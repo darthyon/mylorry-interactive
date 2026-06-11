@@ -25,19 +25,16 @@
     bank:"Maybank · ****4821", lastSync:"09 Jun 2026, 09:15",
 
     kpi: {
-      evalPeriod: "Dec 1 – Dec 31",
-      evalNote:   "Default annual period",
+      evalPeriodOpt: "Yearly",
       progressPeriod: "Dec 1–31",
       actual: 213400,
       locked: false,
-      useCustomPeriod: false,
-      customStart: "Dec", customEnd: "Dec",
       current: {
         version:3, effective:"Dec 2026", target:200000,
         thresholds: [
-          { tier:"Tier 1", label:"Full commission", minPct:100, mult:100 },
-          { tier:"Tier 2", label:"Half commission", minPct:75,  mult:50  },
-          { tier:"Tier 3", label:"No commission",   minPct:0,   mult:0   },
+          { tier:"Tier 1", minPct:100, mult:100, isFinal:true },
+          { tier:"Tier 2", minPct:75,  mult:50  },
+          { tier:"Tier 3", minPct:0,   mult:0   },
         ],
       },
       history: [
