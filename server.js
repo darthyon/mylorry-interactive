@@ -58,7 +58,7 @@ const server = http.createServer((req, res) => {
     pathname = '/index.html';
   }
 
-  let filePath = path.join(__dirname, pathname);
+  let filePath = path.join(process.cwd(), pathname);
   console.log('Request:', pathname, 'File:', filePath, 'Exists:', fs.existsSync(filePath));
 
   fs.stat(filePath, (err, stats) => {
