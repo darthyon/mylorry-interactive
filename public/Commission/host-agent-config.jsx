@@ -345,8 +345,6 @@ function AgentsListView({ onView, onEdit, onCreate, onTerminate }) {
               <select value={pendingStatus} onChange={e => setPendingStatus(e.target.value)}>
                 <option value="all">All statuses</option>
                 <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="suspended">Suspended</option>
                 <option value="terminated">Terminated</option>
               </select>
             </div>
@@ -364,7 +362,7 @@ function AgentsListView({ onView, onEdit, onCreate, onTerminate }) {
         <table className="ml-table hac-agent-table">
           <thead>
             <tr>
-              <th>No.</th><th>ID</th><th>Name</th><th>Role</th>
+              <th>No.</th><th>Agent</th><th>Role</th>
               <th>KPI Progress</th><th>Status</th>
               <th>Mobile Number</th><th>Email</th><th>IC Number</th>
               <th>Bank Name</th><th>Account Number</th><th>Account Name</th>
@@ -375,8 +373,10 @@ function AgentsListView({ onView, onEdit, onCreate, onTerminate }) {
             {pageData.map((a, i) => (
               <tr key={a.id} onClick={() => onView(a)}>
                 <td className="ml-mono">{(page - 1) * perPage + i + 1}</td>
-                <td><code className="hac-code">{a.id}</code></td>
-                <td className="ml-cell-main">{a.name}</td>
+                <td>
+                  <div className="ml-cell-main">{a.name}</div>
+                  <div className="ml-cell-sub"><code className="hac-code">{a.id}</code></div>
+                </td>
                 <td>{a.referrer ? "Referrer" : "Agent"}</td>
                 <td><KPIProgress pct={a.kpiPct} actual={a.volume} target={a.kpiTarget} period="Dec 1–31" /></td>
                 <td><AccountStatusBadge status={a.accountStatus} /></td>
