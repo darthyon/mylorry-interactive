@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyLorry — Interactive Flows</title>
+<link rel="stylesheet" href="fleet-card/colors_and_type.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
+<style>
+/* ── Reset ──────────────────────────────────────────────────── */
+html,body{height:100%;margin:0;padding:0;}
+*,*::before,*::after{box-sizing:border-box;}
+body{font-family:var(--font-sans);font-size:14px;color:var(--fg-primary);background:#fff;}
+.ms{font-family:'Material Symbols Rounded';font-style:normal;font-weight:400;font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20;line-height:1;vertical-align:middle;user-select:none;display:inline-flex;align-items:center;}
+
+/* ── Shell ──────────────────────────────────────────────────── */
+.shell{min-height:100vh;display:flex;flex-direction:column;}
+
+/* ── TopBar ─────────────────────────────────────────────────── */
+.topbar{height:64px;background:var(--gradient-brand);display:flex;align-items:center;padding:0 32px;position:sticky;top:0;z-index:10;}
+.topbar img{height:24px;filter:brightness(0) invert(1);opacity:0.95;}
+.topbar-title{margin-left:12px;font-size:16px;font-weight:600;color:#fff;opacity:0.85;letter-spacing:0.3px;}
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.content{flex:1;display:grid;grid-template-columns:1fr 320px;gap:0;max-width:1400px;width:100%;margin:0 auto;}
+
+/* ── Main Content ───────────────────────────────────────────── */
+.main{padding:48px 40px 80px;}
+
+/* ── Page Header ─────────────────────────────────────────────── */
+.page-hdr{margin-bottom:48px;}
+.page-hdr h1{font-size:28px;font-weight:700;color:var(--fg-primary);margin:0 0 8px;letter-spacing:-0.5px;}
+.page-hdr p{font-size:15px;color:var(--fg-secondary);margin:0 0 24px;}
+
+/* Search bar */
+.search-bar{position:relative;max-width:400px;}
+.search-bar .ms{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--fg-tertiary);font-size:18px;}
+.search-bar input{width:100%;height:44px;padding:0 14px 0 42px;border:1px solid var(--border-light);border-radius:var(--radius-md);font-size:15px;font-family:var(--font-sans);outline:none;transition:border-color 0.15s,box-shadow 0.15s;background:#fff;}
+.search-bar input:focus{border-color:var(--green-500);box-shadow:0 0 0 3px rgba(0,170,79,0.08);}
+.search-bar input::placeholder{color:var(--fg-tertiary);}
+
+/* ── TOC Section ───────────────────────────────────────────── */
+.toc-section{margin-bottom:80px;}
+.toc-hdr{padding:0 0 12px 0;display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;}
+.toc-hdr .ms{font-size:20px;background:var(--gradient-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;transition:transform 0.2s;}
+.toc-section[open] .toc-hdr .ms-chev{transform:rotate(180deg);}
+.toc-hdr h2{font-size:14px;font-weight:600;color:var(--fg-primary);margin:0;flex:1;text-transform:uppercase;letter-spacing:0.5px;}
+.toc-hdr .count{font-size:13px;font-weight:500;color:var(--fg-tertiary);}
+
+/* ── TOC List ──────────────────────────────────────────────── */
+.toc-list{display:none;}
+.toc-section[open] .toc-list{display:block;}
+.toc-item{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border-light);transition:background 0.15s;cursor:pointer;text-decoration:none;}
+.toc-item:last-child{border-bottom:none;}
+.toc-item:hover{background:var(--bg-hover);}
+
+.toc-ico{width:32px;height:32px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.toc-ico .ms{font-size:18px;}
+.toc-ico[data-status="ready"]{background:var(--green-50);}
+.toc-ico[data-status="ready"] .ms{color:var(--green-500);}
+.toc-ico[data-status="wip"]{background:#FFF8E6;}
+.toc-ico[data-status="wip"] .ms{color:#D4A017;}
+.toc-ico[data-status="planned"]{background:var(--bg-muted);}
+.toc-ico[data-status="planned"] .ms{color:var(--fg-tertiary);}
+
+.toc-body{flex:1;min-width:0;}
+.toc-title{font-size:14px;font-weight:500;color:var(--fg-primary);}
+.toc-item[data-status="ready"] .toc-title{font-weight:600;}
+.toc-desc{font-size:13px;color:var(--fg-secondary);margin-top:3px;line-height:1.5;}
+
+.toc-meta{display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.toc-dot{width:8px;height:8px;border-radius:50%;}
+.toc-dot[data-status="ready"]{background:var(--green-500);}
+.toc-dot[data-status="wip"]{background:#D4A017;}
+.toc-dot[data-status="planned"]{background:var(--border-light);}
+
+.btn-view{font-size:12px;font-weight:600;color:var(--green-600);background:var(--green-50);padding:4px 10px;border-radius:4px;border:1px solid var(--green-500);text-decoration:none;transition:all 0.1s;}
+.btn-view:hover{background:var(--green-600);color:#fff;}
+
+/* Focus state for accessibility */
+.toc-item:focus-visible{outline:2px solid var(--green-500);outline-offset:-2px;}
+
+/* Empty state for search */
+.empty-state{text-align:center;padding:48px 20px;color:var(--fg-secondary);font-size:15px;}
+.empty-state .ms{font-size:32px;color:var(--fg-tertiary);margin-bottom:12px;}
+
+/* ── Sidebar / Changelog ───────────────────────────────────── */
+.sidebar{border-left:1px solid var(--border-light);padding:48px 24px;position:sticky;top:64px;height:calc(100vh - 64px);overflow-y:auto;}
+.sidebar-hdr{margin-bottom:24px;}
+.sidebar-hdr h3{font-size:14px;font-weight:600;color:var(--fg-primary);margin:0;text-transform:uppercase;letter-spacing:0.5px;}
+.sidebar-hdr p{font-size:13px;color:var(--fg-secondary);margin:6px 0 0;}
+
+.chg-list{display:flex;flex-direction:column;gap:20px;}
+.chg-item{display:flex;flex-direction:column;gap:6px;}
+.chg-date{font-size:11px;font-weight:600;color:var(--fg-tertiary);text-transform:uppercase;letter-spacing:0.5px;}
+.chg-title{font-size:14px;font-weight:600;color:var(--fg-primary);}
+.chg-desc{font-size:13px;color:var(--fg-secondary);line-height:1.5;}
+.chg-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--green-600);background:var(--green-50);padding:2px 8px;border-radius:4px;align-self:flex-start;}
+.chg-tag.new{color:var(--green-600);background:var(--green-50);}
+.chg-tag.wip{color:#B8860B;background:#FFF8E6;}
+.chg-tag.update{color:var(--teal-600);background:#E6F4F1;}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .content{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .main{padding:32px 24px 60px;}
+}
+@media (max-width: 640px) {
+  .main{padding:32px 16px 60px;}
+  .page-hdr h1{font-size:24px;}
+  .toc-item{gap:12px;}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- TopBar -->
+  <header class="topbar">
+    <img src="fleet-card/img_logo_white.svg" alt="MyLorry" />
+    <span class="topbar-title">Interactive Flows</span>
+  </header>
+
+  <!-- Content -->
+  <div class="content">
+    <!-- Main: TOC -->
+    <main class="main">
+      <div class="page-hdr">
+        <h1>Prototype Library</h1>
+        <p>Table of contents for all interactive click-through flows.</p>
+        <div class="search-bar">
+          <span class="ms">search</span>
+          <input type="text" placeholder="Search flows by name..." id="searchInput" />
+        </div>
+      </div>
+
+      <!-- HOST PORTAL -->
+      <details class="toc-section" open>
+        <summary class="toc-hdr">
+          <span class="ms">business</span>
+          <h2>Host Portal</h2>
+          <span class="count">1 ready</span>
+          <span class="ms ms-chev">expand_more</span>
+        </summary>
+        <div class="toc-list">
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">Host</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">Org</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <a class="toc-item" data-status="ready" href="fleet-card/index.html">
+            <div class="toc-ico" data-status="ready"><span class="ms">check_circle</span></div>
+            <div class="toc-body">
+              <div class="toc-title">MyFuel — Fleet Card Bulk Actions</div>
+              <div class="toc-desc">Select multiple cards, edit status and limits in bulk</div>
+            </div>
+            <div class="toc-meta">
+              <span class="toc-dot" data-status="ready"></span>
+              <span class="btn-view">View</span>
+            </div>
+          </a>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">MyFuel — Dashboard</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">MyFuel — Transaction</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">MyFuel — Rebate</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">MyFuel — Subsidy</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">MyFuel — Usage History</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">MyFuel — Top-Up</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">MyFuel — Payment History</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">MyFuel — Balance Adjustment</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">MyFuel — Report</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">MyFuel — Usage Report</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">MyAdmin</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">MyTrip</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">Settings</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+        </div>
+      </details>
+
+      <!-- AGENT PORTAL -->
+      <details class="toc-section" open>
+        <summary class="toc-hdr">
+          <span class="ms">support_agent</span>
+          <h2>Agent Portal</h2>
+          <span class="count">0 ready · 1 in progress</span>
+          <span class="ms ms-chev">expand_more</span>
+        </summary>
+        <div class="toc-list">
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">Dashboard</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">SP Account</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="wip">
+            <div class="toc-ico" data-status="wip"><span class="ms">pending</span></div>
+            <div class="toc-body"><div class="toc-title">Commission</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="wip"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">Referrer</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">Fleet Card</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">Transaction</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">Rebate</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">Subsidy Settlement</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">Top-Up</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">Payment History</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">Report</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">Usage Report</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+          <div class="toc-item" data-status="planned">
+            <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
+            <div class="toc-body"><div class="toc-title">Settings</div></div>
+            <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
+          </div>
+        </div>
+      </details>
+    </main>
+
+    <!-- Sidebar: Changelog -->
+    <aside class="sidebar">
+      <div class="sidebar-hdr">
+        <h3>Changelog</h3>
+        <p>Latest updates to the prototype library</p>
+      </div>
+      <div class="chg-list">
+        <div class="chg-item">
+          <span class="chg-date">Today</span>
+          <span class="chg-tag new">New</span>
+          <div class="chg-title">Fleet Card — Bulk Actions</div>
+          <div class="chg-desc">Added interactive prototype for bulk editing fleet card status and limits with real-time update states.</div>
+        </div>
+        <div class="chg-item">
+          <span class="chg-date">In Progress</span>
+          <span class="chg-tag wip">WIP</span>
+          <div class="chg-title">Agent Commission</div>
+          <div class="chg-desc">Commission calculation and payout history dashboard for Agent Portal.</div>
+        </div>
+        <div class="chg-item">
+          <span class="chg-date">Coming Soon</span>
+          <span class="chg-tag update">Update</span>
+          <div class="chg-title">Prototype Library v2</div>
+          <div class="chg-desc">Restructured homepage with two-portal layout and improved navigation.</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const searchInput = document.getElementById('searchInput');
+const tocItems = document.querySelectorAll('.toc-item');
+const tocSections = document.querySelectorAll('.toc-section');
+
+searchInput.addEventListener('input', function() {
+  const query = this.value.toLowerCase().trim();
+  
+  tocItems.forEach(item => {
+    const title = item.querySelector('.toc-title').textContent.toLowerCase();
+    const match = title.includes(query);
+    
+    if (match || query === '') {
+      item.style.display = '';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+  
+  tocSections.forEach(section => {
+    const visibleItems = section.querySelectorAll('.toc-item:not([style*="display: none"])');
+    if (visibleItems.length === 0 && query !== '') {
+      section.style.display = 'none';
+    } else {
+      section.style.display = '';
+    }
+  });
+});
+</script>
+</body>
+</html>

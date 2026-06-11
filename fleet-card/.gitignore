@@ -1,0 +1,10 @@
+# System files
+.DS_Store
+
+# Local artifacts
+screenshots/
+uploads/
+
+# Logs
+*.log
+.vercel
