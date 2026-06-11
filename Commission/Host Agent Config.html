@@ -483,19 +483,45 @@ b { font-weight: 600; }
 }
 .hac-cc-sec-label { font-size: 13px; font-weight: 700; color: var(--fg-primary); }
 .hac-version-tag {
+  display: inline-flex; align-items: center; gap: 3px;
   font-size: 11px; font-weight: 600; color: var(--teal-600); background: #EAF6FB;
-  padding: 2px 8px; border-radius: 4px;
+  padding: 3px 6px 3px 9px; border-radius: 5px; border: none;
+  font-family: var(--font-sans); cursor: default;
 }
-.hac-cc-meta { font-size: 12px; color: var(--fg-secondary); margin-bottom: 10px; }
+.hac-version-tag.clickable { cursor: pointer; transition: background .12s; }
+.hac-version-tag.clickable:hover { background: #DCEFF7; }
 .hac-info-note { color: var(--fg-tertiary); margin-left: 8px; }
-.hac-kpi-target-band {
-  background: var(--green-50); border: 1px solid #D6F0E2;
-  border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 4px;
-}
 .hac-big-num {
   font-size: 22px; font-weight: 700; color: var(--navy-800);
   letter-spacing: -.3px; display: block; margin-top: 2px;
 }
+
+/* ── KPI config — two-column row + field labels ──────────────────── */
+.hac-cc-row2 { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; }
+.hac-cc-col { flex: 1; min-width: 200px; }
+.hac-field-label {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 600; color: var(--fg-secondary); margin-bottom: 7px;
+}
+
+/* ── Version history modal ───────────────────────────────────────── */
+.hac-vh-list { display: flex; flex-direction: column; }
+.hac-vh-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 0; border-bottom: 1px solid var(--border-light);
+}
+.hac-vh-row:last-child { border-bottom: none; }
+.hac-vh-ver { font-size: 13px; font-weight: 700; color: var(--navy-800); width: 30px; font-variant-numeric: tabular-nums; }
+.hac-vh-detail { display: flex; flex-direction: column; gap: 1px; flex: 1; }
+.hac-vh-detail b { font-size: 14px; font-weight: 700; color: var(--fg-primary); font-variant-numeric: tabular-nums; }
+.hac-vh-detail span { font-size: 12px; color: var(--fg-secondary); }
+.hac-vh-status { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 4px; }
+.hac-vh-status.active { background: var(--green-50); color: var(--green-600); }
+.hac-vh-status.superseded { background: var(--bg-muted); color: var(--fg-tertiary); }
+
+/* ── Multiplier threshold cards (tier-card styling) ──────────────── */
+.hac-thr-grid { grid-template-columns: 1fr 1fr 1fr !important; }
+.hac-mult-badge { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .hac-cc-divider {
   height: 1px; background: var(--border-light); margin: 18px 0;
 }
@@ -609,7 +635,7 @@ b { font-weight: 600; }
 /* ── Tier cards (Figma pattern) ─────────────────────────────────── */
 .hac-tiers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
 .hac-tier-item { border: 1px solid var(--border-light); border-radius: 8px; padding: 14px 16px; background: #fff; transition: border-color .15s; }
-.hac-tier-item.editing { border-color: var(--green-500); background: var(--green-50); }
+.hac-tier-item.editing { border-color: var(--green-500); }
 .hac-tier-item-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .hac-tier-item-label { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; color: var(--navy-800); }
 .hac-final-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: var(--green-50); color: var(--green-600); margin-left: 4px; }
@@ -687,15 +713,53 @@ b { font-weight: 600; }
 }
 .hac-sp-checkbox.checked { background: var(--green-500); border-color: var(--green-500); }
 
-/* ── KPI tier rows (inline, no table) ────────────────────────────── */
-.hac-kpi-tiers { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
-.hac-kpi-tier-row {
+.hac-thr-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Multiplier thresholds — inline edit (no table) ──────────────── */
+.hac-thr-edit { display: flex; flex-direction: column; gap: 6px; }
+.hac-thr-edit-row {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  font-size: 13px; padding: 8px 12px; background: var(--bg-muted); border-radius: 6px;
+  padding: 8px 10px; border-radius: 8px; background: var(--bg-subtle);
 }
-.hac-kpi-tier-range { font-weight: 600; color: var(--fg-primary); }
-.hac-kpi-tier-mult  { color: var(--fg-secondary); }
-.hac-kpi-tier-label { color: var(--fg-tertiary); font-style: italic; margin-left: auto; }
+.hac-thr-edit-range { display: flex; align-items: center; gap: 6px; }
+.hac-thr-mut { font-size: 12px; color: var(--fg-tertiary); }
+.hac-thr-arrow { color: var(--fg-disabled); font-size: 14px; }
+.hac-thr-meaning { font-size: 13px; color: var(--fg-secondary); margin-left: auto; }
+.hac-thr-err { flex-basis: 100%; font-size: 11px; color: var(--red-400); padding-left: 19px; }
+
+
+/* ── KPI helpers ─────────────────────────────────────────────────── */
+.hac-field-hint { display: block; font-size: 12px; color: var(--fg-tertiary); margin-top: 5px; }
+.hac-kpi-warn {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; color: var(--amber-700, #92400E);
+  background: #FFFBEB; border: 1px solid #FDE68A;
+  border-radius: 6px; padding: 8px 12px; margin-bottom: 12px;
+}
+.hac-radio-group { display: flex; flex-direction: column; gap: 7px; }
+.hac-radio-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--fg-primary); cursor: pointer;
+}
+.hac-radio-note { color: var(--fg-tertiary); font-size: 12px; margin-left: 4px; }
+
+/* ── Period pill ──────────────────────────────────────────────────── */
+.hac-period-pill {
+  display: inline-block; background: #EDEEF7; color: var(--navy-800);
+  font-size: 12px; font-weight: 600; padding: 2px 9px;
+  border-radius: 20px; margin-right: 6px;
+}
+
+/* ── Effective-from band (hoisted) ────────────────────────────────── */
+.hac-effective-band {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: #EAF6FB; border-radius: 6px;
+  padding: 10px 14px; margin-bottom: 14px;
+}
+.hac-effective-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; color: var(--teal-600); white-space: nowrap;
+}
 
 /* ── Sticky edit action bar ──────────────────────────────────────── */
 .hac-edit-bar {
@@ -760,17 +824,37 @@ b { font-weight: 600; }
   border: 5px solid transparent; border-top-color: #322F35;
 }
 
-/* ── KPI Progress detail card ────────────────────────────────────── */
-.hac-kpiprog-row { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
-.hac-kpiprog-pct { font-size: 32px; font-weight: 700; letter-spacing: -.5px; line-height: 1; }
-.hac-kpiprog-bar-wrap { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 7px; }
-.hac-kpiprog-track { height: 10px; background: var(--bg-muted); border-radius: 5px; overflow: hidden; }
-.hac-kpiprog-fill  { height: 100%; border-radius: 5px; }
-.hac-kpiprog-scale { display: flex; justify-content: space-between; font-size: 12px; color: var(--fg-secondary); }
-.hac-kpiprog-scale b { color: var(--fg-primary); font-weight: 600; }
-.hac-kpiprog-outcome {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 4px; white-space: nowrap;
+/* ── KPI Progress — zoned axis ───────────────────────────────────── */
+.hac-kpiaxis-top { display: flex; align-items: baseline; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.hac-kpiaxis-pct { font-size: 38px; font-weight: 700; letter-spacing: -.8px; line-height: .9; font-variant-numeric: tabular-nums; }
+.hac-kpiaxis-readout { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--fg-secondary); }
+.hac-kpiaxis-readout b { color: var(--fg-primary); font-weight: 700; font-variant-numeric: tabular-nums; }
+.hac-kpiaxis-readout span:last-child { font-weight: 700; }
+
+.hac-kpiaxis { position: relative; margin-top: 4px; }
+.hac-kpiaxis-track {
+  position: relative; display: flex; height: 16px;
+  border-radius: 8px; overflow: hidden;
+}
+.hac-kpiaxis-zone { height: 100%; }
+.hac-kpiaxis.future .hac-kpiaxis-track { opacity: .55; }
+.hac-kpiaxis-marker {
+  position: absolute; top: -4px; bottom: -4px; width: 3px;
+  border-radius: 2px; transform: translateX(-50%);
+  box-shadow: 0 0 0 2px #fff;
+}
+.hac-kpiaxis-dot {
+  position: absolute; top: -7px; left: 50%; transform: translateX(-50%);
+  width: 13px; height: 13px; border-radius: 50%; box-shadow: 0 0 0 2.5px #fff;
+}
+.hac-kpiaxis-ticks { position: relative; height: 16px; margin-top: 5px; }
+.hac-kpiaxis-tick {
+  position: absolute; transform: translateX(-50%); font-size: 11px;
+  font-weight: 600; color: var(--fg-tertiary); font-variant-numeric: tabular-nums;
+}
+.hac-kpiaxis-note {
+  display: flex; align-items: center; gap: 6px; margin-top: 14px;
+  font-size: 12px; color: var(--fg-tertiary);
 }
 
 /* ── Payout badges ────────────────────────────────────────────────── */
