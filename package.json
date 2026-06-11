@@ -4,6 +4,7 @@
   "description": "MyLorry interactive prototype library — organized by module",
   "scripts": {
     "dev": "node dev-server.js",
+    "start": "node server.js",
     "dev:python": "python3 -m http.server 8000"
   },
   "devDependencies": {
