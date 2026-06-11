@@ -829,7 +829,7 @@ function AgentFormView({ agent, onBack, onSave }) {
   });
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   return (
-    <div>
+    <div style={{ paddingBottom: 80 }}>
       <div className="hac-breadcrumb">
         <button className="hac-bc-link" onClick={onBack}>Agent List</button>
         <HIcon name="chevron_right" size={15} color="var(--fg-tertiary)" />
@@ -871,7 +871,7 @@ function AgentFormView({ agent, onBack, onSave }) {
           tiers={[]} editing={true} />
       </div>
       <SPAccountsCard spAccounts={[]} />
-      <div className="hac-form-actions">
+      <div className="hac-edit-bar">
         <button className="hac-cancel-btn" onClick={onBack}>Cancel</button>
         <button className="hac-save-btn" onClick={() => onSave(form)}>{isEdit ? "Save Changes" : "Create"}</button>
       </div>
@@ -916,9 +916,9 @@ function AgentDetailView({ agent, onBack }) {
       </div>
       {editing && (
         <div className="hac-edit-bar">
-          <button className="hac-cancel-btn" style={{ padding:"10px 28px", fontSize:13, maxWidth:"none" }}
+          <button className="hac-cancel-btn"
             onClick={() => setEditing(false)}>Cancel</button>
-          <button className="hac-save-btn" style={{ padding:"10px 28px", fontSize:13, maxWidth:"none" }}
+          <button className="hac-save-btn"
             onClick={() => setEditing(false)}>
             <HIcon name="check" size={15} /> Save Changes
           </button>
@@ -936,7 +936,9 @@ function HostAgentConfig() {
 
   const inSubPage = agentView !== "list";
 
+
   const goView   = a => { setActiveAgent(a); setAgentView("detail"); };
+  const goEdit   = a => { setActiveAgent(a); setAgentView("edit"); };
   const goCreate = ()  => { setActiveAgent(null); setAgentView("create"); };
   const goBack   = ()  => setAgentView("list");
   const goSave   = ()  => setAgentView("list");
@@ -974,8 +976,9 @@ function HostAgentConfig() {
         {/* Tab content */}
         {activeTab === "list" && (
           <>
-            {agentView === "list"   && <AgentsListView onView={goView} onEdit={goView} onCreate={goCreate} onTerminate={goView} />}
+            {agentView === "list"   && <AgentsListView onView={goView} onEdit={goEdit} onCreate={goCreate} onTerminate={goView} />}
             {agentView === "create" && <AgentFormView  agent={null} onBack={goBack} onSave={goSave} />}
+            {agentView === "edit"   && <AgentFormView  agent={activeAgent} onBack={goBack} onSave={goSave} />}
             {agentView === "detail" && <AgentDetailView agent={activeAgent} onBack={goBack} />}
           </>
         )}
