@@ -46,7 +46,7 @@ const AccountStatusBadge = window.HAccountStatusBadge;
 // is the next-higher tier's lower bound, so ranges stay contiguous (no gaps /
 // overlaps) by construction. The final tier (isFinal) is open-ended upward and
 // absorbs progress above its lower bound, including progress over 100%.
-const multColor = m => m >= 100 ? "var(--green-600)" : m > 0 ? "var(--amber-600)" : "var(--red-400)"; // text (contrast)
+const multColor = m => m >= 100 ? "var(--green-600)" : m > 0 ? "var(--amber-500)" : "var(--red-400)"; // text (match segmented bar amber)
 const multSolid = m => m >= 100 ? "var(--green-600)" : m > 0 ? "var(--amber-500)" : "var(--red-400)"; // bar fill (brighter amber)
 const multFill = m => m >= 100 ? "#E4F6EC" : m > 0 ? "var(--amber-50)" : "#FCEBEC";
 
@@ -993,19 +993,7 @@ function CommissionSection({
     className: "hac-cc-section"
   }, /*#__PURE__*/React.createElement("div", {
     className: "hac-cc-sec-head"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 6,
-      fontSize: 12,
-      color: "var(--fg-tertiary)"
-    }
-  }, /*#__PURE__*/React.createElement(HIcon, {
-    name: "info",
-    size: 14,
-    color: "var(--fg-tertiary)"
-  }), "KPI progress sets the multiplier applied to the agent's commission."), kpi.current && /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("div", null), kpi.current && /*#__PURE__*/React.createElement("button", {
     className: "hac-version-tag clickable",
     onClick: () => setShowHistory(true)
   }, "v", kpi.current.version, " \xB7 Effective ", kpi.current.effective, /*#__PURE__*/React.createElement(HIcon, {
@@ -1033,7 +1021,9 @@ function CommissionSection({
     className: "hac-kpi-summary-left"
   }, /*#__PURE__*/React.createElement("div", {
     className: "hac-kpi-summary-label"
-  }, "KPI Progress"), /*#__PURE__*/React.createElement(KPIProgressBlock, {
+  }, "KPI Progress", /*#__PURE__*/React.createElement(InfoTip, {
+    text: "KPI progress sets the multiplier applied to the agent's commission."
+  })), /*#__PURE__*/React.createElement(KPIProgressBlock, {
     kpi: kpi,
     target: kpiTarget,
     thresholds: kpiThresholds
@@ -1139,7 +1129,7 @@ function CommissionSection({
   }, [...kpiThresholds].sort((a, b) => b.minPct - a.minPct).map(t => {
     return /*#__PURE__*/React.createElement("div", {
       key: t.id,
-      className: "hac-tier-item" + (t.isFinal ? " editing" : "")
+      className: "hac-tier-item"
     }, /*#__PURE__*/React.createElement("div", {
       className: "hac-tier-item-head"
     }, /*#__PURE__*/React.createElement("div", {
@@ -1163,11 +1153,7 @@ function CommissionSection({
       className: "ml-k"
     }, "Progress range"), /*#__PURE__*/React.createElement("b", null, getThresholdRange(t))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
       className: "ml-k"
-    }, "Multiplier"), /*#__PURE__*/React.createElement("b", {
-      style: {
-        color: multColor(t.mult)
-      }
-    }, t.mult, "%"))));
+    }, "Multiplier"), /*#__PURE__*/React.createElement("b", null, t.mult, "%"))));
   })))), showThresholdModal && /*#__PURE__*/React.createElement(ThresholdModal, {
     editThreshold: editingThreshold,
     siblings: kpiThresholds,

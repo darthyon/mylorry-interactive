@@ -25,7 +25,7 @@ const AccountStatusBadge = window.HAccountStatusBadge;
 // is the next-higher tier's lower bound, so ranges stay contiguous (no gaps /
 // overlaps) by construction. The final tier (isFinal) is open-ended upward and
 // absorbs progress above its lower bound, including progress over 100%.
-const multColor = m => m >= 100 ? "var(--green-600)" : m > 0 ? "var(--amber-600)" : "var(--red-400)"; // text (contrast)
+const multColor = m => m >= 100 ? "var(--green-600)" : m > 0 ? "var(--amber-500)" : "var(--red-400)"; // text (match segmented bar amber)
 const multSolid = m => m >= 100 ? "var(--green-600)" : m > 0 ? "var(--amber-500)" : "var(--red-400)"; // bar fill (brighter amber)
 const multFill  = m => m >= 100 ? "#E4F6EC"          : m > 0 ? "var(--amber-50)"  : "#FCEBEC";
 
@@ -630,10 +630,7 @@ function CommissionSection({ kpi, editing }) {
       {kpi && (
         <div className="hac-cc-section">
           <div className="hac-cc-sec-head">
-            <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:12, color:"var(--fg-tertiary)" }}>
-              <HIcon name="info" size={14} color="var(--fg-tertiary)" />
-              KPI progress sets the multiplier applied to the agent's commission.
-            </div>
+            <div />
             {kpi.current && (
               <button className="hac-version-tag clickable" onClick={() => setShowHistory(true)}>
                 v{kpi.current.version} · Effective {kpi.current.effective}
@@ -659,7 +656,10 @@ function CommissionSection({ kpi, editing }) {
             {/* Left: KPI Progress (view-only) */}
             {!editing && kpiTarget > 0 && (
               <div className="hac-kpi-summary-left">
-                <div className="hac-kpi-summary-label">KPI Progress</div>
+                <div className="hac-kpi-summary-label">
+                  KPI Progress
+                  <InfoTip text="KPI progress sets the multiplier applied to the agent's commission." />
+                </div>
                 <KPIProgressBlock kpi={kpi} target={kpiTarget} thresholds={kpiThresholds} />
               </div>
             )}
@@ -719,7 +719,7 @@ function CommissionSection({ kpi, editing }) {
             <div className="hac-tiers-grid hac-thr-grid">
               {[...kpiThresholds].sort((a, b) => b.minPct - a.minPct).map(t => {
                 return (
-                  <div key={t.id} className={"hac-tier-item" + (t.isFinal ? " editing" : "")}>
+                  <div key={t.id} className="hac-tier-item">
                     <div className="hac-tier-item-head">
                       <div className="hac-tier-item-label">
                         <HIcon name="stacked_bar_chart" size={16} color="var(--navy-800)" />
@@ -740,7 +740,7 @@ function CommissionSection({ kpi, editing }) {
                       </div>
                       <div>
                         <span className="ml-k">Multiplier</span>
-                        <b style={{ color: multColor(t.mult) }}>{t.mult}%</b>
+                        <b>{t.mult}%</b>
                       </div>
                     </div>
                   </div>
