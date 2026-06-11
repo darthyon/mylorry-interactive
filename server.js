@@ -81,6 +81,7 @@ const server = http.createServer((req, res) => {
     pathname = '/index.html';
   }
 
+  // In Vercel serverless, files are in the same directory as the function
   let filePath = path.join(__dirname, pathname);
 
   // Check if it's a directory and serve index.html
