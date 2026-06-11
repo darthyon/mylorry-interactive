@@ -198,7 +198,7 @@ function AgentsListView({ onView, onEdit, onCreate, onTerminate }) {
       a.email.toLowerCase().includes(q.toLowerCase())
     );
     if (filter === "referrer") list = list.filter(a => a.referrer);
-    if (filter === "sales")    list = list.filter(a => !a.referrer);
+    if (filter === "agent")    list = list.filter(a => !a.referrer);
     if (statusFilter !== "all") list = list.filter(a => a.accountStatus === statusFilter);
     return list;
   }, [AGENTS, q, filter, statusFilter]);
@@ -250,11 +250,11 @@ function AgentsListView({ onView, onEdit, onCreate, onTerminate }) {
         <div className="hac-filter-panel">
           <div className="hac-filter-grid">
             <div className="hac-filter-field">
-              <label>Agent Type</label>
+              <label>Role</label>
               <select value={pendingType} onChange={e => setPendingType(e.target.value)}>
-                <option value="all">All types</option>
+                <option value="all">All roles</option>
+                <option value="agent">Agent</option>
                 <option value="referrer">Referrer</option>
-                <option value="sales">Sales</option>
               </select>
             </div>
             <div className="hac-filter-field">
@@ -281,7 +281,7 @@ function AgentsListView({ onView, onEdit, onCreate, onTerminate }) {
         <table className="ml-table hac-agent-table">
           <thead>
             <tr>
-              <th>No.</th><th>ID</th><th>Referrer</th><th>Name</th>
+              <th>No.</th><th>ID</th><th>Name</th><th>Role</th>
               <th>KPI Progress</th><th>Status</th>
               <th>Mobile Number</th><th>Email</th><th>IC Number</th>
               <th>Bank Name</th><th>Account Number</th><th>Account Name</th>
@@ -293,8 +293,8 @@ function AgentsListView({ onView, onEdit, onCreate, onTerminate }) {
               <tr key={a.id} onClick={() => onView(a)}>
                 <td className="ml-mono">{(page - 1) * perPage + i + 1}</td>
                 <td><code className="hac-code">{a.id}</code></td>
-                <td><HBadge kind={a.referrer ? "active" : "inactive"}>{a.referrer ? "Yes" : "No"}</HBadge></td>
                 <td className="ml-cell-main">{a.name}</td>
+                <td>{a.referrer ? "Referrer" : "Agent"}</td>
                 <td><KPIProgress pct={a.kpiPct} actual={a.volume} target={a.kpiTarget} period="Dec 1–31" /></td>
                 <td><AccountStatusBadge status={a.accountStatus} /></td>
                 <td className="ml-mono">{a.mobile}</td>
@@ -978,8 +978,17 @@ function PersonalDetailsSection({ cfg, editing }) {
                       <option value="">Select bank</option>
                       {BANKS.map(b => <option key={b}>{b}</option>)}
                     </select>
+                  : f.key === "role"
+                  ? <select className="hac-input hac-select-input"
+                      value={form.referrer ? "referrer" : "agent"}
+                      onChange={e => set("referrer", e.target.value === "referrer")}>
+                      <option value="agent">Agent</option>
+                      <option value="referrer">Referrer</option>
+                    </select>
                   : <input className="hac-input" value={form[f.key] || ""} onChange={e => set(f.key, e.target.value)} />)
-              : <span className="hac-view-val">{cfg[f.key] || <span style={{ color:"var(--fg-disabled)" }}>—</span>}</span>}
+              : <span className="hac-view-val">{f.key === "role"
+                  ? (cfg.referrer ? "Referrer" : "Agent")
+                  : (cfg[f.key] || <span style={{ color:"var(--fg-disabled)" }}>—</span>)}</span>}
           </div>
         ))}
         <div className="hac-fg">
@@ -1022,6 +1031,15 @@ function AgentFormView({ agent, onBack, onSave }) {
             </div>
           ))}
           <div className="hac-fg">
+            <label className="hac-label req">Role*</label>
+            <select className="hac-input hac-select-input"
+              value={form.referrer ? "referrer" : "agent"}
+              onChange={e => set("referrer", e.target.value === "referrer")}>
+              <option value="agent">Agent</option>
+              <option value="referrer">Referrer</option>
+            </select>
+          </div>
+          <div className="hac-fg">
             <label className="hac-label">Bank name</label>
             <select className="hac-input hac-select-input" value={form.bankName} onChange={e => set("bankName", e.target.value)}>
               <option value="">Select bank</option>
@@ -1063,7 +1081,7 @@ function AgentDetailView({ agent, onBack }) {
   // from the clicked row so every agent renders its real KPI state.
   const cfg = {
     ...base,
-    id: row.id, name: row.name, role: row.role, joined: row.joined,
+    id: row.id, name: row.name, referrer: row.referrer, joined: row.joined,
     accountStatus: row.accountStatus || base.accountStatus,
     kpi: {
       ...base.kpi,
@@ -1089,7 +1107,7 @@ function AgentDetailView({ agent, onBack }) {
             <AccountStatusBadge status={cfg.accountStatus || "active"} />
           </div>
           <div style={{ fontSize:12, color:"var(--fg-secondary)", marginTop:3 }}>
-            {cfg.role} · {cfg.id} · Joined {cfg.joined}
+            {cfg.id} · Joined {cfg.joined}
           </div>
         </div>
         <div className="ml-page-head-right">

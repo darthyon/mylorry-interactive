@@ -7,7 +7,6 @@
   const AGENT = {
     name: "Kenneth Wang",
     id: "AG-0042",
-    role: "Internal Sales Agent",
     joined: "Aug 2024",
     bank: "Maybank · ****4821",
     lastSync: "06 Dec 2026, 09:15",
