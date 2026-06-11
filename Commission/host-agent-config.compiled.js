@@ -1,4 +1,3 @@
-(function(){
 // host-agent-config.jsx — Host portal: Agent Module (tabs + commission config)
 
 const {
@@ -41,6 +40,121 @@ function CommissionStatusBadge({
 /* ─── KPI progress bar — shared (window.HKPIProgress) ───────── */
 const KPIProgress = window.HKPIProgress;
 const AccountStatusBadge = window.HAccountStatusBadge;
+
+/* ─── KPI Progress block (zoned axis) — inline inside Commission Config ─ */
+const KPI_AXIS_MAX = 125;
+const KPI_ZONES = [{
+  from: 0,
+  to: 75,
+  mult: 0,
+  label: "No commission",
+  col: "var(--red-400)",
+  fill: "#FCEBEC"
+}, {
+  from: 75,
+  to: 100,
+  mult: 50,
+  label: "Half commission",
+  col: "#B26A00",
+  fill: "#FBF1DD"
+}, {
+  from: 100,
+  to: KPI_AXIS_MAX,
+  mult: 100,
+  label: "Full commission",
+  col: "var(--green-600)",
+  fill: "#E4F6EC"
+}];
+const kpiZoneOf = pct => KPI_ZONES.find(z => pct >= z.from && pct < z.to) || KPI_ZONES[KPI_ZONES.length - 1];
+function KPIProgressBlock({
+  kpi,
+  target
+}) {
+  const actual = kpi?.actual ?? 0;
+  const period = kpi?.progressPeriod || "Dec 1–31";
+  const phase = kpi?.phase || (kpi?.locked ? "complete" : "active");
+  const isFuture = phase === "future";
+  const isComplete = phase === "complete";
+  const pct = target ? Math.round(actual / target * 1000) / 10 : 0;
+  const zone = kpiZoneOf(pct);
+  const markerCol = isFuture ? "var(--fg-tertiary)" : zone.col;
+  const pos = p => Math.min(p, KPI_AXIS_MAX) / KPI_AXIS_MAX * 100;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 10,
+      marginBottom: 18
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "auto 1fr",
+      gap: "18px",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "hac-kpiaxis-pct",
+    style: {
+      color: markerCol,
+      lineHeight: .9
+    }
+  }, isFuture ? "–" : pct + "%"), /*#__PURE__*/React.createElement("div", {
+    className: "hac-kpiaxis-readout",
+    style: {
+      gap: 2
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "Achieved ", /*#__PURE__*/React.createElement("b", null, isFuture ? "–" : actual.toLocaleString("en-US") + " L")), !isFuture && /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: zone.col
+    }
+  }, zone.label, " \xB7 ", zone.mult, "% multiplier"))), /*#__PURE__*/React.createElement("div", {
+    className: "hac-kpiaxis" + (isFuture ? " future" : ""),
+    style: {
+      marginTop: 0,
+      alignSelf: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "hac-kpiaxis-track"
+  }, KPI_ZONES.map((z, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "hac-kpiaxis-zone",
+    style: {
+      width: (Math.min(z.to, KPI_AXIS_MAX) - z.from) / KPI_AXIS_MAX * 100 + "%",
+      background: z.fill
+    }
+  })), !isFuture && /*#__PURE__*/React.createElement("div", {
+    className: "hac-kpiaxis-marker",
+    style: {
+      left: pos(pct) + "%",
+      background: markerCol
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "hac-kpiaxis-dot",
+    style: {
+      background: markerCol
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "hac-kpiaxis-ticks"
+  }, [75, 100].map(t => /*#__PURE__*/React.createElement("span", {
+    key: t,
+    className: "hac-kpiaxis-tick",
+    style: {
+      left: pos(t) + "%"
+    }
+  }, t, "%"))))), isFuture && /*#__PURE__*/React.createElement("div", {
+    className: "hac-kpiaxis-note"
+  }, /*#__PURE__*/React.createElement(HIcon, {
+    name: "info",
+    size: 14,
+    color: "var(--fg-tertiary)"
+  }), "Evaluation period has not started. Progress tracked from ", period, "."));
+}
 
 /* ─── Bank badge ─────────────────────────────────────────────── */
 const BANK_META = {
@@ -545,6 +659,107 @@ function TierModal({
   }, "Applied to every confirmed litre in this band")));
 }
 
+/* ─── Threshold Modal (add / edit) ───────────────────────────── */
+function ThresholdModal({
+  editThreshold,
+  onClose,
+  onSave
+}) {
+  const isEdit = !!editThreshold;
+  const [tierName, setTierName] = useState(editThreshold ? editThreshold.tier : "");
+  const [minPct, setMinPct] = useState(editThreshold ? String(editThreshold.minPct ?? "") : "");
+  const [mult, setMult] = useState(editThreshold ? String(editThreshold.mult ?? "") : "");
+  const [meaning, setMeaning] = useState(editThreshold ? editThreshold.label : "");
+  const [isFinal, setIsFinal] = useState(editThreshold ? editThreshold.isFinal : false);
+  const canSave = tierName !== "" && mult !== "" && meaning !== "" && (isFinal || minPct !== "");
+  const handleSave = () => {
+    if (!canSave) return;
+    onSave({
+      tier: tierName,
+      minPct: isFinal ? 0 : +minPct,
+      mult: +mult,
+      label: meaning,
+      isFinal
+    }, isEdit ? editThreshold.id : null);
+    onClose();
+  };
+  return /*#__PURE__*/React.createElement(Modal, {
+    title: isEdit ? "Edit Threshold" : "Add Threshold",
+    onClose: onClose,
+    footer: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+      className: "hac-modal-cancel",
+      onClick: onClose
+    }, "Cancel"), /*#__PURE__*/React.createElement("button", {
+      className: "hac-modal-save",
+      disabled: !canSave,
+      onClick: handleSave
+    }, "Save"))
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "hac-fg",
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "hac-label req"
+  }, "Tier name*"), /*#__PURE__*/React.createElement("input", {
+    className: "hac-input",
+    placeholder: "e.g. Tier 1",
+    value: tierName,
+    onChange: e => setTierName(e.target.value)
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "hac-modal-row-split",
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "hac-fg",
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "hac-label req"
+  }, "Minimum progress %*"), /*#__PURE__*/React.createElement("input", {
+    className: "hac-input",
+    placeholder: "e.g. 75",
+    value: minPct,
+    disabled: isFinal,
+    onChange: e => setMinPct(e.target.value)
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "hac-check-row",
+    style: {
+      marginTop: 24,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: isFinal,
+    onChange: e => setIsFinal(e.target.checked)
+  }), /*#__PURE__*/React.createElement("span", null, "Final threshold (no minimum)"))), /*#__PURE__*/React.createElement("div", {
+    className: "hac-fg",
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "hac-label req"
+  }, "Multiplier %*"), /*#__PURE__*/React.createElement("input", {
+    className: "hac-input",
+    placeholder: "e.g. 50",
+    value: mult,
+    onChange: e => setMult(e.target.value)
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "hac-field-hint"
+  }, "Applied to the commission earned from volume tiers")), /*#__PURE__*/React.createElement("div", {
+    className: "hac-fg"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "hac-label req"
+  }, "Meaning / label*"), /*#__PURE__*/React.createElement("input", {
+    className: "hac-input",
+    placeholder: "e.g. Half commission",
+    value: meaning,
+    onChange: e => setMeaning(e.target.value)
+  })));
+}
+
 /* ─── Add SP Account modal ───────────────────────────────────── */
 const SP_ORG_LIST = [{
   sp: "ARC-PTN-063",
@@ -652,6 +867,24 @@ function AddSPModal({
   })));
 }
 
+/* ─── Inline info tooltip ────────────────────────────────────── */
+function InfoTip({
+  text
+}) {
+  return /*#__PURE__*/React.createElement("span", {
+    className: "ml-tooltip-wrap"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "ml-info-btn",
+    type: "button",
+    "aria-label": text
+  }, /*#__PURE__*/React.createElement(HIcon, {
+    name: "info",
+    size: 14
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "ml-tooltip"
+  }, text));
+}
+
 /* ─── Commission config section ──────────────────────────────── */
 function CommissionSection({
   kpi,
@@ -661,28 +894,39 @@ function CommissionSection({
   const [tiers, setTiers] = useState(initTiers || []);
   const [kpiTarget, setKpiTarget] = useState(kpi?.current?.target ?? 150000);
   const [showHistory, setShowHistory] = useState(false);
-  const [kpiThresholds, setKpiThresholds] = useState(kpi?.current?.thresholds || [{
-    tier: "Tier 1",
-    label: "Full commission",
-    minPct: 100,
-    mult: 100
-  }, {
-    tier: "Tier 2",
-    label: "Half commission",
-    minPct: 75,
-    mult: 50
-  }, {
-    tier: "Tier 3",
-    label: "No commission",
-    minPct: 0,
-    mult: 0
-  }]);
+  const [kpiThresholds, setKpiThresholds] = useState(() => {
+    const t = kpi?.current?.thresholds || [{
+      id: 1,
+      tier: "Tier 1",
+      label: "Full commission",
+      minPct: 100,
+      mult: 100
+    }, {
+      id: 2,
+      tier: "Tier 2",
+      label: "Half commission",
+      minPct: 75,
+      mult: 50
+    }, {
+      id: 3,
+      tier: "Tier 3",
+      label: "No commission",
+      minPct: 0,
+      mult: 0
+    }];
+    return t.map((x, i) => ({
+      ...x,
+      id: x.id || i + 1
+    }));
+  });
   const [useCustomPeriod, setUseCustomPeriod] = useState(kpi?.useCustomPeriod || false);
   const [evalStart, setEvalStart] = useState(kpi?.customStart || "Dec");
   const [evalEnd, setEvalEnd] = useState(kpi?.customEnd || "Dec");
   const [effectiveFrom, setEffectiveFrom] = useState("");
   const [showTierModal, setShowTierModal] = useState(false);
   const [editingTier, setEditingTier] = useState(null);
+  const [showThresholdModal, setShowThresholdModal] = useState(false);
+  const [editingThreshold, setEditingThreshold] = useState(null);
   const hasFinalTier = tiers.some(t => t.final);
   const handleSaveTier = (data, editId) => {
     setTiers(prev => {
@@ -717,56 +961,115 @@ function CommissionSection({
       id: i + 1
     })));
   };
-  const updateThreshold = (i, key, val) => {
-    setKpiThresholds(prev => prev.map((t, idx) => idx === i ? {
-      ...t,
-      [key]: +val
-    } : t));
+  const handleSaveThreshold = (data, editId) => {
+    setKpiThresholds(prev => {
+      if (editId != null) {
+        return prev.map(t => t.id === editId ? {
+          ...t,
+          ...data
+        } : t).sort((a, b) => b.minPct - a.minPct);
+      }
+      const nextId = Math.max(0, ...prev.map(t => t.id || 0)) + 1;
+      return [...prev, {
+        ...data,
+        id: nextId
+      }].sort((a, b) => b.minPct - a.minPct);
+    });
+  };
+  const deleteThreshold = id => {
+    setKpiThresholds(prev => prev.filter(t => t.id !== id));
   };
   const tierCls = ["t1", "t2", "t3"];
+  const thrCol = ["var(--green-600)", "#B26A00", "var(--red-400)"];
+  const getThresholdRange = (t, i, sorted) => {
+    if (i === 0) return `≥ ${t.minPct}%`;
+    if (i === sorted.length - 1) return `< ${sorted[i - 1].minPct}%`;
+    const upper = sorted[i - 1].minPct - 0.01;
+    return `${t.minPct}%–${upper.toFixed(2)}%`;
+  };
+  const getThresholdLabel = pct => {
+    const sorted = [...kpiThresholds].sort((a, b) => b.minPct - a.minPct);
+    const match = sorted.find(t => pct >= t.minPct);
+    return match ? match.label : sorted[sorted.length - 1]?.label;
+  };
+  const kpiActual = kpi?.actual ?? 0;
+  const kpiPct = kpiTarget ? Math.round(kpiActual / kpiTarget * 1000) / 10 : 0;
+  const kpiPeriod = useCustomPeriod ? `${evalStart} 1–${evalEnd} 31` : kpi?.progressPeriod || "Dec 1–31";
+  const kpiLabel = getThresholdLabel(kpiPct);
   return /*#__PURE__*/React.createElement(React.Fragment, null, kpi && /*#__PURE__*/React.createElement("div", {
     className: "hac-cc-section"
   }, /*#__PURE__*/React.createElement("div", {
     className: "hac-cc-sec-head"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "hac-cc-sec-label"
-  }, "KPI Configuration"), kpi.current && /*#__PURE__*/React.createElement("span", {
-    className: "hac-version-tag"
-  }, "v", kpi.current.version, " \xB7 Effective ", kpi.current.effective)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 14
-    }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 12,
-      fontWeight: 600,
-      color: "var(--fg-secondary)",
-      marginBottom: 6
+      display: "flex",
+      alignItems: "center",
+      gap: 6
     }
-  }, "Evaluation Period"), editing ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("label", {
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "hac-cc-sec-label"
+  }, "KPI Configuration"), /*#__PURE__*/React.createElement(InfoTip, {
+    text: "Sets the multiplier applied to volume tier commission, based on KPI progress."
+  })), kpi.current && /*#__PURE__*/React.createElement("button", {
+    className: "hac-version-tag clickable",
+    onClick: () => setShowHistory(true)
+  }, "v", kpi.current.version, " \xB7 Effective ", kpi.current.effective, /*#__PURE__*/React.createElement(HIcon, {
+    name: "expand_more",
+    size: 15
+  }))), editing && /*#__PURE__*/React.createElement("div", {
+    className: "hac-effective-band"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "hac-effective-label"
+  }, /*#__PURE__*/React.createElement(HIcon, {
+    name: "new_releases",
+    size: 14,
+    color: "var(--teal-600)"
+  }), "New version \xB7 effective from"), /*#__PURE__*/React.createElement("input", {
+    className: "hac-input",
+    type: "month",
+    style: {
+      maxWidth: 200
+    },
+    value: effectiveFrom,
+    onChange: e => setEffectiveFrom(e.target.value)
+  })), !editing && kpiTarget > 0 && /*#__PURE__*/React.createElement(KPIProgressBlock, {
+    kpi: kpi,
+    target: kpiTarget
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "hac-cc-row2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "hac-cc-col"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "hac-field-label"
+  }, "Evaluation Period"), editing ? /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "hac-period-pill"
+  }, "Dec 1 \u2013 Dec 31"), /*#__PURE__*/React.createElement("label", {
     className: "hac-check-row",
     style: {
-      marginBottom: 8
+      marginLeft: 4
     }
   }, /*#__PURE__*/React.createElement("input", {
     type: "checkbox",
     checked: useCustomPeriod,
     onChange: e => setUseCustomPeriod(e.target.checked)
-  }), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13
-    }
-  }, "Use custom period (default: December 1 \u2013 31)")), useCustomPeriod && /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("span", null, "Custom period"))), useCustomPeriod && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
       gap: 10,
-      marginTop: 4
+      marginTop: 10
     }
   }, /*#__PURE__*/React.createElement("select", {
     className: "hac-select",
     style: {
-      maxWidth: 130
+      maxWidth: 120
     },
     value: evalStart,
     onChange: e => setEvalStart(e.target.value)
@@ -780,7 +1083,7 @@ function CommissionSection({
   }, "to"), /*#__PURE__*/React.createElement("select", {
     className: "hac-select",
     style: {
-      maxWidth: 130
+      maxWidth: 120
     },
     value: evalEnd,
     onChange: e => setEvalEnd(e.target.value)
@@ -788,147 +1091,109 @@ function CommissionSection({
     key: m
   }, m))))) : /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 13,
-      color: "var(--fg-secondary)"
+      display: "flex",
+      alignItems: "baseline",
+      gap: 8
     }
-  }, useCustomPeriod ? `${evalStart} 1 – ${evalEnd} 31` : kpi.evalPeriod || "Dec 1 – Dec 31", /*#__PURE__*/React.createElement("span", {
-    className: "hac-info-note",
-    style: {
-      marginLeft: 8,
-      fontSize: 12
-    }
-  }, kpi.evalNote))), /*#__PURE__*/React.createElement("div", {
-    className: "hac-kpi-target-band"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "ml-k"
-  }, "Monthly Volume Target"), editing ? /*#__PURE__*/React.createElement("input", {
+    className: "hac-period-pill"
+  }, useCustomPeriod ? `${evalStart} 1 – ${evalEnd} 31` : kpi.evalPeriod || "Dec 1 – Dec 31"), !useCustomPeriod && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: "var(--fg-tertiary)"
+    }
+  }, "Default annual period"))), /*#__PURE__*/React.createElement("div", {
+    className: "hac-cc-col"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "hac-field-label"
+  }, "KPI Target Volume", /*#__PURE__*/React.createElement(InfoTip, {
+    text: "Total fuel volume the agent must reach within the evaluation period."
+  })), editing ? /*#__PURE__*/React.createElement("input", {
     className: "hac-input",
     type: "number",
     value: kpiTarget,
     style: {
-      maxWidth: 200,
-      marginTop: 6
+      maxWidth: 200
     },
     onChange: e => setKpiTarget(+e.target.value)
   }) : /*#__PURE__*/React.createElement("span", {
     className: "hac-big-num"
-  }, HC.fmtL(kpiTarget))), /*#__PURE__*/React.createElement("div", {
+  }, HC.fmtL(kpiTarget)))), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginTop: 14
+      marginTop: 16
     }
   }, /*#__PURE__*/React.createElement("div", {
+    className: "hac-cc-sec-head",
     style: {
-      fontSize: 12,
-      fontWeight: 600,
-      color: "var(--fg-secondary)",
-      marginBottom: 8
+      marginBottom: 10
     }
-  }, "KPI Thresholds"), /*#__PURE__*/React.createElement("div", {
-    className: "hac-kpi-tiers"
-  }, kpiThresholds.map((t, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "hac-kpi-tier-row"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "ml-tier-tag " + tierCls[i]
-  }, t.tier), editing ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 6
-    }
-  }, i < kpiThresholds.length - 1 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12,
-      color: "var(--fg-tertiary)"
-    }
-  }, "\u2265"), /*#__PURE__*/React.createElement("input", {
-    className: "hac-input",
-    type: "number",
-    min: 0,
-    max: 200,
-    style: {
-      width: 64,
-      padding: "4px 8px",
-      fontSize: 13
-    },
-    value: t.minPct,
-    onChange: e => updateThreshold(i, "minPct", e.target.value)
-  }), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12,
-      color: "var(--fg-tertiary)"
-    }
-  }, "%")) : /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      color: "var(--fg-tertiary)",
-      fontStyle: "italic"
-    }
-  }, "Below threshold")), /*#__PURE__*/React.createElement(HIcon, {
-    name: "arrow_forward",
-    size: 14,
-    color: "var(--fg-disabled)"
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 6
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "hac-input",
-    type: "number",
-    min: 0,
-    max: 200,
-    style: {
-      width: 64,
-      padding: "4px 8px",
-      fontSize: 13
-    },
-    value: t.mult,
-    onChange: e => updateThreshold(i, "mult", e.target.value)
-  }), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12,
-      color: "var(--fg-tertiary)"
-    }
-  }, "% multiplier"))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
-    className: "hac-kpi-tier-range"
-  }, i === kpiThresholds.length - 1 ? `<${kpiThresholds[i - 1]?.minPct || 75}%` : `≥${t.minPct}%`), /*#__PURE__*/React.createElement(HIcon, {
-    name: "arrow_forward",
-    size: 14,
-    color: "var(--fg-disabled)"
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "hac-kpi-tier-mult"
-  }, t.mult, "% multiplier"), /*#__PURE__*/React.createElement("span", {
-    className: "hac-kpi-tier-label"
-  }, t.label)))))), editing && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 16,
-      padding: "12px 14px",
-      background: "var(--bg-muted)",
-      borderRadius: 6
-    }
-  }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       fontWeight: 600,
-      color: "var(--fg-secondary)",
-      marginBottom: 6
+      color: "var(--fg-secondary)"
     }
-  }, "Changes take effect from ", /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontWeight: 400,
-      color: "var(--fg-tertiary)"
+  }, "Multiplier Thresholds"), editing && /*#__PURE__*/React.createElement("button", {
+    className: "hac-add-tier-btn",
+    onClick: () => {
+      setEditingThreshold(null);
+      setShowThresholdModal(true);
     }
-  }, "(creates new version)")), /*#__PURE__*/React.createElement("input", {
-    className: "hac-input",
-    type: "month",
-    style: {
-      maxWidth: 200
-    },
-    value: effectiveFrom,
-    onChange: e => setEffectiveFrom(e.target.value)
-  }))), kpi && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(HIcon, {
+    name: "add",
+    size: 15
+  }), " Add Threshold")), /*#__PURE__*/React.createElement("div", {
+    className: "hac-tiers-grid hac-thr-grid"
+  }, kpiThresholds.map((t, i) => {
+    const sorted = [...kpiThresholds].sort((a, b) => b.minPct - a.minPct);
+    const idx = sorted.findIndex(x => x.id === t.id);
+    const col = thrCol[idx] || "var(--fg-tertiary)";
+    return /*#__PURE__*/React.createElement("div", {
+      key: t.id,
+      className: "hac-tier-item"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "hac-tier-item-head"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "hac-tier-item-label"
+    }, /*#__PURE__*/React.createElement(HIcon, {
+      name: "stacked_bar_chart",
+      size: 16,
+      color: "var(--navy-800)"
+    }), t.tier), editing && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 4
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      className: "ml-icon-btn",
+      title: "Edit threshold",
+      onClick: () => {
+        setEditingThreshold(t);
+        setShowThresholdModal(true);
+      }
+    }, /*#__PURE__*/React.createElement(HIcon, {
+      name: "edit",
+      size: 15,
+      color: "var(--fg-secondary)"
+    })), /*#__PURE__*/React.createElement("button", {
+      className: "ml-icon-btn",
+      title: "Delete threshold",
+      onClick: () => deleteThreshold(t.id),
+      style: {
+        color: kpiThresholds.length <= 1 ? "var(--fg-disabled)" : "var(--red-400)"
+      },
+      disabled: kpiThresholds.length <= 1
+    }, /*#__PURE__*/React.createElement(HIcon, {
+      name: "delete",
+      size: 15
+    })))), /*#__PURE__*/React.createElement("div", {
+      className: "hac-tier-item-body"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+      className: "ml-k"
+    }, "Progress range"), /*#__PURE__*/React.createElement("b", null, getThresholdRange(t, idx, sorted))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+      className: "ml-k"
+    }, "Multiplier"), /*#__PURE__*/React.createElement("b", null, t.mult, "%"))));
+  })))), kpi && /*#__PURE__*/React.createElement("div", {
     className: "hac-cc-divider"
   }), /*#__PURE__*/React.createElement("div", {
     className: "hac-cc-section"
@@ -1036,7 +1301,34 @@ function CommissionSection({
       setEditingTier(null);
     },
     onSave: handleSaveTier
-  }));
+  }), showThresholdModal && /*#__PURE__*/React.createElement(ThresholdModal, {
+    editThreshold: editingThreshold,
+    onClose: () => {
+      setShowThresholdModal(false);
+      setEditingThreshold(null);
+    },
+    onSave: handleSaveThreshold
+  }), showHistory && /*#__PURE__*/React.createElement(Modal, {
+    title: "Version history",
+    onClose: () => setShowHistory(false)
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "hac-vh-list"
+  }, kpi.history && kpi.history.length > 0 ? kpi.history.map(h => /*#__PURE__*/React.createElement("div", {
+    key: h.version,
+    className: "hac-vh-row"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "hac-vh-ver"
+  }, "v", h.version), /*#__PURE__*/React.createElement("div", {
+    className: "hac-vh-detail"
+  }, /*#__PURE__*/React.createElement("b", null, HC.fmtL(h.target)), /*#__PURE__*/React.createElement("span", null, "Effective ", h.effective)), /*#__PURE__*/React.createElement("span", {
+    className: "hac-vh-status " + h.status
+  }, h.status === "active" ? "Active" : "Superseded"))) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: "var(--fg-tertiary)",
+      padding: "8px 0"
+    }
+  }, "No previous versions."))));
 }
 
 /* ─── Commission config card ─────────────────────────────────── */
@@ -1054,114 +1346,6 @@ function CommissionConfigCard({
     tiers: tiers,
     editing: editing
   }));
-}
-
-/* ─── KPI Progress card (agent detail) ───────────────────────────
-   Shows current progress against target. When the period is locked /
-   evaluated, the card flips to "KPI Result". (Requirement 7 & 8) */
-function KPIProgressCard({
-  kpi
-}) {
-  const target = kpi?.current?.target || 200000;
-  const actual = kpi?.actual ?? 0;
-  const locked = !!kpi?.locked;
-  const period = kpi?.progressPeriod || "Dec 1–31";
-  // When evaluation period is in the future (e.g. Jun 2026 vs Dec 1–31), progress is 0
-  const isFuturePeriod = !locked && new Date().getMonth() < 11; // Dec = 11
-  const pct = locked || !isFuturePeriod ? Math.round(actual / target * 1000) / 10 : 0;
-  const col = pct >= 75 ? "var(--green-500)" : "var(--red-400)";
-  const outcome = pct >= 100 ? {
-    label: "Full commission · 100% multiplier",
-    bg: "var(--green-50)",
-    fg: "var(--green-600)",
-    icon: "check_circle"
-  } : pct >= 75 ? {
-    label: "Half commission · 50% multiplier",
-    bg: "#FFF8E1",
-    fg: "#F57F17",
-    icon: "radio_button_partial"
-  } : {
-    label: "No commission · 0% multiplier",
-    bg: "#FFF0F0",
-    fg: "var(--red-400)",
-    icon: "cancel"
-  };
-  return /*#__PURE__*/React.createElement("div", {
-    className: "ml-card hac-detail-card"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "hac-dcard-head",
-    style: {
-      marginBottom: 18
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "hac-dcard-title"
-  }, /*#__PURE__*/React.createElement(HIcon, {
-    name: "track_changes",
-    size: 17,
-    color: "var(--green-600)"
-  }), locked ? "KPI Result" : "KPI Progress"), /*#__PURE__*/React.createElement("div", {
-    className: "hac-dcard-sub"
-  }, "Target: ", target.toLocaleString("en-US"), " L \xB7 ", period)), locked ? /*#__PURE__*/React.createElement("span", {
-    className: "ml-badge",
-    style: {
-      background: "#EDEEF7",
-      color: "var(--navy-800)"
-    }
-  }, /*#__PURE__*/React.createElement(HIcon, {
-    name: "lock",
-    size: 12
-  }), " Evaluated") : /*#__PURE__*/React.createElement("span", {
-    className: "ml-badge",
-    style: {
-      background: "var(--bg-muted)",
-      color: "var(--fg-secondary)"
-    }
-  }, /*#__PURE__*/React.createElement(HIcon, {
-    name: "schedule",
-    size: 12
-  }), " In progress")), /*#__PURE__*/React.createElement("div", {
-    className: "hac-kpiprog-row"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "hac-kpiprog-pct",
-    style: {
-      color: col
-    }
-  }, isFuturePeriod ? "0%" : pct + "%"), /*#__PURE__*/React.createElement("div", {
-    className: "hac-kpiprog-bar-wrap"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "hac-kpiprog-track"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "hac-kpiprog-fill",
-    style: {
-      width: Math.min(pct, 100) + "%",
-      background: col
-    }
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "hac-kpiprog-scale"
-  }, /*#__PURE__*/React.createElement("span", null, "Achieved: ", /*#__PURE__*/React.createElement("b", null, isFuturePeriod ? "0" : actual.toLocaleString("en-US"), " L")), /*#__PURE__*/React.createElement("span", null, "Target: ", /*#__PURE__*/React.createElement("b", null, target.toLocaleString("en-US"), " L")))), /*#__PURE__*/React.createElement("div", {
-    className: "hac-kpiprog-outcome",
-    style: {
-      background: outcome.bg,
-      color: outcome.fg
-    }
-  }, /*#__PURE__*/React.createElement(HIcon, {
-    name: outcome.icon,
-    size: 14
-  }), outcome.label)), isFuturePeriod && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 12,
-      fontSize: 13,
-      color: "var(--fg-tertiary)",
-      fontStyle: "italic"
-    }
-  }, /*#__PURE__*/React.createElement(HIcon, {
-    name: "info",
-    size: 14,
-    color: "var(--fg-tertiary)",
-    style: {
-      marginRight: 6
-    }
-  }), "Evaluation period has not started. Progress will be counted from ", period, "."));
 }
 
 /* ─── SP Accounts card ───────────────────────────────────────── */
@@ -1493,7 +1677,9 @@ function AgentFormView({
     [k]: v
   }));
   return /*#__PURE__*/React.createElement("div", {
-    style: { paddingBottom: 80 }
+    style: {
+      paddingBottom: 80
+    }
   }, /*#__PURE__*/React.createElement("div", {
     className: "hac-breadcrumb"
   }, /*#__PURE__*/React.createElement("button", {
@@ -1599,10 +1785,33 @@ function AgentDetailView({
   agent,
   onBack
 }) {
-  const cfg = window.HC.AGENT_CONFIG;
+  const base = window.HC.AGENT_CONFIG;
+  const row = agent || base;
+  // Build the per-agent config off the shared template, overriding identity + KPI
+  // from the clicked row so every agent renders its real KPI state.
+  const cfg = {
+    ...base,
+    id: row.id,
+    name: row.name,
+    role: row.role,
+    joined: row.joined,
+    accountStatus: row.accountStatus || base.accountStatus,
+    kpi: {
+      ...base.kpi,
+      actual: row.volume ?? base.kpi.actual,
+      locked: row.kpiPhase === "complete",
+      phase: row.kpiPhase || "active",
+      current: {
+        ...base.kpi.current,
+        target: row.kpiTarget ?? base.kpi.current.target
+      }
+    }
+  };
   const [editing, setEditing] = useState(false);
   return /*#__PURE__*/React.createElement("div", {
-    style: { paddingBottom: editing ? 80 : 0 }
+    style: {
+      paddingBottom: editing ? 80 : 0
+    }
   }, /*#__PURE__*/React.createElement("div", {
     className: "hac-breadcrumb"
   }, /*#__PURE__*/React.createElement("button", {
@@ -1628,8 +1837,7 @@ function AgentDetailView({
   }, cfg.role, " \xB7 ", cfg.id, " \xB7 Joined ", cfg.joined)), /*#__PURE__*/React.createElement("div", {
     className: "ml-page-head-right"
   }, /*#__PURE__*/React.createElement(AccountStatusBadge, {
-    status: cfg.accountStatus || "active",
-    prefix: "Account: "
+    status: cfg.accountStatus || "active"
   }), !editing && /*#__PURE__*/React.createElement("button", {
     className: "ml-btn-outline",
     onClick: () => setEditing(true)
@@ -1641,8 +1849,6 @@ function AgentDetailView({
   }, /*#__PURE__*/React.createElement(PersonalDetailsSection, {
     cfg: cfg,
     editing: editing
-  }), /*#__PURE__*/React.createElement(KPIProgressCard, {
-    kpi: cfg.kpi
   }), /*#__PURE__*/React.createElement(CommissionConfigCard, {
     kpi: cfg.kpi,
     tiers: cfg.tiers,
@@ -1750,5 +1956,3 @@ function HostAgentConfig() {
   })), activeTab === "myfuel" && /*#__PURE__*/React.createElement(MyFuelCommissionTabView, null), activeTab === "subscription" && /*#__PURE__*/React.createElement(SubscriptionCommissionTabView, null)));
 }
 ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(HostAgentConfig, null));
-
-})();

@@ -1,4 +1,3 @@
-(function(){
 // shared-shell.jsx — Shared shell components for both Agent and Host portals.
 // Exposes: Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu,
 //   CurrencyPill, SummaryCard, KpiTierChip, AccountStatusBadge, KPIProgress.
@@ -372,7 +371,8 @@ function KPIProgress({
   pct,
   actual,
   target,
-  period
+  period,
+  commissionLabel
 }) {
   const [hover, setHover] = useState(false);
   const [pos, setPos] = useState({
@@ -391,7 +391,8 @@ function KPIProgress({
     }
     setHover(true);
   };
-  const tip = `${(actual ?? 0).toLocaleString("en-US")} L / ${(target ?? 0).toLocaleString("en-US")} L target · ${period || ""}`;
+  let tip = `${(actual ?? 0).toLocaleString("en-US")} L / ${(target ?? 0).toLocaleString("en-US")} L target · ${period || ""}`;
+  if (commissionLabel) tip += ` · ${commissionLabel}`;
   return /*#__PURE__*/React.createElement("div", {
     ref: ref,
     className: "ml-kpi-prog",
@@ -435,5 +436,3 @@ window.SharedShell = {
   AccountStatusBadge,
   KPIProgress
 };
-
-})();

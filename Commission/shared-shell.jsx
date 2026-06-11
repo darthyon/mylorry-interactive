@@ -212,7 +212,7 @@ function AccountStatusBadge({ status = "active", prefix }) {
 }
 
 /* ─── KPI Progress: bar + percentage + hover tooltip ────────── */
-function KPIProgress({ pct, actual, target, period }) {
+function KPIProgress({ pct, actual, target, period, commissionLabel }) {
   const [hover, setHover] = useState(false);
   const [pos, setPos]     = useState({ top:0, left:0 });
   const ref = React.useRef(null);
@@ -224,7 +224,8 @@ function KPIProgress({ pct, actual, target, period }) {
     }
     setHover(true);
   };
-  const tip = `${(actual ?? 0).toLocaleString("en-US")} L / ${(target ?? 0).toLocaleString("en-US")} L target · ${period || ""}`;
+  let tip = `${(actual ?? 0).toLocaleString("en-US")} L / ${(target ?? 0).toLocaleString("en-US")} L target · ${period || ""}`;
+  if (commissionLabel) tip += ` · ${commissionLabel}`;
   return (
     <div ref={ref} className="ml-kpi-prog" onMouseEnter={show} onMouseLeave={() => setHover(false)}>
       <div className="ml-kpi-track">

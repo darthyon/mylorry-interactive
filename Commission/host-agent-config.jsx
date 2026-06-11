@@ -20,6 +20,74 @@ function CommissionStatusBadge({ status }) {
 const KPIProgress = window.HKPIProgress;
 const AccountStatusBadge = window.HAccountStatusBadge;
 
+/* ─── KPI Progress block (zoned axis) — inline inside Commission Config ─ */
+const KPI_AXIS_MAX = 125;
+const KPI_ZONES = [
+  { from: 0,   to: 75,  mult: 0,   label: "No commission",   col: "var(--red-400)",   fill: "#FCEBEC" },
+  { from: 75,  to: 100, mult: 50,  label: "Half commission", col: "#B26A00",          fill: "#FBF1DD" },
+  { from: 100, to: KPI_AXIS_MAX, mult: 100, label: "Full commission", col: "var(--green-600)", fill: "#E4F6EC" },
+];
+const kpiZoneOf = pct => KPI_ZONES.find(z => pct >= z.from && pct < z.to) || KPI_ZONES[KPI_ZONES.length - 1];
+
+function KPIProgressBlock({ kpi, target }) {
+  const actual = kpi?.actual ?? 0;
+  const period = kpi?.progressPeriod || "Dec 1–31";
+  const phase  = kpi?.phase || (kpi?.locked ? "complete" : "active");
+  const isFuture = phase === "future";
+  const isComplete = phase === "complete";
+  const pct  = target ? Math.round((actual / target) * 1000) / 10 : 0;
+  const zone = kpiZoneOf(pct);
+  const markerCol = isFuture ? "var(--fg-tertiary)" : zone.col;
+  const pos = p => (Math.min(p, KPI_AXIS_MAX) / KPI_AXIS_MAX) * 100;
+
+  return (
+    <div style={{ marginTop: 10, marginBottom: 18 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "18px", alignItems: "center" }}>
+        {/* Left: big % + readout */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div className="hac-kpiaxis-pct" style={{ color: markerCol, lineHeight: .9 }}>
+            {isFuture ? "–" : pct + "%"}
+          </div>
+          <div className="hac-kpiaxis-readout" style={{ gap: 2 }}>
+            <span>Achieved <b>{isFuture ? "–" : actual.toLocaleString("en-US") + " L"}</b></span>
+            {!isFuture && (
+              <span style={{ color: zone.col }}>
+                {zone.label} · {zone.mult}% multiplier
+              </span>
+            )}
+          </div>
+        </div>
+        {/* Right: zoned axis */}
+        <div className={"hac-kpiaxis" + (isFuture ? " future" : "")} style={{ marginTop: 0, alignSelf: "center" }}>
+          <div className="hac-kpiaxis-track">
+            {KPI_ZONES.map((z, i) => (
+              <div key={i} className="hac-kpiaxis-zone"
+                style={{ width: ((Math.min(z.to, KPI_AXIS_MAX) - z.from) / KPI_AXIS_MAX) * 100 + "%",
+                         background: z.fill }} />
+            ))}
+            {!isFuture && (
+              <div className="hac-kpiaxis-marker" style={{ left: pos(pct) + "%", background: markerCol }}>
+                <span className="hac-kpiaxis-dot" style={{ background: markerCol }} />
+              </div>
+            )}
+          </div>
+          <div className="hac-kpiaxis-ticks">
+            {[75, 100].map(t => (
+              <span key={t} className="hac-kpiaxis-tick" style={{ left: pos(t) + "%" }}>{t}%</span>
+            ))}
+          </div>
+        </div>
+      </div>
+      {isFuture && (
+        <div className="hac-kpiaxis-note">
+          <HIcon name="info" size={14} color="var(--fg-tertiary)" />
+          Evaluation period has not started. Progress tracked from {period}.
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Bank badge ─────────────────────────────────────────────── */
 const BANK_META = {
   "Maybank":{"bg":"#FFF3D4","fg":"#7A4F00","abbr":"MB"}, "CIMB":{"bg":"#FFE4E4","fg":"#B71C1C","abbr":"CIMB"},
@@ -311,6 +379,66 @@ function TierModal({ editTier, onClose, onSave }) {
   );
 }
 
+/* ─── Threshold Modal (add / edit) ───────────────────────────── */
+function ThresholdModal({ editThreshold, onClose, onSave }) {
+  const isEdit = !!editThreshold;
+  const [tierName, setTierName]       = useState(editThreshold ? editThreshold.tier : "");
+  const [minPct, setMinPct]           = useState(editThreshold ? String(editThreshold.minPct ?? "") : "");
+  const [mult, setMult]               = useState(editThreshold ? String(editThreshold.mult ?? "") : "");
+  const [meaning, setMeaning]         = useState(editThreshold ? editThreshold.label : "");
+  const [isFinal, setIsFinal]         = useState(editThreshold ? editThreshold.isFinal : false);
+  const canSave = tierName !== "" && mult !== "" && meaning !== "" && (isFinal || minPct !== "");
+
+  const handleSave = () => {
+    if (!canSave) return;
+    onSave({
+      tier: tierName,
+      minPct: isFinal ? 0 : +minPct,
+      mult: +mult,
+      label: meaning,
+      isFinal,
+    }, isEdit ? editThreshold.id : null);
+    onClose();
+  };
+
+  return (
+    <Modal title={isEdit ? "Edit Threshold" : "Add Threshold"} onClose={onClose} footer={
+      <>
+        <button className="hac-modal-cancel" onClick={onClose}>Cancel</button>
+        <button className="hac-modal-save" disabled={!canSave} onClick={handleSave}>Save</button>
+      </>
+    }>
+      <div className="hac-fg" style={{ marginBottom:14 }}>
+        <label className="hac-label req">Tier name*</label>
+        <input className="hac-input" placeholder="e.g. Tier 1" value={tierName}
+          onChange={e => setTierName(e.target.value)} />
+      </div>
+      <div className="hac-modal-row-split" style={{ marginBottom:14 }}>
+        <div className="hac-fg" style={{ flex:1 }}>
+          <label className="hac-label req">Minimum progress %*</label>
+          <input className="hac-input" placeholder="e.g. 75" value={minPct} disabled={isFinal}
+            onChange={e => setMinPct(e.target.value)} />
+        </div>
+        <label className="hac-check-row" style={{ marginTop:24, flexShrink:0 }}>
+          <input type="checkbox" checked={isFinal} onChange={e => setIsFinal(e.target.checked)} />
+          <span>Final threshold (no minimum)</span>
+        </label>
+      </div>
+      <div className="hac-fg" style={{ marginBottom:14 }}>
+        <label className="hac-label req">Multiplier %*</label>
+        <input className="hac-input" placeholder="e.g. 50" value={mult}
+          onChange={e => setMult(e.target.value)} />
+        <div className="hac-field-hint">Applied to the commission earned from volume tiers</div>
+      </div>
+      <div className="hac-fg">
+        <label className="hac-label req">Meaning / label*</label>
+        <input className="hac-input" placeholder="e.g. Half commission" value={meaning}
+          onChange={e => setMeaning(e.target.value)} />
+      </div>
+    </Modal>
+  );
+}
+
 /* ─── Add SP Account modal ───────────────────────────────────── */
 const SP_ORG_LIST = [
   { sp:"ARC-PTN-063", org:"Arcadian Haulage"          }, { sp:"BLU-PTN-088", org:"Bluechip Freight Sdn Bhd" },
@@ -378,18 +506,22 @@ function CommissionSection({ kpi, tiers: initTiers, editing }) {
   const [tiers, setTiers]             = useState(initTiers || []);
   const [kpiTarget, setKpiTarget]     = useState(kpi?.current?.target ?? 150000);
   const [showHistory, setShowHistory] = useState(false);
-  const [kpiThresholds, setKpiThresholds] = useState(kpi?.current?.thresholds || [
-    { tier:"Tier 1", label:"Full commission", minPct:100, mult:100 },
-    { tier:"Tier 2", label:"Half commission", minPct:75,  mult:50  },
-    { tier:"Tier 3", label:"No commission",   minPct:0,   mult:0   },
-  ]);
+  const [kpiThresholds, setKpiThresholds] = useState(() => {
+    const t = kpi?.current?.thresholds || [
+      { id:1, tier:"Tier 1", label:"Full commission", minPct:100, mult:100 },
+      { id:2, tier:"Tier 2", label:"Half commission", minPct:75,  mult:50  },
+      { id:3, tier:"Tier 3", label:"No commission",   minPct:0,   mult:0   },
+    ];
+    return t.map((x, i) => ({ ...x, id: x.id || i + 1 }));
+  });
   const [useCustomPeriod, setUseCustomPeriod] = useState(kpi?.useCustomPeriod || false);
   const [evalStart, setEvalStart] = useState(kpi?.customStart || "Dec");
   const [evalEnd,   setEvalEnd]   = useState(kpi?.customEnd   || "Dec");
   const [effectiveFrom, setEffectiveFrom] = useState("");
-  const [thresholdErrors, setThresholdErrors] = useState([]);
   const [showTierModal, setShowTierModal] = useState(false);
   const [editingTier,   setEditingTier]   = useState(null);
+  const [showThresholdModal, setShowThresholdModal] = useState(false);
+  const [editingThreshold, setEditingThreshold]   = useState(null);
 
   const hasFinalTier = tiers.some(t => t.final);
 
@@ -411,18 +543,42 @@ function CommissionSection({ kpi, tiers: initTiers, editing }) {
     setTiers(prev => prev.filter(t => t.id !== id).map((t, i) => ({ ...t, id: i + 1 })));
   };
 
-  const updateThreshold = (i, key, val) => {
+  const handleSaveThreshold = (data, editId) => {
     setKpiThresholds(prev => {
-      const updated = prev.map((t, idx) => idx === i ? { ...t, [key]: +val } : t);
-      setThresholdErrors(updated.map((t, idx) =>
-        idx < updated.length - 2 ? t.minPct <= updated[idx + 1].minPct : false
-      ));
-      return updated;
+      if (editId != null) {
+        return prev.map(t => t.id === editId ? { ...t, ...data } : t)
+          .sort((a, b) => b.minPct - a.minPct);
+      }
+      const nextId = Math.max(0, ...prev.map(t => t.id || 0)) + 1;
+      return [...prev, { ...data, id: nextId }]
+        .sort((a, b) => b.minPct - a.minPct);
     });
+  };
+
+  const deleteThreshold = id => {
+    setKpiThresholds(prev => prev.filter(t => t.id !== id));
   };
 
   const tierCls = ["t1","t2","t3"];
   const thrCol  = ["var(--green-600)", "#B26A00", "var(--red-400)"];
+
+  const getThresholdRange = (t, i, sorted) => {
+    if (i === 0) return `≥ ${t.minPct}%`;
+    if (i === sorted.length - 1) return `< ${sorted[i - 1].minPct}%`;
+    const upper = sorted[i - 1].minPct - 0.01;
+    return `${t.minPct}%–${upper.toFixed(2)}%`;
+  };
+
+  const getThresholdLabel = pct => {
+    const sorted = [...kpiThresholds].sort((a, b) => b.minPct - a.minPct);
+    const match = sorted.find(t => pct >= t.minPct);
+    return match ? match.label : sorted[sorted.length - 1]?.label;
+  };
+
+  const kpiActual = kpi?.actual ?? 0;
+  const kpiPct = kpiTarget ? Math.round((kpiActual / kpiTarget) * 1000) / 10 : 0;
+  const kpiPeriod = useCustomPeriod ? `${evalStart} 1–${evalEnd} 31` : (kpi?.progressPeriod || "Dec 1–31");
+  const kpiLabel = getThresholdLabel(kpiPct);
 
   return (
     <>
@@ -453,12 +609,9 @@ function CommissionSection({ kpi, tiers: initTiers, editing }) {
             </div>
           )}
 
-          {/* Missing target warning */}
-          {!kpiTarget && (
-            <div className="hac-kpi-warn">
-              <HIcon name="warning" size={14} color="var(--amber-600)" />
-              No KPI target set. Commission defaults to 100% until a target is configured.
-            </div>
+          {/* KPI Progress — zoned axis inside Commission Config */}
+          {!editing && kpiTarget > 0 && (
+            <KPIProgressBlock kpi={kpi} target={kpiTarget} />
           )}
 
           {/* Eval period + target — one row */}
@@ -467,20 +620,17 @@ function CommissionSection({ kpi, tiers: initTiers, editing }) {
             <div className="hac-cc-col">
               <div className="hac-field-label">Evaluation Period</div>
               {editing ? (
-                <div className="hac-radio-group">
-                  <label className="hac-radio-row">
-                    <input type="radio" name="evalPeriod" checked={!useCustomPeriod}
-                      onChange={() => setUseCustomPeriod(false)} />
-                    <span>Default annual period</span>
-                    <span className="hac-radio-note">Dec 1 – Dec 31</span>
-                  </label>
-                  <label className="hac-radio-row">
-                    <input type="radio" name="evalPeriod" checked={useCustomPeriod}
-                      onChange={() => setUseCustomPeriod(true)} />
-                    <span>Custom period</span>
-                  </label>
+                <div>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+                    <span className="hac-period-pill">Dec 1 – Dec 31</span>
+                    <label className="hac-check-row" style={{ marginLeft:4 }}>
+                      <input type="checkbox" checked={useCustomPeriod}
+                        onChange={e => setUseCustomPeriod(e.target.checked)} />
+                      <span>Custom period</span>
+                    </label>
+                  </div>
                   {useCustomPeriod && (
-                    <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:6, marginLeft:22 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:10 }}>
                       <select className="hac-select" style={{ maxWidth:120 }} value={evalStart} onChange={e => setEvalStart(e.target.value)}>
                         {HC.MONTHS.map(m => <option key={m}>{m}</option>)}
                       </select>
@@ -514,66 +664,57 @@ function CommissionSection({ kpi, tiers: initTiers, editing }) {
             </div>
           </div>
 
-          {/* KPI thresholds — multiplier zones, not a table */}
+          {/* KPI thresholds — card UI, same pattern as Volume Tiers */}
           <div style={{ marginTop:16 }}>
-            <div style={{ fontSize:12, fontWeight:600, color:"var(--fg-secondary)", marginBottom:8 }}>Multiplier Thresholds</div>
-            {editing ? (
-              <div className="hac-thr-edit">
-                {kpiThresholds.map((t, i) => (
-                  <div key={i} className="hac-thr-edit-row">
-                    <span className="hac-thr-dot" style={{ background: thrCol[i] }} />
-                    <div className="hac-thr-edit-range">
-                      {i < kpiThresholds.length - 1 ? (
-                        <>
-                          <span className="hac-thr-mut">≥</span>
-                          <input className="hac-input" type="number" min={0} max={200}
-                            style={{ width:60, padding:"4px 8px", fontSize:13, borderColor: thresholdErrors[i] ? "var(--red-400)" : undefined }}
-                            value={t.minPct} onChange={e => updateThreshold(i, "minPct", e.target.value)} />
-                          <span className="hac-thr-mut">%</span>
-                        </>
-                      ) : (
-                        <span className="hac-thr-mut" style={{ fontStyle:"italic" }}>below threshold</span>
-                      )}
-                    </div>
-                    <span className="hac-thr-arrow">→</span>
-                    <div className="hac-thr-edit-range">
-                      <input className="hac-input" type="number" min={0} max={200}
-                        style={{ width:60, padding:"4px 8px", fontSize:13 }}
-                        value={t.mult} onChange={e => updateThreshold(i, "mult", e.target.value)} />
-                      <span className="hac-thr-mut">% multiplier</span>
-                    </div>
-                    <span className="hac-thr-meaning">{t.label}</span>
-                    {thresholdErrors[i] && (
-                      <span className="hac-thr-err">Must exceed Tier {i + 2} (≥{kpiThresholds[i + 1]?.minPct}%)</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="hac-tiers-grid hac-thr-grid">
-                {kpiThresholds.map((t, i) => (
-                  <div key={i} className="hac-tier-item">
+            <div className="hac-cc-sec-head" style={{ marginBottom:10 }}>
+              <span style={{ fontSize:12, fontWeight:600, color:"var(--fg-secondary)" }}>Multiplier Thresholds</span>
+              {editing && (
+                <button className="hac-add-tier-btn" onClick={() => { setEditingThreshold(null); setShowThresholdModal(true); }}>
+                  <HIcon name="add" size={15} /> Add Threshold
+                </button>
+              )}
+            </div>
+            <div className="hac-tiers-grid hac-thr-grid">
+              {kpiThresholds.map((t, i) => {
+                const sorted = [...kpiThresholds].sort((a, b) => b.minPct - a.minPct);
+                const idx = sorted.findIndex(x => x.id === t.id);
+                const col = thrCol[idx] || "var(--fg-tertiary)";
+                return (
+                  <div key={t.id} className="hac-tier-item">
                     <div className="hac-tier-item-head">
                       <div className="hac-tier-item-label">
-                        <span className="hac-thr-dot" style={{ background: thrCol[i] }} />
+                        <HIcon name="stacked_bar_chart" size={16} color="var(--navy-800)" />
                         {t.tier}
                       </div>
-                      <span className="hac-mult-badge" style={{ color: thrCol[i] }}>{t.mult}% mult.</span>
+                      {editing && (
+                        <div style={{ display:"flex", gap:4 }}>
+                          <button className="ml-icon-btn" title="Edit threshold"
+                            onClick={() => { setEditingThreshold(t); setShowThresholdModal(true); }}>
+                            <HIcon name="edit" size={15} color="var(--fg-secondary)" />
+                          </button>
+                          <button className="ml-icon-btn" title="Delete threshold"
+                            onClick={() => deleteThreshold(t.id)}
+                            style={{ color: kpiThresholds.length <= 1 ? "var(--fg-disabled)" : "var(--red-400)" }}
+                            disabled={kpiThresholds.length <= 1}>
+                            <HIcon name="delete" size={15} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <div className="hac-tier-item-body">
                       <div>
                         <span className="ml-k">Progress range</span>
-                        <b>{i === kpiThresholds.length - 1 ? `< ${kpiThresholds[i-1]?.minPct || 75}%` : `≥ ${t.minPct}%`}</b>
+                        <b>{getThresholdRange(t, idx, sorted)}</b>
                       </div>
                       <div>
-                        <span className="ml-k">Meaning</span>
-                        <b>{t.label}</b>
+                        <span className="ml-k">Multiplier</span>
+                        <b>{t.mult}%</b>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
           </div>
 
         </div>
@@ -651,6 +792,10 @@ function CommissionSection({ kpi, tiers: initTiers, editing }) {
         <TierModal editTier={editingTier} onClose={() => { setShowTierModal(false); setEditingTier(null); }} onSave={handleSaveTier} />
       )}
 
+      {showThresholdModal && (
+        <ThresholdModal editThreshold={editingThreshold} onClose={() => { setShowThresholdModal(false); setEditingThreshold(null); }} onSave={handleSaveThreshold} />
+      )}
+
       {showHistory && (
         <Modal title="Version history" onClose={() => setShowHistory(false)}>
           <div className="hac-vh-list">
@@ -677,102 +822,6 @@ function CommissionConfigCard({ kpi, tiers, editing }) {
     <div className="ml-card hac-detail-card">
       <div className="hac-sec-header">Commission Configuration</div>
       <CommissionSection kpi={kpi} tiers={tiers} editing={editing} />
-    </div>
-  );
-}
-
-/* ─── KPI Progress card (agent detail) ───────────────────────────
-   Shows current progress against target. When the period is locked /
-   evaluated, the card flips to "KPI Result". (Requirement 7 & 8) */
-/* Zone tokens shared by the KPI axis and the threshold legend.
-   The axis runs 0 → AXIS_MAX%; zones are the multiplier thresholds. */
-const KPI_AXIS_MAX = 125;
-const KPI_ZONES = [
-  { from: 0,   to: 75,  mult: 0,   label: "No commission",   col: "var(--red-400)",   fill: "#FCEBEC" },
-  { from: 75,  to: 100, mult: 50,  label: "Half commission", col: "#B26A00",          fill: "#FBF1DD" },
-  { from: 100, to: KPI_AXIS_MAX, mult: 100, label: "Full commission", col: "var(--green-600)", fill: "#E4F6EC" },
-];
-const kpiZoneOf = pct => KPI_ZONES.find(z => pct >= z.from && pct < z.to) || KPI_ZONES[KPI_ZONES.length - 1];
-
-function KPIProgressCard({ kpi }) {
-  const target = kpi?.current?.target || 200000;
-  const actual = kpi?.actual ?? 0;
-  const period = kpi?.progressPeriod || "Dec 1–31";
-  const phase  = kpi?.phase || (kpi?.locked ? "complete" : "active"); // future | active | complete
-  const isFuture = phase === "future";
-  const isComplete = phase === "complete";
-
-  const pct  = Math.round((actual / target) * 1000) / 10;
-  const zone = kpiZoneOf(pct);
-  const markerCol = isFuture ? "var(--fg-tertiary)" : zone.col;
-
-  const badge = isFuture
-    ? <span className="ml-badge" style={{ background:"#EDEEF7", color:"var(--navy-800)" }}><HIcon name="event" size={12} /> Upcoming</span>
-    : isComplete
-      ? <span className="ml-badge" style={{ background:"#EDEEF7", color:"var(--navy-800)" }}><HIcon name="lock" size={12} /> Period ended</span>
-      : zone.mult >= 75
-        ? <span className="ml-badge" style={{ background:"var(--green-50)", color:"var(--green-600)" }}><HIcon name="trending_up" size={12} /> On track</span>
-        : <span className="ml-badge" style={{ background:"#FBF1DD", color:"#B26A00" }}><HIcon name="warning" size={12} /> At risk</span>;
-
-  const pos = p => (Math.min(p, KPI_AXIS_MAX) / KPI_AXIS_MAX) * 100; // % → axis position
-
-  return (
-    <div className="ml-card hac-detail-card">
-      <div className="hac-dcard-head" style={{ marginBottom:20 }}>
-        <div>
-          <div className="hac-dcard-title">
-            <HIcon name="track_changes" size={17} color={markerCol} />
-            {isComplete ? "KPI Result" : "KPI Progress"}
-          </div>
-          <div className="hac-dcard-sub">
-            <span className="hac-period-pill">{period}</span>
-            Target: {target.toLocaleString("en-US")} L
-          </div>
-        </div>
-        {badge}
-      </div>
-
-      <div className="hac-kpiaxis-top">
-        <div className="hac-kpiaxis-pct" style={{ color: markerCol }}>
-          {isFuture ? "–" : pct + "%"}
-        </div>
-        <div className="hac-kpiaxis-readout">
-          <span>Achieved <b>{isFuture ? "–" : actual.toLocaleString("en-US") + " L"}</b></span>
-          {!isFuture && (
-            <span style={{ color: zone.col }}>
-              {zone.label} · {zone.mult}% multiplier
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Zoned axis — thresholds are the zones; marker is live progress */}
-      <div className={"hac-kpiaxis" + (isFuture ? " future" : "")}>
-        <div className="hac-kpiaxis-track">
-          {KPI_ZONES.map((z, i) => (
-            <div key={i} className="hac-kpiaxis-zone"
-              style={{ width: ((Math.min(z.to, KPI_AXIS_MAX) - z.from) / KPI_AXIS_MAX) * 100 + "%",
-                       background: z.fill }} />
-          ))}
-          {!isFuture && (
-            <div className="hac-kpiaxis-marker" style={{ left: pos(pct) + "%", background: markerCol }}>
-              <span className="hac-kpiaxis-dot" style={{ background: markerCol }} />
-            </div>
-          )}
-        </div>
-        <div className="hac-kpiaxis-ticks">
-          {[75, 100].map(t => (
-            <span key={t} className="hac-kpiaxis-tick" style={{ left: pos(t) + "%" }}>{t}%</span>
-          ))}
-        </div>
-      </div>
-
-      {isFuture && (
-        <div className="hac-kpiaxis-note">
-          <HIcon name="info" size={14} color="var(--fg-tertiary)" />
-          Evaluation period has not started. Progress tracked from {period}.
-        </div>
-      )}
     </div>
   );
 }
@@ -1039,7 +1088,7 @@ function AgentDetailView({ agent, onBack }) {
           </div>
         </div>
         <div className="ml-page-head-right">
-          <AccountStatusBadge status={cfg.accountStatus || "active"} prefix="Account: " />
+          <AccountStatusBadge status={cfg.accountStatus || "active"} />
           {!editing && (
             <button className="ml-btn-outline" onClick={() => setEditing(true)}>
               <HIcon name="edit" size={15} /> Edit
@@ -1049,7 +1098,6 @@ function AgentDetailView({ agent, onBack }) {
       </div>
       <div className="hac-detail-sections">
         <PersonalDetailsSection cfg={cfg} editing={editing} />
-        <KPIProgressCard kpi={cfg.kpi} />
         <CommissionConfigCard kpi={cfg.kpi} tiers={cfg.tiers} editing={editing} />
         <SPAccountsCard spAccounts={cfg.spAccounts} />
         <TerminationCard cfg={cfg} />
