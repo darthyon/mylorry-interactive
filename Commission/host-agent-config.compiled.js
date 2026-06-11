@@ -1492,7 +1492,9 @@ function AgentFormView({
     ...f,
     [k]: v
   }));
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
+    style: { paddingBottom: 80 }
+  }, /*#__PURE__*/React.createElement("div", {
     className: "hac-breadcrumb"
   }, /*#__PURE__*/React.createElement("button", {
     className: "hac-bc-link",
@@ -1582,7 +1584,7 @@ function AgentFormView({
   })), /*#__PURE__*/React.createElement(SPAccountsCard, {
     spAccounts: []
   }), /*#__PURE__*/React.createElement("div", {
-    className: "hac-form-actions"
+    className: "hac-edit-bar"
   }, /*#__PURE__*/React.createElement("button", {
     className: "hac-cancel-btn",
     onClick: onBack
@@ -1600,9 +1602,7 @@ function AgentDetailView({
   const cfg = window.HC.AGENT_CONFIG;
   const [editing, setEditing] = useState(false);
   return /*#__PURE__*/React.createElement("div", {
-    style: {
-      paddingBottom: editing ? 80 : 0
-    }
+    style: { paddingBottom: editing ? 80 : 0 }
   }, /*#__PURE__*/React.createElement("div", {
     className: "hac-breadcrumb"
   }, /*#__PURE__*/React.createElement("button", {
@@ -1655,19 +1655,9 @@ function AgentDetailView({
     className: "hac-edit-bar"
   }, /*#__PURE__*/React.createElement("button", {
     className: "hac-cancel-btn",
-    style: {
-      padding: "10px 28px",
-      fontSize: 13,
-      maxWidth: "none"
-    },
     onClick: () => setEditing(false)
   }, "Cancel"), /*#__PURE__*/React.createElement("button", {
     className: "hac-save-btn",
-    style: {
-      padding: "10px 28px",
-      fontSize: 13,
-      maxWidth: "none"
-    },
     onClick: () => setEditing(false)
   }, /*#__PURE__*/React.createElement(HIcon, {
     name: "check",
@@ -1684,6 +1674,10 @@ function HostAgentConfig() {
   const goView = a => {
     setActiveAgent(a);
     setAgentView("detail");
+  };
+  const goEdit = a => {
+    setActiveAgent(a);
+    setAgentView("edit");
   };
   const goCreate = () => {
     setActiveAgent(null);
@@ -1739,11 +1733,15 @@ function HostAgentConfig() {
     }
   }, "Soon"))))), activeTab === "list" && /*#__PURE__*/React.createElement(React.Fragment, null, agentView === "list" && /*#__PURE__*/React.createElement(AgentsListView, {
     onView: goView,
-    onEdit: goView,
+    onEdit: goEdit,
     onCreate: goCreate,
     onTerminate: goView
   }), agentView === "create" && /*#__PURE__*/React.createElement(AgentFormView, {
     agent: null,
+    onBack: goBack,
+    onSave: goSave
+  }), agentView === "edit" && /*#__PURE__*/React.createElement(AgentFormView, {
+    agent: activeAgent,
     onBack: goBack,
     onSave: goSave
   }), agentView === "detail" && /*#__PURE__*/React.createElement(AgentDetailView, {
