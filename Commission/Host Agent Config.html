@@ -504,6 +504,54 @@ b { font-weight: 600; }
   font-size: 12px; font-weight: 600; color: var(--fg-secondary); margin-bottom: 7px;
 }
 
+/* ── KPI Summary — 2-column split layout ─────────────────────────── */
+.hac-kpi-summary {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 32px;
+  align-items: start;
+  margin-top: 10px;
+  margin-bottom: 18px;
+}
+.hac-kpi-summary-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.hac-kpi-summary-right {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+.hac-kpi-summary.editing {
+  grid-template-columns: 1fr;
+}
+.hac-kpi-summary-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-secondary);
+  margin-bottom: 2px;
+}
+.hac-kpi-summary-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+@media (max-width: 720px) {
+  .hac-kpi-summary {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .hac-kpi-summary-right {
+    gap: 14px;
+  }
+}
+
 /* ── Version history modal ───────────────────────────────────────── */
 .hac-vh-list { display: flex; flex-direction: column; }
 .hac-vh-row {

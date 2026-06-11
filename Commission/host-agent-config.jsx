@@ -41,41 +41,39 @@ function KPIProgressBlock({ kpi, target }) {
   const pos = p => (Math.min(p, KPI_AXIS_MAX) / KPI_AXIS_MAX) * 100;
 
   return (
-    <div style={{ marginTop: 10, marginBottom: 18 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "18px", alignItems: "center" }}>
-        {/* Left: big % + readout */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <div className="hac-kpiaxis-pct" style={{ color: markerCol, lineHeight: .9 }}>
-            {isFuture ? "–" : pct + "%"}
-          </div>
-          <div className="hac-kpiaxis-readout" style={{ gap: 2 }}>
-            <span>Achieved <b>{isFuture ? "–" : actual.toLocaleString("en-US") + " L"}</b></span>
-            {!isFuture && (
-              <span style={{ color: zone.col }}>
-                {zone.label} · {zone.mult}% multiplier
-              </span>
-            )}
-          </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {/* Metric row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div className="hac-kpiaxis-pct" style={{ color: markerCol, lineHeight: .9 }}>
+          {isFuture ? "–" : pct + "%"}
         </div>
-        {/* Right: zoned axis */}
-        <div className={"hac-kpiaxis" + (isFuture ? " future" : "")} style={{ marginTop: 0, alignSelf: "center" }}>
-          <div className="hac-kpiaxis-track">
-            {KPI_ZONES.map((z, i) => (
-              <div key={i} className="hac-kpiaxis-zone"
-                style={{ width: ((Math.min(z.to, KPI_AXIS_MAX) - z.from) / KPI_AXIS_MAX) * 100 + "%",
-                         background: z.fill }} />
-            ))}
-            {!isFuture && (
-              <div className="hac-kpiaxis-marker" style={{ left: pos(pct) + "%", background: markerCol }}>
-                <span className="hac-kpiaxis-dot" style={{ background: markerCol }} />
-              </div>
-            )}
-          </div>
-          <div className="hac-kpiaxis-ticks">
-            {[75, 100].map(t => (
-              <span key={t} className="hac-kpiaxis-tick" style={{ left: pos(t) + "%" }}>{t}%</span>
-            ))}
-          </div>
+        <div className="hac-kpiaxis-readout" style={{ gap: 2 }}>
+          <span>Achieved <b>{isFuture ? "–" : actual.toLocaleString("en-US") + " L"}</b></span>
+          {!isFuture && (
+            <span style={{ color: zone.col }}>
+              {zone.label} · {zone.mult}% multiplier
+            </span>
+          )}
+        </div>
+      </div>
+      {/* Zoned axis directly underneath */}
+      <div className={"hac-kpiaxis" + (isFuture ? " future" : "")} style={{ marginTop: 0 }}>
+        <div className="hac-kpiaxis-track">
+          {KPI_ZONES.map((z, i) => (
+            <div key={i} className="hac-kpiaxis-zone"
+              style={{ width: ((Math.min(z.to, KPI_AXIS_MAX) - z.from) / KPI_AXIS_MAX) * 100 + "%",
+                       background: z.fill }} />
+          ))}
+          {!isFuture && (
+            <div className="hac-kpiaxis-marker" style={{ left: pos(pct) + "%", background: markerCol }}>
+              <span className="hac-kpiaxis-dot" style={{ background: markerCol }} />
+            </div>
+          )}
+        </div>
+        <div className="hac-kpiaxis-ticks">
+          {[75, 100].map(t => (
+            <span key={t} className="hac-kpiaxis-tick" style={{ left: pos(t) + "%" }}>{t}%</span>
+          ))}
         </div>
       </div>
       {isFuture && (
@@ -609,58 +607,62 @@ function CommissionSection({ kpi, tiers: initTiers, editing }) {
             </div>
           )}
 
-          {/* KPI Progress — zoned axis inside Commission Config */}
-          {!editing && kpiTarget > 0 && (
-            <KPIProgressBlock kpi={kpi} target={kpiTarget} />
-          )}
-
-          {/* Eval period + target — one row */}
-          <div className="hac-cc-row2">
-            {/* Eval period */}
-            <div className="hac-cc-col">
-              <div className="hac-field-label">Evaluation Period</div>
-              {editing ? (
-                <div>
-                  <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
-                    <span className="hac-period-pill">Dec 1 – Dec 31</span>
-                    <label className="hac-check-row" style={{ marginLeft:4 }}>
-                      <input type="checkbox" checked={useCustomPeriod}
-                        onChange={e => setUseCustomPeriod(e.target.checked)} />
-                      <span>Custom period</span>
-                    </label>
-                  </div>
-                  {useCustomPeriod && (
-                    <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:10 }}>
-                      <select className="hac-select" style={{ maxWidth:120 }} value={evalStart} onChange={e => setEvalStart(e.target.value)}>
-                        {HC.MONTHS.map(m => <option key={m}>{m}</option>)}
-                      </select>
-                      <span style={{ color:"var(--fg-tertiary)", fontSize:13 }}>to</span>
-                      <select className="hac-select" style={{ maxWidth:120 }} value={evalEnd} onChange={e => setEvalEnd(e.target.value)}>
-                        {HC.MONTHS.map(m => <option key={m}>{m}</option>)}
-                      </select>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div style={{ display:"flex", alignItems:"baseline", gap:8 }}>
-                  <span className="hac-period-pill">
-                    {useCustomPeriod ? `${evalStart} 1 – ${evalEnd} 31` : (kpi.evalPeriod || "Dec 1 – Dec 31")}
-                  </span>
-                  {!useCustomPeriod && <span style={{ fontSize:12, color:"var(--fg-tertiary)" }}>Default annual period</span>}
-                </div>
-              )}
-            </div>
-
-            {/* Volume target */}
-            <div className="hac-cc-col">
-              <div className="hac-field-label">
-                KPI Target Volume
-                <InfoTip text="Total fuel volume the agent must reach within the evaluation period." />
+          {/* KPI Summary — 2-column split */}
+          <div className={"hac-kpi-summary" + (editing ? " editing" : "")}>
+            {/* Left: KPI Progress (view-only) */}
+            {!editing && kpiTarget > 0 && (
+              <div className="hac-kpi-summary-left">
+                <div className="hac-kpi-summary-label">KPI Progress</div>
+                <KPIProgressBlock kpi={kpi} target={kpiTarget} />
               </div>
-              {editing
-                ? <input className="hac-input" type="number" value={kpiTarget} style={{ maxWidth:200 }}
-                    onChange={e => setKpiTarget(+e.target.value)} />
-                : <span className="hac-big-num">{HC.fmtL(kpiTarget)}</span>}
+            )}
+
+            {/* Right: Evaluation Period + Target Volume */}
+            <div className="hac-kpi-summary-right">
+              <div className="hac-kpi-summary-group">
+                <div className="hac-kpi-summary-label">Evaluation Period</div>
+                {editing ? (
+                  <div>
+                    <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+                      <span className="hac-period-pill">Dec 1 – Dec 31</span>
+                      <label className="hac-check-row" style={{ marginLeft:4 }}>
+                        <input type="checkbox" checked={useCustomPeriod}
+                          onChange={e => setUseCustomPeriod(e.target.checked)} />
+                        <span>Custom period</span>
+                      </label>
+                    </div>
+                    {useCustomPeriod && (
+                      <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:10 }}>
+                        <select className="hac-select" style={{ maxWidth:120 }} value={evalStart} onChange={e => setEvalStart(e.target.value)}>
+                          {HC.MONTHS.map(m => <option key={m}>{m}</option>)}
+                        </select>
+                        <span style={{ color:"var(--fg-tertiary)", fontSize:13 }}>to</span>
+                        <select className="hac-select" style={{ maxWidth:120 }} value={evalEnd} onChange={e => setEvalEnd(e.target.value)}>
+                          {HC.MONTHS.map(m => <option key={m}>{m}</option>)}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ display:"flex", alignItems:"baseline", gap:8, marginTop:2 }}>
+                    <span className="hac-period-pill">
+                      {useCustomPeriod ? `${evalStart} 1 – ${evalEnd} 31` : (kpi.evalPeriod || "Dec 1 – Dec 31")}
+                    </span>
+                    {!useCustomPeriod && <span style={{ fontSize:12, color:"var(--fg-tertiary)" }}>Default annual period</span>}
+                  </div>
+                )}
+              </div>
+
+              <div className="hac-kpi-summary-group">
+                <div className="hac-kpi-summary-label">
+                  KPI Target Volume
+                  <InfoTip text="Total fuel volume the agent must reach within the evaluation period." />
+                </div>
+                {editing
+                  ? <input className="hac-input" type="number" value={kpiTarget} style={{ maxWidth:200, marginTop:2 }}
+                      onChange={e => setKpiTarget(+e.target.value)} />
+                  : <span className="hac-big-num" style={{ marginTop:2 }}>{HC.fmtL(kpiTarget)}</span>}
+              </div>
             </div>
           </div>
 
@@ -1082,13 +1084,15 @@ function AgentDetailView({ agent, onBack }) {
       </div>
       <div className="ml-page-head" style={{ margin:"10px 0 20px" }}>
         <div>
-          <h1 className="ml-h1">{cfg.name}</h1>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <h1 className="ml-h1">{cfg.name}</h1>
+            <AccountStatusBadge status={cfg.accountStatus || "active"} />
+          </div>
           <div style={{ fontSize:12, color:"var(--fg-secondary)", marginTop:3 }}>
             {cfg.role} · {cfg.id} · Joined {cfg.joined}
           </div>
         </div>
         <div className="ml-page-head-right">
-          <AccountStatusBadge status={cfg.accountStatus || "active"} />
           {!editing && (
             <button className="ml-btn-outline" onClick={() => setEditing(true)}>
               <HIcon name="edit" size={15} /> Edit
