@@ -141,7 +141,7 @@ body{font-family:var(--font-sans);font-size:14px;color:var(--fg-primary);backgro
         <summary class="toc-hdr">
           <span class="ms">business</span>
           <h2>Host Portal</h2>
-          <span class="count">1 ready</span>
+          <span class="count">2 ready</span>
           <span class="ms ms-chev">expand_more</span>
         </summary>
         <div class="toc-list">
@@ -160,6 +160,17 @@ body{font-family:var(--font-sans);font-size:14px;color:var(--fg-primary);backgro
             <div class="toc-body">
               <div class="toc-title">MyFuel — Fleet Card Bulk Actions</div>
               <div class="toc-desc">Select multiple cards, edit status and limits in bulk</div>
+            </div>
+            <div class="toc-meta">
+              <span class="toc-dot" data-status="ready"></span>
+              <span class="btn-view">View</span>
+            </div>
+          </a>
+          <a class="toc-item" data-status="ready" href="Commission/Host%20Agent%20Config.html">
+            <div class="toc-ico" data-status="ready"><span class="ms">check_circle</span></div>
+            <div class="toc-body">
+              <div class="toc-title">Agent Commission Config</div>
+              <div class="toc-desc">Host portal — per-agent commission tier setup, SP account mapping, termination</div>
             </div>
             <div class="toc-meta">
               <span class="toc-dot" data-status="ready"></span>
@@ -239,7 +250,7 @@ body{font-family:var(--font-sans);font-size:14px;color:var(--fg-primary);backgro
         <summary class="toc-hdr">
           <span class="ms">support_agent</span>
           <h2>Agent Portal</h2>
-          <span class="count">0 ready · 1 in progress</span>
+          <span class="count">1 ready</span>
           <span class="ms ms-chev">expand_more</span>
         </summary>
         <div class="toc-list">
@@ -253,11 +264,17 @@ body{font-family:var(--font-sans);font-size:14px;color:var(--fg-primary);backgro
             <div class="toc-body"><div class="toc-title">SP Account</div></div>
             <div class="toc-meta"><span class="toc-dot" data-status="planned"></span></div>
           </div>
-          <div class="toc-item" data-status="wip">
-            <div class="toc-ico" data-status="wip"><span class="ms">pending</span></div>
-            <div class="toc-body"><div class="toc-title">Commission</div></div>
-            <div class="toc-meta"><span class="toc-dot" data-status="wip"></span></div>
-          </div>
+          <a class="toc-item" data-status="ready" href="Commission/Agent%20Commission.html">
+            <div class="toc-ico" data-status="ready"><span class="ms">check_circle</span></div>
+            <div class="toc-body">
+              <div class="toc-title">Commission</div>
+              <div class="toc-desc">Agent dashboard — KPI gauge, tier track, SP account breakdown, commission history</div>
+            </div>
+            <div class="toc-meta">
+              <span class="toc-dot" data-status="ready"></span>
+              <span class="btn-view">View</span>
+            </div>
+          </a>
           <div class="toc-item" data-status="planned">
             <div class="toc-ico" data-status="planned"><span class="ms">folder</span></div>
             <div class="toc-body"><div class="toc-title">Referrer</div></div>
@@ -326,10 +343,22 @@ body{font-family:var(--font-sans);font-size:14px;color:var(--fg-primary);backgro
           <div class="chg-desc">Added interactive prototype for bulk editing fleet card status and limits with real-time update states.</div>
         </div>
         <div class="chg-item">
-          <span class="chg-date">In Progress</span>
-          <span class="chg-tag wip">WIP</span>
-          <div class="chg-title">Agent Commission</div>
-          <div class="chg-desc">Commission calculation and payout history dashboard for Agent Portal.</div>
+          <span class="chg-date">Today</span>
+          <span class="chg-tag update">Update</span>
+          <div class="chg-title">Agent Commission — Shared Shell</div>
+          <div class="chg-desc">Consolidated duplicate Agent + Host shell components into a single shared library. Both portals now load from <code>shared-shell.jsx</code>.</div>
+        </div>
+        <div class="chg-item">
+          <span class="chg-date">11 Jun 2026</span>
+          <span class="chg-tag new">New</span>
+          <div class="chg-title">Agent Commission Dashboard</div>
+          <div class="chg-desc">KPI gauge, tier track, SP account breakdown with drill-to-transaction drawer, commission history, responsive layout.</div>
+        </div>
+        <div class="chg-item">
+          <span class="chg-date">11 Jun 2026</span>
+          <span class="chg-tag new">New</span>
+          <div class="chg-title">Host — Agent Commission Config</div>
+          <div class="chg-desc">Per-agent commission tier setup, SP account mapping, New Org exception, termination with pro-rated commission estimate.</div>
         </div>
         <div class="chg-item">
           <span class="chg-date">Coming Soon</span>

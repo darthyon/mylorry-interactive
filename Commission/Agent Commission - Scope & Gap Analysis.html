@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agent Commission — Design Scope &amp; Gap Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gradient-brand: linear-gradient(to right, rgb(0,129,170), rgb(0,170,79));
+    --green-600:#00AA4F; --green-500:#00AB46; --green-400:#33BD6A; --green-50:#F3FDF8;
+    --teal-600:#0081AA;
+    --navy-800:#1A2472; --navy-900:#000045; --navy-950:#002642;
+    --red-400:#FF7476;
+    --amber-600:#B26A00; --amber-50:#FFF6E8;
+    --fg-primary:#3C3C42; --fg-secondary:#757575; --fg-tertiary:#999AA5; --fg-disabled:#BBBBBB;
+    --bg-page:#FFFFFF; --bg-muted:#F5F5F5; --bg-subtle:#F6F6F6; --bg-hover:#FAFAFA;
+    --border-light:#E9E9E9; --border-medium:#D8D8D8;
+    --shadow-card:0px 0px 5px 0px rgba(0,0,0,0.08);
+    --radius-sm:4px; --radius-md:8px; --radius-lg:12px; --radius-xl:14px; --radius-pill:9999px;
+    --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+  *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:var(--font-sans); color:var(--fg-primary);
+    background:var(--bg-muted); line-height:1.55;
+    -webkit-font-smoothing:antialiased; padding:40px 24px 96px;
+  }
+  .doc { max-width:1020px; margin:0 auto; background:var(--bg-page);
+    border:1px solid var(--border-light); border-radius:var(--radius-xl);
+    box-shadow:var(--shadow-card); overflow:hidden; }
+
+  /* Header */
+  .masthead { background:var(--gradient-brand); color:#fff; padding:32px 40px; }
+  .masthead .eyebrow { font-size:11px; font-weight:600; letter-spacing:1.2px;
+    text-transform:uppercase; opacity:.9; }
+  .masthead h1 { font-size:27px; font-weight:700; margin:8px 0 4px; letter-spacing:-.2px; }
+  .masthead .sub { font-size:14px; font-weight:400; opacity:.92; max-width:60ch; }
+  .meta-row { display:flex; flex-wrap:wrap; gap:6px 28px; margin-top:18px; }
+  .meta-row div { font-size:12px; }
+  .meta-row b { font-weight:600; }
+  .meta-row span { opacity:.8; }
+
+  .body { padding:8px 40px 44px; }
+
+  /* Section */
+  section { padding-top:34px; }
+  .sec-head { display:flex; align-items:baseline; gap:12px; margin-bottom:14px;
+    border-bottom:2px solid var(--green-500); padding-bottom:9px; }
+  .sec-num { font-size:13px; font-weight:700; color:var(--green-500); }
+  .sec-head h2 { font-size:18px; font-weight:700; color:var(--fg-primary); letter-spacing:-.1px; }
+  p.lead { font-size:14px; color:var(--fg-secondary); margin:0 0 14px; max-width:78ch; }
+  p.note { font-size:13px; color:var(--fg-secondary); margin:12px 0 0; max-width:80ch; }
+
+  /* Pills */
+  .pill { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600;
+    line-height:1; padding:4px 9px; border-radius:var(--radius-pill); white-space:nowrap; }
+  .pill::before { content:""; width:6px; height:6px; border-radius:50%; }
+  .pill.scope { background:var(--green-50); color:var(--green-600); }
+  .pill.scope::before { background:var(--green-500); }
+  .pill.revamp { background:#EAF6FB; color:var(--teal-600); }
+  .pill.revamp::before { background:var(--teal-600); }
+  .pill.new { background:#EDEEF7; color:var(--navy-800); }
+  .pill.new::before { background:var(--navy-800); }
+  .pill.parked { background:var(--amber-50); color:var(--amber-600); }
+  .pill.parked::before { background:var(--amber-600); }
+  .pill.oos { background:var(--bg-muted); color:var(--fg-secondary); }
+  .pill.oos::before { background:var(--fg-tertiary); }
+  .pill.open { background:#FFF1F1; color:#D14B4D; }
+  .pill.open::before { background:var(--red-400); }
+  .pill.decided { background:var(--green-50); color:var(--green-600); }
+  .pill.decided::before { background:var(--green-500); }
+  .pill.done { background:var(--green-50); color:var(--green-600); }
+  .pill.done::before { background:var(--green-500); }
+  .pill.inprog { background:#EAF6FB; color:var(--teal-600); }
+  .pill.inprog::before { background:var(--teal-600); }
+
+  /* Legend */
+  .legend { display:flex; flex-wrap:wrap; gap:10px 14px; padding:16px 18px;
+    background:var(--bg-hover); border:1px solid var(--border-light);
+    border-radius:var(--radius-lg); margin-bottom:6px; }
+  .legend .li { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--fg-secondary); }
+
+  /* Cards grid */
+  .cards { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-top:4px; }
+  .card { border:1px solid var(--border-light); border-radius:var(--radius-lg); padding:18px 18px 16px;
+    background:var(--bg-page); }
+  .card.span { grid-column:1 / -1; }
+  .card h4 { font-size:14px; font-weight:700; margin-bottom:3px; }
+  .card .k { font-size:12px; color:var(--fg-tertiary); font-weight:600; text-transform:uppercase;
+    letter-spacing:.4px; margin-bottom:10px; }
+  .card p { font-size:13px; color:var(--fg-secondary); }
+  .card .formula { font-size:13.5px; font-weight:600; color:var(--navy-800);
+    background:var(--green-50); border:1px solid #D6F0E2; border-radius:var(--radius-md);
+    padding:11px 13px; margin-top:4px; line-height:1.5; }
+
+  /* Tables */
+  table { width:100%; border-collapse:collapse; margin-top:6px; font-size:13px; }
+  thead th { background:var(--bg-muted); color:var(--fg-primary); font-weight:600; font-size:12.5px;
+    text-align:left; padding:10px 12px; border-bottom:1px solid var(--border-medium); }
+  thead th:first-child { border-top-left-radius:var(--radius-sm); }
+  thead th:last-child { border-top-right-radius:var(--radius-sm); }
+  tbody td { padding:11px 12px; border-bottom:1px solid var(--border-light); vertical-align:top;
+    color:var(--fg-primary); }
+  tbody tr:hover { background:var(--bg-hover); }
+  td .id { font-family:'Inter'; font-weight:600; font-size:12px; color:var(--navy-800);
+    white-space:nowrap; }
+  td.sec { color:var(--fg-secondary); }
+  .strike { text-decoration:line-through; color:var(--fg-disabled); }
+  .codes { font-size:11.5px; color:var(--fg-tertiary); font-weight:500; }
+
+  ul.clean { list-style:none; margin:8px 0 0; }
+  ul.clean li { position:relative; padding-left:20px; font-size:13.5px; color:var(--fg-primary);
+    margin-bottom:9px; max-width:84ch; }
+  ul.clean li::before { content:""; position:absolute; left:2px; top:8px; width:7px; height:7px;
+    border-radius:2px; background:var(--green-500); }
+  ul.clean li b { font-weight:600; }
+  ul.clean.warn li::before { background:var(--amber-600); }
+  ul.clean.q li::before { background:var(--red-400); border-radius:50%; }
+
+  .callout { border-left:3px solid var(--green-500); background:var(--green-50);
+    border-radius:0 var(--radius-md) var(--radius-md) 0; padding:13px 16px; margin-top:14px;
+    font-size:13px; color:var(--fg-primary); max-width:86ch; }
+  .callout.amber { border-left-color:var(--amber-600); background:var(--amber-50); }
+  .callout b { font-weight:600; }
+
+  .foot { padding:22px 40px 30px; border-top:1px solid var(--border-light); color:var(--fg-tertiary);
+    font-size:12px; }
+  @media (max-width:680px){ .cards{grid-template-columns:1fr;} .body{padding:8px 22px 36px;} .masthead{padding:26px 22px;} }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <header class="masthead">
+    <div class="eyebrow">MyLorry.AI · Commission Engine</div>
+    <h1>Agent Commission Module — Design Scope &amp; Gap Analysis</h1>
+    <div class="sub">A pre-build record: what we will design, what is parked, what is still open — reconciled between PRD v1.2 and the existing MyLorry reference designs.</div>
+    <div class="meta-row">
+      <div><b>Source</b> · <span>PRD — Agent Commission Module v1.2</span></div>
+      <div><b>Reference</b> · <span>MyLorry Reference (Figma)</span></div>
+      <div><b>Phase</b> · <span>Phase 1 complete · Phase 2 in progress</span></div>
+      <div><b>Surfaces</b> · <span>Host Portal + Agent Portal (web)</span></div>
+    </div>
+  </header>
+
+  <div class="body">
+
+    <!-- LEGEND -->
+    <section style="padding-top:26px;">
+      <div class="legend">
+        <div class="li"><span class="pill scope">In scope</span> will be designed in V1</div>
+        <div class="li"><span class="pill revamp">Revamp</span> exists in Figma, needs rework</div>
+        <div class="li"><span class="pill new">Net-new</span> no current design</div>
+        <div class="li"><span class="pill parked">Parked</span> struck in PRD — recorded, not built</div>
+        <div class="li"><span class="pill oos">Out of scope</span> excluded from V1</div>
+        <div class="li"><span class="pill done">Done</span> built &amp; verified</div>
+        <div class="li"><span class="pill inprog">In progress</span> active build</div>
+        <div class="li"><span class="pill decided">Decision</span> resolved this round</div>
+        <div class="li"><span class="pill open">Open</span> needs an answer</div>
+      </div>
+    </section>
+
+    <!-- 1. AT A GLANCE -->
+    <section>
+      <div class="sec-head"><span class="sec-num">01</span><h2>At a glance</h2></div>
+      <p class="lead">Agent Commission calculates, tracks and surfaces fuel-rebate earnings for internal sales Agents (~7–10), based on the fuel volume of the SP Accounts they manage. It is <b>fuel-only</b> — it does not touch MyAdmin / MyTrip subscription revenue. After the PRD strikethroughs, V1 is a <b>calculation &amp; visibility</b> system; money movement (payouts) stays manual/offline.</p>
+      <div class="cards">
+        <div class="card span">
+          <div class="k">The two-layer model (authoritative)</div>
+          <div class="formula">Commission&nbsp;=&nbsp;Σ&nbsp;per&nbsp;org&nbsp;[ Org Monthly Litres × Volume Tier Rate ]&nbsp;×&nbsp;KPI Multiplier %</div>
+          <p style="margin-top:10px;"><b>Layer 1 — Base rate:</b> each org's monthly volume maps to the agent's own volume-tier table (RM/L). Each org can land in a different tier. <b>Layer 2 — KPI multiplier:</b> the agent's <i>total</i> volume across all orgs vs their KPI target → 100% / 50% / 0%. Tier table is set in <b>Agent Commission Config</b>, not the SP Account Rebate Setting.</p>
+        </div>
+        <div class="card">
+          <h4>In scope</h4>
+          <div class="k">surfaces</div>
+          <p><span class="pill scope">Host Portal</span> &nbsp; config + monitoring<br><br><span class="pill scope">Agent Portal</span> &nbsp; own commission + KPI view</p>
+        </div>
+        <div class="card">
+          <h4>Not in this effort</h4>
+          <div class="k">recorded below</div>
+          <p><span class="pill parked">Payout workflow</span> &nbsp; struck in PRD<br><br><span class="pill oos">Referrer</span> · <span class="pill oos">Reseller</span> · <span class="pill oos">Org/Flutter widget</span></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. SOURCE RECONCILIATION -->
+    <section>
+      <div class="sec-head"><span class="sec-num">02</span><h2>Source reconciliation</h2></div>
+      <ul class="clean">
+        <li>The originally-linked doc bundles <b>three PRDs</b> (Subscription · Subsidy Quota · Commission &amp; KPI). This analysis uses the <b>standalone Agent Commission Module PRD v1.2</b> as the source of truth.</li>
+        <li><b>Model differs from the earlier BRD.</b> v1.2 is a <b>per-org volume-tier rate × KPI multiplier</b> model (multiple configurable tiers per agent), not a single flat base-rate × KPI%. We design to v1.2.</li>
+        <li><b>Org grouping (Master/Member) affects org rebate only — never agent commission.</b> Commission is always calculated per-org individually (PRD §4G). Agent commission views must not show pooled grouping.</li>
+        <li>Subscription PRD §10 confirms Agent Commission is an <b>independent workstream</b> — not blocked by, and not blocking, Subscription go-live.</li>
+      </ul>
+    </section>
+
+    <!-- 3. SCREENS TO BUILD -->
+    <section>
+      <div class="sec-head"><span class="sec-num">03</span><h2>Screens we will design (V1)</h2></div>
+      <p class="lead">Four screens across two portals. Two are revamps of existing MyLorry screens; two are net-new.</p>
+      <table>
+        <thead><tr><th style="width:23%;">Screen</th><th style="width:13%;">Portal</th><th style="width:17%;">Figma today</th><th>What it must do</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>Commission Dashboard</b></td>
+            <td class="sec">Agent</td>
+            <td><span class="pill revamp">Revamp</span><div class="codes" style="margin-top:6px;">Agent-2.0 / Agent-Dashboard</div></td>
+            <td>Header (month total · MTD litres · eval-period label); KPI progress bar vs target (Dec 1–31); SP Account breakdown (litres · tier · rate · commission · validity end · new-org status); drill to txn detail; export PDF/Excel.</td>
+          </tr>
+          <tr>
+            <td><b>Commission History</b></td>
+            <td class="sec">Agent</td>
+            <td><span class="pill revamp">Revamp</span><div class="codes" style="margin-top:6px;">Agent-2.0 / Archive-Commission</div></td>
+            <td>Last 12 months of commission totals; per-period state (Provisional / Finalized — see §06). One row per org per month to fix grouping (Bug&nbsp;#6).</td>
+          </tr>
+          <tr>
+            <td><b>Commission Monitoring Dashboard</b></td>
+            <td class="sec">Host</td>
+            <td><span class="pill new">Net-new</span><div class="codes" style="margin-top:6px;">Dashboard → Commission</div></td>
+            <td>Header KPIs; all-agents table (agent · #SP accounts · litres · KPI% · commission · period state); filters (date · agent · SP); drill into per-SP breakdown; 12-mo history.</td>
+          </tr>
+          <tr>
+            <td><b>Per-Agent Commission Config</b></td>
+            <td class="sec">Host</td>
+            <td><span class="pill new">Net-new</span><div class="codes" style="margin-top:6px;">Main Nav → Agent</div></td>
+            <td>Volume tier table (+ final tier &amp; validation); KPI config (target · eval period · thresholds · versioning); assign/reassign SP Accounts; validity years per org; New Org Exception mode per org; agent termination date (4th-of-month / hold state); org transfer between agents.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 4. REQUIREMENT COVERAGE -->
+    <section>
+      <div class="sec-head"><span class="sec-num">04</span><h2>Requirement coverage (in-scope)</h2></div>
+      <p class="lead">Every retained user story &amp; functional requirement, mapped to where it lands. Struck items are listed in §05.</p>
+      <table>
+        <thead><tr><th style="width:30%;">Requirement group</th><th style="width:40%;">IDs (retained)</th><th>Lands on</th></tr></thead>
+        <tbody>
+          <tr><td>Host — commission configuration</td><td class="codes">FR-HC-01 → 10</td><td>Per-Agent Config</td></tr>
+          <tr><td>Host — monitoring dashboard</td><td class="codes">FR-HM-01, 02, 03, 04, 07</td><td>Monitoring Dashboard</td></tr>
+          <tr><td>Host — config / monitor stories</td><td class="codes">US-HC-01, 02, 03, 04, 08, 09, 10, 11</td><td>Config + Monitoring</td></tr>
+          <tr><td>Commission validity engine</td><td class="codes">FR-CV-01 → 07</td><td>Config (set) · Agent + Host (display)</td></tr>
+          <tr><td>New Org exception rule</td><td class="codes">FR-NOE-01 → 07</td><td>Config (set) · Agent (display)</td></tr>
+          <tr><td>Agent termination logic</td><td class="codes">FR-TM-01 → 07</td><td>Per-Agent Config</td></tr>
+          <tr><td>Agent transfer flow</td><td class="codes">FR-TR-01 → 07</td><td>Per-Agent Config</td></tr>
+          <tr><td>Agent — commission dashboard</td><td class="codes">FR-AG-01, 02, 03, 05, 09</td><td>Agent Dashboard</td></tr>
+          <tr><td>Agent — history &amp; stories</td><td class="codes">FR-AG-04 · US-AG-01, 02, 03, 04, 07</td><td>Agent Dashboard + History</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 5. PARKED & OUT OF SCOPE -->
+    <section>
+      <div class="sec-head"><span class="sec-num">05</span><h2>Parked &amp; out of scope — recorded, not built</h2></div>
+      <p class="lead">Captured so nothing is silently dropped. <b>Parked</b> = struck in the PRD (revisit later). <b>Out of scope</b> = excluded from V1 per PRD §8 / this round's decisions.</p>
+      <table>
+        <thead><tr><th style="width:30%;">Item</th><th style="width:23%;">IDs / source</th><th style="width:14%;">Status</th><th>Note for when we revisit</th></tr></thead>
+        <tbody>
+          <tr><td class="strike">Agent payout request + status tracking</td><td class="codes">US-AG-05, 06 · FR-AG-06, 07</td><td><span class="pill parked">Parked</span></td><td>Whole payout request flow struck. Agent dashboard will show <i>earned</i>, no "Request payout" CTA.</td></tr>
+          <tr><td class="strike">Host payout queue (approve / reject)</td><td class="codes">FR-HM-06</td><td><span class="pill parked">Parked</span></td><td>No approval queue in V1. Money movement stays manual/offline.</td></tr>
+          <tr><td class="strike">Host export to Excel</td><td class="codes">US-HC-06 · FR-HM-05</td><td><span class="pill parked">Parked</span></td><td>Host-side Excel export struck. <b>Agent-side</b> export (PDF/Excel, FR-AG-09) is retained.</td></tr>
+          <tr><td class="strike">Host 12-mo history per agent (story)</td><td class="codes">US-HC-07</td><td><span class="pill open">Conflict</span></td><td>Story struck but its FR (FR-HM-07) is <b>not</b> struck → see §06 decision (we keep the display).</td></tr>
+          <tr><td>Payout history (agent)</td><td class="codes">FR-AG-08</td><td><span class="pill parked">Parked</span></td><td>Orphaned by the payout strikethrough — dropped with the flow.</td></tr>
+          <tr><td>Referrer commission</td><td class="codes">PRD §1, §8</td><td><span class="pill oos">Out</span></td><td>Separate workstream/PRD. Same engine will be replicated later. Existing Figma "Referrer-Dashboard" is a placeholder clone.</td></tr>
+          <tr><td>Reseller commission · CEO commission · Group KPI</td><td class="codes">PRD §8 (Bug #50)</td><td><span class="pill oos">Out</span></td><td>Future roles.</td></tr>
+          <tr><td>Org Portal "Agent Info" widget</td><td class="codes">PRD §7 (Flutter)</td><td><span class="pill oos">Out</span></td><td>Read-only embedded widget in the Flutter app; excluded from this web effort by decision. Revisit if Org transparency (O4) is prioritised.</td></tr>
+          <tr><td>Auto bank disbursement · Tax/SST · Multi-agent split · Subscription-fee commission · Gamification</td><td class="codes">PRD §8</td><td><span class="pill oos">Out</span></td><td>Deferred to V2+ per PRD.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 6. DISCREPANCIES & DECISIONS -->
+    <section>
+      <div class="sec-head"><span class="sec-num">06</span><h2>Discrepancies &amp; decisions</h2></div>
+      <p class="lead">Where the strikethroughs left dangling references, or the PRD contradicts itself, here's the design call taken this round.</p>
+      <table>
+        <thead><tr><th style="width:32%;">Discrepancy</th><th style="width:13%;">Status</th><th>Decision</th></tr></thead>
+        <tbody>
+          <tr><td>FR-HM-01 header shows "Total pending payout requests" — but payout is parked</td><td><span class="pill decided">Decided</span></td><td>Replace with <b>"Orgs within 60 days of validity expiry"</b> (ties to FR-CV-07), or total period litres.</td></tr>
+          <tr><td>FR-HM-02 / 03 carry a "Payout status" column &amp; filter</td><td><span class="pill decided">Decided</span></td><td>Replace with a <b>period state: Provisional → Finalized</b> (after the 4th-of-month rebate run). Useful, not payout-coupled.</td></tr>
+          <tr><td>FR-AG-04 history "status (Pending / Approved / Paid)" are payout statuses</td><td><span class="pill decided">Decided</span></td><td>Same substitution — <b>Provisional / Finalized</b>, not payout statuses.</td></tr>
+          <tr><td>US-HC-07 struck but FR-HM-07 (Host 12-mo history) not struck</td><td><span class="pill decided">Decided</span></td><td><b>Keep the history display</b> — FR-HM-07 stands; it's read-only audit, low cost. (Flagged for your confirmation.)</td></tr>
+          <tr><td>New Org exception self-contradicts on mid-year starters (Org D/E vs Org F)</td><td><span class="pill decided">Decided</span></td><td>Badge driven by a <b>data flag</b> (Auto 100% / Custom % / —), never a UI date rule. PRD §4D confirms three modes.</td></tr>
+          <tr><td>Existing Figma "Commission / Tier" fields live under SP Account → Rebate</td><td><span class="pill decided">Decided</span></td><td>Those are <b>org rebate</b>, a different thing. Agent volume-tier table lives in <b>Per-Agent Config</b> (PRD §4, §11).</td></tr>
+          <tr><td>Petron 2–3 hr sync; commission on settled txns only (R7, FR-HC-10)</td><td><span class="pill decided">Decided</span></td><td>Show a <b>"last synced" timestamp</b> in commission views; current month is Provisional until settled.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 7. OPEN QUESTIONS -->
+    <section>
+      <div class="sec-head"><span class="sec-num">07</span><h2>Open questions — need an answer before/at build</h2></div>
+      <ul class="clean q">
+        <li><b>Confirm §06 decisions</b> — especially Provisional/Finalized replacing payout statuses, and keeping the Host 12-mo history (FR-HM-07).</li>
+        <li><b>OQ4 — payout cycle</b> (PRD open): moot for V1 visuals since payout is parked, but confirms there is no "request" affordance in the Agent dashboard.</li>
+        <li><b>OQ5 — reversals/refunds</b> deducted from commission base? Affects how the SP breakdown reconciles. <span class="codes">Owner: Finance/Eng</span></li>
+        <li><b>OQ6 — gross vs net (post-subsidy) litres</b> as the commission base? Affects the volume figure shown everywhere. <span class="codes">Owner: Finance</span></li>
+        <li><b>OQ10 — approval/paid notifications</b> (low; payout-adjacent, likely parked with payout).</li>
+        <li><b>Termination &amp; transfer UI</b> — the 4th-of-month cutoff + "hold state" (FR-TM-06, FR-TR-06) is intricate; needs an agreed visual model on the Config page.</li>
+      </ul>
+    </section>
+
+    <!-- 8. RISKS -->
+    <section>
+      <div class="sec-head"><span class="sec-num">08</span><h2>Risks &amp; dependencies that touch design</h2></div>
+      <ul class="clean warn">
+        <li><b>R2 — Bug&nbsp;#6 (commission grouping)</b> is the trigger for this work and still open. Our one-row-per-org-per-month statement structure is the design-side mitigation.</li>
+        <li><b>R7 — Petron sync delay.</b> Drives the "last synced" timestamp + Provisional/Finalized states.</li>
+        <li><b>Agent auth scoping</b> (PRD §3 ⚠): an agent must only ever see their own data — the Agent Portal sits outside the Host/Org taxonomy. Design must avoid any cross-agent surface.</li>
+        <li><b>R4 — no agent bank details collected.</b> Was a payout prerequisite; with payout parked, it's no longer a V1 blocker — noted.</li>
+      </ul>
+    </section>
+
+    <!-- 9. BUILD PLAN -->
+    <section>
+      <div class="sec-head"><span class="sec-num">09</span><h2>Build plan &amp; status</h2></div>
+      <p class="lead">Recommended sequencing once we move out of analysis. Everything below is <b>not started</b> — recorded here as the outstanding work.</p>
+      <table>
+        <thead><tr><th style="width:12%;">Phase</th><th style="width:32%;">Deliverable</th><th style="width:14%;">Type</th><th style="width:14%;">Status</th><th>Rationale</th></tr></thead>
+        <tbody>
+          <tr><td><b>Phase 1</b></td><td>Agent Commission Dashboard</td><td><span class="pill revamp">Revamp</span></td><td><span class="pill done">Done</span></td><td rowspan="2">Revamp of approved screens = fastest hi-fi; most demoable; locks the commission-record data shape that Host config must produce.</td></tr>
+          <tr><td><b>Phase 1</b></td><td>Agent Commission History</td><td><span class="pill revamp">Revamp</span></td><td><span class="pill done">Done</span></td></tr>
+          <tr><td><b>Phase 2</b></td><td>Host Monitoring Dashboard</td><td><span class="pill new">Net-new</span></td><td><span class="pill inprog">In progress</span></td><td rowspan="2">Where most FRs concentrate (config, validity, new-org, termination, transfer). Wired so Host config drives the Agent numbers.</td></tr>
+          <tr><td><b>Phase 2</b></td><td>Host Per-Agent Config</td><td><span class="pill new">Net-new</span></td><td><span class="pill inprog">In progress</span></td></tr>
+        </tbody>
+      </table>
+      <div class="callout"><b>Delivery format:</b> one connected hi-fi interactive prototype (not loose files) — Host config visibly drives Agent display, so the two-layer model can be demonstrated end to end.</div>
+      <div class="callout"><b>Phase 1 delivered:</b> Agent Commission Dashboard &amp; History — interactive hi-fi prototype with KPI tier track, SP Account breakdown (pagination, drill-to-txn drawer), commission calculation accordion, Provisional/Finalized states, New Org exception badges, mobile-responsive layout. Export is stubbed (PDF/Excel UI present, not wired to real data).</div>
+      <div class="callout amber"><b>Phase 2 next:</b> Host Monitoring Dashboard + Per-Agent Config — both net-new. Wiring Host config to drive Agent numbers closes the end-to-end demo loop.</div>
+    </section>
+
+  </div>
+
+  <div class="foot">
+    MyLorry.AI · Agent Commission Module — Design Scope &amp; Gap Analysis · derived from PRD v1.2 against the MyLorry reference designs. Living document — Phase 1 complete Jun 2026 · Phase 2 in progress.
+  </div>
+
+</div>
+</body>
+</html>
