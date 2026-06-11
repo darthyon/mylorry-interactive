@@ -59,6 +59,7 @@ const server = http.createServer((req, res) => {
   }
 
   let filePath = path.join(__dirname, pathname);
+  console.log('Request:', pathname, 'File:', filePath, 'Exists:', fs.existsSync(filePath));
 
   fs.stat(filePath, (err, stats) => {
     if (!err && stats.isDirectory()) {
