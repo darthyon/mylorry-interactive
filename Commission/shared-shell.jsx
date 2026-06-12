@@ -49,6 +49,18 @@ function Sidebar({ active, onNav, navItems, badgeLabel }) {
             {navItems.map((n, i) =>
               n.key === "__div__"
                 ? <div key={i} className="ml-side-divider" style={{margin:"4px 0"}} />
+                : n.key === "__label__"
+                  ? (
+                    <div key={n.label + i} style={{
+                      padding: "10px 10px 6px",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: ".08em",
+                      color: "var(--fg-tertiary)",
+                    }}>
+                      {n.label}
+                    </div>
+                  )
                 : (
                   <button key={n.key}
                     className={"ml-nav-item" + (n.key === active ? " active" : "")}

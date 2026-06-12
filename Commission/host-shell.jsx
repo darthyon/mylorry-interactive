@@ -5,15 +5,21 @@ const { Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu,
   CurrencyPill, AccountStatusBadge, KPIProgress } = window.SharedShell;
 
 const HOST_NAV = [
-  { key:"dashboard",  label:"Dashboard",  icon:"space_dashboard"      },
-  { key:"myfuel",     label:"MyFuel",     icon:"local_gas_station"     },
-  { key:"myadmin",    label:"MyAdmin",    icon:"manage_accounts"       },
-  { key:"mytrip",     label:"MyTrip",     icon:"route"                 },
-  { key:"__div__",    label:"",           icon:""                      },
-  { key:"org",        label:"Org",        icon:"business_center"       },
-  { key:"agent",      label:"Agent",      icon:"supervisor_account"    },
-  { key:"log",        label:"Log",        icon:"description"           },
-  { key:"sub",        label:"Subscription",icon:"workspace_premium"   },
+  { key:"__label__",    label:"HOST",               icon:"" },
+  { key:"dashboard",    label:"Dashboard",          icon:"grid_view" },
+  { key:"host_user",    label:"Host User",          icon:"manage_accounts" },
+  { key:"user_activity",label:"User Activity",      icon:"swap_horiz" },
+  { key:"agent",        label:"Agent",              icon:"support_agent" },
+  { key:"commission",   label:"Commission",         icon:"paid" },
+  { key:"subscription", label:"Subscription",       icon:"diamond" },
+  { key:"announce",     label:"Announce..",         icon:"campaign" },
+  { key:"__label__",    label:"ORG",                icon:"" },
+  { key:"organisation", label:"Organisation",       icon:"business_center" },
+  { key:"org_user",     label:"Organisation User",  icon:"supervisor_account" },
+  { key:"__label__",    label:"PRODUCT",            icon:"" },
+  { key:"myfuel",       label:"MyFuel",             icon:"local_gas_station" },
+  { key:"myadmin",      label:"MyAdmin",            icon:"admin_panel_settings" },
+  { key:"mytrip",       label:"MyTrip",             icon:"alt_route" },
 ];
 
 // Host-specific aliases (same component, different name for historical reasons)
