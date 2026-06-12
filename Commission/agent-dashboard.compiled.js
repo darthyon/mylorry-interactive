@@ -145,7 +145,7 @@ function KpiHero({
     className: "ml-f-step"
   }, /*#__PURE__*/React.createElement("span", {
     className: "ml-k"
-  }, "Base commission"), /*#__PURE__*/React.createElement("b", null, AC.fmtRM(m.summary.base)), /*#__PURE__*/React.createElement("span", {
+  }, "Actual Commission"), /*#__PURE__*/React.createElement("b", null, AC.fmtRM(m.summary.base)), /*#__PURE__*/React.createElement("span", {
     className: "ml-f-note"
   }, "\u03A3 volume \xD7 tier rate")), /*#__PURE__*/React.createElement(Icon, {
     name: "close",
@@ -195,7 +195,7 @@ function KpiHero({
     className: "ml-kpi-calc-step"
   }, /*#__PURE__*/React.createElement("span", {
     className: "ml-k"
-  }, "Base commission"), /*#__PURE__*/React.createElement("b", null, AC.fmtRM(m.summary.base)), /*#__PURE__*/React.createElement("span", {
+  }, "Actual Commission"), /*#__PURE__*/React.createElement("b", null, AC.fmtRM(m.summary.base)), /*#__PURE__*/React.createElement("span", {
     className: "ml-note"
   }, "\u03A3 volume \xD7 tier rate")), /*#__PURE__*/React.createElement("div", {
     className: "ml-kpi-calc-row"
@@ -544,19 +544,28 @@ function Dashboard({
     value: String(month.newCount),
     accent: "#00AA4F"
   })), /*#__PURE__*/React.createElement("div", {
-    className: "ml-card"
-  }, /*#__PURE__*/React.createElement(CardHead, {
-    icon: "receipt_long",
-    title: "Commission by SP Account",
-    sub: month.label + " · click a row for transaction detail",
-    right: /*#__PURE__*/React.createElement("span", {
-      className: "ml-synced"
-    }, /*#__PURE__*/React.createElement(Icon, {
-      name: "sync",
-      size: 14,
-      color: "#999AA5"
-    }), " Last synced ", AC.AGENT.lastSync)
-  }), /*#__PURE__*/React.createElement("div", {
+    className: "ml-month-head",
+    style: {
+      marginTop: 20
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ml-month-head-title"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "receipt_long",
+    size: 18,
+    color: "#00AA4F"
+  }), /*#__PURE__*/React.createElement("span", null, "Commission by SP Account")), /*#__PURE__*/React.createElement("span", {
+    className: "ml-synced"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "sync",
+    size: 14,
+    color: "#999AA5"
+  }), " Last synced ", AC.AGENT.lastSync)), /*#__PURE__*/React.createElement("div", {
+    className: "hac-count",
+    style: {
+      marginBottom: 8
+    }
+  }, month.rows.length, " SP account", month.rows.length !== 1 ? "s" : "", " \xB7 ", month.label), /*#__PURE__*/React.createElement("div", {
     className: "ml-table-wrap ml-desk-only"
   }, /*#__PURE__*/React.createElement("table", {
     className: "ml-table"
@@ -654,7 +663,7 @@ function Dashboard({
       setSpPage(1);
     },
     perPageOptions: [10, 50, 100]
-  }))), /*#__PURE__*/React.createElement(TxnModal, {
+  })), /*#__PURE__*/React.createElement(TxnModal, {
     row: drawer,
     monthLabel: month.label,
     onClose: () => setDrawer(null)

@@ -88,7 +88,16 @@ function Sidebar({
     style: {
       margin: "4px 0"
     }
-  }) : /*#__PURE__*/React.createElement("button", {
+  }) : n.key === "__label__" ? /*#__PURE__*/React.createElement("div", {
+    key: n.label + i,
+    style: {
+      padding: "10px 10px 6px",
+      fontSize: 11,
+      fontWeight: 700,
+      letterSpacing: ".08em",
+      color: "var(--fg-tertiary)"
+    }
+  }, n.label) : /*#__PURE__*/React.createElement("button", {
     key: n.key,
     className: "ml-nav-item" + (n.key === active ? " active" : ""),
     onClick: () => onNav && onNav(n.key),
@@ -422,33 +431,28 @@ function KPIProgress({
 }
 
 /* ─── Petron provider logo mark ─────────────────────────────── */
-// Petron brand mark — navy square with the red double-swoosh. Approximated as
-// inline SVG (no licensed asset in repo) for the single fuel provider (MyFuel).
+const PETRON_LOGO_SRC = "../agent-portal/img-petron.jpg";
+const PETRON_LOGO_FALLBACK_SRC = "../../agent-portal/img-petron.jpg";
 function PetronLogo({
   size = 16
 }) {
-  return /*#__PURE__*/React.createElement("svg", {
+  return /*#__PURE__*/React.createElement("img", {
     className: "ml-petron-logo",
+    src: PETRON_LOGO_SRC,
     width: size,
     height: size,
-    viewBox: "0 0 32 32",
-    role: "img",
-    "aria-label": "Petron",
+    alt: "Petron",
+    loading: "lazy",
     style: {
-      flexShrink: 0
+      flexShrink: 0,
+      objectFit: "contain"
+    },
+    onError: e => {
+      if (e.currentTarget.dataset.fallbackLoaded) return;
+      e.currentTarget.dataset.fallbackLoaded = "true";
+      e.currentTarget.src = PETRON_LOGO_FALLBACK_SRC;
     }
-  }, /*#__PURE__*/React.createElement("rect", {
-    width: "32",
-    height: "32",
-    rx: "5",
-    fill: "#0A2472"
-  }), /*#__PURE__*/React.createElement("path", {
-    fill: "#ED1C24",
-    d: "M5.5 27c2.6-7.4 8.8-7.7 12.1-10.6 2.4-2.1 3.1-4.6 3.4-7.4-1.6 3.9-4.7 5-8 6.2C8.9 16.7 6.4 19.7 5.5 27z"
-  }), /*#__PURE__*/React.createElement("path", {
-    fill: "#ED1C24",
-    d: "M13 26.5c2.2-6 7.7-6.6 10.8-9.2 2.6-2.2 3.4-5.2 3.7-9.3-1.2 4.6-3.9 6.3-7.5 7.9-3.6 1.6-6.2 4.4-7 10.6z"
-  }));
+  });
 }
 
 /* ─── Export to window ─────────────────────────────────────── */

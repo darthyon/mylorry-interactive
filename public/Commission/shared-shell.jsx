@@ -49,6 +49,18 @@ function Sidebar({ active, onNav, navItems, badgeLabel }) {
             {navItems.map((n, i) =>
               n.key === "__div__"
                 ? <div key={i} className="ml-side-divider" style={{margin:"4px 0"}} />
+                : n.key === "__label__"
+                  ? (
+                    <div key={n.label + i} style={{
+                      padding: "10px 10px 6px",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: ".08em",
+                      color: "var(--fg-tertiary)",
+                    }}>
+                      {n.label}
+                    </div>
+                  )
                 : (
                   <button key={n.key}
                     className={"ml-nav-item" + (n.key === active ? " active" : "")}
@@ -240,8 +252,32 @@ function KPIProgress({ pct, actual, target, period, commissionLabel }) {
   );
 }
 
+/* ─── Petron provider logo mark ─────────────────────────────── */
+const PETRON_LOGO_SRC = "../agent-portal/img-petron.jpg";
+const PETRON_LOGO_FALLBACK_SRC = "../../agent-portal/img-petron.jpg";
+
+function PetronLogo({ size = 16 }) {
+  return (
+    <img
+      className="ml-petron-logo"
+      src={PETRON_LOGO_SRC}
+      width={size}
+      height={size}
+      alt="Petron"
+      loading="lazy"
+      style={{ flexShrink: 0, objectFit: "contain" }}
+      onError={(e) => {
+        if (e.currentTarget.dataset.fallbackLoaded) return;
+        e.currentTarget.dataset.fallbackLoaded = "true";
+        e.currentTarget.src = PETRON_LOGO_FALLBACK_SRC;
+      }}
+    />
+  );
+}
+
 /* ─── Export to window ─────────────────────────────────────── */
 window.SharedShell = {
   Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu,
   Pill, CurrencyPill, SummaryCard, KpiTierChip, AccountStatusBadge, KPIProgress,
+  PetronLogo,
 };

@@ -91,7 +91,7 @@ function KpiHero({ m, visual }) {
 
   const formulaInner = (
     <div className="ml-formula">
-      <span className="ml-f-step"><span className="ml-k">Base commission</span><b>{AC.fmtRM(m.summary.base)}</b><span className="ml-f-note">Σ volume × tier rate</span></span>
+      <span className="ml-f-step"><span className="ml-k">Actual Commission</span><b>{AC.fmtRM(m.summary.base)}</b><span className="ml-f-note">Σ volume × tier rate</span></span>
       <Icon name="close" size={14} color="#999AA5" />
       <span className="ml-f-step"><span className="ml-k">KPI multiplier</span><b>{m.mult}%</b><span className="ml-f-note">{m.note}</span></span>
       <span style={{fontSize:16,color:"#999AA5",fontWeight:600,lineHeight:1,flexShrink:0}}>=</span>
@@ -108,7 +108,7 @@ function KpiHero({ m, visual }) {
       <div className={"ml-accordion-body " + (calcOpen ? "open" : "closed")}>
         <div style={{paddingTop:14,display:"flex",flexDirection:"column",gap:14}}>
           <div className="ml-kpi-calc-step">
-            <span className="ml-k">Base commission</span>
+            <span className="ml-k">Actual Commission</span>
             <b>{AC.fmtRM(m.summary.base)}</b>
             <span className="ml-note">Σ volume × tier rate</span>
           </div>
@@ -352,71 +352,77 @@ function Dashboard({ model, history, t }) {
       </div>
 
       {/* 3 — Commission by SP Account (month-filtered) */}
-      <div className="ml-card">
-        <CardHead icon="receipt_long" title="Commission by SP Account" sub={month.label + " · click a row for transaction detail"}
-          right={<span className="ml-synced"><Icon name="sync" size={14} color="#999AA5" /> Last synced {AC.AGENT.lastSync}</span>} />
+      <div className="ml-month-head" style={{ marginTop: 20 }}>
+        <div className="ml-month-head-title">
+          <Icon name="receipt_long" size={18} color="#00AA4F" />
+          <span>Commission by SP Account</span>
+        </div>
+        <span className="ml-synced"><Icon name="sync" size={14} color="#999AA5" /> Last synced {AC.AGENT.lastSync}</span>
+      </div>
+      <div className="hac-count" style={{ marginBottom:8 }}>
+        {month.rows.length} SP account{month.rows.length !== 1 ? "s" : ""} · {month.label}
+      </div>
 
-        {/* Desktop table */}
-        <div className="ml-table-wrap ml-desk-only">
-          <table className="ml-table">
-            <thead>
-              <tr>
-                <th style={{minWidth:240}}>SP Account</th>
-                <th>Volume</th>
-                <th>Commission Tier</th>
-                <th>Actual Commission</th>
-                <th>KPI Tier</th>
-                <th style={{textAlign:"right"}}>Final Commission</th>
-                <th>Commission Validity</th>
-                <th style={{width:40}}></th>
+      {/* Desktop table */}
+      <div className="ml-table-wrap ml-desk-only">
+        <table className="ml-table">
+          <thead>
+            <tr>
+              <th style={{minWidth:240}}>SP Account</th>
+              <th>Volume</th>
+              <th>Commission Tier</th>
+              <th>Actual Commission</th>
+              <th>KPI Tier</th>
+              <th style={{textAlign:"right"}}>Final Commission</th>
+              <th>Commission Validity</th>
+              <th style={{width:40}}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {spRows.map((r) => (
+              <tr key={r.sp} onClick={() => setDrawer(r)}>
+                <td><SpAccountCell r={r} /></td>
+                <td>{AC.fmtL(r.volume)}</td>
+                <td><TierCell r={r} /></td>
+                <td>{AC.fmtRM(r.base)}</td>
+                <td><KpiTierCell r={r} /></td>
+                <td style={{textAlign:"right"}}><CurrencyPill>{AC.fmtRM(r.commission)}</CurrencyPill></td>
+                <td><ValidityCell r={r} expiring={expiring && r.end.includes("2028")} /></td>
+                <td><Icon name="chevron_right" size={18} color="#BBBBBB" /></td>
               </tr>
-            </thead>
-            <tbody>
-              {spRows.map((r) => (
-                <tr key={r.sp} onClick={() => setDrawer(r)}>
-                  <td><SpAccountCell r={r} /></td>
-                  <td>{AC.fmtL(r.volume)}</td>
-                  <td><TierCell r={r} /></td>
-                  <td>{AC.fmtRM(r.base)}</td>
-                  <td><KpiTierCell r={r} /></td>
-                  <td style={{textAlign:"right"}}><CurrencyPill>{AC.fmtRM(r.commission)}</CurrencyPill></td>
-                  <td><ValidityCell r={r} expiring={expiring && r.end.includes("2028")} /></td>
-                  <td><Icon name="chevron_right" size={18} color="#BBBBBB" /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <Pager page={spPage} perPage={spPerPage} total={month.rows.length} onPage={setSpPage} onPerPage={(v) => { setSpPerPage(v); setSpPage(1); }} perPageOptions={[10, 50, 100]} />
+
+      {/* ── Mobile cards — same hierarchy: SP → Volume → Tier → Actual → KPI Tier → Final ── */}
+      <div className="ml-sp-mob">
+        {spRows.map((r) => (
+          <div key={r.sp} className="ml-sp-mob-card" onClick={() => setDrawer(r)}>
+            <div className="ml-sp-mob-head">
+              <SpAccountCell r={r} />
+              <CurrencyPill>{AC.fmtRM(r.commission)}</CurrencyPill>
+            </div>
+            <div className="ml-sp-mob-metas">
+              <div><span className="ml-k">Volume</span><b>{AC.fmtL(r.volume)}</b></div>
+              <div><span className="ml-k">Commission Tier</span>
+                <b>{AC.fmtRate(r.tier.rate)}</b>
+                <span className="ml-sub-xs" style={{display:"block"}}>{r.tier.label}</span>
+              </div>
+              <div><span className="ml-k">Actual Commission</span><b>{AC.fmtRM(r.base)}</b></div>
+              <div><span className="ml-k">KPI Tier</span>
+                <b>{r.appliedMult}%</b>
+                {(r.isException || r.pending) && <span className="ml-sub-xs" style={{display:"block"}}>New SP Account</span>}
+              </div>
+              <div><span className="ml-k">Final Commission</span><b className="ml-green">{AC.fmtRM(r.commission)}</b></div>
+            </div>
+          </div>
+        ))}
+        <div style={{fontSize:12,color:"var(--fg-tertiary)",paddingTop:4}}>
+          {month.activeCount} accounts · actual × KPI {month.mult}% = <b className="ml-green">{AC.fmtRM(month.summary.commission)}</b>
         </div>
         <Pager page={spPage} perPage={spPerPage} total={month.rows.length} onPage={setSpPage} onPerPage={(v) => { setSpPerPage(v); setSpPage(1); }} perPageOptions={[10, 50, 100]} />
-
-        {/* ── Mobile cards — same hierarchy: SP → Volume → Tier → Actual → KPI Tier → Final ── */}
-        <div className="ml-sp-mob">
-          {spRows.map((r) => (
-            <div key={r.sp} className="ml-sp-mob-card" onClick={() => setDrawer(r)}>
-              <div className="ml-sp-mob-head">
-                <SpAccountCell r={r} />
-                <CurrencyPill>{AC.fmtRM(r.commission)}</CurrencyPill>
-              </div>
-              <div className="ml-sp-mob-metas">
-                <div><span className="ml-k">Volume</span><b>{AC.fmtL(r.volume)}</b></div>
-                <div><span className="ml-k">Commission Tier</span>
-                  <b>{AC.fmtRate(r.tier.rate)}</b>
-                  <span className="ml-sub-xs" style={{display:"block"}}>{r.tier.label}</span>
-                </div>
-                <div><span className="ml-k">Actual Commission</span><b>{AC.fmtRM(r.base)}</b></div>
-                <div><span className="ml-k">KPI Tier</span>
-                  <b>{r.appliedMult}%</b>
-                  {(r.isException || r.pending) && <span className="ml-sub-xs" style={{display:"block"}}>New SP Account</span>}
-                </div>
-                <div><span className="ml-k">Final Commission</span><b className="ml-green">{AC.fmtRM(r.commission)}</b></div>
-              </div>
-            </div>
-          ))}
-          <div style={{fontSize:12,color:"var(--fg-tertiary)",paddingTop:4}}>
-            {month.activeCount} accounts · actual × KPI {month.mult}% = <b className="ml-green">{AC.fmtRM(month.summary.commission)}</b>
-          </div>
-          <Pager page={spPage} perPage={spPerPage} total={month.rows.length} onPage={setSpPage} onPerPage={(v) => { setSpPerPage(v); setSpPage(1); }} perPageOptions={[10, 50, 100]} />
-        </div>
       </div>
 
       <TxnModal row={drawer} monthLabel={month.label} onClose={() => setDrawer(null)} />

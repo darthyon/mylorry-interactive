@@ -83,7 +83,7 @@ function History({ history }) {
                                 <thead>
                                   <tr>
                                     <th>SP Account</th><th>Volume</th>
-                                    <th>Tier · rate</th><th>Base</th>
+                                    <th>Tier · rate</th><th>Actual Commission</th>
                                     <th>KPI Tier</th>
                                     <th style={{textAlign:"right"}}>Commission</th>
                                   </tr>

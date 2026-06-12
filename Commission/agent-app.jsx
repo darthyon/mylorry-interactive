@@ -53,9 +53,6 @@ function AgentApp() {
 
         {view === "dashboard" ? <Dashboard model={model} history={history} t={t} /> : <History history={history} />}
 
-        <div className="ml-footer-note">
-          MyLorry · Agent Portal — Commission (Phase 1 prototype). Figures are provisional until the 4th-of-month rebate run settles. Payout requests are out of scope for V1.
-        </div>
       </main>
 
       <TweaksPanel title="Tweaks">

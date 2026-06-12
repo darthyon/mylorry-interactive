@@ -116,7 +116,7 @@ function History({
       className: "ml-expand-inner"
     }, /*#__PURE__*/React.createElement("table", {
       className: "ml-subtable"
-    }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "SP Account"), /*#__PURE__*/React.createElement("th", null, "Volume"), /*#__PURE__*/React.createElement("th", null, "Tier \xB7 rate"), /*#__PURE__*/React.createElement("th", null, "Base"), /*#__PURE__*/React.createElement("th", null, "KPI Tier"), /*#__PURE__*/React.createElement("th", {
+    }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "SP Account"), /*#__PURE__*/React.createElement("th", null, "Volume"), /*#__PURE__*/React.createElement("th", null, "Tier \xB7 rate"), /*#__PURE__*/React.createElement("th", null, "Actual Commission"), /*#__PURE__*/React.createElement("th", null, "KPI Tier"), /*#__PURE__*/React.createElement("th", {
       style: {
         textAlign: "right"
       }

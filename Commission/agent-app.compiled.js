@@ -75,9 +75,7 @@ function AgentApp() {
     t: t
   }) : /*#__PURE__*/React.createElement(History, {
     history: history
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "ml-footer-note"
-  }, "MyLorry \xB7 Agent Portal \u2014 Commission (Phase 1 prototype). Figures are provisional until the 4th-of-month rebate run settles. Payout requests are out of scope for V1.")), /*#__PURE__*/React.createElement(TweaksPanel, {
+  })), /*#__PURE__*/React.createElement(TweaksPanel, {
     title: "Tweaks"
   }, /*#__PURE__*/React.createElement(TweakSection, {
     label: "KPI scenario (what-if)"

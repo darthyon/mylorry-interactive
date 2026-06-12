@@ -22,7 +22,6 @@ const HOST_NAV = [
   { key:"mytrip",       label:"MyTrip",             icon:"alt_route" },
 ];
 
-// Host-specific aliases (same component, different name for historical reasons)
 const HIcon = Icon;
 const HBadge = Badge;
 const HCurrencyPill = CurrencyPill;
@@ -32,7 +31,6 @@ const HExportMenu = ({ comingSoon = true }) => <ExportMenu comingSoon={comingSoo
 const HAccountStatusBadge = AccountStatusBadge;
 const HKPIProgress = KPIProgress;
 
-// Host-specific wrappers
 function HostSidebar({ active = "agent" }) {
   return <Sidebar active={active} onNav={null} navItems={HOST_NAV} badgeLabel="HOST" />;
 }
@@ -40,7 +38,6 @@ function HostTopBar() {
   return <TopBar />;
 }
 
-// Re-export everything to window with the same names existing code expects
 Object.assign(window, {
   HIcon, HostTopBar, HostSidebar, HBadge, HAccountStatusBadge, HKPIProgress,
   HCurrencyPill, HCardHead, HPager, HExportMenu,
