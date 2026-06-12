@@ -1,3 +1,4 @@
+(function(){
 // shared-shell.jsx — Shared shell components for both Agent and Host portals.
 // Exposes: Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu,
 //   CurrencyPill, SummaryCard, KpiTierChip, AccountStatusBadge, KPIProgress.
@@ -420,6 +421,36 @@ function KPIProgress({
   }, tip), document.body));
 }
 
+/* ─── Petron provider logo mark ─────────────────────────────── */
+// Petron brand mark — navy square with the red double-swoosh. Approximated as
+// inline SVG (no licensed asset in repo) for the single fuel provider (MyFuel).
+function PetronLogo({
+  size = 16
+}) {
+  return /*#__PURE__*/React.createElement("svg", {
+    className: "ml-petron-logo",
+    width: size,
+    height: size,
+    viewBox: "0 0 32 32",
+    role: "img",
+    "aria-label": "Petron",
+    style: {
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("rect", {
+    width: "32",
+    height: "32",
+    rx: "5",
+    fill: "#0A2472"
+  }), /*#__PURE__*/React.createElement("path", {
+    fill: "#ED1C24",
+    d: "M5.5 27c2.6-7.4 8.8-7.7 12.1-10.6 2.4-2.1 3.1-4.6 3.4-7.4-1.6 3.9-4.7 5-8 6.2C8.9 16.7 6.4 19.7 5.5 27z"
+  }), /*#__PURE__*/React.createElement("path", {
+    fill: "#ED1C24",
+    d: "M13 26.5c2.2-6 7.7-6.6 10.8-9.2 2.6-2.2 3.4-5.2 3.7-9.3-1.2 4.6-3.9 6.3-7.5 7.9-3.6 1.6-6.2 4.4-7 10.6z"
+  }));
+}
+
 /* ─── Export to window ─────────────────────────────────────── */
 window.SharedShell = {
   Icon,
@@ -434,5 +465,7 @@ window.SharedShell = {
   SummaryCard,
   KpiTierChip,
   AccountStatusBadge,
-  KPIProgress
+  KPIProgress,
+  PetronLogo
 };
+})();

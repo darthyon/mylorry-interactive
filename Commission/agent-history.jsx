@@ -23,7 +23,7 @@ function History({ history }) {
         </div>
         <div style={{flex:"1 1 220px",maxWidth:400}}>
           <SummaryCard icon="local_gas_station" title="Volume · 2026 YTD" sub="All SP accounts"
-            value={AC.fmtL(totalVol)} accent="#0081AA" />
+            value={AC.fmtL(totalVol)} />
         </div>
       </div>
 
@@ -34,7 +34,7 @@ function History({ history }) {
           {history.map((h) => (
             <div className="ml-bar-col" key={h.key}>
               <div className="ml-bar"
-                style={{ height: (h.commission / maxC * 100) + "%", opacity: h.state === "Pending" ? 0.5 : 1 }}
+                style={{ height: (h.commission / maxC * 100) + "%", opacity: h.index === 11 ? 0.5 : 1 }}
                 title={AC.fmtRM(h.commission)} />
               <span className="ml-bar-x">{h.month}</span>
             </div>
@@ -57,8 +57,7 @@ function History({ history }) {
                   <th style={{width:40}}></th>
                   <th style={{minWidth:140}}>Period</th>
                   <th>Volume</th>
-                  <th>KPI multiplier</th>
-                  <th>State</th>
+                  <th>KPI Tier</th>
                   <th style={{textAlign:"right"}}>Commission</th>
                 </tr>
               </thead>
@@ -73,24 +72,19 @@ function History({ history }) {
                         <td><b>{h.key}</b></td>
                         <td>{AC.fmtL(h.volume)}</td>
                         <td><span className="ml-mult">{h.mult}%</span></td>
-                        <td>{h.state === "Pending"
-                          ? <Badge kind="pending">Pending</Badge>
-                          : h.state === "Approved"
-                          ? <Badge kind="active">Approved</Badge>
-                          : <Badge kind="active">Paid</Badge>}</td>
                         <td style={{textAlign:"right"}}><b>{AC.fmtRM(h.commission)}</b></td>
                       </tr>
                       {isOpen && (
                         <tr className="ml-expand">
                           <td></td>
-                          <td colSpan={5}>
+                          <td colSpan={4}>
                             <div className="ml-expand-inner">
                               <table className="ml-subtable">
                                 <thead>
                                   <tr>
                                     <th>SP Account</th><th>Volume</th>
                                     <th>Tier · rate</th><th>Base</th>
-                                    <th>Mult</th>
+                                    <th>KPI Tier</th>
                                     <th style={{textAlign:"right"}}>Commission</th>
                                   </tr>
                                 </thead>
@@ -141,13 +135,7 @@ function History({ history }) {
                 <div className="ml-hist-mob-head">
                   <div>
                     <b style={{fontSize:14,color:"var(--fg-primary)"}}>{h.key}</b>
-                    <div style={{marginTop:4}}>
-                      {h.state === "Pending"
-                        ? <Badge kind="pending">Pending</Badge>
-                        : h.state === "Approved"
-                        ? <Badge kind="active">Approved</Badge>
-                        : <Badge kind="active">Paid</Badge>}
-                    </div>
+                    <div style={{marginTop:4,fontSize:11,color:"var(--fg-tertiary)"}}>{AC.fmtL(h.volume)}</div>
                   </div>
                   <div style={{textAlign:"right"}}>
                     <b style={{fontSize:15,color:"var(--green-600)"}}>{AC.fmtRM(h.commission)}</b>

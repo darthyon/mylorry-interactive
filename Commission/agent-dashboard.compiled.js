@@ -13,81 +13,78 @@ function gaugeStyle(pct) {
   };
 }
 
-// KPI tier threshold track (recommended) — shows the three bands, the 75% / 100%
-// thresholds, and a marker for where the agent currently sits.
-const TT_MAX = 125;
-function TierTrack({
+// KPI tier segmented bar — mirrors the Host Agent Config SegmentedProgressView:
+// 10 discrete cells tinted by their multiplier zone (light tint until reached,
+// saturated zone colour once achieved), with ticks at the tier boundaries.
+const segColor = m => m >= 100 ? "var(--green-600)" : m > 0 ? "var(--amber-500)" : "var(--red-400)";
+const segFill = m => m >= 100 ? "#E4F6EC" : m > 0 ? "var(--amber-50)" : "#FCEBEC";
+// Ascending zones {from,to,mult,tier,isFinal} derived from the KPI thresholds.
+function kpiSegZones() {
+  const asc = [...AC.KPI.thresholds].sort((a, b) => a.min - b.min);
+  const finalMin = asc[asc.length - 1].min;
+  const axisMax = Math.max(100, Math.ceil(finalMin * 1.25)); // headroom above 100%
+  const zones = asc.map((t, i) => ({
+    from: t.min,
+    to: asc[i + 1] ? asc[i + 1].min : axisMax,
+    mult: t.mult,
+    tier: t.tier,
+    isFinal: i === asc.length - 1
+  }));
+  return {
+    zones,
+    axisMax
+  };
+}
+const segZoneOf = (pct, zones) => zones.find(z => pct >= z.from && pct < z.to) || zones[zones.length - 1];
+const segRange = z => z.isFinal ? `≥ ${z.from}%` : `${z.from}%–${z.to}%`;
+function KpiSegBar({
   pct
 }) {
-  const [tipZone, setTipZone] = React.useState(null);
-  const pos = Math.min(pct, TT_MAX) / TT_MAX * 100;
-  const markCol = pct >= 100 ? "#00AA4F" : pct >= 75 ? "#0081AA" : "#D14B4D";
-  const zones = [{
-    key: "z3",
-    cls: "z3",
-    label: "Tier 3",
-    detail: "<75% · 0%",
-    width: 75 / TT_MAX * 100 + "%"
-  }, {
-    key: "z2",
-    cls: "z2",
-    label: "Tier 2",
-    detail: "75–100% · 50%",
-    width: 25 / TT_MAX * 100 + "%"
-  }, {
-    key: "z1",
-    cls: "z1",
-    label: "Tier 1",
-    detail: "≥100% · 100%",
-    width: 25 / TT_MAX * 100 + "%"
-  }];
+  const {
+    zones,
+    axisMax
+  } = kpiSegZones();
+  const CELLS = 10,
+    STEP = axisMax / CELLS;
+  const pos = p => Math.min(p, axisMax) / axisMax * 100;
+  const ticks = zones.filter(z => z.from > 0).map(z => z.from);
+  const cells = Array.from({
+    length: CELLS
+  }, (_, i) => {
+    const from = i * STEP;
+    const z = segZoneOf(from + STEP / 2, zones) || {};
+    const reached = pct > from;
+    return {
+      bg: reached ? z.mult != null ? segColor(z.mult) : "var(--fg-tertiary)" : segFill(z.mult) || "#EDEDED",
+      tier: z.tier,
+      range: z.from != null ? segRange(z) : "",
+      mult: z.mult
+    };
+  });
   return /*#__PURE__*/React.createElement("div", {
-    className: "ml-tt"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ml-tt-bar"
-  }, zones.map(z => /*#__PURE__*/React.createElement("div", {
-    key: z.key,
-    className: "ml-tt-zone " + z.cls,
+    className: "hac-kpiaxis",
     style: {
-      width: z.width
-    },
-    onClick: () => setTipZone(tipZone === z.key ? null : z.key)
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "ml-tz-full"
-  }, z.label, ": ", z.detail), /*#__PURE__*/React.createElement("span", {
-    className: "ml-tz-short"
-  }, z.label), tipZone === z.key && /*#__PURE__*/React.createElement("div", {
-    className: "ml-tz-tip"
-  }, z.detail))), /*#__PURE__*/React.createElement("div", {
-    className: "ml-tt-marker",
-    style: {
-      left: pos + "%",
-      borderColor: markCol
+      marginTop: 4
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "ml-tt-flag",
+    className: "hac-kpiseg"
+  }, cells.map((c, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "hac-kpiseg-cell ml-tooltip-wrap",
     style: {
-      background: markCol
+      background: c.bg
     }
-  }, pct.toFixed(1), "%"))), /*#__PURE__*/React.createElement("div", {
-    className: "ml-tt-ticks"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, c.tier && /*#__PURE__*/React.createElement("span", {
+    className: "ml-tooltip"
+  }, /*#__PURE__*/React.createElement("b", null, c.tier), /*#__PURE__*/React.createElement("br", null), c.range, " \xB7 ", c.mult, "% multiplier")))), /*#__PURE__*/React.createElement("div", {
+    className: "hac-kpiaxis-ticks"
+  }, ticks.map(t => /*#__PURE__*/React.createElement("span", {
+    key: t,
+    className: "hac-kpiaxis-tick",
     style: {
-      left: "0%"
+      left: pos(t) + "%"
     }
-  }, "0%"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      left: 75 / TT_MAX * 100 + "%"
-    }
-  }, "75%"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      left: 100 / TT_MAX * 100 + "%"
-    }
-  }, "100%"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      left: "100%"
-    }
-  }, TT_MAX, "%")));
+  }, t, "%"))));
 }
 function KpiHero({
   m,
@@ -260,7 +257,7 @@ function KpiHero({
     className: "ml-kpi-hero col"
   }, /*#__PURE__*/React.createElement("div", {
     className: "ml-kpi-body"
-  }, head, nums, /*#__PURE__*/React.createElement(TierTrack, {
+  }, head, nums, /*#__PURE__*/React.createElement(KpiSegBar, {
     pct: pct
   })), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -283,31 +280,57 @@ function KpiHero({
     }
   }, formulaInner)));
 }
-function ExceptionCell({
+// Volume range for a tier, e.g. "45,001 L and above".
+function tierRange(t) {
+  const from = t.from.toLocaleString("en-US");
+  if (t.to == null) return from + " L and above";
+  return from + " – " + t.to.toLocaleString("en-US") + " L";
+}
+
+// Commission Tier — rate primary, tier secondary, range on hover.
+function TierCell({
   r
 }) {
-  if (r.isException) {
-    const label = r.exception.mode === "custom" ? `${r.exception.rate}% · custom` : `${r.exception.rate}% · auto`;
-    return /*#__PURE__*/React.createElement("div", {
-      className: "ml-stack"
-    }, /*#__PURE__*/React.createElement(Badge, {
-      kind: "new"
-    }, "New org"), /*#__PURE__*/React.createElement("span", {
-      className: "ml-sub-xs"
-    }, label));
-  }
+  return /*#__PURE__*/React.createElement("span", {
+    className: "ml-tooltip-wrap"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "ml-stack ml-tier-cell"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "ml-tier-rate"
+  }, AC.fmtRate(r.tier.rate)), /*#__PURE__*/React.createElement("span", {
+    className: "ml-sub-xs"
+  }, r.tier.label)), /*#__PURE__*/React.createElement("span", {
+    className: "ml-tooltip"
+  }, r.tier.label, " \xB7 ", tierRange(r.tier)));
+}
+
+// KPI Tier — applied multiplier primary; "New SP Account" sublabel for new/pending.
+function KpiTierCell({
+  r
+}) {
   return /*#__PURE__*/React.createElement("div", {
     className: "ml-stack"
   }, /*#__PURE__*/React.createElement("span", {
     className: "ml-mult"
   }, r.appliedMult, "%"), /*#__PURE__*/React.createElement("span", {
     className: "ml-sub-xs"
-  }, "KPI tier"));
+  }, r.isException || r.pending ? "New SP Account" : "KPI tier"));
 }
+
+// Commission Validity — activation/validity only, never payout state.
 function ValidityCell({
   r,
   expiring
 }) {
+  if (r.pending) {
+    return /*#__PURE__*/React.createElement("div", {
+      className: "ml-stack"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "ml-validity-date"
+    }, "Not active"), /*#__PURE__*/React.createElement(Badge, {
+      kind: "pending"
+    }, "Pending activation"));
+  }
   return /*#__PURE__*/React.createElement("div", {
     className: "ml-stack"
   }, /*#__PURE__*/React.createElement("span", {
@@ -318,8 +341,30 @@ function ValidityCell({
     className: "ml-sub-xs"
   }, "Active window"));
 }
+
+// Month picker — drives the commission summary + SP table (not KPI).
+// Mirrors the Host MyFuel Commission month selector (floating-label select).
+function MonthSelect({
+  history,
+  value,
+  onChange
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "hm-month-group"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "hm-month-label"
+  }, "Month"), /*#__PURE__*/React.createElement("select", {
+    className: "hm-month-select",
+    value: value,
+    onChange: e => onChange(e.target.value)
+  }, [...history].reverse().map(h => /*#__PURE__*/React.createElement("option", {
+    key: h.key,
+    value: h.key
+  }, h.label))));
+}
 function TxnModal({
   row,
+  monthLabel = "Dec 2026",
   onClose
 }) {
   if (!row) return null;
@@ -331,7 +376,7 @@ function TxnModal({
     const vol = per + (i - 2) * 120;
     const amt = vol * row.tier.rate * (row.appliedMult / 100);
     return {
-      date: `${2 + i * 5} Dec 2026`,
+      date: `${String(1 + i).padStart(2, "0")} ${monthLabel}`,
       ref: `TXN-${row.sp.split("-")[0]}-${4810 + i}`,
       vol,
       amt
@@ -352,7 +397,7 @@ function TxnModal({
     className: "ml-modal-title"
   }, row.org), /*#__PURE__*/React.createElement("div", {
     className: "ml-modal-sub"
-  }, row.sp, " \xB7 settled transactions \xB7 Dec 2026")), /*#__PURE__*/React.createElement("button", {
+  }, row.sp, " \xB7 settled transactions \xB7 ", monthLabel)), /*#__PURE__*/React.createElement("button", {
     className: "ml-icon-btn",
     onClick: onClose
   }, /*#__PURE__*/React.createElement(Icon, {
@@ -426,54 +471,84 @@ function TxnModal({
     color: "#999AA5"
   }), " Commission is calculated on confirmed (settled) Petron transactions only.")));
 }
+
+// SP Account label — org name (primary), SP number with Petron mark (secondary).
+function SpAccountCell({
+  r
+}) {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "ml-cell-main"
+  }, r.org), /*#__PURE__*/React.createElement("div", {
+    className: "ml-cell-id ml-sp-id"
+  }, /*#__PURE__*/React.createElement(PetronLogo, {
+    size: 14
+  }), r.sp));
+}
 function Dashboard({
   model,
+  history,
   t
 }) {
   const [drawer, setDrawer] = useStateD(null);
   const [spPage, setSpPage] = useStateD(1);
   const [spPerPage, setSpPerPage] = useStateD(10);
+  // Month filter — defaults to the latest month; drives summary + SP table only.
+  const [monthKey, setMonthKey] = useStateD(history[history.length - 1].key);
+  const month = history.find(h => h.key === monthKey) || history[history.length - 1];
   const expiring = t.timeMachine === "dec2028";
-  const m = model;
-  const pct = m.achievementPct;
-  const spRows = m.rows.slice((spPage - 1) * spPerPage, spPage * spPerPage);
+  const m = model; // KPI Progress stays on the live evaluation model (not month-filtered)
+  const spRows = month.rows.slice((spPage - 1) * spPerPage, spPage * spPerPage);
+  const onMonth = k => {
+    setMonthKey(k);
+    setSpPage(1);
+  };
+  const cardsCls = month.newCount > 0 ? "ml-cards4" : "ml-cards3";
   return /*#__PURE__*/React.createElement("div", {
     className: "ml-view"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ml-row ml-cards3"
-  }, /*#__PURE__*/React.createElement(SummaryCard, {
-    icon: "payments",
-    title: "Commission \xB7 This Month",
-    sub: "Dec 2026 \xB7 provisional",
-    value: AC.fmtRM(m.summary.commission),
-    trend: {
-      dir: "up",
-      val: "8%"
-    }
-  }), /*#__PURE__*/React.createElement(SummaryCard, {
-    icon: "local_gas_station",
-    title: "Portfolio Volume",
-    sub: "MTD \xB7 6 SP accounts",
-    value: AC.fmtL(m.actual),
-    trend: {
-      dir: "up",
-      val: "4%"
-    }
-  }), /*#__PURE__*/React.createElement(SummaryCard, {
-    icon: "account_balance",
-    title: "Active SP Accounts",
-    sub: "Assigned to you",
-    value: String(m.rows.length),
-    accent: "#0081AA"
-  })), /*#__PURE__*/React.createElement(KpiHero, {
+  }, /*#__PURE__*/React.createElement(KpiHero, {
     m: m,
     visual: t.kpiVisual
   }), /*#__PURE__*/React.createElement("div", {
+    className: "ml-month-head"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ml-month-head-title"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "payments",
+    size: 18,
+    color: "#00AA4F"
+  }), /*#__PURE__*/React.createElement("span", null, "Commission Overview")), /*#__PURE__*/React.createElement(MonthSelect, {
+    history: history,
+    value: monthKey,
+    onChange: onMonth
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "ml-row " + cardsCls
+  }, /*#__PURE__*/React.createElement(SummaryCard, {
+    icon: "payments",
+    title: "Total Commission",
+    sub: month.label + " · provisional",
+    value: AC.fmtRM(month.summary.commission)
+  }), /*#__PURE__*/React.createElement(SummaryCard, {
+    icon: "local_gas_station",
+    title: "Total Volume",
+    sub: "MyFuel · " + month.label,
+    value: AC.fmtL(month.volume)
+  }), /*#__PURE__*/React.createElement(SummaryCard, {
+    icon: "account_balance",
+    title: "Active SP Accounts",
+    sub: "Transacting this month",
+    value: String(month.activeCount)
+  }), month.newCount > 0 && /*#__PURE__*/React.createElement(SummaryCard, {
+    icon: "fiber_new",
+    title: "New SP Accounts",
+    sub: "Activated this month",
+    value: String(month.newCount),
+    accent: "#00AA4F"
+  })), /*#__PURE__*/React.createElement("div", {
     className: "ml-card"
   }, /*#__PURE__*/React.createElement(CardHead, {
     icon: "receipt_long",
     title: "Commission by SP Account",
-    sub: "December 2026 \xB7 click a row for transaction detail",
+    sub: month.label + " · click a row for transaction detail",
     right: /*#__PURE__*/React.createElement("span", {
       className: "ml-synced"
     }, /*#__PURE__*/React.createElement(Icon, {
@@ -487,44 +562,40 @@ function Dashboard({
     className: "ml-table"
   }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
     style: {
-      minWidth: 220
+      minWidth: 240
     }
-  }, "SP Account"), /*#__PURE__*/React.createElement("th", null, "Volume"), /*#__PURE__*/React.createElement("th", null, "Tier \xB7 rate"), /*#__PURE__*/React.createElement("th", null, "Base"), /*#__PURE__*/React.createElement("th", null, "Multiplier"), /*#__PURE__*/React.createElement("th", null, "Validity"), /*#__PURE__*/React.createElement("th", {
+  }, "SP Account"), /*#__PURE__*/React.createElement("th", null, "Volume"), /*#__PURE__*/React.createElement("th", null, "Commission Tier"), /*#__PURE__*/React.createElement("th", null, "Actual Commission"), /*#__PURE__*/React.createElement("th", null, "KPI Tier"), /*#__PURE__*/React.createElement("th", {
     style: {
       textAlign: "right"
     }
-  }, "Commission"), /*#__PURE__*/React.createElement("th", {
+  }, "Final Commission"), /*#__PURE__*/React.createElement("th", null, "Commission Validity"), /*#__PURE__*/React.createElement("th", {
     style: {
       width: 40
     }
   }))), /*#__PURE__*/React.createElement("tbody", null, spRows.map(r => /*#__PURE__*/React.createElement("tr", {
     key: r.sp,
     onClick: () => setDrawer(r)
-  }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("div", {
-    className: "ml-cell-main"
-  }, r.org), /*#__PURE__*/React.createElement("div", {
-    className: "ml-cell-id"
-  }, r.sp)), /*#__PURE__*/React.createElement("td", null, AC.fmtL(r.volume)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
-    className: "ml-tier-tag t" + r.tier.id
-  }, r.tier.label), /*#__PURE__*/React.createElement("div", {
-    className: "ml-sub-xs"
-  }, AC.fmtRate(r.tier.rate))), /*#__PURE__*/React.createElement("td", null, AC.fmtRM(r.base)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(ExceptionCell, {
+  }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(SpAccountCell, {
     r: r
-  })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(ValidityCell, {
-    r: r,
-    expiring: expiring && r.end.includes("2028")
+  })), /*#__PURE__*/React.createElement("td", null, AC.fmtL(r.volume)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(TierCell, {
+    r: r
+  })), /*#__PURE__*/React.createElement("td", null, AC.fmtRM(r.base)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(KpiTierCell, {
+    r: r
   })), /*#__PURE__*/React.createElement("td", {
     style: {
       textAlign: "right"
     }
-  }, /*#__PURE__*/React.createElement(CurrencyPill, null, AC.fmtRM(r.commission))), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(Icon, {
+  }, /*#__PURE__*/React.createElement(CurrencyPill, null, AC.fmtRM(r.commission))), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(ValidityCell, {
+    r: r,
+    expiring: expiring && r.end.includes("2028")
+  })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(Icon, {
     name: "chevron_right",
     size: 18,
     color: "#BBBBBB"
   }))))))), /*#__PURE__*/React.createElement(Pager, {
     page: spPage,
     perPage: spPerPage,
-    total: m.rows.length,
+    total: month.rows.length,
     onPage: setSpPage,
     onPerPage: v => {
       setSpPerPage(v);
@@ -539,36 +610,44 @@ function Dashboard({
     onClick: () => setDrawer(r)
   }, /*#__PURE__*/React.createElement("div", {
     className: "ml-sp-mob-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "ml-cell-main"
-  }, r.org), /*#__PURE__*/React.createElement("div", {
-    className: "ml-cell-id"
-  }, r.sp)), /*#__PURE__*/React.createElement(CurrencyPill, null, AC.fmtRM(r.commission))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(SpAccountCell, {
+    r: r
+  }), /*#__PURE__*/React.createElement(CurrencyPill, null, AC.fmtRM(r.commission))), /*#__PURE__*/React.createElement("div", {
     className: "ml-sp-mob-metas"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "ml-k"
   }, "Volume"), /*#__PURE__*/React.createElement("b", null, AC.fmtL(r.volume))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "ml-k"
-  }, "Tier \xB7 rate"), /*#__PURE__*/React.createElement("span", {
-    className: "ml-tier-tag t" + r.tier.id,
+  }, "Commission Tier"), /*#__PURE__*/React.createElement("b", null, AC.fmtRate(r.tier.rate)), /*#__PURE__*/React.createElement("span", {
+    className: "ml-sub-xs",
     style: {
-      display: "block",
-      marginTop: 2
+      display: "block"
     }
   }, r.tier.label)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "ml-k"
-  }, "Base"), /*#__PURE__*/React.createElement("b", null, AC.fmtRM(r.base)))))), /*#__PURE__*/React.createElement("div", {
+  }, "Actual Commission"), /*#__PURE__*/React.createElement("b", null, AC.fmtRM(r.base))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "ml-k"
+  }, "KPI Tier"), /*#__PURE__*/React.createElement("b", null, r.appliedMult, "%"), (r.isException || r.pending) && /*#__PURE__*/React.createElement("span", {
+    className: "ml-sub-xs",
+    style: {
+      display: "block"
+    }
+  }, "New SP Account")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "ml-k"
+  }, "Final Commission"), /*#__PURE__*/React.createElement("b", {
+    className: "ml-green"
+  }, AC.fmtRM(r.commission)))))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "var(--fg-tertiary)",
       paddingTop: 4
     }
-  }, "Total ", m.rows.length, " accounts \xB7 base \xD7 KPI ", m.mult, "% = ", /*#__PURE__*/React.createElement("b", {
+  }, month.activeCount, " accounts \xB7 actual \xD7 KPI ", month.mult, "% = ", /*#__PURE__*/React.createElement("b", {
     className: "ml-green"
-  }, AC.fmtRM(m.summary.commission))), /*#__PURE__*/React.createElement(Pager, {
+  }, AC.fmtRM(month.summary.commission))), /*#__PURE__*/React.createElement(Pager, {
     page: spPage,
     perPage: spPerPage,
-    total: m.rows.length,
+    total: month.rows.length,
     onPage: setSpPage,
     onPerPage: v => {
       setSpPerPage(v);
@@ -577,11 +656,11 @@ function Dashboard({
     perPageOptions: [10, 50, 100]
   }))), /*#__PURE__*/React.createElement(TxnModal, {
     row: drawer,
+    monthLabel: month.label,
     onClose: () => setDrawer(null)
   }));
 }
 Object.assign(window, {
   Dashboard
 });
-
 })();

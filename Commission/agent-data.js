@@ -88,29 +88,47 @@
   const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   // per-month volume factor vs the Dec snapshot, to make the trend feel real
   const FACTOR = [0.62,0.55,0.71,0.74,0.80,0.86,0.78,0.83,0.91,0.88,0.94,1.00];
+  // index 0-11 of the month an org first transacted in 2026 (null = pre-2026)
+  function firstUsageMonthIdx(o) {
+    const mu = (o.firstUsage || "").match(/([A-Za-z]{3}) (\d{4})/);
+    if (!mu || Number(mu[2]) !== 2026) return null;
+    return MONTHS.indexOf(mu[1]);
+  }
   function buildHistory() {
     // 2026 multiplier is locked at 100% (from the Dec 2025 evaluation).
     return MONTHS.map((m, i) => {
       const f = FACTOR[i];
       // orgs only contribute from their effective month
-      const effMonth = { "Jul": 6, "Feb": 1 };
       const active = ORGS.filter((o) => {
         if (o.sp === "PIN-PTN-033") return i >= 6; // Jul
         if (o.sp === "RAP-PTN-021") return i >= 1; // Feb
         return true;
       });
+      // rows expose the same shape as compute() so the SP table reads one model.
       const rows = active.map((o) => {
-        const vol = Math.round(o.volume * f / 100) * 100;
-        const tier = tierFor(vol);
-        const base = vol * tier.rate;
-        const applied = o.exception ? o.exception.rate : 100;
-        return { sp: o.sp, org: o.org, vol, tier, base, applied, commission: base * applied / 100, isException: !!o.exception };
+        const volume = Math.round(o.volume * f / 100) * 100;
+        const tier = tierFor(volume);
+        const base = volume * tier.rate;
+        const appliedMult = o.exception ? o.exception.rate : 100;
+        const newThisMonth = firstUsageMonthIdx(o) === i;
+        return {
+          sp: o.sp, org: o.org, volume, vol: volume, tier, base,
+          appliedMult, applied: appliedMult, commission: base * appliedMult / 100,
+          isException: !!o.exception, exception: o.exception,
+          eff: o.eff, end: o.end, firstUsage: o.firstUsage,
+          pending: volume === 0, newThisMonth,
+        };
       });
-      const vol = rows.reduce((s, r) => s + r.vol, 0);
-      const commission = rows.reduce((s, r) => s + r.commission, 0);
+      const volume = rows.reduce((s, r) => s + r.volume, 0);
+      const summary = {
+        base: rows.reduce((s, r) => s + r.base, 0),
+        commission: rows.reduce((s, r) => s + r.commission, 0),
+      };
+      const newCount = active.filter((o) => firstUsageMonthIdx(o) === i).length;
       return {
-        key: m + " 2026", month: m, year: 2026,
-        volume: vol, mult: 100, commission,
+        key: m + " 2026", label: m + " 2026", month: m, year: 2026, index: i,
+        volume, mult: 100, commission: summary.commission, summary,
+        activeCount: rows.length, newCount,
         state: i === 11 ? "Pending" : i === 10 ? "Approved" : "Paid",
         rows,
       };

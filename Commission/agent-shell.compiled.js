@@ -15,7 +15,8 @@ const {
   SummaryCard,
   KpiTierChip,
   AccountStatusBadge,
-  KPIProgress
+  KPIProgress,
+  PetronLogo
 } = window.SharedShell;
 const AGENT_NAV = [{
   key: "dashboard",
@@ -93,6 +94,7 @@ Object.assign(window, {
   CardHead,
   ExportMenu,
   Pager,
+  PetronLogo,
   // Bonus re-exports for anything that might reference them
   AccountStatusBadge,
   KPIProgress
