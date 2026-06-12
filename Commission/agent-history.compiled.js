@@ -45,8 +45,7 @@ function History({
     icon: "local_gas_station",
     title: "Volume \xB7 2026 YTD",
     sub: "All SP accounts",
-    value: AC.fmtL(totalVol),
-    accent: "#0081AA"
+    value: AC.fmtL(totalVol)
   }))), /*#__PURE__*/React.createElement("div", {
     className: "ml-card"
   }, /*#__PURE__*/React.createElement(CardHead, {
@@ -62,7 +61,7 @@ function History({
     className: "ml-bar",
     style: {
       height: h.commission / maxC * 100 + "%",
-      opacity: h.state === "Pending" ? 0.5 : 1
+      opacity: h.index === 11 ? 0.5 : 1
     },
     title: AC.fmtRM(h.commission)
   }), /*#__PURE__*/React.createElement("span", {
@@ -88,7 +87,7 @@ function History({
     style: {
       minWidth: 140
     }
-  }, "Period"), /*#__PURE__*/React.createElement("th", null, "Volume"), /*#__PURE__*/React.createElement("th", null, "KPI multiplier"), /*#__PURE__*/React.createElement("th", null, "State"), /*#__PURE__*/React.createElement("th", {
+  }, "Period"), /*#__PURE__*/React.createElement("th", null, "Volume"), /*#__PURE__*/React.createElement("th", null, "KPI Tier"), /*#__PURE__*/React.createElement("th", {
     style: {
       textAlign: "right"
     }
@@ -105,25 +104,19 @@ function History({
       color: "#999AA5"
     })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("b", null, h.key)), /*#__PURE__*/React.createElement("td", null, AC.fmtL(h.volume)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
       className: "ml-mult"
-    }, h.mult, "%")), /*#__PURE__*/React.createElement("td", null, h.state === "Pending" ? /*#__PURE__*/React.createElement(Badge, {
-      kind: "pending"
-    }, "Pending") : h.state === "Approved" ? /*#__PURE__*/React.createElement(Badge, {
-      kind: "active"
-    }, "Approved") : /*#__PURE__*/React.createElement(Badge, {
-      kind: "active"
-    }, "Paid")), /*#__PURE__*/React.createElement("td", {
+    }, h.mult, "%")), /*#__PURE__*/React.createElement("td", {
       style: {
         textAlign: "right"
       }
     }, /*#__PURE__*/React.createElement("b", null, AC.fmtRM(h.commission)))), isOpen && /*#__PURE__*/React.createElement("tr", {
       className: "ml-expand"
     }, /*#__PURE__*/React.createElement("td", null), /*#__PURE__*/React.createElement("td", {
-      colSpan: 5
+      colSpan: 4
     }, /*#__PURE__*/React.createElement("div", {
       className: "ml-expand-inner"
     }, /*#__PURE__*/React.createElement("table", {
       className: "ml-subtable"
-    }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "SP Account"), /*#__PURE__*/React.createElement("th", null, "Volume"), /*#__PURE__*/React.createElement("th", null, "Tier \xB7 rate"), /*#__PURE__*/React.createElement("th", null, "Base"), /*#__PURE__*/React.createElement("th", null, "Mult"), /*#__PURE__*/React.createElement("th", {
+    }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "SP Account"), /*#__PURE__*/React.createElement("th", null, "Volume"), /*#__PURE__*/React.createElement("th", null, "Tier \xB7 rate"), /*#__PURE__*/React.createElement("th", null, "Base"), /*#__PURE__*/React.createElement("th", null, "KPI Tier"), /*#__PURE__*/React.createElement("th", {
       style: {
         textAlign: "right"
       }
@@ -179,15 +172,11 @@ function History({
       }
     }, h.key), /*#__PURE__*/React.createElement("div", {
       style: {
-        marginTop: 4
+        marginTop: 4,
+        fontSize: 11,
+        color: "var(--fg-tertiary)"
       }
-    }, h.state === "Pending" ? /*#__PURE__*/React.createElement(Badge, {
-      kind: "pending"
-    }, "Pending") : h.state === "Approved" ? /*#__PURE__*/React.createElement(Badge, {
-      kind: "active"
-    }, "Approved") : /*#__PURE__*/React.createElement(Badge, {
-      kind: "active"
-    }, "Paid"))), /*#__PURE__*/React.createElement("div", {
+    }, AC.fmtL(h.volume))), /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: "right"
       }
@@ -270,5 +259,4 @@ function History({
 Object.assign(window, {
   History
 });
-
 })();

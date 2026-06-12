@@ -9,38 +9,54 @@ function gaugeStyle(pct) {
   return { background: `conic-gradient(${col} ${deg}deg, #E9E9E9 ${deg}deg 360deg)` };
 }
 
-// KPI tier threshold track (recommended) — shows the three bands, the 75% / 100%
-// thresholds, and a marker for where the agent currently sits.
-const TT_MAX = 125;
-function TierTrack({ pct }) {
-  const [tipZone, setTipZone] = React.useState(null);
-  const pos = Math.min(pct, TT_MAX) / TT_MAX * 100;
-  const markCol = pct >= 100 ? "#00AA4F" : pct >= 75 ? "#0081AA" : "#D14B4D";
-  const zones = [
-    { key: "z3", cls: "z3", label: "Tier 3", detail: "<75% · 0%",       width: (75 / TT_MAX * 100) + "%" },
-    { key: "z2", cls: "z2", label: "Tier 2", detail: "75–100% · 50%",   width: (25 / TT_MAX * 100) + "%" },
-    { key: "z1", cls: "z1", label: "Tier 1", detail: "≥100% · 100%",    width: (25 / TT_MAX * 100) + "%" },
-  ];
+// KPI tier segmented bar — mirrors the Host Agent Config SegmentedProgressView:
+// 10 discrete cells tinted by their multiplier zone (light tint until reached,
+// saturated zone colour once achieved), with ticks at the tier boundaries.
+const segColor = m => m >= 100 ? "var(--green-600)" : m > 0 ? "var(--amber-500)" : "var(--red-400)";
+const segFill  = m => m >= 100 ? "#E4F6EC"          : m > 0 ? "var(--amber-50)"  : "#FCEBEC";
+// Ascending zones {from,to,mult,tier,isFinal} derived from the KPI thresholds.
+function kpiSegZones() {
+  const asc = [...AC.KPI.thresholds].sort((a, b) => a.min - b.min);
+  const finalMin = asc[asc.length - 1].min;
+  const axisMax = Math.max(100, Math.ceil(finalMin * 1.25)); // headroom above 100%
+  const zones = asc.map((t, i) => ({
+    from: t.min, to: asc[i + 1] ? asc[i + 1].min : axisMax,
+    mult: t.mult, tier: t.tier, isFinal: i === asc.length - 1,
+  }));
+  return { zones, axisMax };
+}
+const segZoneOf = (pct, zones) => zones.find(z => pct >= z.from && pct < z.to) || zones[zones.length - 1];
+const segRange = z => z.isFinal ? `≥ ${z.from}%` : `${z.from}%–${z.to}%`;
+
+function KpiSegBar({ pct }) {
+  const { zones, axisMax } = kpiSegZones();
+  const CELLS = 10, STEP = axisMax / CELLS;
+  const pos = p => Math.min(p, axisMax) / axisMax * 100;
+  const ticks = zones.filter(z => z.from > 0).map(z => z.from);
+  const cells = Array.from({ length: CELLS }, (_, i) => {
+    const from = i * STEP;
+    const z = segZoneOf(from + STEP / 2, zones) || {};
+    const reached = pct > from;
+    return {
+      bg: reached ? (z.mult != null ? segColor(z.mult) : "var(--fg-tertiary)") : (segFill(z.mult) || "#EDEDED"),
+      tier: z.tier, range: z.from != null ? segRange(z) : "", mult: z.mult,
+    };
+  });
   return (
-    <div className="ml-tt">
-      <div className="ml-tt-bar">
-        {zones.map(z => (
-          <div key={z.key} className={"ml-tt-zone " + z.cls} style={{ width: z.width }}
-            onClick={() => setTipZone(tipZone === z.key ? null : z.key)}>
-            <span className="ml-tz-full">{z.label}: {z.detail}</span>
-            <span className="ml-tz-short">{z.label}</span>
-            {tipZone === z.key && <div className="ml-tz-tip">{z.detail}</div>}
+    <div className="hac-kpiaxis" style={{ marginTop: 4 }}>
+      <div className="hac-kpiseg">
+        {cells.map((c, i) => (
+          <div key={i} className="hac-kpiseg-cell ml-tooltip-wrap" style={{ background: c.bg }}>
+            {c.tier && (
+              <span className="ml-tooltip"><b>{c.tier}</b><br />{c.range} · {c.mult}% multiplier</span>
+            )}
           </div>
         ))}
-        <div className="ml-tt-marker" style={{ left: pos + "%", borderColor: markCol }}>
-          <div className="ml-tt-flag" style={{ background: markCol }}>{pct.toFixed(1)}%</div>
-        </div>
       </div>
-      <div className="ml-tt-ticks">
-        <span style={{ left: "0%" }}>0%</span>
-        <span style={{ left: (75 / TT_MAX * 100) + "%" }}>75%</span>
-        <span style={{ left: (100 / TT_MAX * 100) + "%" }}>100%</span>
-        <span style={{ left: "100%" }}>{TT_MAX}%</span>
+      <div className="hac-kpiaxis-ticks">
+        {ticks.map(t => (
+          <span key={t} className="hac-kpiaxis-tick" style={{ left: pos(t) + "%" }}>{t}%</span>
+        ))}
       </div>
     </div>
   );
@@ -144,7 +160,7 @@ function KpiHero({ m, visual }) {
       <div className="ml-kpi-body">
         {head}
         {nums}
-        <TierTrack pct={pct} />
+        <KpiSegBar pct={pct} />
       </div>
       <div style={{marginTop:12,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
         <button className="ml-accordion-btn" onClick={() => setCalcOpen(v => !v)}>
@@ -158,27 +174,46 @@ function KpiHero({ m, visual }) {
     </div>
   );
 }
-function ExceptionCell({ r }) {
-  if (r.isException) {
-    const label = r.exception.mode === "custom"
-      ? `${r.exception.rate}% · custom`
-      : `${r.exception.rate}% · auto`;
-    return (
-      <div className="ml-stack">
-        <Badge kind="new">New org</Badge>
-        <span className="ml-sub-xs">{label}</span>
-      </div>
-    );
-  }
+// Volume range for a tier, e.g. "45,001 L and above".
+function tierRange(t) {
+  const from = t.from.toLocaleString("en-US");
+  if (t.to == null) return from + " L and above";
+  return from + " – " + t.to.toLocaleString("en-US") + " L";
+}
+
+// Commission Tier — rate primary, tier secondary, range on hover.
+function TierCell({ r }) {
+  return (
+    <span className="ml-tooltip-wrap">
+      <span className="ml-stack ml-tier-cell">
+        <span className="ml-tier-rate">{AC.fmtRate(r.tier.rate)}</span>
+        <span className="ml-sub-xs">{r.tier.label}</span>
+      </span>
+      <span className="ml-tooltip">{r.tier.label} · {tierRange(r.tier)}</span>
+    </span>
+  );
+}
+
+// KPI Tier — applied multiplier primary; "New SP Account" sublabel for new/pending.
+function KpiTierCell({ r }) {
   return (
     <div className="ml-stack">
       <span className="ml-mult">{r.appliedMult}%</span>
-      <span className="ml-sub-xs">KPI tier</span>
+      <span className="ml-sub-xs">{(r.isException || r.pending) ? "New SP Account" : "KPI tier"}</span>
     </div>
   );
 }
 
+// Commission Validity — activation/validity only, never payout state.
 function ValidityCell({ r, expiring }) {
+  if (r.pending) {
+    return (
+      <div className="ml-stack">
+        <span className="ml-validity-date">Not active</span>
+        <Badge kind="pending">Pending activation</Badge>
+      </div>
+    );
+  }
   return (
     <div className="ml-stack">
       <span className="ml-validity-date">{r.end}</span>
@@ -189,14 +224,27 @@ function ValidityCell({ r, expiring }) {
   );
 }
 
-function TxnModal({ row, onClose }) {
+// Month picker — drives the commission summary + SP table (not KPI).
+// Mirrors the Host MyFuel Commission month selector (floating-label select).
+function MonthSelect({ history, value, onChange }) {
+  return (
+    <div className="hm-month-group">
+      <label className="hm-month-label">Month</label>
+      <select className="hm-month-select" value={value} onChange={(e) => onChange(e.target.value)}>
+        {[...history].reverse().map((h) => <option key={h.key} value={h.key}>{h.label}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function TxnModal({ row, monthLabel = "Dec 2026", onClose }) {
   if (!row) return null;
   const n = 20;
   const per = Math.round(row.volume / n / 10) * 10;
   const allTxns = Array.from({ length: n }).map((_, i) => {
     const vol = per + (i - 2) * 120;
     const amt = vol * row.tier.rate * (row.appliedMult / 100);
-    return { date: `${2 + i * 5} Dec 2026`, ref: `TXN-${row.sp.split("-")[0]}-${4810 + i}`, vol, amt };
+    return { date: `${String(1 + i).padStart(2, "0")} ${monthLabel}`, ref: `TXN-${row.sp.split("-")[0]}-${4810 + i}`, vol, amt };
   });
   const [modalPage, setModalPage] = React.useState(1);
   const [modalPerPage, setModalPerPage] = React.useState(5);
@@ -207,7 +255,7 @@ function TxnModal({ row, onClose }) {
         <div className="ml-modal-head">
           <div>
             <div className="ml-modal-title">{row.org}</div>
-            <div className="ml-modal-sub">{row.sp} · settled transactions · Dec 2026</div>
+            <div className="ml-modal-sub">{row.sp} · settled transactions · {monthLabel}</div>
           </div>
           <button className="ml-icon-btn" onClick={onClose}><Icon name="close" size={20} /></button>
         </div>
@@ -254,33 +302,58 @@ function TxnModal({ row, onClose }) {
   );
 }
 
-function Dashboard({ model, t }) {
+// SP Account label — org name (primary), SP number with Petron mark (secondary).
+function SpAccountCell({ r }) {
+  return (
+    <div>
+      <div className="ml-cell-main">{r.org}</div>
+      <div className="ml-cell-id ml-sp-id"><PetronLogo size={14} />{r.sp}</div>
+    </div>
+  );
+}
+
+function Dashboard({ model, history, t }) {
   const [drawer, setDrawer] = useStateD(null);
   const [spPage, setSpPage] = useStateD(1);
   const [spPerPage, setSpPerPage] = useStateD(10);
+  // Month filter — defaults to the latest month; drives summary + SP table only.
+  const [monthKey, setMonthKey] = useStateD(history[history.length - 1].key);
+  const month = history.find((h) => h.key === monthKey) || history[history.length - 1];
   const expiring = t.timeMachine === "dec2028";
-  const m = model;
-  const pct = m.achievementPct;
-  const spRows = m.rows.slice((spPage - 1) * spPerPage, spPage * spPerPage);
+  const m = model; // KPI Progress stays on the live evaluation model (not month-filtered)
+  const spRows = month.rows.slice((spPage - 1) * spPerPage, spPage * spPerPage);
+  const onMonth = (k) => { setMonthKey(k); setSpPage(1); };
+  const cardsCls = month.newCount > 0 ? "ml-cards4" : "ml-cards3";
 
   return (
     <div className="ml-view">
-      {/* Summary cards */}
-      <div className="ml-row ml-cards3">
-        <SummaryCard icon="payments" title="Commission · This Month" sub="Dec 2026 · provisional"
-          value={AC.fmtRM(m.summary.commission)} trend={{ dir: "up", val: "8%" }} />
-        <SummaryCard icon="local_gas_station" title="Portfolio Volume" sub="MTD · 6 SP accounts"
-          value={AC.fmtL(m.actual)} trend={{ dir: "up", val: "4%" }} />
-        <SummaryCard icon="account_balance" title="Active SP Accounts" sub="Assigned to you"
-          value={String(m.rows.length)} accent="#0081AA" />
-      </div>
-
-      {/* KPI progress hero — NEW component */}
+      {/* 1 — KPI progress hero (top, NOT month-filtered) */}
       <KpiHero m={m} visual={t.kpiVisual} />
 
-      {/* SP breakdown */}
+      {/* 2 — Month-filtered commission summary */}
+      <div className="ml-month-head">
+        <div className="ml-month-head-title">
+          <Icon name="payments" size={18} color="#00AA4F" />
+          <span>Commission Overview</span>
+        </div>
+        <MonthSelect history={history} value={monthKey} onChange={onMonth} />
+      </div>
+      <div className={"ml-row " + cardsCls}>
+        <SummaryCard icon="payments" title="Total Commission" sub={month.label + " · provisional"}
+          value={AC.fmtRM(month.summary.commission)} />
+        <SummaryCard icon="local_gas_station" title="Total Volume" sub={"MyFuel · " + month.label}
+          value={AC.fmtL(month.volume)} />
+        <SummaryCard icon="account_balance" title="Active SP Accounts" sub="Transacting this month"
+          value={String(month.activeCount)} />
+        {month.newCount > 0 && (
+          <SummaryCard icon="fiber_new" title="New SP Accounts" sub="Activated this month"
+            value={String(month.newCount)} accent="#00AA4F" />
+        )}
+      </div>
+
+      {/* 3 — Commission by SP Account (month-filtered) */}
       <div className="ml-card">
-        <CardHead icon="receipt_long" title="Commission by SP Account" sub="December 2026 · click a row for transaction detail"
+        <CardHead icon="receipt_long" title="Commission by SP Account" sub={month.label + " · click a row for transaction detail"}
           right={<span className="ml-synced"><Icon name="sync" size={14} color="#999AA5" /> Last synced {AC.AGENT.lastSync}</span>} />
 
         {/* Desktop table */}
@@ -288,62 +361,65 @@ function Dashboard({ model, t }) {
           <table className="ml-table">
             <thead>
               <tr>
-                <th style={{minWidth:220}}>SP Account</th>
+                <th style={{minWidth:240}}>SP Account</th>
                 <th>Volume</th>
-                <th>Tier · rate</th>
-                <th>Base</th>
-                <th>Multiplier</th>
-                <th>Validity</th>
-                <th style={{textAlign:"right"}}>Commission</th>
+                <th>Commission Tier</th>
+                <th>Actual Commission</th>
+                <th>KPI Tier</th>
+                <th style={{textAlign:"right"}}>Final Commission</th>
+                <th>Commission Validity</th>
                 <th style={{width:40}}></th>
               </tr>
             </thead>
             <tbody>
               {spRows.map((r) => (
                 <tr key={r.sp} onClick={() => setDrawer(r)}>
-                  <td><div className="ml-cell-main">{r.org}</div><div className="ml-cell-id">{r.sp}</div></td>
+                  <td><SpAccountCell r={r} /></td>
                   <td>{AC.fmtL(r.volume)}</td>
-                  <td><span className={"ml-tier-tag t" + r.tier.id}>{r.tier.label}</span><div className="ml-sub-xs">{AC.fmtRate(r.tier.rate)}</div></td>
+                  <td><TierCell r={r} /></td>
                   <td>{AC.fmtRM(r.base)}</td>
-                  <td><ExceptionCell r={r} /></td>
-                  <td><ValidityCell r={r} expiring={expiring && r.end.includes("2028")} /></td>
+                  <td><KpiTierCell r={r} /></td>
                   <td style={{textAlign:"right"}}><CurrencyPill>{AC.fmtRM(r.commission)}</CurrencyPill></td>
+                  <td><ValidityCell r={r} expiring={expiring && r.end.includes("2028")} /></td>
                   <td><Icon name="chevron_right" size={18} color="#BBBBBB" /></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <Pager page={spPage} perPage={spPerPage} total={m.rows.length} onPage={setSpPage} onPerPage={(v) => { setSpPerPage(v); setSpPage(1); }} perPageOptions={[10, 50, 100]} />
+        <Pager page={spPage} perPage={spPerPage} total={month.rows.length} onPage={setSpPage} onPerPage={(v) => { setSpPerPage(v); setSpPage(1); }} perPageOptions={[10, 50, 100]} />
 
-        {/* ── Mobile cards ── */}
+        {/* ── Mobile cards — same hierarchy: SP → Volume → Tier → Actual → KPI Tier → Final ── */}
         <div className="ml-sp-mob">
           {spRows.map((r) => (
             <div key={r.sp} className="ml-sp-mob-card" onClick={() => setDrawer(r)}>
               <div className="ml-sp-mob-head">
-                <div>
-                  <div className="ml-cell-main">{r.org}</div>
-                  <div className="ml-cell-id">{r.sp}</div>
-                </div>
+                <SpAccountCell r={r} />
                 <CurrencyPill>{AC.fmtRM(r.commission)}</CurrencyPill>
               </div>
               <div className="ml-sp-mob-metas">
                 <div><span className="ml-k">Volume</span><b>{AC.fmtL(r.volume)}</b></div>
-                <div><span className="ml-k">Tier · rate</span>
-                  <span className={"ml-tier-tag t" + r.tier.id} style={{display:"block",marginTop:2}}>{r.tier.label}</span>
+                <div><span className="ml-k">Commission Tier</span>
+                  <b>{AC.fmtRate(r.tier.rate)}</b>
+                  <span className="ml-sub-xs" style={{display:"block"}}>{r.tier.label}</span>
                 </div>
-                <div><span className="ml-k">Base</span><b>{AC.fmtRM(r.base)}</b></div>
+                <div><span className="ml-k">Actual Commission</span><b>{AC.fmtRM(r.base)}</b></div>
+                <div><span className="ml-k">KPI Tier</span>
+                  <b>{r.appliedMult}%</b>
+                  {(r.isException || r.pending) && <span className="ml-sub-xs" style={{display:"block"}}>New SP Account</span>}
+                </div>
+                <div><span className="ml-k">Final Commission</span><b className="ml-green">{AC.fmtRM(r.commission)}</b></div>
               </div>
             </div>
           ))}
           <div style={{fontSize:12,color:"var(--fg-tertiary)",paddingTop:4}}>
-            Total {m.rows.length} accounts · base × KPI {m.mult}% = <b className="ml-green">{AC.fmtRM(m.summary.commission)}</b>
+            {month.activeCount} accounts · actual × KPI {month.mult}% = <b className="ml-green">{AC.fmtRM(month.summary.commission)}</b>
           </div>
-          <Pager page={spPage} perPage={spPerPage} total={m.rows.length} onPage={setSpPage} onPerPage={(v) => { setSpPerPage(v); setSpPage(1); }} perPageOptions={[10, 50, 100]} />
+          <Pager page={spPage} perPage={spPerPage} total={month.rows.length} onPage={setSpPage} onPerPage={(v) => { setSpPerPage(v); setSpPage(1); }} perPageOptions={[10, 50, 100]} />
         </div>
       </div>
 
-      <TxnModal row={drawer} onClose={() => setDrawer(null)} />
+      <TxnModal row={drawer} monthLabel={month.label} onClose={() => setDrawer(null)} />
     </div>
   );
 }

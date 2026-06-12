@@ -2,7 +2,8 @@
 // Adds Agent-specific nav and component aliases.
 
 const { Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu,
-  Pill, CurrencyPill, SummaryCard, KpiTierChip, AccountStatusBadge, KPIProgress } = window.SharedShell;
+  Pill, CurrencyPill, SummaryCard, KpiTierChip, AccountStatusBadge, KPIProgress,
+  PetronLogo } = window.SharedShell;
 
 const AGENT_NAV = [
   { key: "dashboard", label: "Dashboard", icon: "space_dashboard" },
@@ -37,6 +38,7 @@ Object.assign(window, {
   CardHead,
   ExportMenu,
   Pager,
+  PetronLogo,
   // Bonus re-exports for anything that might reference them
   AccountStatusBadge,
   KPIProgress,

@@ -93,6 +93,7 @@ function Pager({ page, perPage, total, onPage, onPerPage, perPageOptions = [10, 
         </select>
       </div>
       <div className="ml-pager-center">
+        <span className="ml-pager-range">{start}–{end} of {total}</span>
         <div className="ml-pager-nav">
           <button className="ml-pager-btn" disabled={page <= 1} onClick={() => onPage(page - 1)}>
             <Icon name="chevron_left" size={18} />
@@ -102,7 +103,6 @@ function Pager({ page, perPage, total, onPage, onPerPage, perPageOptions = [10, 
             <Icon name="chevron_right" size={18} />
           </button>
         </div>
-        <span className="ml-pager-range">{start}–{end} of {total}</span>
       </div>
     </div>
   );
@@ -240,8 +240,23 @@ function KPIProgress({ pct, actual, target, period, commissionLabel }) {
   );
 }
 
+/* ─── Petron provider logo mark ─────────────────────────────── */
+// Petron brand mark — navy square with the red double-swoosh. Approximated as
+// inline SVG (no licensed asset in repo) for the single fuel provider (MyFuel).
+function PetronLogo({ size = 16 }) {
+  return (
+    <svg className="ml-petron-logo" width={size} height={size} viewBox="0 0 32 32"
+      role="img" aria-label="Petron" style={{ flexShrink: 0 }}>
+      <rect width="32" height="32" rx="5" fill="#0A2472" />
+      <path fill="#ED1C24" d="M5.5 27c2.6-7.4 8.8-7.7 12.1-10.6 2.4-2.1 3.1-4.6 3.4-7.4-1.6 3.9-4.7 5-8 6.2C8.9 16.7 6.4 19.7 5.5 27z" />
+      <path fill="#ED1C24" d="M13 26.5c2.2-6 7.7-6.6 10.8-9.2 2.6-2.2 3.4-5.2 3.7-9.3-1.2 4.6-3.9 6.3-7.5 7.9-3.6 1.6-6.2 4.4-7 10.6z" />
+    </svg>
+  );
+}
+
 /* ─── Export to window ─────────────────────────────────────── */
 window.SharedShell = {
   Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu,
   Pill, CurrencyPill, SummaryCard, KpiTierChip, AccountStatusBadge, KPIProgress,
+  PetronLogo,
 };

@@ -13,7 +13,7 @@
   --gradient-brand:linear-gradient(to right,rgb(0,129,170),rgb(0,170,79));
   --green-600:#00AA4F; --green-500:#00AB46; --green-50:#F3FDF8;
   --teal-600:#0081AA; --navy-800:#1A2472; --red-400:#FF7476;
-  --amber-600:#B26A00; --amber-50:#FFF6E8;
+  --amber-600:#B26A00; --amber-500:#F5A623; --amber-50:#FFF6E8;
   --fg-primary:#3C3C42; --fg-secondary:#757575; --fg-tertiary:#999AA5; --fg-disabled:#BBBBBB;
   --bg-muted:#F5F5F5; --bg-hover:#FAFAFA; --bg-subtle:#F6F6F6;
   --border-light:#E9E9E9; --border-medium:#D8D8D8;
@@ -242,6 +242,35 @@ b{font-weight:600;}
 .ml-tier-tag.t1{background:#EEF7F1;color:#3C7A55;}
 .ml-tier-tag.t2{background:#EAF6FB;color:var(--teal-600);}
 .ml-tier-tag.t3{background:#EDEEF7;color:var(--navy-800);}
+
+/* ---------- SP account label + Petron logo ---------- */
+.ml-petron-logo{display:inline-block;vertical-align:middle;flex-shrink:0;border-radius:4px;}
+.ml-sp-id{display:inline-flex;align-items:center;gap:5px;}
+/* ---------- Commission tier (rate primary, tier secondary) ---------- */
+.ml-tier-cell{cursor:help;}
+.ml-tier-rate{font-size:13px;font-weight:600;color:var(--fg-primary);}
+/* ---------- Month filter ---------- */
+.ml-month-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:2px;}
+.ml-month-head-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--fg-primary);}
+/* Month picker — matches Host MyFuel Commission (floating-label select) */
+.hm-month-group{position:relative;display:inline-block;flex-shrink:0;}
+.hm-month-label{position:absolute;top:-7px;left:11px;padding:0 5px;background:#fff;z-index:1;pointer-events:none;
+  font-size:11px;font-weight:600;color:var(--fg-secondary);}
+.hm-month-select{appearance:none;-webkit-appearance:none;padding:11px 38px 11px 14px;font-size:14px;font-weight:600;
+  color:var(--fg-primary);background-color:#fff;border:1px solid var(--border-light);border-radius:10px;cursor:pointer;min-width:150px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='%235F6368'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat:no-repeat;background-position:right 10px center;}
+.hm-month-select:focus{outline:none;border-color:var(--green-500);}
+
+/* ---------- KPI segmented bar (matches Host Agent Config) ---------- */
+.hac-kpiaxis{position:relative;margin-top:4px;}
+.hac-kpiseg{display:flex;gap:3px;height:16px;}
+.hac-kpiseg-cell{flex:1;height:100%;border-radius:2px;transition:background .15s;}
+.hac-kpiseg-cell:first-child{border-top-left-radius:8px;border-bottom-left-radius:8px;}
+.hac-kpiseg-cell:last-child{border-top-right-radius:8px;border-bottom-right-radius:8px;}
+.hac-kpiaxis-ticks{position:relative;height:16px;margin-top:5px;}
+.hac-kpiaxis-tick{position:absolute;transform:translateX(-50%);font-size:11px;
+  font-weight:600;color:var(--fg-tertiary);font-variant-numeric:tabular-nums;}
 
 /* ---------- Badges / pills ---------- */
 .ml-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:4px;font-size:11.5px;font-weight:600;white-space:nowrap;}

@@ -71,6 +71,7 @@ function AgentApp() {
     size: 18
   }), " History")), view === "dashboard" ? /*#__PURE__*/React.createElement(Dashboard, {
     model: model,
+    history: history,
     t: t
   }) : /*#__PURE__*/React.createElement(History, {
     history: history
