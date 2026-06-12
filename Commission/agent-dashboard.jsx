@@ -31,9 +31,11 @@ function KpiSegBar({ pct }) {
   const CELLS = 10, STEP = axisMax / CELLS;
   const pos = p => Math.min(p, axisMax) / axisMax * 100;
   const ticks = zones.filter(z => z.from > 0).map(z => z.from);
+  const finalZone = zones[zones.length - 1];
   const cells = Array.from({ length: CELLS }, (_, i) => {
     const from = i * STEP;
-    const z = segZoneOf(from + STEP / 2, zones) || {};
+    const sampled = segZoneOf(from + STEP / 2, zones) || {};
+    const z = i === CELLS - 1 && finalZone?.from >= axisMax ? finalZone : sampled;
     const meta = KPIProgressMeta(from + STEP / 2);
     const reached = pct > from;
     return {

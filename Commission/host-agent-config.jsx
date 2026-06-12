@@ -105,6 +105,7 @@ function KPIProgressBlock({ kpi, target, thresholds }) {
   const pos = p => (Math.min(p, axisMax) / axisMax) * 100;
   // Tick marks at every interior boundary (each zone's lower bound > 0).
   const ticks = zones.filter(z => z.from > 0).map(z => z.from);
+  const finalZone = zones[zones.length - 1];
   // Discrete cells (SegmentedProgressView-style). Each cell is tinted by the
   // shared progress bands: light tint when not yet reached, saturated colour
   // once achieved. Threshold ticks remain as quiet guides only.
@@ -112,7 +113,8 @@ function KPIProgressBlock({ kpi, target, thresholds }) {
   const STEP = axisMax / CELLS;
   const cells = Array.from({ length: CELLS }, (_, i) => {
     const from = i * STEP;
-    const z = kpiZoneOf(from + STEP / 2, zones) || {};
+    const sampled = kpiZoneOf(from + STEP / 2, zones) || {};
+    const z = i === CELLS - 1 && finalZone?.from >= axisMax ? finalZone : sampled;
     const meta = KPIProgressMeta(from + STEP / 2);
     const reached = !isFuture && pct > from;
     return {
@@ -613,13 +615,13 @@ function CardMenu({ onEdit, onDelete, deleteDisabled }) {
 /* ─── Evaluation period options ──────────────────────────────── */
 const EVAL_PERIOD_GROUPS = [
   {
-    label: "Custom",
+    label: "Custom period",
     options: [
       { label: "Custom range", description: "Choose a start and end date manually. Default shortcut: Jan 1 - Dec 31." },
     ],
   },
   {
-    label: "Completed month windows",
+    label: "Recent periods",
     options: [
       { label: "Last completed month", description: "Uses the most recent completed reporting month." },
       { label: "Last 3 completed months", description: "Uses the most recent 3 completed reporting months." },
@@ -628,7 +630,7 @@ const EVAL_PERIOD_GROUPS = [
     ],
   },
   {
-    label: "Fixed calendar periods",
+    label: "Calendar periods",
     options: [
       { label: "Last completed quarter", description: "Uses the previous completed calendar quarter." },
       { label: "Last completed half year", description: "Uses the previous completed half-year period, H1 or H2." },
@@ -960,33 +962,15 @@ function CommissionSection({ kpi, editing, showHistory, setShowHistory }) {
         >
           <div className="hac-help-subtitle">Choose how KPI performance is measured over time.</div>
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-            {EVAL_PERIOD_GROUPS.map(group => (
+            {[
+              { label: "Custom period", description: "Set a specific start and end date." },
+              { label: "Recent periods", description: "Use the most recent completed month(s), such as last month or last 3 months." },
+              { label: "Calendar periods", description: "Use the previous completed quarter, half year, or year." },
+            ].map(group => (
               <div key={group.label}>
                 <div style={{ fontSize:13, fontWeight:700, color:"var(--fg-primary)", marginBottom:8 }}>{group.label}</div>
-                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                  {group.options.map(option => (
-                    <div
-                      key={option.label}
-                      style={{
-                        display:"flex",
-                        alignItems:"flex-start",
-                        justifyContent:"space-between",
-                        gap:12,
-                        paddingBottom:8,
-                        borderBottom:"1px solid var(--border-light)",
-                      }}
-                    >
-                      <div style={{ minWidth:0 }}>
-                        <div style={{ fontSize:13, fontWeight:600, color:"var(--fg-primary)" }}>{option.label}</div>
-                        <div style={{ fontSize:12, color:"var(--fg-secondary)", marginTop:2 }}>{option.description}</div>
-                      </div>
-                      {evalPeriod === option.label && (
-                        <span style={{ fontSize:11, fontWeight:700, color:"var(--green-600)", whiteSpace:"nowrap", paddingTop:1 }}>
-                          Selected
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                <div style={{ fontSize:12, color:"var(--fg-secondary)", lineHeight:1.5, paddingBottom:8, borderBottom:"1px solid var(--border-light)" }}>
+                  {group.description}
                 </div>
               </div>
             ))}
