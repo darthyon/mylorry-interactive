@@ -223,12 +223,26 @@ function AccountStatusBadge({ status = "active", prefix }) {
   return <span className={"ml-badge " + m.cls}>{prefix || ""}{m.label}</span>;
 }
 
+/* ─── KPI Progress semantics ────────────────────────────────── */
+const KPI_PROGRESS_TONES = {
+  green: { col: "var(--green-500)", solid: "var(--green-600)", fill: "#E4F6EC" },
+  amber: { col: "var(--amber-500)", solid: "var(--amber-500)", fill: "var(--amber-50)" },
+  red:   { col: "var(--red-400)",   solid: "var(--red-400)",   fill: "#FCEBEC" },
+};
+function KPIProgressMeta(pct = 0) {
+  const value = Number(pct) || 0;
+  const tone = value >= 80 ? "green" : value >= 50 ? "amber" : "red";
+  return { pct: value, tone, isAchieved: value >= 100, ...KPI_PROGRESS_TONES[tone] };
+}
+
 /* ─── KPI Progress: bar + percentage + hover tooltip ────────── */
-function KPIProgress({ pct, actual, target, period, commissionLabel }) {
+function KPIProgress({ pct, actual, target, period, commissionLabel, phase }) {
   const [hover, setHover] = useState(false);
   const [pos, setPos]     = useState({ top:0, left:0 });
   const ref = React.useRef(null);
-  const col = pct >= 75 ? "var(--green-500)" : "var(--red-400)";
+  const isFuture = phase === "future";
+  const meta = KPIProgressMeta(pct);
+  const col = isFuture ? "var(--fg-disabled)" : meta.solid;
   const show = () => {
     if (ref.current) {
       const r = ref.current.getBoundingClientRect();
@@ -236,14 +250,16 @@ function KPIProgress({ pct, actual, target, period, commissionLabel }) {
     }
     setHover(true);
   };
-  let tip = `${(actual ?? 0).toLocaleString("en-US")} L / ${(target ?? 0).toLocaleString("en-US")} L target · ${period || ""}`;
+  let tip = isFuture
+    ? `KPI progress not started yet${period ? ` · ${period}` : ""}`
+    : `${(actual ?? 0).toLocaleString("en-US")} L / ${(target ?? 0).toLocaleString("en-US")} L target · ${period || ""}`;
   if (commissionLabel) tip += ` · ${commissionLabel}`;
   return (
     <div ref={ref} className="ml-kpi-prog" onMouseEnter={show} onMouseLeave={() => setHover(false)}>
       <div className="ml-kpi-track">
-        <div className="ml-kpi-fill" style={{ width: Math.min(pct, 100) + "%", background: col }} />
+        <div className="ml-kpi-fill" style={{ width: isFuture ? "0%" : Math.min(pct, 100) + "%", background: col }} />
       </div>
-      <span className="ml-kpi-pct" style={{ color: col }}>{pct}%</span>
+      <span className="ml-kpi-pct" style={{ color: col }}>{isFuture ? "—" : `${pct}%`}</span>
       {hover && ReactDOM.createPortal(
         <div className="ml-kpi-tip" style={{ top: pos.top, left: pos.left }}>{tip}</div>,
         document.body
@@ -278,6 +294,7 @@ function PetronLogo({ size = 16 }) {
 /* ─── Export to window ─────────────────────────────────────── */
 window.SharedShell = {
   Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu,
-  Pill, CurrencyPill, SummaryCard, KpiTierChip, AccountStatusBadge, KPIProgress,
+  Pill, CurrencyPill, SummaryCard, KpiTierChip, AccountStatusBadge, KPIProgress, KPIProgressMeta,
   PetronLogo,
 };
+window.KPIProgressMeta = KPIProgressMeta;

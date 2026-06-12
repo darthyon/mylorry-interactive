@@ -1,24 +1,22 @@
 // agent-dashboard.jsx — Agent Commission Dashboard view.
 // Consumes a precomputed `model` from the app. Exports window.Dashboard.
 const { useState: useStateD } = React;
+const KPIProgressMeta = window.KPIProgressMeta;
 
 function gaugeStyle(pct) {
   const clamped = Math.max(0, Math.min(100, pct));
   const deg = clamped * 3.6;
-  const col = pct >= 100 ? "#00AA4F" : pct >= 75 ? "#0081AA" : "#FF7476";
+  const col = KPIProgressMeta(pct).solid;
   return { background: `conic-gradient(${col} ${deg}deg, #E9E9E9 ${deg}deg 360deg)` };
 }
 
 // KPI tier segmented bar — mirrors the Host Agent Config SegmentedProgressView:
-// 10 discrete cells tinted by their multiplier zone (light tint until reached,
-// saturated zone colour once achieved), with ticks at the tier boundaries.
-const segColor = m => m >= 100 ? "var(--green-600)" : m > 0 ? "var(--amber-500)" : "var(--red-400)";
-const segFill  = m => m >= 100 ? "#E4F6EC"          : m > 0 ? "var(--amber-50)"  : "#FCEBEC";
+// 10 discrete cells tinted by progress bands, with ticks at the tier boundaries.
 // Ascending zones {from,to,mult,tier,isFinal} derived from the KPI thresholds.
+// The visual axis is capped at 100% even if achievement exceeds target.
 function kpiSegZones() {
   const asc = [...AC.KPI.thresholds].sort((a, b) => a.min - b.min);
-  const finalMin = asc[asc.length - 1].min;
-  const axisMax = Math.max(100, Math.ceil(finalMin * 1.25)); // headroom above 100%
+  const axisMax = 100;
   const zones = asc.map((t, i) => ({
     from: t.min, to: asc[i + 1] ? asc[i + 1].min : axisMax,
     mult: t.mult, tier: t.tier, isFinal: i === asc.length - 1,
@@ -36,9 +34,10 @@ function KpiSegBar({ pct }) {
   const cells = Array.from({ length: CELLS }, (_, i) => {
     const from = i * STEP;
     const z = segZoneOf(from + STEP / 2, zones) || {};
+    const meta = KPIProgressMeta(from + STEP / 2);
     const reached = pct > from;
     return {
-      bg: reached ? (z.mult != null ? segColor(z.mult) : "var(--fg-tertiary)") : (segFill(z.mult) || "#EDEDED"),
+      bg: reached ? meta.solid : meta.fill,
       tier: z.tier, range: z.from != null ? segRange(z) : "", mult: z.mult,
     };
   });
@@ -65,7 +64,8 @@ function KpiSegBar({ pct }) {
 function KpiHero({ m, visual }) {
   const [calcOpen, setCalcOpen] = React.useState(false);
   const pct = m.achievementPct;
-  const fillCol = pct >= 100 ? "#00AA4F" : pct >= 75 ? "#0081AA" : "#FF7476";
+  const progressMeta = KPIProgressMeta(pct);
+  const fillCol = progressMeta.solid;
 
   const head = (
     <div className="ml-kpi-headrow">
@@ -84,14 +84,20 @@ function KpiHero({ m, visual }) {
     <div className="ml-kpi-nums">
       <div><span className="ml-k">Portfolio volume</span><b style={{color:"var(--navy-800)"}}>{AC.fmtL(m.actual)}</b></div>
       <div><span className="ml-k">Target volume</span><b style={{color:"var(--navy-800)"}}>{AC.fmtL(m.target)}</b></div>
-      <div><span className="ml-k">Target achieved</span><b className="ml-green">{pct.toFixed(1)}%</b></div>
-      <div><span className="ml-k">Applied multiplier</span><b className="ml-green">{m.mult}%</b></div>
+      <div>
+        <span className="ml-k">Target achieved</span>
+        <b style={{color:progressMeta.solid, display:"inline-flex", alignItems:"center", gap:4}}>
+          <span>{pct.toFixed(1)}%</span>
+          {progressMeta.isAchieved && <span style={{ fontSize:11, lineHeight:1 }}>✓</span>}
+        </b>
+      </div>
+      <div><span className="ml-k">Applied multiplier</span><b style={{color:"var(--navy-800)"}}>{m.mult}%</b></div>
     </div>
   );
 
   const formulaInner = (
     <div className="ml-formula">
-      <span className="ml-f-step"><span className="ml-k">Actual Commission</span><b>{AC.fmtRM(m.summary.base)}</b><span className="ml-f-note">Σ volume × tier rate</span></span>
+      <span className="ml-f-step"><span className="ml-k">Base Commission</span><b>{AC.fmtRM(m.summary.base)}</b><span className="ml-f-note">Σ volume × tier rate</span></span>
       <Icon name="close" size={14} color="#999AA5" />
       <span className="ml-f-step"><span className="ml-k">KPI multiplier</span><b>{m.mult}%</b><span className="ml-f-note">{m.note}</span></span>
       <span style={{fontSize:16,color:"#999AA5",fontWeight:600,lineHeight:1,flexShrink:0}}>=</span>
@@ -108,7 +114,7 @@ function KpiHero({ m, visual }) {
       <div className={"ml-accordion-body " + (calcOpen ? "open" : "closed")}>
         <div style={{paddingTop:14,display:"flex",flexDirection:"column",gap:14}}>
           <div className="ml-kpi-calc-step">
-            <span className="ml-k">Actual Commission</span>
+            <span className="ml-k">Base Commission</span>
             <b>{AC.fmtRM(m.summary.base)}</b>
             <span className="ml-note">Σ volume × tier rate</span>
           </div>
@@ -371,7 +377,7 @@ function Dashboard({ model, history, t }) {
               <th style={{minWidth:240}}>SP Account</th>
               <th>Volume</th>
               <th>Commission Tier</th>
-              <th>Actual Commission</th>
+              <th>Base Commission</th>
               <th>KPI Tier</th>
               <th style={{textAlign:"right"}}>Final Commission</th>
               <th>Commission Validity</th>
@@ -410,7 +416,7 @@ function Dashboard({ model, history, t }) {
                 <b>{AC.fmtRate(r.tier.rate)}</b>
                 <span className="ml-sub-xs" style={{display:"block"}}>{r.tier.label}</span>
               </div>
-              <div><span className="ml-k">Actual Commission</span><b>{AC.fmtRM(r.base)}</b></div>
+              <div><span className="ml-k">Base Commission</span><b>{AC.fmtRM(r.base)}</b></div>
               <div><span className="ml-k">KPI Tier</span>
                 <b>{r.appliedMult}%</b>
                 {(r.isException || r.pending) && <span className="ml-sub-xs" style={{display:"block"}}>New SP Account</span>}

@@ -4,25 +4,23 @@
 const {
   useState: useStateD
 } = React;
+const KPIProgressMeta = window.KPIProgressMeta;
 function gaugeStyle(pct) {
   const clamped = Math.max(0, Math.min(100, pct));
   const deg = clamped * 3.6;
-  const col = pct >= 100 ? "#00AA4F" : pct >= 75 ? "#0081AA" : "#FF7476";
+  const col = KPIProgressMeta(pct).solid;
   return {
     background: `conic-gradient(${col} ${deg}deg, #E9E9E9 ${deg}deg 360deg)`
   };
 }
 
 // KPI tier segmented bar — mirrors the Host Agent Config SegmentedProgressView:
-// 10 discrete cells tinted by their multiplier zone (light tint until reached,
-// saturated zone colour once achieved), with ticks at the tier boundaries.
-const segColor = m => m >= 100 ? "var(--green-600)" : m > 0 ? "var(--amber-500)" : "var(--red-400)";
-const segFill = m => m >= 100 ? "#E4F6EC" : m > 0 ? "var(--amber-50)" : "#FCEBEC";
+// 10 discrete cells tinted by progress bands, with ticks at the tier boundaries.
 // Ascending zones {from,to,mult,tier,isFinal} derived from the KPI thresholds.
+// The visual axis is capped at 100% even if achievement exceeds target.
 function kpiSegZones() {
   const asc = [...AC.KPI.thresholds].sort((a, b) => a.min - b.min);
-  const finalMin = asc[asc.length - 1].min;
-  const axisMax = Math.max(100, Math.ceil(finalMin * 1.25)); // headroom above 100%
+  const axisMax = 100;
   const zones = asc.map((t, i) => ({
     from: t.min,
     to: asc[i + 1] ? asc[i + 1].min : axisMax,
@@ -53,9 +51,10 @@ function KpiSegBar({
   }, (_, i) => {
     const from = i * STEP;
     const z = segZoneOf(from + STEP / 2, zones) || {};
+    const meta = KPIProgressMeta(from + STEP / 2);
     const reached = pct > from;
     return {
-      bg: reached ? z.mult != null ? segColor(z.mult) : "var(--fg-tertiary)" : segFill(z.mult) || "#EDEDED",
+      bg: reached ? meta.solid : meta.fill,
       tier: z.tier,
       range: z.from != null ? segRange(z) : "",
       mult: z.mult
@@ -92,7 +91,8 @@ function KpiHero({
 }) {
   const [calcOpen, setCalcOpen] = React.useState(false);
   const pct = m.achievementPct;
-  const fillCol = pct >= 100 ? "#00AA4F" : pct >= 75 ? "#0081AA" : "#FF7476";
+  const progressMeta = KPIProgressMeta(pct);
+  const fillCol = progressMeta.solid;
   const head = /*#__PURE__*/React.createElement("div", {
     className: "ml-kpi-headrow"
   }, /*#__PURE__*/React.createElement("div", {
@@ -133,11 +133,23 @@ function KpiHero({
   }, AC.fmtL(m.target))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "ml-k"
   }, "Target achieved"), /*#__PURE__*/React.createElement("b", {
-    className: "ml-green"
-  }, pct.toFixed(1), "%")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: progressMeta.solid,
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 4
+    }
+  }, /*#__PURE__*/React.createElement("span", null, pct.toFixed(1), "%"), progressMeta.isAchieved && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      lineHeight: 1
+    }
+  }, "\u2713"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "ml-k"
   }, "Applied multiplier"), /*#__PURE__*/React.createElement("b", {
-    className: "ml-green"
+    style: {
+      color: "var(--navy-800)"
+    }
   }, m.mult, "%")));
   const formulaInner = /*#__PURE__*/React.createElement("div", {
     className: "ml-formula"
@@ -145,7 +157,7 @@ function KpiHero({
     className: "ml-f-step"
   }, /*#__PURE__*/React.createElement("span", {
     className: "ml-k"
-  }, "Actual Commission"), /*#__PURE__*/React.createElement("b", null, AC.fmtRM(m.summary.base)), /*#__PURE__*/React.createElement("span", {
+  }, "Base Commission"), /*#__PURE__*/React.createElement("b", null, AC.fmtRM(m.summary.base)), /*#__PURE__*/React.createElement("span", {
     className: "ml-f-note"
   }, "\u03A3 volume \xD7 tier rate")), /*#__PURE__*/React.createElement(Icon, {
     name: "close",
@@ -195,7 +207,7 @@ function KpiHero({
     className: "ml-kpi-calc-step"
   }, /*#__PURE__*/React.createElement("span", {
     className: "ml-k"
-  }, "Actual Commission"), /*#__PURE__*/React.createElement("b", null, AC.fmtRM(m.summary.base)), /*#__PURE__*/React.createElement("span", {
+  }, "Base Commission"), /*#__PURE__*/React.createElement("b", null, AC.fmtRM(m.summary.base)), /*#__PURE__*/React.createElement("span", {
     className: "ml-note"
   }, "\u03A3 volume \xD7 tier rate")), /*#__PURE__*/React.createElement("div", {
     className: "ml-kpi-calc-row"
@@ -573,7 +585,7 @@ function Dashboard({
     style: {
       minWidth: 240
     }
-  }, "SP Account"), /*#__PURE__*/React.createElement("th", null, "Volume"), /*#__PURE__*/React.createElement("th", null, "Commission Tier"), /*#__PURE__*/React.createElement("th", null, "Actual Commission"), /*#__PURE__*/React.createElement("th", null, "KPI Tier"), /*#__PURE__*/React.createElement("th", {
+  }, "SP Account"), /*#__PURE__*/React.createElement("th", null, "Volume"), /*#__PURE__*/React.createElement("th", null, "Commission Tier"), /*#__PURE__*/React.createElement("th", null, "Base Commission"), /*#__PURE__*/React.createElement("th", null, "KPI Tier"), /*#__PURE__*/React.createElement("th", {
     style: {
       textAlign: "right"
     }
@@ -634,7 +646,7 @@ function Dashboard({
     }
   }, r.tier.label)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "ml-k"
-  }, "Actual Commission"), /*#__PURE__*/React.createElement("b", null, AC.fmtRM(r.base))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+  }, "Base Commission"), /*#__PURE__*/React.createElement("b", null, AC.fmtRM(r.base))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "ml-k"
   }, "KPI Tier"), /*#__PURE__*/React.createElement("b", null, r.appliedMult, "%"), (r.isException || r.pending) && /*#__PURE__*/React.createElement("span", {
     className: "ml-sub-xs",

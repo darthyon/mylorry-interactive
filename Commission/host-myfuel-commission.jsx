@@ -3,6 +3,7 @@
 
 const { useState: useMFC, useMemo: useMFM } = React;
 const KPIProgress = window.HKPIProgress;
+const KPIProgressMeta = window.KPIProgressMeta;
 
 /* ─── Commission Status Badge ────────────────────────────────── */
 const COMM_STATUS_META = {
@@ -18,7 +19,8 @@ function MFCommStatusBadge({ status }) {
 
 /* ─── KPI attainment bar ─────────────────────────────────────── */
 function KPIBar({ pct }) {
-  const col = pct >= 75 ? "var(--green-500)" : "var(--red-400)";
+  const meta = KPIProgressMeta(pct);
+  const col = meta.solid;
   return (
     <div style={{ display:"flex", alignItems:"center", gap:8 }}>
       <div style={{ width:56, height:6, background:"var(--bg-muted)", borderRadius:3, overflow:"hidden", flexShrink:0 }}>
@@ -111,8 +113,9 @@ function TrendBarChart({ data, title, subtitle, defaultMetric = "volume", icon =
 function MyFuelKPIHeader() {
   const s = HC.MYFUEL_SUMMARY;
   const recs = HC.MYFUEL_RECORDS;
-  const avgKpi = recs.length
-    ? recs.reduce((a, r) => a + r.kpiPct, 0) / recs.length
+  const avgKpiSource = recs.filter(r => r.kpiPhase !== "future");
+  const avgKpi = avgKpiSource.length
+    ? avgKpiSource.reduce((a, r) => a + r.kpiPct, 0) / avgKpiSource.length
     : 0;
   const kpis = [
     { title:"Total Commission Payable", value:HC.fmtRM(s.totalPayable), sub:s.period,            icon:"payments"      },
@@ -148,6 +151,14 @@ function AgentCommissionDrilldown({ record, onBack }) {
   const MONTHS = ["Jun 2026","May 2026","Apr 2026","Mar 2026","Feb 2026","Jan 2026","Dec 2025","Nov 2025","Oct 2025"];
   const breakdown  = HC.SP_COMMISSION_BREAKDOWN[record.agentId] || [];
   const history    = HC.COMMISSION_HISTORY[record.agentId] || HC.COMMISSION_HISTORY._default;
+  const kpiMeta = KPIProgressMeta(record.kpiPct);
+  const kpiStatusLabel = kpiMeta.isAchieved
+    ? "Achieved"
+    : kpiMeta.tone === "green"
+      ? "On track"
+      : kpiMeta.tone === "amber"
+        ? "Mid performance"
+        : "Needs attention";
   const [spQ, setSpQ]   = useMFC("");
   const [month, setMonth] = useMFC(record.period);
   const [page, setPage] = useMFC(1);
@@ -210,10 +221,9 @@ function AgentCommissionDrilldown({ record, onBack }) {
             </div>
           </div>
           <div className="hm-stat-value-row">
-            <span className="hm-stat-value">{record.kpiPct}%</span>
-            <span style={{ fontSize:12, fontWeight:600,
-              color: record.kpiPct >= 75 ? "var(--green-500)" : "var(--red-400)" }}>
-              {record.kpiPct >= 100 ? "✓ Full commission" : record.kpiPct >= 75 ? "✓ 50% multiplier" : "No commission"}
+            <span className="hm-stat-value">{record.kpiPhase === "future" ? "—" : `${record.kpiPct}%`}</span>
+            <span style={{ fontSize:12, fontWeight:600, color:record.kpiPhase === "future" ? "var(--fg-disabled)" : kpiMeta.solid, display:"inline-flex", alignItems:"center", gap:4 }}>
+              <span>{record.kpiPhase === "future" ? "Not started" : kpiStatusLabel}</span>
             </span>
           </div>
         </div>
@@ -281,12 +291,13 @@ function AgentCommissionDrilldown({ record, onBack }) {
                     <th>KPI Multiplier</th>
                     <th>Final Commission</th>
                     <th>Commission Validity</th>
+                    <th>Commission Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
-                      <td colSpan={7} style={{ textAlign:"center", padding:"24px 0", color:"var(--fg-tertiary)" }}>
+                      <td colSpan={8} style={{ textAlign:"center", padding:"24px 0", color:"var(--fg-tertiary)" }}>
                         No SP accounts match “{spQ}”.
                       </td>
                     </tr>
@@ -306,8 +317,8 @@ function AgentCommissionDrilldown({ record, onBack }) {
                       <td className="ml-mono" style={{ fontWeight:600, color:"var(--navy-800)" }}>{HC.fmtRM(b.finalCommission)}</td>
                       <td>
                         <div style={{ fontSize:12, color:"var(--fg-secondary)" }}>{b.eff} – {b.end}</div>
-                        <div style={{ marginTop:4 }}><MFCommStatusBadge status={b.commissionStatus} /></div>
                       </td>
+                      <td><MFCommStatusBadge status={b.commissionStatus} /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -411,7 +422,7 @@ function MyFuelCommissionTab() {
                 </td>
                 <td className="ml-mono">{r.spCount}</td>
                 <td className="ml-mono">{r.totalLiters.toLocaleString()}</td>
-                <td><KPIProgress pct={r.kpiPct} actual={r.totalLiters} target={r.kpiTarget} period="Dec 1–31" /></td>
+                <td><KPIProgress pct={r.kpiPct} actual={r.totalLiters} target={r.kpiTarget} period="Dec 1–31" phase={r.kpiPhase} /></td>
                 <td className="ml-mono" style={{ fontWeight:600, color:"var(--navy-800)" }}>{HC.fmtRM(r.commission)}</td>
                 <td className="hm-view-cell">
                   <HIcon name="chevron_right" size={20} color="var(--fg-tertiary)" />

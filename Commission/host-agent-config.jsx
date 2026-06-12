@@ -18,28 +18,24 @@ function CommissionStatusBadge({ status }) {
 
 /* ─── KPI progress bar — shared (window.HKPIProgress) ───────── */
 const KPIProgress = window.HKPIProgress;
+const KPIProgressMeta = window.KPIProgressMeta;
 const AccountStatusBadge = window.HAccountStatusBadge;
 
 /* ─── KPI multiplier zones — derived from configurable thresholds ─────── */
 // Each threshold stores only a lower bound (minPct); the upper bound of a tier
 // is the next-higher tier's lower bound, so ranges stay contiguous (no gaps /
-// overlaps) by construction. The final tier (isFinal) is open-ended upward and
-// absorbs progress above its lower bound, including progress over 100%.
-const multColor = m => m >= 100 ? "var(--green-600)" : m > 0 ? "var(--amber-500)" : "var(--red-400)"; // text (match segmented bar amber)
-const multSolid = m => m >= 100 ? "var(--green-600)" : m > 0 ? "var(--amber-500)" : "var(--red-400)"; // bar fill (brighter amber)
-const multFill  = m => m >= 100 ? "#E4F6EC"          : m > 0 ? "var(--amber-50)"  : "#FCEBEC";
-
+// overlaps) by construction. The final tier (isFinal) is open-ended upward, but
+// the visual axis is capped at 100% because target achievement is the ceiling
+// of the progress track.
 // Returns { zones (ascending, with from/to/mult/tier/isFinal/col/fill), axisMax }.
 function kpiZones(thresholds) {
   const asc = [...(thresholds || [])].sort((a, b) => a.minPct - b.minPct);
   if (asc.length === 0) return { zones: [], axisMax: 100 };
-  const finalMin = (asc.find(t => t.isFinal) || asc[asc.length - 1]).minPct;
-  const axisMax  = Math.max(100, Math.ceil(finalMin * 1.25)); // headroom for >100% progress
+  const axisMax  = 100;
   const zones = asc.map((t, i) => ({
     from: t.minPct,
     to:   asc[i + 1] ? asc[i + 1].minPct : axisMax,
     mult: t.mult, tier: t.tier, isFinal: t.isFinal,
-    col:  multColor(t.mult), fill: multFill(t.mult),
   }));
   return { zones, axisMax };
 }
@@ -102,24 +98,25 @@ function KPIProgressBlock({ kpi, target, thresholds }) {
   const phase  = kpi?.phase || (kpi?.locked ? "complete" : "active");
   const isFuture = phase === "future";
   const pct  = target ? Math.round((actual / target) * 1000) / 10 : 0;
+  const progressMeta = KPIProgressMeta(pct);
   const { zones, axisMax } = kpiZones(thresholds);
   const zone = kpiZoneOf(pct, zones);
-  const markerCol = isFuture ? "var(--fg-tertiary)" : (zone?.col || "var(--fg-tertiary)");
+  const markerCol = isFuture ? "var(--fg-tertiary)" : progressMeta.solid;
   const pos = p => (Math.min(p, axisMax) / axisMax) * 100;
   // Tick marks at every interior boundary (each zone's lower bound > 0).
   const ticks = zones.filter(z => z.from > 0).map(z => z.from);
-  // Discrete cells (SegmentedProgressView-style). Each cell is tinted by its tier
-  // zone: light tint when not yet reached, saturated zone colour once achieved.
-  // 10 cells across the axis — at the default 0–125 range the 75%/100% tier
-  // boundaries land exactly on cell edges.
+  // Discrete cells (SegmentedProgressView-style). Each cell is tinted by the
+  // shared progress bands: light tint when not yet reached, saturated colour
+  // once achieved. Threshold ticks remain as quiet guides only.
   const CELLS = 10;
   const STEP = axisMax / CELLS;
   const cells = Array.from({ length: CELLS }, (_, i) => {
     const from = i * STEP;
     const z = kpiZoneOf(from + STEP / 2, zones) || {};
+    const meta = KPIProgressMeta(from + STEP / 2);
     const reached = !isFuture && pct > from;
     return {
-      bg: reached ? (z.mult != null ? multSolid(z.mult) : "var(--fg-tertiary)") : (z.fill || "#EDEDED"),
+      bg: reached ? meta.solid : meta.fill,
       tier: z.tier, range: z.from != null ? zoneRange(z) : "", mult: z.mult,
     };
   });
@@ -128,13 +125,14 @@ function KPIProgressBlock({ kpi, target, thresholds }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       {/* Metric row */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <div className="hac-kpiaxis-pct" style={{ color: markerCol, lineHeight: .9 }}>
-          {isFuture ? "–" : pct + "%"}
+        <div className="hac-kpiaxis-pct" style={{ color: markerCol, lineHeight: .9, display:"inline-flex", alignItems:"center", gap:5 }}>
+          <span>{isFuture ? "–" : pct + "%"}</span>
+          {!isFuture && progressMeta.isAchieved && <span style={{ fontSize:11, lineHeight:1 }}>✓</span>}
         </div>
         <div className="hac-kpiaxis-readout" style={{ gap: 2 }}>
           <span>Achieved <b>{isFuture ? "–" : actual.toLocaleString("en-US") + " L"}</b></span>
           {!isFuture && zone && (
-            <span style={{ color: zone.col }}>
+            <span style={{ color: "var(--fg-secondary)" }}>
               Current multiplier {zone.mult}%
             </span>
           )}
@@ -378,7 +376,7 @@ function AgentsListView({ onView, onEdit, onCreate, onTerminate }) {
                   <div className="ml-cell-sub"><code className="hac-code">{a.id}</code></div>
                 </td>
                 <td>{a.referrer ? "Referrer" : "Agent"}</td>
-                <td><KPIProgress pct={a.kpiPct} actual={a.volume} target={a.kpiTarget} period="Dec 1–31" /></td>
+                <td><KPIProgress pct={a.kpiPct} actual={a.volume} target={a.kpiTarget} period="Dec 1–31" phase={a.kpiPhase} /></td>
                 <td><AccountStatusBadge status={a.accountStatus} /></td>
                 <td className="ml-mono">{a.mobile}</td>
                 <td style={{ color:"var(--fg-secondary)", fontSize:12 }}>{a.email}</td>
@@ -781,9 +779,6 @@ function CommissionSection({ kpi, editing, showHistory, setShowHistory }) {
                         </optgroup>
                       ))}
                     </select>
-                    {evalPeriod !== "Custom range" && (
-                      <div className="hac-kpi-measure-note">Window preview: {evalPeriodSummary(evalPeriod)}</div>
-                    )}
                   </div>
 
                   {evalPeriod === "Custom range" && (
@@ -964,18 +959,32 @@ function CommissionSection({ kpi, editing, showHistory, setShowHistory }) {
           footer={<button className="hac-modal-save" onClick={() => setShowEvalHelp(false)}>Got it</button>}
         >
           <div className="hac-help-subtitle">Choose how KPI performance is measured over time.</div>
-          <div className="hac-help-groups">
+          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
             {EVAL_PERIOD_GROUPS.map(group => (
-              <div key={group.label} className="hac-help-group">
-                <div className="hac-help-group-title">{group.label}</div>
-                <div className="hac-help-cards">
+              <div key={group.label}>
+                <div style={{ fontSize:13, fontWeight:700, color:"var(--fg-primary)", marginBottom:8 }}>{group.label}</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                   {group.options.map(option => (
-                    <div key={option.label} className={"hac-help-card" + (evalPeriod === option.label ? " selected" : "")}>
-                      <div className="hac-help-card-top">
-                        <b>{option.label}</b>
-                        {evalPeriod === option.label && <span className="hac-help-selected">Selected</span>}
+                    <div
+                      key={option.label}
+                      style={{
+                        display:"flex",
+                        alignItems:"flex-start",
+                        justifyContent:"space-between",
+                        gap:12,
+                        paddingBottom:8,
+                        borderBottom:"1px solid var(--border-light)",
+                      }}
+                    >
+                      <div style={{ minWidth:0 }}>
+                        <div style={{ fontSize:13, fontWeight:600, color:"var(--fg-primary)" }}>{option.label}</div>
+                        <div style={{ fontSize:12, color:"var(--fg-secondary)", marginTop:2 }}>{option.description}</div>
                       </div>
-                      <span>{option.description}</span>
+                      {evalPeriod === option.label && (
+                        <span style={{ fontSize:11, fontWeight:700, color:"var(--green-600)", whiteSpace:"nowrap", paddingTop:1 }}>
+                          Selected
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1013,6 +1022,7 @@ function SPAccountsCard({ spAccounts: initSP }) {
   const [spAccounts, setSPAccounts] = useState(initSP);
   const [showModal, setShowModal]   = useState(false);
   const existing = spAccounts.map(s => s.sp);
+  const hasAccounts = spAccounts.length > 0;
 
   const handleAdd = selectedSPs => {
     const added = SP_ORG_LIST
@@ -1024,37 +1034,42 @@ function SPAccountsCard({ spAccounts: initSP }) {
   return (
     <div className="ml-card hac-detail-card">
       <div className="hac-sec-header">SP Accounts</div>
-      <div className="hac-dcard-head" style={{ marginBottom:12 }}>
+      <div className="hac-dcard-head" style={{ marginBottom:hasAccounts ? 12 : 0 }}>
         <div className="hac-dcard-sub">{spAccounts.length} assigned account{spAccounts.length !== 1 ? "s" : ""}</div>
         <button className="ml-btn-outline" style={{ fontSize:13 }} onClick={() => setShowModal(true)}>
           <HIcon name="add" size={15} /> Add Account
         </button>
       </div>
-      <div className="ml-table-wrap">
-        <table className="ml-table" style={{ minWidth:680 }}>
-          <thead>
-            <tr><th>SP Code</th><th>Organisation</th><th>Commission Status</th><th>Volume (L)</th><th>Effective</th><th>End</th><th>Exception</th><th></th></tr>
-          </thead>
-          <tbody>
-            {spAccounts.map((sp, i) => (
-              <tr key={i}>
-                <td><code className="hac-code">{sp.sp}</code></td>
-                <td className="ml-cell-main">{sp.org}</td>
-                <td><CommissionStatusBadge status={sp.commissionStatus || "activated"} /></td>
-                <td className="ml-mono">{sp.volume ? sp.volume.toLocaleString() : "—"}</td>
-                <td className="ml-mono" style={{ fontSize:12 }}>{sp.eff}</td>
-                <td className="ml-mono" style={{ fontSize:12 }}>{sp.end}</td>
-                <td>
-                  {sp.exception
-                    ? <span className={"hac-exc-tag " + sp.exception.mode}>{sp.exception.mode === "auto" ? "Auto" : "Custom"} · {sp.exception.rate}%</span>
-                    : <span style={{ color:"var(--fg-disabled)", fontSize:12 }}>—</span>}
-                </td>
-                <td><button className="ml-icon-btn"><HIcon name="more_horiz" size={17} /></button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {hasAccounts ? (
+        <div className="ml-table-wrap">
+          <table className="ml-table" style={{ minWidth:680 }}>
+            <thead>
+              <tr><th>SP Code</th><th>Organisation</th><th>Volume (L)</th><th>Commission Status</th><th>Commission Validity</th><th>Exception</th><th></th></tr>
+            </thead>
+            <tbody>
+              {spAccounts.map((sp, i) => (
+                <tr key={i}>
+                  <td><code className="hac-code">{sp.sp}</code></td>
+                  <td className="ml-cell-main">{sp.org}</td>
+                  <td className="ml-mono">{sp.volume ? sp.volume.toLocaleString() : "—"}</td>
+                  <td><CommissionStatusBadge status={sp.commissionStatus || "activated"} /></td>
+                  <td className="ml-mono" style={{ fontSize:12 }}>{sp.eff} – {sp.end}</td>
+                  <td>
+                    {sp.exception
+                      ? <span className={"hac-exc-tag " + sp.exception.mode}>{sp.exception.mode === "auto" ? "Auto" : "Custom"} · {sp.exception.rate}%</span>
+                      : <span style={{ color:"var(--fg-disabled)", fontSize:12 }}>—</span>}
+                  </td>
+                  <td><button className="ml-icon-btn"><HIcon name="more_horiz" size={17} /></button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="hac-empty-state">
+          No SP accounts assigned yet.
+        </div>
+      )}
       {showModal && <AddSPModal onClose={() => setShowModal(false)} onAdd={handleAdd} existing={existing} />}
     </div>
   );
@@ -1126,7 +1141,7 @@ function TerminationCard({ cfg, editing = false }) {
           <div className="hac-term-grid">
             <div className="hac-form-group">
               <div className="hac-label-row">
-                <label className="hac-label">Transfer SP accounts to</label>
+                <label className="hac-label">Transferred to</label>
                 <span className="hac-inline-badge">
                   Total: {cfg.spAccounts?.length || 0} accounts{exceptionCount ? ` \u00b7 ${exceptionCount} with exceptions` : ""}
                 </span>
@@ -1249,51 +1264,53 @@ function AgentFormView({ agent, onBack, onSave }) {
         <span>{isEdit ? "Edit" : "Create"}</span>
       </div>
       <h1 className="ml-h1" style={{ margin:"10px 0 18px" }}>{isEdit ? "Edit agent account" : "Create agent account"}</h1>
-      <div className="ml-card hac-detail-card">
-        <div className="hac-sec-header">Personal Details</div>
-        <div className="hac-form-grid3">
-          {[["name","Name",true],["email","Email",true],["mobile","Mobile",true],["ic","IC No.",true]].map(([k,l,r]) => (
-            <div key={k} className="hac-fg">
-              <label className="hac-label req">{l}*</label>
-              <input className="hac-input" value={form[k]} onChange={e => set(k, e.target.value)} />
+      <div className="hac-detail-sections">
+        <div className="ml-card hac-detail-card">
+          <div className="hac-sec-header">Personal Details</div>
+          <div className="hac-form-grid3">
+            {[["name","Name",true],["email","Email",true],["mobile","Mobile",true],["ic","IC No.",true]].map(([k,l,r]) => (
+              <div key={k} className="hac-fg">
+                <label className="hac-label req">{l}*</label>
+                <input className="hac-input" value={form[k]} onChange={e => set(k, e.target.value)} />
+              </div>
+            ))}
+            <div className="hac-fg">
+              <label className="hac-label req">Role*</label>
+              <select className="hac-input hac-select-input"
+                value={form.referrer ? "referrer" : "agent"}
+                onChange={e => set("referrer", e.target.value === "referrer")}>
+                <option value="agent">Agent</option>
+                <option value="referrer">Referrer</option>
+              </select>
             </div>
-          ))}
-          <div className="hac-fg">
-            <label className="hac-label req">Role*</label>
-            <select className="hac-input hac-select-input"
-              value={form.referrer ? "referrer" : "agent"}
-              onChange={e => set("referrer", e.target.value === "referrer")}>
-              <option value="agent">Agent</option>
-              <option value="referrer">Referrer</option>
-            </select>
-          </div>
-          <div className="hac-fg">
-            <label className="hac-label">Bank name</label>
-            <select className="hac-input hac-select-input" value={form.bankName} onChange={e => set("bankName", e.target.value)}>
-              <option value="">Select bank</option>
-              {BANKS.map(b => <option key={b}>{b}</option>)}
-            </select>
-          </div>
-          {[["accName","Bank account name"],["accNo","Bank account number"]].map(([k,l]) => (
-            <div key={k} className="hac-fg">
-              <label className="hac-label">{l}</label>
-              <input className="hac-input" value={form[k]} onChange={e => set(k, e.target.value)} />
+            <div className="hac-fg">
+              <label className="hac-label">Bank name</label>
+              <select className="hac-input hac-select-input" value={form.bankName} onChange={e => set("bankName", e.target.value)}>
+                <option value="">Select bank</option>
+                {BANKS.map(b => <option key={b}>{b}</option>)}
+              </select>
             </div>
-          ))}
+            {[["accName","Bank account name"],["accNo","Bank account number"]].map(([k,l]) => (
+              <div key={k} className="hac-fg">
+                <label className="hac-label">{l}</label>
+                <input className="hac-input" value={form[k]} onChange={e => set(k, e.target.value)} />
+              </div>
+            ))}
+          </div>
         </div>
+        <div className="ml-card hac-detail-card">
+          <div className="hac-sec-header">KPI Configuration</div>
+          <CommissionSection
+            kpi={{ evalPeriodOpt:"Last year", current:{ version:1, effective:"", target:0, thresholds:[
+              { tier:"Tier 1", minPct:100, mult:100, isFinal:true },
+              { tier:"Tier 2", minPct:75,  mult:50  },
+              { tier:"Tier 3", minPct:0,   mult:0   },
+            ]}}}
+            editing={true} />
+        </div>
+        <SPAccountsCard spAccounts={[]} />
+        {isEdit && <TerminationCard cfg={editCfg} editing={true} />}
       </div>
-      <div className="ml-card hac-detail-card" style={{ marginTop:16 }}>
-        <div className="hac-sec-header">KPI Configuration</div>
-        <CommissionSection
-          kpi={{ evalPeriodOpt:"Last year", current:{ version:1, effective:"", target:0, thresholds:[
-            { tier:"Tier 1", minPct:100, mult:100, isFinal:true },
-            { tier:"Tier 2", minPct:75,  mult:50  },
-            { tier:"Tier 3", minPct:0,   mult:0   },
-          ]}}}
-          editing={true} />
-      </div>
-      <SPAccountsCard spAccounts={[]} />
-      {isEdit && <TerminationCard cfg={editCfg} editing={true} />}
       <div className="hac-edit-bar">
         <button className="hac-cancel-btn" onClick={onBack}>Cancel</button>
         <button className="hac-save-btn" onClick={() => onSave(form)}>{isEdit ? "Save Changes" : "Create"}</button>

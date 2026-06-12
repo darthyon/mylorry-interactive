@@ -1337,7 +1337,7 @@ function TerminationCard({
     className: "hac-form-group"
   }, /*#__PURE__*/React.createElement("label", {
     className: "hac-label"
-  }, "Transfer SP accounts to"), /*#__PURE__*/React.createElement("select", {
+  }, "Transferred to"), /*#__PURE__*/React.createElement("select", {
     className: "hac-select",
     value: transferTo,
     onChange: e => setTransferTo(e.target.value)

@@ -376,13 +376,43 @@ function AccountStatusBadge({
   }, prefix || "", m.label);
 }
 
+/* ─── KPI Progress semantics ────────────────────────────────── */
+const KPI_PROGRESS_TONES = {
+  green: {
+    col: "var(--green-500)",
+    solid: "var(--green-600)",
+    fill: "#E4F6EC"
+  },
+  amber: {
+    col: "var(--amber-500)",
+    solid: "var(--amber-500)",
+    fill: "var(--amber-50)"
+  },
+  red: {
+    col: "var(--red-400)",
+    solid: "var(--red-400)",
+    fill: "#FCEBEC"
+  }
+};
+function KPIProgressMeta(pct = 0) {
+  const value = Number(pct) || 0;
+  const tone = value >= 80 ? "green" : value >= 50 ? "amber" : "red";
+  return {
+    pct: value,
+    tone,
+    isAchieved: value >= 100,
+    ...KPI_PROGRESS_TONES[tone]
+  };
+}
+
 /* ─── KPI Progress: bar + percentage + hover tooltip ────────── */
 function KPIProgress({
   pct,
   actual,
   target,
   period,
-  commissionLabel
+  commissionLabel,
+  phase
 }) {
   const [hover, setHover] = useState(false);
   const [pos, setPos] = useState({
@@ -390,7 +420,9 @@ function KPIProgress({
     left: 0
   });
   const ref = React.useRef(null);
-  const col = pct >= 75 ? "var(--green-500)" : "var(--red-400)";
+  const isFuture = phase === "future";
+  const meta = KPIProgressMeta(pct);
+  const col = isFuture ? "var(--fg-disabled)" : meta.solid;
   const show = () => {
     if (ref.current) {
       const r = ref.current.getBoundingClientRect();
@@ -401,7 +433,7 @@ function KPIProgress({
     }
     setHover(true);
   };
-  let tip = `${(actual ?? 0).toLocaleString("en-US")} L / ${(target ?? 0).toLocaleString("en-US")} L target · ${period || ""}`;
+  let tip = isFuture ? `KPI progress not started yet${period ? ` · ${period}` : ""}` : `${(actual ?? 0).toLocaleString("en-US")} L / ${(target ?? 0).toLocaleString("en-US")} L target · ${period || ""}`;
   if (commissionLabel) tip += ` · ${commissionLabel}`;
   return /*#__PURE__*/React.createElement("div", {
     ref: ref,
@@ -413,15 +445,25 @@ function KPIProgress({
   }, /*#__PURE__*/React.createElement("div", {
     className: "ml-kpi-fill",
     style: {
-      width: Math.min(pct, 100) + "%",
+      width: isFuture ? "0%" : Math.min(pct, 100) + "%",
       background: col
     }
   })), /*#__PURE__*/React.createElement("span", {
     className: "ml-kpi-pct",
     style: {
-      color: col
+      color: col,
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 4
     }
-  }, pct, "%"), hover && ReactDOM.createPortal(/*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, isFuture ? "\u2014" : `${pct}%`), !isFuture && meta.isAchieved && /*#__PURE__*/React.createElement("span", {
+    "aria-label": "Achieved",
+    title: "Achieved",
+    style: {
+      fontSize: 11,
+      lineHeight: 1
+    }
+  }, "\u2713")), hover && ReactDOM.createPortal(/*#__PURE__*/React.createElement("div", {
     className: "ml-kpi-tip",
     style: {
       top: pos.top,
@@ -470,6 +512,8 @@ window.SharedShell = {
   KpiTierChip,
   AccountStatusBadge,
   KPIProgress,
+  KPIProgressMeta,
   PetronLogo
 };
+window.KPIProgressMeta = KPIProgressMeta;
 })();
