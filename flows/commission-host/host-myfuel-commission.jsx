@@ -16,17 +16,8 @@ const ROLE_META = {
   referrer: { label: "Referrer", accent: "#0E7490", tint: "#D9F0F6" },
 };
 
-/* ─── Commission Status Badge ────────────────────────────────── */
-const COMM_STATUS_META = {
-  activated:           { label:"Activated",          cls:"comm-activated"  },
-  pending_onboarding:  { label:"Pending Onboarding", cls:"comm-pending-ob" },
-  on_hold:             { label:"On Hold",            cls:"comm-on-hold"    },
-  deactivated:         { label:"Deactivated",        cls:"comm-deactivated"},
-};
-function MFCommStatusBadge({ status }) {
-  const m = COMM_STATUS_META[status] || COMM_STATUS_META.activated;
-  return <span className={"ml-badge " + m.cls}>{m.label}</span>;
-}
+/* ─── Commission Status Badge — shared (window.HStatusBadge) ──── */
+const MFCommStatusBadge = window.HStatusBadge;
 
 /* ─── KPI attainment bar ─────────────────────────────────────── */
 function KPIBar({ pct }) {

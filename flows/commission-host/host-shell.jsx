@@ -2,7 +2,7 @@
 // Adds Host-specific nav and component aliases (HIcon, HostTopBar, HostSidebar, etc.).
 
 const { Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu,
-  CurrencyPill, AccountStatusBadge, KPIProgress } = window.SharedShell;
+  CurrencyPill, StatusBadge, AccountStatusBadge, KPIProgress } = window.SharedShell;
 
 const HOST_NAV = [
   { key:"__label__",    label:"HOST",               icon:"" },
@@ -21,6 +21,7 @@ const HOST_NAV = [
   { key:"mytrip",       label:"MyTrip",             icon:"alt_route" },
 ];
 
+// Host-specific aliases (same component, different name for historical reasons)
 const HIcon = Icon;
 const HBadge = Badge;
 const HCurrencyPill = CurrencyPill;
@@ -28,8 +29,10 @@ const HCardHead = CardHead;
 const HPager = Pager;
 const HExportMenu = ({ comingSoon = true }) => <ExportMenu comingSoon={comingSoon} />;
 const HAccountStatusBadge = AccountStatusBadge;
+const HStatusBadge = StatusBadge;
 const HKPIProgress = KPIProgress;
 
+// Host-specific wrappers
 function HostSidebar({ active = "agent" }) {
   return <Sidebar active={active} onNav={null} navItems={HOST_NAV} badgeLabel="HOST" />;
 }
@@ -37,7 +40,8 @@ function HostTopBar() {
   return <TopBar />;
 }
 
+// Re-export everything to window with the same names existing code expects
 Object.assign(window, {
-  HIcon, HostTopBar, HostSidebar, HBadge, HAccountStatusBadge, HKPIProgress,
+  HIcon, HostTopBar, HostSidebar, HBadge, HAccountStatusBadge, HStatusBadge, HKPIProgress,
   HCurrencyPill, HCardHead, HPager, HExportMenu,
 });

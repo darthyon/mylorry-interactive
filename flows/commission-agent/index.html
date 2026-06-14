@@ -8,18 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet" />
+<link rel="stylesheet" href="../../styles/tokens.css" />
 <style>
-:root{
-  --gradient-brand:linear-gradient(to right,rgb(0,129,170),rgb(0,170,79));
-  --green-600:#00AA4F; --green-500:#00AB46; --green-50:#F3FDF8;
-  --teal-600:#0081AA; --navy-800:#1A2472; --red-400:#FF7476;
-  --amber-600:#B26A00; --amber-500:#F5A623; --amber-50:#FFF6E8;
-  --fg-primary:#3C3C42; --fg-secondary:#757575; --fg-tertiary:#999AA5; --fg-disabled:#BBBBBB;
-  --bg-muted:#F5F5F5; --bg-hover:#FAFAFA; --bg-subtle:#F6F6F6;
-  --border-light:#E9E9E9; --border-medium:#D8D8D8;
-  --shadow-card:0px 0px 5px 0px rgba(0,0,0,.08); --shadow-md:0px 0px 10px 0px rgba(0,0,0,.16);
-  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-}
+/* Design tokens come from ../../styles/tokens.css (single source of truth). */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:var(--font);color:var(--fg-primary);background:#FFFFFF;-webkit-font-smoothing:antialiased;}
 .msr{font-family:'Material Symbols Rounded';font-weight:normal;line-height:1;vertical-align:middle;
@@ -479,12 +470,11 @@ b{font-weight:600;}
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 
-<script src="agent-data.js"></script>
-<script src="shared-shell.compiled.js"></script>
-<script src="tweaks-panel.compiled.js"></script>
-<script src="agent-shell.compiled.js"></script>
-<script src="agent-dashboard.compiled.js"></script>
-<script src="agent-history.compiled.js"></script>
-<script src="agent-app.compiled.js"></script>
+<script src="data.js?v=20260614"></script>
+<script src="../../shared/shared-shell.js?v=20260614"></script>
+<script src="agent-shell.js?v=20260614"></script>
+<script src="agent-dashboard.js?v=20260614"></script>
+<script src="agent-history.js?v=20260614"></script>
+<script src="agent-app.js?v=20260614"></script>
 </body>
 </html>

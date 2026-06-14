@@ -25,6 +25,11 @@
   /* ── Forest (sidebar active fill) ───────────────────────── */
   --forest-700: #377448;  /* rgb(55,116,72) — donut chart fill */
 
+  /* ── Amber / Warning ────────────────────────────────────── */
+  --amber-600: #B26A00;   /* warning text */
+  --amber-500: #F5A623;   /* warning fill, pending states */
+  --amber-50:  #FFF6E8;   /* warning tint bg */
+
   /* ── Error / Red ────────────────────────────────────────── */
   --red-400: #FF7476;     /* rgb(255,116,118) — error text, error borders */
 
@@ -63,6 +68,7 @@
 
   /* ── Typography — Font Stack ────────────────────────────── */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font: var(--font-sans); /* alias used across flows */
 
   /* ── Typography — Semantic Scales ───────────────────────── */
   /* h1 */ --h1-size: 24px; --h1-weight: 600; --h1-lh: 1;

@@ -1,6 +1,7 @@
-// agent-app.jsx — Agent portal root: state, view switch, tweaks, mount.
+// agent-app.jsx — Agent portal root: state, view switch, mount.
 
-const AC_TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+// Static review configuration (was the tweaks-panel defaults).
+const AC_CONFIG = /*EDITMODE-BEGIN*/{
   "kpiScenario": "hit",
   "kpiVisual": "track",
   "newOrgException": true,
@@ -21,7 +22,7 @@ function buildModel(t) {
 }
 
 function AgentApp() {
-  const [t, setTweak] = useTweaks(AC_TWEAK_DEFAULTS);
+  const t = AC_CONFIG;
   const [view, setView] = React.useState("dashboard");
   const model = buildModel(t);
   const history = React.useMemo(() => AC.buildHistory(), []);
@@ -54,31 +55,6 @@ function AgentApp() {
         {view === "dashboard" ? <Dashboard model={model} history={history} t={t} /> : <History history={history} />}
 
       </main>
-
-      <TweaksPanel title="Tweaks">
-        <TweakSection label="KPI scenario (what-if)" />
-        <TweakRadio label="Outcome" value={t.kpiScenario}
-          options={[{value:"hit",label:"On target"},{value:"partial",label:"Partial"},{value:"missed",label:"Below"}]}
-          onChange={(v) => setTweak("kpiScenario", v)} />
-        <div className="twk-hint">Same usage, different target → different multiplier &amp; payout.</div>
-
-        <TweakSection label="KPI visual" />
-        <TweakRadio label="Style" value={t.kpiVisual}
-          options={[{value:"track",label:"Tier track"},{value:"gauge",label:"Gauge"}]}
-          onChange={(v) => setTweak("kpiVisual", v)} />
-
-        <TweakSection label="Rules" />
-        <TweakToggle label="New-org exception" value={t.newOrgException}
-          onChange={(v) => setTweak("newOrgException", v)} />
-        <TweakRadio label="Validity demo" value={t.timeMachine}
-          options={[{value:"dec2026",label:"Dec 2026"},{value:"dec2028",label:"Dec 2028"}]}
-          onChange={(v) => setTweak("timeMachine", v)} />
-
-        <TweakSection label="Display" />
-        <TweakRadio label="Density" value={t.density}
-          options={[{value:"regular",label:"Regular"},{value:"compact",label:"Compact"}]}
-          onChange={(v) => setTweak("density", v)} />
-      </TweaksPanel>
     </div>
   );
 }

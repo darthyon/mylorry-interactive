@@ -1,6 +1,8 @@
 // shared-shell.jsx — Shared shell components for both Agent and Host portals.
-// Exposes: Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu,
-//   CurrencyPill, SummaryCard, KpiTierChip, AccountStatusBadge, KPIProgress.
+// Exposes: Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu, Pill,
+//   CurrencyPill, SummaryCard, KpiTierChip, StatusBadge, AccountStatusBadge,
+//   KPIProgress, KPIProgressMeta, PetronLogo.
+// StatusBadge is the single metadata-driven badge for every status vocabulary.
 // Portal-specific shell files (agent-shell.jsx, host-shell.jsx) import from here
 // and re-export with their own names and nav configs.
 
@@ -24,7 +26,7 @@ function TopBar() {
       <button className="ml-burger" aria-label="Menu"><Icon name="menu" size={22} color="#fff" /></button>
       <div className="ml-topbar-brand">
         <div className="ml-logo">
-          <img className="ml-logo-img" src="/fleet-card/img_logo_white.svg" alt="MyLorry" />
+          <img className="ml-logo-img" src="/flows/fleet-card/img_logo_white.svg" alt="MyLorry" />
         </div>
         <div className="ml-topbar-tag">More Safety · More Savings · More Earnings</div>
       </div>
@@ -211,16 +213,30 @@ function KpiTierChip({ mult }) {
   return <span className={"ml-tierchip " + tone}>{label}</span>;
 }
 
-/* ─── Account Status Badge ──────────────────────────────────── */
-const ACCOUNT_STATUS_META = {
+/* ─── Status Badge (single source of truth) ─────────────────── */
+// One metadata-driven badge for every status vocabulary. Replaces the
+// previously duplicated CommissionStatusBadge / MFCommStatusBadge /
+// AccountStatusBadge. CSS for each `cls` lives with the design tokens
+// (ml-badge.* — see flow HTML / design-system showcase).
+const STATUS_BADGE_META = {
+  // Commission account status
+  activated:          { label:"Activated",          cls:"comm-activated"   },
+  pending_onboarding: { label:"Pending Onboarding", cls:"comm-pending-ob"  },
+  on_hold:            { label:"On Hold",            cls:"comm-on-hold"     },
+  deactivated:        { label:"Deactivated",        cls:"comm-deactivated" },
+  // Generic account status
   active:     { label:"Active",     cls:"acct-active"     },
   inactive:   { label:"Inactive",   cls:"acct-inactive"   },
   suspended:  { label:"Suspended",  cls:"acct-suspended"  },
   terminated: { label:"Terminated", cls:"acct-terminated" },
 };
-function AccountStatusBadge({ status = "active", prefix }) {
-  const m = ACCOUNT_STATUS_META[status] || ACCOUNT_STATUS_META.active;
+function StatusBadge({ status, prefix, fallback = "activated" }) {
+  const m = STATUS_BADGE_META[status] || STATUS_BADGE_META[fallback] || { label: status, cls: "" };
   return <span className={"ml-badge " + m.cls}>{prefix || ""}{m.label}</span>;
+}
+// Back-compat alias — account-status callers default to the "active" vocabulary.
+function AccountStatusBadge({ status = "active", prefix }) {
+  return <StatusBadge status={status} prefix={prefix} fallback="active" />;
 }
 
 /* ─── KPI Progress semantics ────────────────────────────────── */
@@ -269,8 +285,7 @@ function KPIProgress({ pct, actual, target, period, commissionLabel, phase }) {
 }
 
 /* ─── Petron provider logo mark ─────────────────────────────── */
-const PETRON_LOGO_SRC = "../agent-portal/img-petron.jpg";
-const PETRON_LOGO_FALLBACK_SRC = "../../agent-portal/img-petron.jpg";
+const PETRON_LOGO_SRC = "/flows/fleet-card/petron.png";
 
 function PetronLogo({ size = 16 }) {
   return (
@@ -282,11 +297,6 @@ function PetronLogo({ size = 16 }) {
       alt="Petron"
       loading="lazy"
       style={{ flexShrink: 0, objectFit: "contain" }}
-      onError={(e) => {
-        if (e.currentTarget.dataset.fallbackLoaded) return;
-        e.currentTarget.dataset.fallbackLoaded = "true";
-        e.currentTarget.src = PETRON_LOGO_FALLBACK_SRC;
-      }}
     />
   );
 }
@@ -294,7 +304,8 @@ function PetronLogo({ size = 16 }) {
 /* ─── Export to window ─────────────────────────────────────── */
 window.SharedShell = {
   Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu,
-  Pill, CurrencyPill, SummaryCard, KpiTierChip, AccountStatusBadge, KPIProgress, KPIProgressMeta,
+  Pill, CurrencyPill, SummaryCard, KpiTierChip,
+  StatusBadge, AccountStatusBadge, KPIProgress, KPIProgressMeta,
   PetronLogo,
 };
 window.KPIProgressMeta = KPIProgressMeta;
