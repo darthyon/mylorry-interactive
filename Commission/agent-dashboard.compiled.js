@@ -35,6 +35,7 @@ function kpiSegZones() {
 }
 const segZoneOf = (pct, zones) => zones.find(z => pct >= z.from && pct < z.to) || zones[zones.length - 1];
 const segRange = z => z.isFinal ? `≥ ${z.from}%` : `${z.from}%–${z.to}%`;
+const segMetaOf = z => KPIProgressMeta((z === null || z === void 0 ? void 0 : z.mult) >= 100 ? 100 : (z === null || z === void 0 ? void 0 : z.mult) >= 50 ? 75 : 0);
 function KpiSegBar({
   pct
 }) {
@@ -53,7 +54,7 @@ function KpiSegBar({
     const from = i * STEP;
     const sampled = segZoneOf(from + STEP / 2, zones) || {};
     const z = i === CELLS - 1 && (finalZone === null || finalZone === void 0 ? void 0 : finalZone.from) >= axisMax ? finalZone : sampled;
-    const meta = KPIProgressMeta(from + STEP / 2);
+    const meta = segMetaOf(z);
     const reached = pct > from;
     return {
       bg: reached ? meta.solid : meta.fill,
@@ -91,21 +92,20 @@ function KpiHero({
   m,
   visual
 }) {
-  const [calcOpen, setCalcOpen] = React.useState(false);
   const pct = m.achievementPct;
   const progressMeta = KPIProgressMeta(pct);
-  const fillCol = progressMeta.solid;
   const head = /*#__PURE__*/React.createElement("div", {
     className: "ml-kpi-headrow"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
-      gap: 7
+      gap: 7,
+      minWidth: 0
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "ml-kpi-title"
-  }, "KPI Progress \u2014 Evaluation ", AC.KPI.windowLabel), /*#__PURE__*/React.createElement("div", {
+  }, "KPI Progress"), /*#__PURE__*/React.createElement("div", {
     className: "ml-tooltip-wrap"
   }, /*#__PURE__*/React.createElement("button", {
     className: "ml-info-btn",
@@ -115,7 +115,7 @@ function KpiHero({
     size: 15
   })), /*#__PURE__*/React.createElement("div", {
     className: "ml-tooltip"
-  }, "Evaluation is counted from 1 Dec \u2013 31 Dec 2026 and determines next year's commission multiplier"))), /*#__PURE__*/React.createElement(KpiTierChip, {
+  }, "Evaluation period: ", AC.KPI.windowLabel, ". This period determines the KPI multiplier applied to commission."))), /*#__PURE__*/React.createElement(KpiTierChip, {
     mult: m.mult
   }));
   const nums = /*#__PURE__*/React.createElement("div", {
@@ -134,7 +134,7 @@ function KpiHero({
     }
   }, AC.fmtL(m.target))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "ml-k"
-  }, "Target achieved"), /*#__PURE__*/React.createElement("b", {
+  }, "Target KPI"), /*#__PURE__*/React.createElement("b", {
     style: {
       color: progressMeta.solid,
       display: "inline-flex",
@@ -188,111 +188,21 @@ function KpiHero({
   }, AC.fmtRM(m.summary.commission)), /*#__PURE__*/React.createElement("span", {
     className: "ml-f-note"
   }, "this month")));
-  const calcCard = /*#__PURE__*/React.createElement("div", {
-    className: "ml-kpi-calc-card"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "ml-accordion-btn",
-    onClick: () => setCalcOpen(v => !v)
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: calcOpen ? "expand_less" : "expand_more",
-    size: 16
-  }), calcOpen ? "Hide calculation" : "View calculation"), /*#__PURE__*/React.createElement("div", {
-    className: "ml-accordion-body " + (calcOpen ? "open" : "closed")
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      paddingTop: 14,
-      display: "flex",
-      flexDirection: "column",
-      gap: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ml-kpi-calc-step"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "ml-k"
-  }, "Base Commission"), /*#__PURE__*/React.createElement("b", null, AC.fmtRM(m.summary.base)), /*#__PURE__*/React.createElement("span", {
-    className: "ml-note"
-  }, "\u03A3 volume \xD7 tier rate")), /*#__PURE__*/React.createElement("div", {
-    className: "ml-kpi-calc-row"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "ml-kpi-calc-op"
-  }, "\xD7"), /*#__PURE__*/React.createElement("div", {
-    className: "ml-kpi-calc-step"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "ml-k"
-  }, "KPI multiplier"), /*#__PURE__*/React.createElement("b", null, m.mult, "%"), /*#__PURE__*/React.createElement("span", {
-    className: "ml-note"
-  }, m.note))), /*#__PURE__*/React.createElement("div", {
-    className: "ml-kpi-calc-divider"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "ml-kpi-calc-row"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "ml-kpi-calc-op eq"
-  }, "="), /*#__PURE__*/React.createElement("div", {
-    className: "ml-kpi-calc-step ml-kpi-calc-total"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "ml-k"
-  }, "Commission this month"), /*#__PURE__*/React.createElement("b", null, AC.fmtRM(m.summary.commission)), /*#__PURE__*/React.createElement("span", {
-    className: "ml-note"
-  }, "provisional"))))));
-  if (visual === "gauge") {
-    return /*#__PURE__*/React.createElement("div", {
-      className: "ml-kpi-hero"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "ml-kpi-gauge"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "ml-gauge",
-      style: gaugeStyle(pct)
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "ml-gauge-inner"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "ml-gauge-pct"
-    }, pct.toFixed(1), "%"), /*#__PURE__*/React.createElement("div", {
-      className: "ml-gauge-cap"
-    }, "achieved")))), /*#__PURE__*/React.createElement("div", {
-      className: "ml-kpi-body"
-    }, head, /*#__PURE__*/React.createElement("div", {
-      className: "ml-kpi-bar"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "ml-kpi-fill",
-      style: {
-        width: Math.min(100, pct) + "%",
-        background: fillCol
-      }
-    }), /*#__PURE__*/React.createElement("div", {
-      className: "ml-kpi-target",
-      style: {
-        left: "100%"
-      }
-    })), nums, formulaInner));
-  }
-
-  // Track visual — single column, calculation below
   return /*#__PURE__*/React.createElement("div", {
     className: "ml-kpi-hero col"
   }, /*#__PURE__*/React.createElement("div", {
     className: "ml-kpi-body"
-  }, head, nums, /*#__PURE__*/React.createElement(KpiSegBar, {
+  }, head, /*#__PURE__*/React.createElement("div", {
+    className: "ml-kpi-mainrow"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ml-kpi-metrics-col"
+  }, nums, /*#__PURE__*/React.createElement("div", {
+    className: "ml-kpi-progress-wrap"
+  }, /*#__PURE__*/React.createElement(KpiSegBar, {
     pct: pct
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 12,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "flex-end",
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "ml-accordion-btn",
-    onClick: () => setCalcOpen(v => !v)
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: calcOpen ? "expand_less" : "expand_more",
-    size: 16
-  }), calcOpen ? "Hide calculation" : "View calculation"), /*#__PURE__*/React.createElement("div", {
-    className: "ml-accordion-body " + (calcOpen ? "open" : "closed"),
-    style: {
-      width: "100%"
-    }
-  }, formulaInner)));
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "ml-kpi-formula-col"
+  }, formulaInner))));
 }
 // Volume range for a tier, e.g. "45,001 L and above".
 function tierRange(t) {

@@ -25,6 +25,7 @@ function kpiSegZones() {
 }
 const segZoneOf = (pct, zones) => zones.find(z => pct >= z.from && pct < z.to) || zones[zones.length - 1];
 const segRange = z => z.isFinal ? `≥ ${z.from}%` : `${z.from}%–${z.to}%`;
+const segMetaOf = z => KPIProgressMeta(z?.mult >= 100 ? 100 : z?.mult >= 50 ? 75 : 0);
 
 function KpiSegBar({ pct }) {
   const { zones, axisMax } = kpiSegZones();
@@ -36,7 +37,7 @@ function KpiSegBar({ pct }) {
     const from = i * STEP;
     const sampled = segZoneOf(from + STEP / 2, zones) || {};
     const z = i === CELLS - 1 && finalZone?.from >= axisMax ? finalZone : sampled;
-    const meta = KPIProgressMeta(from + STEP / 2);
+    const meta = segMetaOf(z);
     const reached = pct > from;
     return {
       bg: reached ? meta.solid : meta.fill,
@@ -64,18 +65,16 @@ function KpiSegBar({ pct }) {
 }
 
 function KpiHero({ m, visual }) {
-  const [calcOpen, setCalcOpen] = React.useState(false);
   const pct = m.achievementPct;
   const progressMeta = KPIProgressMeta(pct);
-  const fillCol = progressMeta.solid;
 
   const head = (
     <div className="ml-kpi-headrow">
-      <div style={{display:"flex",alignItems:"center",gap:7}}>
-        <div className="ml-kpi-title">KPI Progress — Evaluation {AC.KPI.windowLabel}</div>
+      <div style={{display:"flex",alignItems:"center",gap:7,minWidth:0}}>
+        <div className="ml-kpi-title">KPI Progress</div>
         <div className="ml-tooltip-wrap">
           <button className="ml-info-btn" tabIndex={0}><Icon name="info" size={15} /></button>
-          <div className="ml-tooltip">Evaluation is counted from 1 Dec – 31 Dec 2026 and determines next year's commission multiplier</div>
+          <div className="ml-tooltip">Evaluation period: {AC.KPI.windowLabel}. This period determines the KPI multiplier applied to commission.</div>
         </div>
       </div>
       <KpiTierChip mult={m.mult} />
@@ -87,7 +86,7 @@ function KpiHero({ m, visual }) {
       <div><span className="ml-k">Portfolio volume</span><b style={{color:"var(--navy-800)"}}>{AC.fmtL(m.actual)}</b></div>
       <div><span className="ml-k">Target volume</span><b style={{color:"var(--navy-800)"}}>{AC.fmtL(m.target)}</b></div>
       <div>
-        <span className="ml-k">Target achieved</span>
+        <span className="ml-k">Target KPI</span>
         <b style={{color:progressMeta.solid, display:"inline-flex", alignItems:"center", gap:4}}>
           <span>{pct.toFixed(1)}%</span>
           {progressMeta.isAchieved && <span style={{ fontSize:11, lineHeight:1 }}>✓</span>}
@@ -107,76 +106,20 @@ function KpiHero({ m, visual }) {
     </div>
   );
 
-  const calcCard = (
-    <div className="ml-kpi-calc-card">
-      <button className="ml-accordion-btn" onClick={() => setCalcOpen(v => !v)}>
-        <Icon name={calcOpen ? "expand_less" : "expand_more"} size={16} />
-        {calcOpen ? "Hide calculation" : "View calculation"}
-      </button>
-      <div className={"ml-accordion-body " + (calcOpen ? "open" : "closed")}>
-        <div style={{paddingTop:14,display:"flex",flexDirection:"column",gap:14}}>
-          <div className="ml-kpi-calc-step">
-            <span className="ml-k">Base Commission</span>
-            <b>{AC.fmtRM(m.summary.base)}</b>
-            <span className="ml-note">Σ volume × tier rate</span>
-          </div>
-          <div className="ml-kpi-calc-row">
-            <span className="ml-kpi-calc-op">×</span>
-            <div className="ml-kpi-calc-step">
-              <span className="ml-k">KPI multiplier</span>
-              <b>{m.mult}%</b>
-              <span className="ml-note">{m.note}</span>
-            </div>
-          </div>
-          <div className="ml-kpi-calc-divider" />
-          <div className="ml-kpi-calc-row">
-            <span className="ml-kpi-calc-op eq">=</span>
-            <div className="ml-kpi-calc-step ml-kpi-calc-total">
-              <span className="ml-k">Commission this month</span>
-              <b>{AC.fmtRM(m.summary.commission)}</b>
-              <span className="ml-note">provisional</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  if (visual === "gauge") {
-    return (
-      <div className="ml-kpi-hero">
-        <div className="ml-kpi-gauge">
-          <div className="ml-gauge" style={gaugeStyle(pct)}>
-            <div className="ml-gauge-inner">
-              <div className="ml-gauge-pct">{pct.toFixed(1)}%</div>
-              <div className="ml-gauge-cap">achieved</div>
-            </div>
-          </div>
-        </div>
-        <div className="ml-kpi-body">
-          {head}
-          <div className="ml-kpi-bar"><div className="ml-kpi-fill" style={{ width: Math.min(100, pct) + "%", background: fillCol }} /><div className="ml-kpi-target" style={{ left: "100%" }} /></div>
-          {nums}{formulaInner}
-        </div>
-      </div>
-    );
-  }
-
-  // Track visual — single column, calculation below
   return (
     <div className="ml-kpi-hero col">
       <div className="ml-kpi-body">
         {head}
-        {nums}
-        <KpiSegBar pct={pct} />
-      </div>
-      <div style={{marginTop:12,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
-        <button className="ml-accordion-btn" onClick={() => setCalcOpen(v => !v)}>
-          <Icon name={calcOpen ? "expand_less" : "expand_more"} size={16} />
-          {calcOpen ? "Hide calculation" : "View calculation"}
-        </button>
-        <div className={"ml-accordion-body " + (calcOpen ? "open" : "closed")} style={{width:"100%"}}>
-          {formulaInner}
+        <div className="ml-kpi-mainrow">
+          <div className="ml-kpi-metrics-col">
+            {nums}
+            <div className="ml-kpi-progress-wrap">
+              <KpiSegBar pct={pct} />
+            </div>
+          </div>
+          <div className="ml-kpi-formula-col">
+            {formulaInner}
+          </div>
         </div>
       </div>
     </div>

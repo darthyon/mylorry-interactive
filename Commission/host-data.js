@@ -32,9 +32,9 @@
       current: {
         version:3, effective:"Dec 2026", target:200000,
         thresholds: [
-          { tier:"Tier 1", minPct:100, mult:100, isFinal:true },
+          { tier:"Tier 3", minPct:100, mult:100, isFinal:true },
           { tier:"Tier 2", minPct:75,  mult:50  },
-          { tier:"Tier 3", minPct:0,   mult:0   },
+          { tier:"Tier 1", minPct:0,   mult:0   },
         ],
       },
       history: [

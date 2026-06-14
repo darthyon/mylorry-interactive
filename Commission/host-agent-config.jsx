@@ -293,12 +293,9 @@ function AgentsListView({ onView, onEdit, onCreate, onTerminate }) {
       {/* ── Toolbar ── */}
       <div className="hac-toolbar">
         <div className="hac-toolbar-left">
-          {/* Search — DS pattern: scope pill + input */}
+          {/* Search — single-field pattern */}
           <div className="hac-search-group">
-            <button className="hac-scope-pill">
-                Agent <HIcon name="arrow_drop_down" size={18} color="var(--green-600)" />
-              </button>
-            <div className="hac-search-bar">
+            <div className="hac-search-bar single">
               <HIcon name="search" size={18} color="var(--fg-tertiary)" />
               <input
                 className="hac-search-input"
@@ -324,7 +321,7 @@ function AgentsListView({ onView, onEdit, onCreate, onTerminate }) {
           </button>
         </div>
         <button className="hac-create-btn" onClick={onCreate}>
-          <HIcon name="add" size={16} color="#fff" /> Create Agent Account
+          <HIcon name="add" size={16} color="#fff" /> Create Account
         </button>
       </div>
 
@@ -356,13 +353,13 @@ function AgentsListView({ onView, onEdit, onCreate, onTerminate }) {
         </div>
       )}
 
-      <div className="hac-count">{filtered.length} Agent account{filtered.length !== 1 ? "s" : ""}</div>
+      <div className="hac-count">{filtered.length} Salesperson account{filtered.length !== 1 ? "s" : ""}</div>
 
       <div className="ml-table-wrap">
         <table className="ml-table hac-agent-table">
           <thead>
             <tr>
-              <th>No.</th><th>Agent</th><th>Role</th>
+              <th>No.</th><th>Salesperson</th><th>Role</th>
               <th>KPI Progress</th><th>Status</th>
               <th>Mobile Number</th><th>Email</th><th>IC Number</th>
               <th>Bank Name</th><th>Account Number</th><th>Account Name</th>
@@ -510,7 +507,7 @@ function AddSPModal({ onClose, onAdd, existing }) {
       <>
         <button className="hac-modal-cancel" onClick={onClose}>Cancel</button>
         <button className="hac-modal-save" disabled={selected.size === 0}
-          onClick={() => { onAdd([...selected]); onClose(); }}>Add {selected.size > 0 ? `(${selected.size})` : ""}</button>
+          onClick={() => { onAdd([...selected]); onClose(); }}>Add SP Account{selected.size > 0 ? ` (${selected.size})` : ""}</button>
       </>
     }>
       <div className="hac-sp-search-wrap">
@@ -693,9 +690,9 @@ function CommissionSection({ kpi, editing, showHistory, setShowHistory }) {
   const [showEvalHelp, setShowEvalHelp] = useState(false);
   const [kpiThresholds, setKpiThresholds] = useState(() => {
     const t = kpi?.current?.thresholds || [
-      { id:1, tier:"Tier 1", minPct:100, mult:100, isFinal:true },
+      { id:1, tier:"Tier 3", minPct:100, mult:100, isFinal:true },
       { id:2, tier:"Tier 2", minPct:75,  mult:50  },
-      { id:3, tier:"Tier 3", minPct:0,   mult:0   },
+      { id:3, tier:"Tier 1", minPct:0,   mult:0   },
     ];
     return t.map((x, i) => ({ ...x, id: x.id || i + 1 }));
   });
@@ -1243,11 +1240,11 @@ function AgentFormView({ agent, onBack, onSave }) {
   return (
     <div style={{ paddingBottom: 80 }}>
       <div className="hac-breadcrumb">
-        <button className="hac-bc-link" onClick={onBack}>Agent List</button>
+        <button className="hac-bc-link" onClick={onBack}>Salesperson List</button>
         <HIcon name="chevron_right" size={15} color="var(--fg-tertiary)" />
         <span>{isEdit ? "Edit" : "Create"}</span>
       </div>
-      <h1 className="ml-h1" style={{ margin:"10px 0 18px" }}>{isEdit ? "Edit agent account" : "Create agent account"}</h1>
+      <h1 className="ml-h1" style={{ margin:"10px 0 18px" }}>{isEdit ? "Edit Account" : "Create Account"}</h1>
       <div className="hac-detail-sections">
         <div className="ml-card hac-detail-card">
           <div className="hac-sec-header">Personal Details</div>
@@ -1286,9 +1283,9 @@ function AgentFormView({ agent, onBack, onSave }) {
           <div className="hac-sec-header">KPI Configuration</div>
           <CommissionSection
             kpi={{ evalPeriodOpt:"Last year", current:{ version:1, effective:"", target:0, thresholds:[
-              { tier:"Tier 1", minPct:100, mult:100, isFinal:true },
+              { tier:"Tier 3", minPct:100, mult:100, isFinal:true },
               { tier:"Tier 2", minPct:75,  mult:50  },
-              { tier:"Tier 3", minPct:0,   mult:0   },
+              { tier:"Tier 1", minPct:0,   mult:0   },
             ]}}}
             editing={true} />
         </div>
@@ -1311,7 +1308,7 @@ function AgentDetailView({ agent, onBack }) {
   return (
     <div style={{ paddingBottom: editing ? 80 : 0 }}>
       <div className="hac-breadcrumb">
-        <button className="hac-bc-link" onClick={onBack}>Agent List</button>
+        <button className="hac-bc-link" onClick={onBack}>Salesperson List</button>
         <HIcon name="chevron_right" size={15} color="var(--fg-tertiary)" />
         <span>{cfg.name}</span>
       </div>
@@ -1377,10 +1374,10 @@ function HostAgentConfig() {
         {/* Page header + tabs — only at list level */}
         {!inSubPage && (
           <div style={{ marginBottom:20 }}>
-            <h1 className="ml-h1" style={{ marginBottom:14 }}>Agent</h1>
+            <h1 className="ml-h1" style={{ marginBottom:14 }}>Salesperson</h1>
             <div className="ml-tabs">
               {[
-                { key:"list",         label:"Agent List",              icon:"group"            },
+                { key:"list",         label:"Salesperson List",        icon:"group"            },
                 { key:"myfuel",       label:"MyFuel Commission",       icon:"local_gas_station" },
                 { key:"subscription", label:"Subscription Commission", icon:"workspace_premium" },
               ].map(t => (

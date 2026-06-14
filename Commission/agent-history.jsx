@@ -5,12 +5,18 @@ function History({ history }) {
   const [open, setOpen] = useStateH("Dec 2026");
   const [page, setPage] = useStateH(1);
   const [perPage, setPerPage] = useStateH(10);
+  const [nestedPage, setNestedPage] = useStateH({});
+  const [nestedPerPage, setNestedPerPage] = useStateH({});
   const total = history.reduce((s, h) => s + h.commission, 0);
   const totalVol = history.reduce((s, h) => s + h.volume, 0);
   const maxC = Math.max(...history.map((h) => h.commission));
 
   const sorted = [...history].reverse();
   const paginated = sorted.slice((page - 1) * perPage, page * perPage);
+  const getNestedPage = (key) => nestedPage[key] || 1;
+  const getNestedPerPage = (key) => nestedPerPage[key] || 5;
+  const setMonthNestedPage = (key, value) => setNestedPage(prev => ({ ...prev, [key]: value }));
+  const setMonthNestedPerPage = (key, value) => setNestedPerPage(prev => ({ ...prev, [key]: value }));
 
   return (
     <div className="ml-view">
@@ -64,10 +70,16 @@ function History({ history }) {
               <tbody>
                 {paginated.map((h) => {
                   const isOpen = open === h.key;
+                  const nestedPageValue = getNestedPage(h.key);
+                  const nestedPerPageValue = getNestedPerPage(h.key);
+                  const nestedRows = h.rows.slice((nestedPageValue - 1) * nestedPerPageValue, nestedPageValue * nestedPerPageValue);
                   return (
                     <React.Fragment key={h.key}>
                       <tr className={isOpen ? "ml-row-open" : ""}
-                          onClick={() => setOpen(isOpen ? null : h.key)}>
+                          onClick={() => {
+                            if (!isOpen && !nestedPage[h.key]) setMonthNestedPage(h.key, 1);
+                            setOpen(isOpen ? null : h.key);
+                          }}>
                         <td><Icon name={isOpen ? "expand_more" : "chevron_right"} size={18} color="#999AA5" /></td>
                         <td><b>{h.key}</b></td>
                         <td>{AC.fmtL(h.volume)}</td>
@@ -83,29 +95,47 @@ function History({ history }) {
                                 <thead>
                                   <tr>
                                     <th>SP Account</th><th>Volume</th>
-                                    <th>Tier · rate</th><th>Base Commission</th>
+                                    <th>Commission Tier</th><th>Base Commission</th>
                                     <th>KPI Tier</th>
                                     <th style={{textAlign:"right"}}>Commission</th>
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {h.rows.map((r) => (
+                                  {nestedRows.map((r) => (
                                     <tr key={r.sp}>
                                       <td><div className="ml-cell-main">{r.org}</div><div className="ml-cell-id">{r.sp}</div></td>
                                       <td>{AC.fmtL(r.vol)}</td>
                                       <td>
-                                        <span className={"ml-tier-tag t" + r.tier.id}>{r.tier.label}</span>
-                                        <span className="ml-sub-xs"> {AC.fmtRate(r.tier.rate)}</span>
+                                        <div className="ml-stack">
+                                          <span className="ml-tier-rate">{AC.fmtRate(r.tier.rate)}</span>
+                                          <span className="ml-sub-xs">{r.tier.label}</span>
+                                        </div>
                                       </td>
                                       <td>{AC.fmtRM(r.base)}</td>
-                                      <td>{r.isException
-                                        ? <Badge kind="new">{r.applied}%</Badge>
-                                        : <span className="ml-mult">{r.applied}%</span>}</td>
+                                      <td>
+                                        <div className="ml-stack">
+                                          <span className="ml-mult">{r.applied}%</span>
+                                          <span className="ml-sub-xs">{r.isException ? "New SP Account" : "KPI tier"}</span>
+                                        </div>
+                                      </td>
                                       <td style={{textAlign:"right"}}>{AC.fmtRM(r.commission)}</td>
                                     </tr>
                                   ))}
                                 </tbody>
                               </table>
+                              {h.rows.length > nestedPerPageValue && (
+                                <Pager
+                                  page={nestedPageValue}
+                                  perPage={nestedPerPageValue}
+                                  total={h.rows.length}
+                                  onPage={(value) => setMonthNestedPage(h.key, value)}
+                                  onPerPage={(value) => {
+                                    setMonthNestedPerPage(h.key, value);
+                                    setMonthNestedPage(h.key, 1);
+                                  }}
+                                  perPageOptions={[5, 10, 20]}
+                                />
+                              )}
                               <div className="ml-expand-note">
                                 <Icon name="info" size={14} color="#999AA5" />
                                 Grouped one row per SP account per month.

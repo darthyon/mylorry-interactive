@@ -31,9 +31,9 @@
     windowLabel: "1–31 Dec 2026",
     windowShort: "Dec 1–31",
     thresholds: [
-      { min: 100, mult: 100, tier: "Tier 1", note: "Full commission" },
+      { min: 100, mult: 100, tier: "Tier 3", note: "Full commission" },
       { min: 75,  mult: 50,  tier: "Tier 2", note: "Half commission" },
-      { min: 0,   mult: 0,   tier: "Tier 3", note: "No commission" },
+      { min: 0,   mult: 0,   tier: "Tier 1", note: "No commission" },
     ],
     // scenarios change ONLY the target, so the same real usage yields a
     // different achievement % — demonstrates the model honestly.

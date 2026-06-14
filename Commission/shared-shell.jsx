@@ -24,7 +24,7 @@ function TopBar() {
       <button className="ml-burger" aria-label="Menu"><Icon name="menu" size={22} color="#fff" /></button>
       <div className="ml-topbar-brand">
         <div className="ml-logo">
-          <span className="ml-logo-mark">MY</span><span className="ml-logo-word">LORRY</span><span className="ml-logo-ai">.ai</span>
+          <img className="ml-logo-img" src="/fleet-card/img_logo_white.svg" alt="MyLorry" />
         </div>
         <div className="ml-topbar-tag">More Safety · More Savings · More Earnings</div>
       </div>
@@ -207,7 +207,7 @@ function SummaryCard({ icon, title, sub, value, trend, accent }) {
 /* ─── KPI Tier Chip ─────────────────────────────────────────── */
 function KpiTierChip({ mult }) {
   const tone = mult >= 100 ? "good" : mult >= 50 ? "mid" : "bad";
-  const label = mult >= 100 ? "Tier 1 · 100%" : mult >= 50 ? "Tier 2 · 50%" : "Tier 3 · 0%";
+  const label = mult >= 100 ? "Tier 3 · 100%" : mult >= 50 ? "Tier 2 · 50%" : "Tier 1 · 0%";
   return <span className={"ml-tierchip " + tone}>{label}</span>;
 }
 
@@ -231,7 +231,7 @@ const KPI_PROGRESS_TONES = {
 };
 function KPIProgressMeta(pct = 0) {
   const value = Number(pct) || 0;
-  const tone = value >= 80 ? "green" : value >= 50 ? "amber" : "red";
+  const tone = value >= 100 ? "green" : value >= 75 ? "amber" : "red";
   return { pct: value, tone, isAchieved: value >= 100, ...KPI_PROGRESS_TONES[tone] };
 }
 

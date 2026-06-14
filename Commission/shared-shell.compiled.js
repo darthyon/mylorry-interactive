@@ -43,13 +43,11 @@ function TopBar() {
     className: "ml-topbar-brand"
   }, /*#__PURE__*/React.createElement("div", {
     className: "ml-logo"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "ml-logo-mark"
-  }, "MY"), /*#__PURE__*/React.createElement("span", {
-    className: "ml-logo-word"
-  }, "LORRY"), /*#__PURE__*/React.createElement("span", {
-    className: "ml-logo-ai"
-  }, ".ai")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("img", {
+    className: "ml-logo-img",
+    src: "/fleet-card/img_logo_white.svg",
+    alt: "MyLorry"
+  })), /*#__PURE__*/React.createElement("div", {
     className: "ml-topbar-tag"
   }, "More Safety \xB7 More Savings \xB7 More Earnings")));
 }
@@ -341,7 +339,7 @@ function KpiTierChip({
   mult
 }) {
   const tone = mult >= 100 ? "good" : mult >= 50 ? "mid" : "bad";
-  const label = mult >= 100 ? "Tier 1 · 100%" : mult >= 50 ? "Tier 2 · 50%" : "Tier 3 · 0%";
+  const label = mult >= 100 ? "Tier 3 · 100%" : mult >= 50 ? "Tier 2 · 50%" : "Tier 1 · 0%";
   return /*#__PURE__*/React.createElement("span", {
     className: "ml-tierchip " + tone
   }, label);
@@ -396,7 +394,7 @@ const KPI_PROGRESS_TONES = {
 };
 function KPIProgressMeta(pct = 0) {
   const value = Number(pct) || 0;
-  const tone = value >= 80 ? "green" : value >= 50 ? "amber" : "red";
+  const tone = value >= 100 ? "green" : value >= 75 ? "amber" : "red";
   return {
     pct: value,
     tone,

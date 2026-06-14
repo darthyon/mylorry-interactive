@@ -207,7 +207,7 @@ function SummaryCard({ icon, title, sub, value, trend, accent }) {
 /* ─── KPI Tier Chip ─────────────────────────────────────────── */
 function KpiTierChip({ mult }) {
   const tone = mult >= 100 ? "good" : mult >= 50 ? "mid" : "bad";
-  const label = mult >= 100 ? "Tier 1 · 100%" : mult >= 50 ? "Tier 2 · 50%" : "Tier 3 · 0%";
+  const label = mult >= 100 ? "Tier 3 · 100%" : mult >= 50 ? "Tier 2 · 50%" : "Tier 1 · 0%";
   return <span className={"ml-tierchip " + tone}>{label}</span>;
 }
 
@@ -224,11 +224,12 @@ function AccountStatusBadge({ status = "active", prefix }) {
 }
 
 /* ─── KPI Progress: bar + percentage + hover tooltip ────────── */
-function KPIProgress({ pct, actual, target, period, commissionLabel }) {
+function KPIProgress({ pct, actual, target, period, commissionLabel, phase }) {
   const [hover, setHover] = useState(false);
   const [pos, setPos]     = useState({ top:0, left:0 });
   const ref = React.useRef(null);
-  const col = pct >= 75 ? "var(--green-500)" : "var(--red-400)";
+  const isFuture = phase === "future";
+  const col = isFuture ? "var(--fg-disabled)" : pct >= 100 ? "var(--green-600)" : pct >= 75 ? "var(--amber-500)" : "var(--red-400)";
   const show = () => {
     if (ref.current) {
       const r = ref.current.getBoundingClientRect();
@@ -236,14 +237,16 @@ function KPIProgress({ pct, actual, target, period, commissionLabel }) {
     }
     setHover(true);
   };
-  let tip = `${(actual ?? 0).toLocaleString("en-US")} L / ${(target ?? 0).toLocaleString("en-US")} L target · ${period || ""}`;
+  let tip = isFuture
+    ? `KPI progress not started yet${period ? ` · ${period}` : ""}`
+    : `${(actual ?? 0).toLocaleString("en-US")} L / ${(target ?? 0).toLocaleString("en-US")} L target · ${period || ""}`;
   if (commissionLabel) tip += ` · ${commissionLabel}`;
   return (
     <div ref={ref} className="ml-kpi-prog" onMouseEnter={show} onMouseLeave={() => setHover(false)}>
       <div className="ml-kpi-track">
-        <div className="ml-kpi-fill" style={{ width: Math.min(pct, 100) + "%", background: col }} />
+        <div className="ml-kpi-fill" style={{ width: isFuture ? "0%" : Math.min(pct, 100) + "%", background: col }} />
       </div>
-      <span className="ml-kpi-pct" style={{ color: col }}>{pct}%</span>
+      <span className="ml-kpi-pct" style={{ color: col }}>{isFuture ? "—" : `${pct}%`}</span>
       {hover && ReactDOM.createPortal(
         <div className="ml-kpi-tip" style={{ top: pos.top, left: pos.left }}>{tip}</div>,
         document.body

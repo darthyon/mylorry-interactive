@@ -9,11 +9,23 @@ function History({
   const [open, setOpen] = useStateH("Dec 2026");
   const [page, setPage] = useStateH(1);
   const [perPage, setPerPage] = useStateH(10);
+  const [nestedPage, setNestedPage] = useStateH({});
+  const [nestedPerPage, setNestedPerPage] = useStateH({});
   const total = history.reduce((s, h) => s + h.commission, 0);
   const totalVol = history.reduce((s, h) => s + h.volume, 0);
   const maxC = Math.max(...history.map(h => h.commission));
   const sorted = [...history].reverse();
   const paginated = sorted.slice((page - 1) * perPage, page * perPage);
+  const getNestedPage = key => nestedPage[key] || 1;
+  const getNestedPerPage = key => nestedPerPage[key] || 5;
+  const setMonthNestedPage = (key, value) => setNestedPage(prev => ({
+    ...prev,
+    [key]: value
+  }));
+  const setMonthNestedPerPage = (key, value) => setNestedPerPage(prev => ({
+    ...prev,
+    [key]: value
+  }));
   return /*#__PURE__*/React.createElement("div", {
     className: "ml-view"
   }, /*#__PURE__*/React.createElement("div", {
@@ -93,11 +105,17 @@ function History({
     }
   }, "Commission"))), /*#__PURE__*/React.createElement("tbody", null, paginated.map(h => {
     const isOpen = open === h.key;
+    const nestedPageValue = getNestedPage(h.key);
+    const nestedPerPageValue = getNestedPerPage(h.key);
+    const nestedRows = h.rows.slice((nestedPageValue - 1) * nestedPerPageValue, nestedPageValue * nestedPerPageValue);
     return /*#__PURE__*/React.createElement(React.Fragment, {
       key: h.key
     }, /*#__PURE__*/React.createElement("tr", {
       className: isOpen ? "ml-row-open" : "",
-      onClick: () => setOpen(isOpen ? null : h.key)
+      onClick: () => {
+        if (!isOpen && !nestedPage[h.key]) setMonthNestedPage(h.key, 1);
+        setOpen(isOpen ? null : h.key);
+      }
     }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(Icon, {
       name: isOpen ? "expand_more" : "chevron_right",
       size: 18,
@@ -116,29 +134,43 @@ function History({
       className: "ml-expand-inner"
     }, /*#__PURE__*/React.createElement("table", {
       className: "ml-subtable"
-    }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "SP Account"), /*#__PURE__*/React.createElement("th", null, "Volume"), /*#__PURE__*/React.createElement("th", null, "Tier \xB7 rate"), /*#__PURE__*/React.createElement("th", null, "Base Commission"), /*#__PURE__*/React.createElement("th", null, "KPI Tier"), /*#__PURE__*/React.createElement("th", {
+    }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "SP Account"), /*#__PURE__*/React.createElement("th", null, "Volume"), /*#__PURE__*/React.createElement("th", null, "Commission Tier"), /*#__PURE__*/React.createElement("th", null, "Base Commission"), /*#__PURE__*/React.createElement("th", null, "KPI Tier"), /*#__PURE__*/React.createElement("th", {
       style: {
         textAlign: "right"
       }
-    }, "Commission"))), /*#__PURE__*/React.createElement("tbody", null, h.rows.map(r => /*#__PURE__*/React.createElement("tr", {
+    }, "Commission"))), /*#__PURE__*/React.createElement("tbody", null, nestedRows.map(r => /*#__PURE__*/React.createElement("tr", {
       key: r.sp
     }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("div", {
       className: "ml-cell-main"
     }, r.org), /*#__PURE__*/React.createElement("div", {
       className: "ml-cell-id"
-    }, r.sp)), /*#__PURE__*/React.createElement("td", null, AC.fmtL(r.vol)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
-      className: "ml-tier-tag t" + r.tier.id
-    }, r.tier.label), /*#__PURE__*/React.createElement("span", {
+    }, r.sp)), /*#__PURE__*/React.createElement("td", null, AC.fmtL(r.vol)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("div", {
+      className: "ml-stack"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "ml-tier-rate"
+    }, AC.fmtRate(r.tier.rate)), /*#__PURE__*/React.createElement("span", {
       className: "ml-sub-xs"
-    }, " ", AC.fmtRate(r.tier.rate))), /*#__PURE__*/React.createElement("td", null, AC.fmtRM(r.base)), /*#__PURE__*/React.createElement("td", null, r.isException ? /*#__PURE__*/React.createElement(Badge, {
-      kind: "new"
-    }, r.applied, "%") : /*#__PURE__*/React.createElement("span", {
+    }, r.tier.label))), /*#__PURE__*/React.createElement("td", null, AC.fmtRM(r.base)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("div", {
+      className: "ml-stack"
+    }, /*#__PURE__*/React.createElement("span", {
       className: "ml-mult"
-    }, r.applied, "%")), /*#__PURE__*/React.createElement("td", {
+    }, r.applied, "%"), /*#__PURE__*/React.createElement("span", {
+      className: "ml-sub-xs"
+    }, r.isException ? "New SP Account" : "KPI tier"))), /*#__PURE__*/React.createElement("td", {
       style: {
         textAlign: "right"
       }
-    }, AC.fmtRM(r.commission)))))), /*#__PURE__*/React.createElement("div", {
+    }, AC.fmtRM(r.commission)))))), h.rows.length > nestedPerPageValue && /*#__PURE__*/React.createElement(Pager, {
+      page: nestedPageValue,
+      perPage: nestedPerPageValue,
+      total: h.rows.length,
+      onPage: value => setMonthNestedPage(h.key, value),
+      onPerPage: value => {
+        setMonthNestedPerPage(h.key, value);
+        setMonthNestedPage(h.key, 1);
+      },
+      perPageOptions: [5, 10, 20]
+    }), /*#__PURE__*/React.createElement("div", {
       className: "ml-expand-note"
     }, /*#__PURE__*/React.createElement(Icon, {
       name: "info",

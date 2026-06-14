@@ -18,7 +18,7 @@ function MFCommStatusBadge({ status }) {
 
 /* ─── KPI attainment bar ─────────────────────────────────────── */
 function KPIBar({ pct }) {
-  const col = pct >= 75 ? "var(--green-500)" : "var(--red-400)";
+  const col = pct >= 100 ? "var(--green-600)" : pct >= 75 ? "var(--amber-500)" : "var(--red-400)";
   return (
     <div style={{ display:"flex", alignItems:"center", gap:8 }}>
       <div style={{ width:56, height:6, background:"var(--bg-muted)", borderRadius:3, overflow:"hidden", flexShrink:0 }}>
@@ -111,34 +111,76 @@ function TrendBarChart({ data, title, subtitle, defaultMetric = "volume", icon =
 function MyFuelKPIHeader() {
   const s = HC.MYFUEL_SUMMARY;
   const recs = HC.MYFUEL_RECORDS;
-  const avgKpi = recs.length
-    ? recs.reduce((a, r) => a + r.kpiPct, 0) / recs.length
+  const agents = HC.AGENTS || [];
+  const avgKpiSource = recs.filter(r => r.kpiPhase !== "future");
+  const avgKpi = avgKpiSource.length
+    ? avgKpiSource.reduce((a, r) => a + r.kpiPct, 0) / avgKpiSource.length
     : 0;
-  const kpis = [
-    { title:"Total Commission Payable", value:HC.fmtRM(s.totalPayable), sub:s.period,            icon:"payments"      },
-    { title:"Total Active Agents",      value:s.activeAgents,           sub:"Currently active",   icon:"group"         },
-    { title:"Average KPI Progress",     value:avgKpi.toFixed(1) + "%",  sub:"Across all agents",  icon:"track_changes" },
-  ];
+  const activeAgents = agents.filter(a => a.status === "active").length;
+  const pendingTermination = agents.filter(a => a.status === "terminating").length;
+  const totalAgents = activeAgents + pendingTermination;
   return (
     <div className="hm-kpi-strip">
-      {kpis.map((k, i) => (
-        <div key={i} className="hm-stat-card-a">
+      <div className="hm-stat-card-a">
+        <div className="hm-stat-header">
+          <div className="hm-stat-header-left">
+            <div className="hm-stat-icon">
+              <HIcon name="payments" size={18} color="#00AA4F" />
+            </div>
+            <div>
+              <div className="hm-stat-title">Total Commission Payable</div>
+              <div className="hm-stat-subtitle">{s.period}</div>
+            </div>
+          </div>
+        </div>
+        <div className="hm-stat-value-row">
+          <span className="hm-stat-value">{HC.fmtRM(s.totalPayable)}</span>
+        </div>
+      </div>
+
+      <div className="hm-stat-card-a">
+        <div className="hm-stat-header">
+          <div className="hm-stat-header-left">
+            <div className="hm-stat-icon">
+              <HIcon name="group" size={18} color="#00AA4F" />
+            </div>
+            <div>
+              <div className="hm-stat-title">Total Agents</div>
+              <div className="hm-stat-subtitle">{s.period}</div>
+            </div>
+          </div>
+        </div>
+        <div className="hm-stat-value-row">
+          <span className="hm-stat-value">{totalAgents}</span>
+        </div>
+        <div style={{ display:"flex", gap:16, flexWrap:"wrap", marginTop:2 }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+            <span style={{ fontSize:11, fontWeight:600, color:"var(--fg-tertiary)", textTransform:"uppercase", letterSpacing:".04em" }}>Active</span>
+            <span style={{ fontSize:14, fontWeight:700, color:"var(--fg-primary)" }}>{activeAgents}</span>
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+            <span style={{ fontSize:11, fontWeight:600, color:"var(--fg-tertiary)", textTransform:"uppercase", letterSpacing:".04em" }}>Pending termination</span>
+            <span style={{ fontSize:14, fontWeight:700, color:"var(--fg-primary)" }}>{pendingTermination}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="hm-stat-card-a">
           <div className="hm-stat-header">
             <div className="hm-stat-header-left">
               <div className="hm-stat-icon">
-                <HIcon name={k.icon} size={18} color="#00AA4F" />
+                <HIcon name="track_changes" size={18} color="#00AA4F" />
               </div>
               <div>
-                <div className="hm-stat-title">{k.title}</div>
-                <div className="hm-stat-subtitle">{k.sub}</div>
+                <div className="hm-stat-title">Average KPI Progress</div>
+                <div className="hm-stat-subtitle">Across all agents</div>
               </div>
             </div>
           </div>
           <div className="hm-stat-value-row">
-            <span className="hm-stat-value">{k.value}</span>
+            <span className="hm-stat-value">{avgKpi.toFixed(1) + "%"}</span>
           </div>
         </div>
-      ))}
     </div>
   );
 }
@@ -351,10 +393,8 @@ function MyFuelCommissionTab() {
 
   return (
     <div>
-      <MyFuelKPIHeader />
-
       {/* Portfolio commission trend */}
-      <div style={{ marginTop:20 }}>
+      <div>
         <TrendBarChart data={HC.MYFUEL_TREND} title="Commission Trend"
           subtitle={"Last 12 months · ending " + month} defaultMetric="volume" icon="bar_chart" />
       </div>
@@ -385,6 +425,8 @@ function MyFuelCommissionTab() {
           </div>
         </div>
       </div>
+
+      <MyFuelKPIHeader />
 
       {/* Agent performance table */}
       <div className="hac-count" style={{ marginBottom:8 }}>
