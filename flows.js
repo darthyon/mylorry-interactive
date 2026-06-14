@@ -60,10 +60,9 @@ window.FLOWS = {
           name: "Commission",
           status: "ready",
           route: "flows/commission-agent/index.html",
-          desc: "Agent dashboard — KPI gauge, tier track, SP breakdown, history",
+          desc: "One page — live KPI, YTD summary, 12-month trend, statements by month or SP account",
           screens: [
-            { label: "Dashboard", note: "KPI gauge vs target, tier track, SP account breakdown, drill-to-detail drawer." },
-            { label: "History", note: "12-month commission statements with monthly bar chart and per-SP drill-down." },
+            { label: "Commission", note: "Live KPI hero + YTD cards + monthly trend, with a By Month / By SP Account statement switch and drill-to-transaction." },
           ],
         },
         { id: "agent-sp-account",  name: "SP Account",         status: "planned" },

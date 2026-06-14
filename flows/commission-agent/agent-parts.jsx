@@ -1,6 +1,6 @@
-// agent-dashboard.jsx — Agent Commission Dashboard view.
-// Consumes a precomputed `model` from the app. Exports window.Dashboard.
-const { useState: useStateD } = React;
+// agent-parts.jsx — Shared building blocks for the Agent Commission page:
+// KPI hero, table cell renderers, and the transaction drill modal.
+// Composed by agent-app.jsx + agent-statements.jsx via the window.* exports below.
 const KPIProgressMeta = window.KPIProgressMeta;
 
 function gaugeStyle(pct) {
@@ -155,39 +155,6 @@ function KpiTierCell({ r }) {
   );
 }
 
-// Commission Validity — activation/validity only, never payout state.
-function ValidityCell({ r, expiring }) {
-  if (r.pending) {
-    return (
-      <div className="ml-stack">
-        <span className="ml-validity-date">Not active</span>
-        <Badge kind="pending">Pending activation</Badge>
-      </div>
-    );
-  }
-  return (
-    <div className="ml-stack">
-      <span className="ml-validity-date">{r.end}</span>
-      {expiring
-        ? <Badge kind="expire">Expiring ≤60d</Badge>
-        : <span className="ml-sub-xs">Active window</span>}
-    </div>
-  );
-}
-
-// Month picker — drives the commission summary + SP table (not KPI).
-// Mirrors the Host MyFuel Commission month selector (floating-label select).
-function MonthSelect({ history, value, onChange }) {
-  return (
-    <div className="hm-month-group">
-      <label className="hm-month-label">Month</label>
-      <select className="hm-month-select" value={value} onChange={(e) => onChange(e.target.value)}>
-        {[...history].reverse().map((h) => <option key={h.key} value={h.key}>{h.label}</option>)}
-      </select>
-    </div>
-  );
-}
-
 function TxnModal({ row, monthLabel = "Dec 2026", onClose }) {
   if (!row) return null;
   const n = 20;
@@ -263,119 +230,4 @@ function SpAccountCell({ r }) {
   );
 }
 
-function Dashboard({ model, history, t }) {
-  const [drawer, setDrawer] = useStateD(null);
-  const [spPage, setSpPage] = useStateD(1);
-  const [spPerPage, setSpPerPage] = useStateD(10);
-  // Month filter — defaults to the latest month; drives summary + SP table only.
-  const [monthKey, setMonthKey] = useStateD(history[history.length - 1].key);
-  const month = history.find((h) => h.key === monthKey) || history[history.length - 1];
-  const expiring = t.timeMachine === "dec2028";
-  const m = model; // KPI Progress stays on the live evaluation model (not month-filtered)
-  const spRows = month.rows.slice((spPage - 1) * spPerPage, spPage * spPerPage);
-  const onMonth = (k) => { setMonthKey(k); setSpPage(1); };
-  const cardsCls = month.newCount > 0 ? "ml-cards4" : "ml-cards3";
-
-  return (
-    <div className="ml-view">
-      {/* 1 — KPI progress hero (top, NOT month-filtered) */}
-      <KpiHero m={m} visual={t.kpiVisual} />
-
-      {/* 2 — Month-filtered commission summary */}
-      <div className="ml-month-head">
-        <div className="ml-month-head-title">
-          <Icon name="payments" size={18} color="#00AA4F" />
-          <span>Commission Overview</span>
-        </div>
-        <MonthSelect history={history} value={monthKey} onChange={onMonth} />
-      </div>
-      <div className={"ml-row " + cardsCls}>
-        <SummaryCard icon="payments" title="Total Commission" sub={month.label + " · provisional"}
-          value={AC.fmtRM(month.summary.commission)} />
-        <SummaryCard icon="local_gas_station" title="Total Volume" sub={"MyFuel · " + month.label}
-          value={AC.fmtL(month.volume)} />
-        <SummaryCard icon="account_balance" title="Active SP Accounts" sub="Transacting this month"
-          value={String(month.activeCount)} />
-        {month.newCount > 0 && (
-          <SummaryCard icon="fiber_new" title="New SP Accounts" sub="Activated this month"
-            value={String(month.newCount)} accent="#00AA4F" />
-        )}
-      </div>
-
-      {/* 3 — Commission by SP Account (month-filtered) */}
-      <div className="ml-month-head" style={{ marginTop: 20 }}>
-        <div className="ml-month-head-title">
-          <Icon name="receipt_long" size={18} color="#00AA4F" />
-          <span>Commission by SP Account</span>
-        </div>
-        <span className="ml-synced"><Icon name="sync" size={14} color="#999AA5" /> Last synced {AC.AGENT.lastSync}</span>
-      </div>
-      <div className="hac-count" style={{ marginBottom:8 }}>
-        {month.rows.length} SP account{month.rows.length !== 1 ? "s" : ""} · {month.label}
-      </div>
-
-      {/* Desktop table */}
-      <div className="ml-table-wrap ml-desk-only">
-        <table className="ml-table">
-          <thead>
-            <tr>
-              <th style={{minWidth:240}}>SP Account</th>
-              <th>Volume</th>
-              <th>Commission Tier</th>
-              <th>Base Commission</th>
-              <th>KPI Tier</th>
-              <th style={{textAlign:"right"}}>Final Commission</th>
-              <th>Commission Validity</th>
-              <th style={{width:40}}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {spRows.map((r) => (
-              <tr key={r.sp} onClick={() => setDrawer(r)}>
-                <td><SpAccountCell r={r} /></td>
-                <td>{AC.fmtL(r.volume)}</td>
-                <td><TierCell r={r} /></td>
-                <td>{AC.fmtRM(r.base)}</td>
-                <td><KpiTierCell r={r} /></td>
-                <td style={{textAlign:"right"}}><CurrencyPill>{AC.fmtRM(r.commission)}</CurrencyPill></td>
-                <td><ValidityCell r={r} expiring={expiring && r.end.includes("2028")} /></td>
-                <td><Icon name="chevron_right" size={18} color="#BBBBBB" /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <Pager page={spPage} perPage={spPerPage} total={month.rows.length} onPage={setSpPage} onPerPage={(v) => { setSpPerPage(v); setSpPage(1); }} perPageOptions={[10, 50, 100]} />
-
-      {/* ── Mobile cards — same hierarchy: SP → Volume → Tier → Actual → KPI Tier → Final ── */}
-      <div className="ml-sp-mob">
-        {spRows.map((r) => (
-          <div key={r.sp} className="ml-sp-mob-card" onClick={() => setDrawer(r)}>
-            <div className="ml-sp-mob-head">
-              <SpAccountCell r={r} />
-              <CurrencyPill>{AC.fmtRM(r.commission)}</CurrencyPill>
-            </div>
-            <div className="ml-sp-mob-metas">
-              <div><span className="ml-k">Volume</span><b>{AC.fmtL(r.volume)}</b></div>
-              <div><span className="ml-k">Commission Tier</span>
-                <b>{AC.fmtRate(r.tier.rate)}</b>
-                <span className="ml-sub-xs" style={{display:"block"}}>{r.tier.label}</span>
-              </div>
-              <div><span className="ml-k">Base Commission</span><b>{AC.fmtRM(r.base)}</b></div>
-              <div><span className="ml-k">KPI Tier</span>
-                <b>{r.appliedMult}%</b>
-                {(r.isException || r.pending) && <span className="ml-sub-xs" style={{display:"block"}}>New SP Account</span>}
-              </div>
-              <div><span className="ml-k">Final Commission</span><b className="ml-green">{AC.fmtRM(r.commission)}</b></div>
-            </div>
-          </div>
-        ))}
-        <Pager page={spPage} perPage={spPerPage} total={month.rows.length} onPage={setSpPage} onPerPage={(v) => { setSpPerPage(v); setSpPage(1); }} perPageOptions={[10, 50, 100]} />
-      </div>
-
-      <TxnModal row={drawer} monthLabel={month.label} onClose={() => setDrawer(null)} />
-    </div>
-  );
-}
-
-Object.assign(window, { Dashboard });
+Object.assign(window, { KpiHero, TierCell, KpiTierCell, SpAccountCell, TxnModal });

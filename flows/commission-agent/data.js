@@ -135,6 +135,29 @@
     });
   }
 
+  // ---- SP-account pivot of the 12-month history ----------------------
+  //  Same rows as buildHistory(), regrouped by SP → months, with YTD totals.
+  //  Powers the "By SP Account" statement view.
+  function buildSpStatements() {
+    const hist = buildHistory();
+    const map = new Map();
+    hist.forEach((h) => h.rows.forEach((r) => {
+      let e = map.get(r.sp);
+      if (!e) {
+        e = { sp: r.sp, org: r.org, eff: r.eff, end: r.end, isException: r.isException,
+          volume: 0, commission: 0, months: [] };
+        map.set(r.sp, e);
+      }
+      e.volume += r.volume;
+      e.commission += r.commission;
+      e.tier = r.tier;            // latest month wins (chronological order)
+      e.appliedMult = r.appliedMult;
+      e.months.push({ key: h.key, label: h.label, month: h.month, index: h.index, ...r });
+    }));
+    // Highest-earning SP first — answers "which account earns most".
+    return [...map.values()].sort((a, b) => b.commission - a.commission);
+  }
+
   // ---- formatting ----------------------------------------------------
   const fmtRM = (n) => "RM " + n.toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtL  = (n) => n.toLocaleString("en-US") + " L";
@@ -142,7 +165,7 @@
 
   window.AC = {
     AGENT, TIERS, tierFor, KPI, multiplierFor, ORGS,
-    portfolioVolume, compute, summarise, buildHistory,
+    portfolioVolume, compute, summarise, buildHistory, buildSpStatements,
     MONTHS, fmtRM, fmtL, fmtRate,
   };
 })();
