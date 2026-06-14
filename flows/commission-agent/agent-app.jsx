@@ -23,9 +23,12 @@ function buildModel(t) {
 
 function AgentApp() {
   const t = AC_CONFIG;
-  const [view, setView] = React.useState("dashboard");
   const model = buildModel(t);
   const history = React.useMemo(() => AC.buildHistory(), []);
+  const ytdCommission = history.reduce((s, h) => s + h.commission, 0);
+  const ytdVolume = history.reduce((s, h) => s + h.volume, 0);
+  const activeSp = history[history.length - 1].activeCount;
+  const maxC = Math.max(...history.map((h) => h.commission));
 
   return (
     <div className={"ml-app density-" + t.density}>
@@ -43,16 +46,38 @@ function AgentApp() {
           </div>
         </div>
 
-        <div className="ml-tabs">
-          <button className={"ml-tab" + (view === "dashboard" ? " active" : "")} onClick={() => setView("dashboard")}>
-            <Icon name="dashboard" size={18} /> Dashboard
-          </button>
-          <button className={"ml-tab" + (view === "history" ? " active" : "")} onClick={() => setView("history")}>
-            <Icon name="history" size={18} /> History
-          </button>
-        </div>
+        <div className="ml-view">
+          {/* 1 — Live KPI progress (current standing, not month-filtered) */}
+          <KpiHero m={model} visual={t.kpiVisual} />
 
-        {view === "dashboard" ? <Dashboard model={model} history={history} t={t} /> : <History history={history} />}
+          {/* 2 — Year-to-date summary */}
+          <div className="ml-cards3">
+            <SummaryCard icon="summarize" title="Commission · 2026 YTD" sub="Jan–Dec 2026"
+              value={AC.fmtRM(ytdCommission)} trend={{ dir: "up", val: "12%" }} />
+            <SummaryCard icon="local_gas_station" title="Volume · 2026 YTD" sub="All SP accounts"
+              value={AC.fmtL(ytdVolume)} />
+            <SummaryCard icon="account_balance" title="Active SP Accounts" sub="Transacting this month"
+              value={String(activeSp)} />
+          </div>
+
+          {/* 3 — 12-month trend */}
+          <div className="ml-card">
+            <CardHead icon="bar_chart" title="Monthly Commission" sub="Last 12 months · 2026" />
+            <div className="ml-bars">
+              {history.map((h) => (
+                <div className="ml-bar-col" key={h.key}>
+                  <div className="ml-bar"
+                    style={{ height: (h.commission / maxC * 100) + "%", opacity: h.index === 11 ? 0.5 : 1 }}
+                    title={AC.fmtRM(h.commission)} />
+                  <span className="ml-bar-x">{h.month}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 4 — Unified statements (By Month / By SP Account) */}
+          <Statements history={history} />
+        </div>
 
       </main>
     </div>
