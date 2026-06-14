@@ -1,0 +1,44 @@
+/* ============================================================
+   MyLorry — shared status badge styles
+   ------------------------------------------------------------
+   Single source for badge/status visuals across every flow and
+   the design-system showcase. Companion to the one StatusBadge
+   component in shared/shared-shell.jsx — keep the class names in
+   sync with STATUS_BADGE_META.
+
+   Note: only the status-badge layer is shared here. Layout/shell
+   CSS (.ml-app, .ml-card, .ml-table, …) intentionally stays inline
+   per flow — those have diverged between flows and merging them
+   would need visual QA.
+   ============================================================ */
+
+.ml-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 4px;
+  font-size: 11.5px; font-weight: 600; white-space: nowrap;
+}
+
+/* Generic tones */
+.ml-badge.active   { background: var(--green-50); color: var(--green-600); }
+.ml-badge.inactive { background: #FFF0F0;         color: var(--red-400);   }
+.ml-badge.expire   { background: var(--amber-50);  color: var(--amber-600); }
+.ml-badge.pending  { background: var(--amber-50);  color: var(--amber-600); }
+.ml-badge.new      { background: #EDEEF7;         color: var(--navy-800);  }
+
+/* Commission status */
+.ml-badge.comm-activated   { background: var(--green-50); color: var(--green-600); }
+.ml-badge.comm-pending-ob  { background: #FFF8E1;         color: #F57F17;          }
+.ml-badge.comm-on-hold     { background: #FFF8E1;         color: #F57F17;          }
+.ml-badge.comm-deactivated { background: #FFF0F0;         color: var(--red-400);   }
+
+/* Account status */
+.ml-badge.acct-active     { background: var(--green-50); color: var(--green-600);    }
+.ml-badge.acct-inactive   { background: #F0F0F2;         color: var(--fg-secondary); }
+.ml-badge.acct-suspended  { background: var(--amber-50); color: var(--amber-600);    }
+.ml-badge.acct-terminated { background: #FFF0F0;         color: var(--red-400);      }
+
+/* Payout status */
+.ml-badge.payout-pending  { background: #FFF8E1;         color: #F57F17;         }
+.ml-badge.payout-approved { background: #EAF6FB;         color: var(--teal-600); }
+.ml-badge.payout-paid     { background: var(--green-50); color: var(--green-600);}
+.ml-badge.payout-rejected { background: #FFF0F0;         color: var(--red-400);  }
