@@ -1,15 +1,27 @@
 // host-myfuel-commission.jsx — MyFuel Commission tab + Subscription Commission tab
-// Exports: MyFuelCommissionTab, SubscriptionCommissionTab → window
+// Exports: MyFuelCommissionTab, SubscriptionCommissionTab -> window
 
 const { useState: useMFC, useMemo: useMFM } = React;
 const KPIProgress = window.HKPIProgress;
+const KPIProgressMeta = window.KPIProgressMeta;
+
+const MYFUEL_VIEW_OPTIONS = [
+  { key: "all", label: "All" },
+  { key: "agent", label: "Agent" },
+  { key: "referrer", label: "Referrer" },
+];
+
+const ROLE_META = {
+  agent: { label: "Agent", accent: "#00AA4F", tint: "#D9F3E4" },
+  referrer: { label: "Referrer", accent: "#0E7490", tint: "#D9F0F6" },
+};
 
 /* ─── Commission Status Badge ────────────────────────────────── */
 const COMM_STATUS_META = {
   activated:           { label:"Activated",          cls:"comm-activated"  },
   pending_onboarding:  { label:"Pending Onboarding", cls:"comm-pending-ob" },
-  on_hold:             { label:"On Hold",             cls:"comm-on-hold"    },
-  deactivated:         { label:"Deactivated",         cls:"comm-deactivated"},
+  on_hold:             { label:"On Hold",            cls:"comm-on-hold"    },
+  deactivated:         { label:"Deactivated",        cls:"comm-deactivated"},
 };
 function MFCommStatusBadge({ status }) {
   const m = COMM_STATUS_META[status] || COMM_STATUS_META.activated;
@@ -18,7 +30,8 @@ function MFCommStatusBadge({ status }) {
 
 /* ─── KPI attainment bar ─────────────────────────────────────── */
 function KPIBar({ pct }) {
-  const col = pct >= 100 ? "var(--green-600)" : pct >= 75 ? "var(--amber-500)" : "var(--red-400)";
+  const meta = KPIProgressMeta(pct);
+  const col = meta.solid;
   return (
     <div style={{ display:"flex", alignItems:"center", gap:8 }}>
       <div style={{ width:56, height:6, background:"var(--bg-muted)", borderRadius:3, overflow:"hidden", flexShrink:0 }}>
@@ -29,30 +42,102 @@ function KPIBar({ pct }) {
   );
 }
 
-/* ─── Chart axis helpers ─────────────────────────────────────── */
+/* ─── Helpers ────────────────────────────────────────────────── */
 function chartCompact(v) {
   if (v >= 1e6) return (v / 1e6).toFixed(v % 1e6 === 0 ? 0 : 1) + "M";
   if (v >= 1e3) return Math.round(v / 1e3) + "K";
   return String(Math.round(v));
 }
+
 function chartNiceMax(max) {
-  const pow = Math.pow(10, Math.floor(Math.log10(max)));
-  const n = max / pow;
+  const safeMax = Math.max(max, 1);
+  const pow = Math.pow(10, Math.floor(Math.log10(safeMax)));
+  const n = safeMax / pow;
   const step = n <= 1 ? 1 : n <= 1.5 ? 1.5 : n <= 2 ? 2 : n <= 2.5 ? 2.5
             : n <= 3 ? 3 : n <= 4 ? 4 : n <= 5 ? 5 : n <= 7.5 ? 7.5 : 10;
   return step * pow;
 }
 
+function shortPeriodFromMonth(monthLabel) {
+  if (!monthLabel) return null;
+  const parts = monthLabel.split(" ");
+  if (parts.length !== 2) return null;
+  return `${parts[0]} '${String(parts[1]).slice(-2)}`;
+}
+
+function getTrendWindow(data, selectedMonth) {
+  const target = shortPeriodFromMonth(selectedMonth);
+  if (!target) return data;
+  const idx = data.findIndex((item) => item.period === target);
+  if (idx === -1) return data;
+  return data.slice(Math.max(0, idx - 11), idx + 1);
+}
+
+function getRecordId(record) {
+  return record.salespersonId || record.agentId;
+}
+
+function getRecordName(record) {
+  return record.salespersonName || record.agentName;
+}
+
+function getRoleKey(record) {
+  return (record.roleKey || record.role || "agent").toLowerCase();
+}
+
+function getRoleLabel(record) {
+  const roleKey = getRoleKey(record);
+  return ROLE_META[roleKey]?.label || "Agent";
+}
+
+function getMetricKey(metric) {
+  return metric === "volume" ? "Volume" : "Amount";
+}
+
+function getMetricValue(point, metric, roleView) {
+  const key = getMetricKey(metric);
+  if (roleView === "agent") return point["agent" + key] ?? point[metric] ?? point.commission ?? 0;
+  if (roleView === "referrer") return point["referrer" + key] ?? point[metric] ?? point.commission ?? 0;
+  return point[metric] ?? point.amount ?? point.commission ?? 0;
+}
+
+function getStackValues(point, metric, roleView, stackedInAll) {
+  if (stackedInAll) {
+    const agent = point["agent" + getMetricKey(metric)] ?? 0;
+    const referrer = point["referrer" + getMetricKey(metric)] ?? 0;
+    if (roleView === "agent") return { total: agent, agent, referrer: 0 };
+    if (roleView === "referrer") return { total: referrer, agent: 0, referrer };
+    return { total: agent + referrer, agent, referrer };
+  }
+
+  const total = getMetricValue(point, metric, roleView);
+  return { total, agent: total, referrer: 0 };
+}
+
+function formatMetricValue(metric, value) {
+  return metric === "volume" ? HC.fmtL(value) : HC.fmtRM(value);
+}
+
+function formatAxisValue(metric, value) {
+  return metric === "volume" ? chartCompact(value) : "RM " + chartCompact(value);
+}
+
 /* ─── Trend bar chart — Volume / Amount toggle + tooltip ──────── */
-function TrendBarChart({ data, title, subtitle, defaultMetric = "volume", icon = "history" }) {
+function TrendBarChart({
+  data,
+  title,
+  subtitle,
+  defaultMetric = "volume",
+  icon = "history",
+  view = "all",
+  stackedInAll = false,
+}) {
   const [metric, setMetric] = useMFC(defaultMetric);
-  const [hover, setHover]   = useMFC(null);
+  const [hover, setHover] = useMFC(null);
   const TICKS = 4;
 
-  const valOf   = (d) => (metric === "volume" ? d.volume : d.amount);
-  const niceMax = chartNiceMax(Math.max(...data.map(valOf), 1));
-  const fmtVal  = (v) => (metric === "volume" ? HC.fmtL(v) : HC.fmtRM(v));
-  const fmtAxis = (v) => (metric === "volume" ? chartCompact(v) : "RM " + chartCompact(v));
+  const maxValue = Math.max(...data.map((point) => getStackValues(point, metric, view, stackedInAll).total), 1);
+  const niceMax = chartNiceMax(maxValue);
 
   return (
     <div className="ml-card hac-detail-card hm-chart-card">
@@ -75,7 +160,7 @@ function TrendBarChart({ data, title, subtitle, defaultMetric = "volume", icon =
       <div className="hm-chart-body">
         <div className="hm-chart-yaxis">
           {Array.from({ length:TICKS + 1 }).map((_, i) => (
-            <div key={i} className="hm-chart-ytick">{fmtAxis(niceMax * (TICKS - i) / TICKS)}</div>
+            <div key={i} className="hm-chart-ytick">{formatAxisValue(metric, niceMax * (TICKS - i) / TICKS)}</div>
           ))}
         </div>
         <div className="hm-chart-plot">
@@ -83,23 +168,80 @@ function TrendBarChart({ data, title, subtitle, defaultMetric = "volume", icon =
             {Array.from({ length:TICKS + 1 }).map((_, i) => <div key={i} className="hm-chart-gridline" />)}
           </div>
           <div className="hm-chart-bars">
-            {data.map((d, i) => (
-              <div key={i} className="hm-chart-col"
-                onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}
-                onClick={() => setHover(h => (h === i ? null : i))}>
-                <div className={"hm-chart-bar-track" + (hover === i ? " active" : "")}>
-                  <div className={"hm-chart-bar" + (hover === i ? " active" : "")}
-                    style={{ height:(valOf(d) / niceMax * 100) + "%" }} />
-                  {hover === i && (
-                    <div className="hm-chart-tip">
-                      <div className="hm-chart-tip-val">{fmtVal(valOf(d))}</div>
-                      <div className="hm-chart-tip-period">{(metric === "volume" ? "Volume" : "Amount") + " · " + d.period}</div>
-                    </div>
-                  )}
+            {data.map((point, i) => {
+              const values = getStackValues(point, metric, view, stackedInAll);
+              const totalHeight = values.total / niceMax * 100;
+              const isStacked = stackedInAll && view === "all";
+              return (
+                <div key={i} className="hm-chart-col"
+                  onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}
+                  onClick={() => setHover((current) => current === i ? null : i)}>
+                  <div className={"hm-chart-bar-track" + (hover === i ? " active" : "")}>
+                    {isStacked ? (
+                      <div style={{
+                        height: totalHeight + "%",
+                        width: "58%",
+                        maxWidth: 26,
+                        minHeight: 3,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "flex-end",
+                        gap: 2,
+                      }}>
+                        {values.referrer > 0 && (
+                          <div className="hm-chart-bar" style={{
+                            height: Math.max(values.referrer / values.total * 100, 3) + "%",
+                            width: "100%",
+                            maxWidth: "none",
+                            background: ROLE_META.referrer.accent,
+                            borderRadius: values.agent > 0 ? "0" : "4px 4px 0 0",
+                          }} />
+                        )}
+                        {values.agent > 0 && (
+                          <div className="hm-chart-bar" style={{
+                            height: Math.max(values.agent / values.total * 100, 3) + "%",
+                            width: "100%",
+                            maxWidth: "none",
+                            background: ROLE_META.agent.accent,
+                            borderRadius: values.referrer > 0 ? "4px 4px 0 0" : "4px 4px 0 0",
+                          }} />
+                        )}
+                      </div>
+                    ) : (
+                      <div className={"hm-chart-bar" + (hover === i ? " active" : "")}
+                        style={{
+                          height: totalHeight + "%",
+                          background: view === "referrer" ? ROLE_META.referrer.accent : ROLE_META.agent.accent,
+                        }} />
+                    )}
+                    {hover === i && (
+                      <div className="hm-chart-tip">
+                        <div className="hm-chart-tip-val">{formatMetricValue(metric, values.total)}</div>
+                        <div className="hm-chart-tip-period">{point.period}</div>
+                        {isStacked && (
+                          <div style={{ marginTop:8, display:"grid", gap:4 }}>
+                            {[
+                              { label: "Total", value: values.total, color: "#3A3D46" },
+                              { label: "Agent", value: values.agent, color: ROLE_META.agent.accent },
+                              { label: "Referrer", value: values.referrer, color: ROLE_META.referrer.accent },
+                            ].map((row) => (
+                              <div key={row.label} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, fontSize:12 }}>
+                                <span style={{ display:"inline-flex", alignItems:"center", gap:6, color:"var(--fg-secondary)" }}>
+                                  <span style={{ width:8, height:8, borderRadius:999, background:row.color, display:"inline-block" }} />
+                                  {row.label}
+                                </span>
+                                <span style={{ color:"var(--fg-primary)", fontWeight:700 }}>{formatMetricValue(metric, row.value)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="hm-chart-xlabel">{point.period}</div>
                 </div>
-                <div className="hm-chart-xlabel">{d.period}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -108,17 +250,26 @@ function TrendBarChart({ data, title, subtitle, defaultMetric = "volume", icon =
 }
 
 /* ─── MyFuel KPI header strip ────────────────────────────────── */
-function MyFuelKPIHeader() {
-  const s = HC.MYFUEL_SUMMARY;
-  const recs = HC.MYFUEL_RECORDS;
-  const agents = HC.AGENTS || [];
-  const avgKpiSource = recs.filter(r => r.kpiPhase !== "future");
+function MyFuelKPIHeader({ view, records, month }) {
+  const activeRecords = records.filter((record) => record.status === "active");
+  const avgKpiSource = records.filter((record) => record.kpiPhase !== "future");
   const avgKpi = avgKpiSource.length
-    ? avgKpiSource.reduce((a, r) => a + r.kpiPct, 0) / avgKpiSource.length
+    ? avgKpiSource.reduce((sum, record) => sum + (record.kpiPct || 0), 0) / avgKpiSource.length
     : 0;
-  const activeAgents = agents.filter(a => a.status === "active").length;
-  const pendingTermination = agents.filter(a => a.status === "terminating").length;
-  const totalAgents = activeAgents + pendingTermination;
+  const agentCount = activeRecords.filter((record) => getRoleKey(record) === "agent").length;
+  const referrerCount = activeRecords.filter((record) => getRoleKey(record) === "referrer").length;
+  const totalCommission = records.reduce((sum, record) => sum + (record.commission || 0), 0);
+  const activeTitle = view === "agent"
+    ? "Active Agent"
+    : view === "referrer"
+      ? "Active Referrer"
+      : "Total Active Salesperson";
+  const kpiSubtitle = view === "agent"
+    ? "Across active Agent records"
+    : view === "referrer"
+      ? "Across active Referrer records"
+      : "Across current selection";
+
   return (
     <div className="hm-kpi-strip">
       <div className="hm-stat-card-a">
@@ -129,12 +280,12 @@ function MyFuelKPIHeader() {
             </div>
             <div>
               <div className="hm-stat-title">Total Commission Payable</div>
-              <div className="hm-stat-subtitle">{s.period}</div>
+              <div className="hm-stat-subtitle">{month}</div>
             </div>
           </div>
         </div>
         <div className="hm-stat-value-row">
-          <span className="hm-stat-value">{HC.fmtRM(s.totalPayable)}</span>
+          <span className="hm-stat-value">{HC.fmtRM(totalCommission)}</span>
         </div>
       </div>
 
@@ -145,67 +296,70 @@ function MyFuelKPIHeader() {
               <HIcon name="group" size={18} color="#00AA4F" />
             </div>
             <div>
-              <div className="hm-stat-title">Total Agents</div>
-              <div className="hm-stat-subtitle">{s.period}</div>
+              <div className="hm-stat-title">{activeTitle}</div>
+              <div className="hm-stat-subtitle">{month}</div>
             </div>
           </div>
         </div>
-        <div className="hm-stat-value-row">
-          <span className="hm-stat-value">{totalAgents}</span>
-        </div>
-        <div style={{ display:"flex", gap:16, flexWrap:"wrap", marginTop:2 }}>
-          <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
-            <span style={{ fontSize:11, fontWeight:600, color:"var(--fg-tertiary)", textTransform:"uppercase", letterSpacing:".04em" }}>Active</span>
-            <span style={{ fontSize:14, fontWeight:700, color:"var(--fg-primary)" }}>{activeAgents}</span>
-          </div>
-          <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
-            <span style={{ fontSize:11, fontWeight:600, color:"var(--fg-tertiary)", textTransform:"uppercase", letterSpacing:".04em" }}>Pending termination</span>
-            <span style={{ fontSize:14, fontWeight:700, color:"var(--fg-primary)" }}>{pendingTermination}</span>
-          </div>
+        <div className="hm-stat-value-row" style={{ flexWrap:"wrap", alignItems:"baseline", gap:12 }}>
+          <span className="hm-stat-value">{activeRecords.length}</span>
+          {view === "all" && (
+            <span style={{ fontSize:13, color:"var(--fg-secondary)" }}>
+              {agentCount} Agent · {referrerCount} Referrer
+            </span>
+          )}
         </div>
       </div>
 
       <div className="hm-stat-card-a">
-          <div className="hm-stat-header">
-            <div className="hm-stat-header-left">
-              <div className="hm-stat-icon">
-                <HIcon name="track_changes" size={18} color="#00AA4F" />
-              </div>
-              <div>
-                <div className="hm-stat-title">Average KPI Progress</div>
-                <div className="hm-stat-subtitle">Across all agents</div>
-              </div>
+        <div className="hm-stat-header">
+          <div className="hm-stat-header-left">
+            <div className="hm-stat-icon">
+              <HIcon name="track_changes" size={18} color="#00AA4F" />
+            </div>
+            <div>
+              <div className="hm-stat-title">Average KPI Progress</div>
+              <div className="hm-stat-subtitle">{kpiSubtitle}</div>
             </div>
           </div>
-          <div className="hm-stat-value-row">
-            <span className="hm-stat-value">{avgKpi.toFixed(1) + "%"}</span>
-          </div>
         </div>
+        <div className="hm-stat-value-row">
+          <span className="hm-stat-value">{avgKpi.toFixed(1) + "%"}</span>
+        </div>
+      </div>
     </div>
   );
 }
 
-/* ─── Agent Commission Drill-down ────────────────────────────── */
+/* ─── Salesperson Commission Drill-down ───────────────────────── */
 function AgentCommissionDrilldown({ record, onBack }) {
   const MONTHS = ["Jun 2026","May 2026","Apr 2026","Mar 2026","Feb 2026","Jan 2026","Dec 2025","Nov 2025","Oct 2025"];
-  const breakdown  = HC.SP_COMMISSION_BREAKDOWN[record.agentId] || [];
-  const history    = HC.COMMISSION_HISTORY[record.agentId] || HC.COMMISSION_HISTORY._default;
-  const [spQ, setSpQ]   = useMFC("");
+  const recordId = getRecordId(record);
+  const recordName = getRecordName(record);
+  const roleLabel = getRoleLabel(record);
+  const breakdown = HC.SP_COMMISSION_BREAKDOWN[recordId] || [];
+  const history = HC.COMMISSION_HISTORY[recordId] || HC.COMMISSION_HISTORY._default;
+  const kpiMeta = KPIProgressMeta(record.kpiPct);
+  const kpiStatusLabel = kpiMeta.isAchieved
+    ? "Achieved"
+    : kpiMeta.tone === "green"
+      ? "On track"
+      : kpiMeta.tone === "amber"
+        ? "Mid performance"
+        : "Needs attention";
+  const [spQ, setSpQ] = useMFC("");
   const [month, setMonth] = useMFC(record.period);
   const [page, setPage] = useMFC(1);
   const [perPage, setPerPage] = useMFC(10);
-  const onSpSearch = (v) => { setSpQ(v); setPage(1); };
+  const onSpSearch = (value) => { setSpQ(value); setPage(1); };
 
   const rows = spQ
-    ? breakdown.filter(b => {
+    ? breakdown.filter((item) => {
         const q = spQ.toLowerCase();
-        return b.org.toLowerCase().includes(q) || b.sp.toLowerCase().includes(q);
+        return item.org.toLowerCase().includes(q) || item.sp.toLowerCase().includes(q);
       })
     : breakdown;
   const pageRows = rows.slice((page - 1) * perPage, page * perPage);
-  const totalVol   = rows.reduce((a, b) => a + b.volume, 0);
-  const totalBase  = rows.reduce((a, b) => a + b.baseCommission, 0);
-  const totalFinal = rows.reduce((a, b) => a + b.finalCommission, 0);
 
   return (
     <div>
@@ -218,14 +372,13 @@ function AgentCommissionDrilldown({ record, onBack }) {
 
       <div className="ml-page-head" style={{ margin:"10px 0 20px" }}>
         <div>
-          <h1 className="ml-h1">{record.agentName}</h1>
+          <h1 className="ml-h1">{recordName}</h1>
           <div style={{ fontSize:12, color:"var(--fg-secondary)", marginTop:3 }}>
-            {record.agentId} · {record.period}
+            {recordId} · {roleLabel} · {record.period}
           </div>
         </div>
       </div>
 
-      {/* Summary KPIs */}
       <div className="hm-kpi-strip" style={{ marginBottom:20 }}>
         <div className="hm-stat-card-a">
           <div className="hm-stat-header">
@@ -252,10 +405,9 @@ function AgentCommissionDrilldown({ record, onBack }) {
             </div>
           </div>
           <div className="hm-stat-value-row">
-            <span className="hm-stat-value">{record.kpiPct}%</span>
-            <span style={{ fontSize:12, fontWeight:600,
-              color: record.kpiPct >= 75 ? "var(--green-500)" : "var(--red-400)" }}>
-              {record.kpiPct >= 100 ? "✓ Full commission" : record.kpiPct >= 75 ? "✓ 50% multiplier" : "No commission"}
+            <span className="hm-stat-value">{record.kpiPhase === "future" ? "—" : `${record.kpiPct}%`}</span>
+            <span style={{ fontSize:12, fontWeight:600, color:record.kpiPhase === "future" ? "var(--fg-disabled)" : kpiMeta.solid, display:"inline-flex", alignItems:"center", gap:4 }}>
+              <span>{record.kpiPhase === "future" ? "Not started" : kpiStatusLabel}</span>
             </span>
           </div>
         </div>
@@ -275,12 +427,11 @@ function AgentCommissionDrilldown({ record, onBack }) {
         </div>
       </div>
 
-      {/* Per-SP breakdown — bare table, mirrors the agent list */}
       <div style={{ marginBottom:16 }}>
         {breakdown.length === 0 ? (
           <div style={{ padding:"32px 0", textAlign:"center", color:"var(--fg-tertiary)", fontSize:14 }}>
             <HIcon name="table_chart" size={32} color="var(--fg-disabled)" /><br/>
-            <span style={{ marginTop:8, display:"block" }}>No SP account breakdown available for this agent.</span>
+            <span style={{ marginTop:8, display:"block" }}>No SP account breakdown available for this salesperson.</span>
           </div>
         ) : (
           <>
@@ -293,7 +444,7 @@ function AgentCommissionDrilldown({ record, onBack }) {
                   <div className="hac-search-bar">
                     <HIcon name="search" size={18} color="var(--fg-tertiary)" />
                     <input className="hac-search-input" placeholder="Search SP account or code"
-                      value={spQ} onChange={e => onSpSearch(e.target.value)} />
+                      value={spQ} onChange={(e) => onSpSearch(e.target.value)} />
                     {spQ && (
                       <button className="hac-search-clear" onClick={() => onSpSearch("")}>
                         <HIcon name="close" size={16} color="var(--fg-tertiary)" />
@@ -303,8 +454,8 @@ function AgentCommissionDrilldown({ record, onBack }) {
                 </div>
                 <div className="hm-month-group">
                   <label className="hm-month-label">Month</label>
-                  <select className="hm-month-select" value={month} onChange={e => setMonth(e.target.value)}>
-                    {MONTHS.map(m => <option key={m}>{m}</option>)}
+                  <select className="hm-month-select" value={month} onChange={(e) => setMonth(e.target.value)}>
+                    {MONTHS.map((item) => <option key={item}>{item}</option>)}
                   </select>
                 </div>
               </div>
@@ -323,33 +474,34 @@ function AgentCommissionDrilldown({ record, onBack }) {
                     <th>KPI Multiplier</th>
                     <th>Final Commission</th>
                     <th>Commission Validity</th>
+                    <th>Commission Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
-                      <td colSpan={7} style={{ textAlign:"center", padding:"24px 0", color:"var(--fg-tertiary)" }}>
+                      <td colSpan={8} style={{ textAlign:"center", padding:"24px 0", color:"var(--fg-tertiary)" }}>
                         No SP accounts match “{spQ}”.
                       </td>
                     </tr>
-                  ) : pageRows.map((b, i) => (
+                  ) : pageRows.map((item, i) => (
                     <tr key={i}>
                       <td>
-                        <div className="ml-cell-main">{b.org}</div>
-                        <div className="ml-cell-sub"><code className="hac-code">{b.sp}</code></div>
+                        <div className="ml-cell-main">{item.org}</div>
+                        <div className="ml-cell-sub"><code className="hac-code">{item.sp}</code></div>
                       </td>
-                      <td className="ml-mono">{b.volume.toLocaleString()}</td>
+                      <td className="ml-mono">{item.volume.toLocaleString()}</td>
                       <td>
-                        <div className="ml-mono" style={{ fontWeight:600 }}>{HC.fmtRate(b.rate)}</div>
-                        <div className="ml-cell-sub">{b.tier}</div>
+                        <div className="ml-mono" style={{ fontWeight:600 }}>{HC.fmtRate(item.rate)}</div>
+                        <div className="ml-cell-sub">{item.tier}</div>
                       </td>
-                      <td className="ml-mono">{HC.fmtRM(b.baseCommission)}</td>
-                      <td className="ml-mono">×{(b.kpiMult / 100).toFixed(2)}</td>
-                      <td className="ml-mono" style={{ fontWeight:600, color:"var(--navy-800)" }}>{HC.fmtRM(b.finalCommission)}</td>
+                      <td className="ml-mono">{HC.fmtRM(item.baseCommission)}</td>
+                      <td className="ml-mono">×{(item.kpiMult / 100).toFixed(2)}</td>
+                      <td className="ml-mono" style={{ fontWeight:600, color:"var(--navy-800)" }}>{HC.fmtRM(item.finalCommission)}</td>
                       <td>
-                        <div style={{ fontSize:12, color:"var(--fg-secondary)" }}>{b.eff} – {b.end}</div>
-                        <div style={{ marginTop:4 }}><MFCommStatusBadge status={b.commissionStatus} /></div>
+                        <div style={{ fontSize:12, color:"var(--fg-secondary)" }}>{item.eff} – {item.end}</div>
                       </td>
+                      <td><MFCommStatusBadge status={item.commissionStatus} /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -362,7 +514,6 @@ function AgentCommissionDrilldown({ record, onBack }) {
         )}
       </div>
 
-      {/* Commission history */}
       <TrendBarChart data={history} title="Commission History" subtitle="Last 12 months" defaultMetric="volume" />
     </div>
   );
@@ -372,20 +523,42 @@ function AgentCommissionDrilldown({ record, onBack }) {
 function MyFuelCommissionTab() {
   const MONTHS = ["Jun 2026","May 2026","Apr 2026","Mar 2026","Feb 2026","Jan 2026","Dec 2025","Nov 2025","Oct 2025"];
   const [drillRecord, setDrillRecord] = useMFC(null);
-  const [month, setMonth]   = useMFC("Jun 2026");
-  const [agentQ, setAgentQ] = useMFC("");
-  const [page, setPage]     = useMFC(1);
+  const [month, setMonth] = useMFC("Jun 2026");
+  const [salespersonQ, setSalespersonQ] = useMFC("");
+  const [view, setView] = useMFC("all");
+  const [page, setPage] = useMFC(1);
   const [perPage, setPerPage] = useMFC(10);
 
-  const records = useMFM(() => {
-    if (!agentQ) return HC.MYFUEL_RECORDS;
-    const q = agentQ.toLowerCase();
-    return HC.MYFUEL_RECORDS.filter(r =>
-      r.agentName.toLowerCase().includes(q) || r.agentId.toLowerCase().includes(q));
-  }, [agentQ]);
+  const records = HC.MYFUEL_SALESPERSON_RECORDS || HC.MYFUEL_RECORDS || [];
 
-  const pageData = records.slice((page - 1) * perPage, page * perPage);
-  const onSearch = (v) => { setAgentQ(v); setPage(1); };
+  const filteredRecords = useMFM(() => {
+    const q = salespersonQ.trim().toLowerCase();
+    return records.filter((record) => {
+      const matchesMonth = !month || record.period === month;
+      const matchesView = view === "all" || getRoleKey(record) === view;
+      const matchesQuery = !q
+        || getRecordName(record).toLowerCase().includes(q)
+        || getRecordId(record).toLowerCase().includes(q);
+      return matchesMonth && matchesView && matchesQuery;
+    });
+  }, [records, month, salespersonQ, view]);
+
+  const pageData = filteredRecords.slice((page - 1) * perPage, page * perPage);
+  const trendData = useMFM(() => getTrendWindow(HC.MYFUEL_ROLE_TREND || HC.MYFUEL_TREND || [], month), [month]);
+  const exportRows = useMFM(() => filteredRecords.map((record) => ({
+    salesperson: getRecordName(record),
+    salespersonId: getRecordId(record),
+    role: getRoleLabel(record),
+    spAccounts: record.spCount,
+    totalVolume: record.totalLiters,
+    kpiProgress: record.kpiPct,
+    commission: record.commission,
+    period: record.period,
+  })), [filteredRecords]);
+
+  const onSearch = (value) => { setSalespersonQ(value); setPage(1); };
+  const onViewChange = (nextView) => { setView(nextView); setPage(1); };
+  const onMonthChange = (nextMonth) => { setMonth(nextMonth); setPage(1); };
 
   if (drillRecord) {
     return <AgentCommissionDrilldown record={drillRecord} onBack={() => setDrillRecord(null)} />;
@@ -393,24 +566,46 @@ function MyFuelCommissionTab() {
 
   return (
     <div>
-      {/* Portfolio commission trend */}
-      <div>
-        <TrendBarChart data={HC.MYFUEL_TREND} title="Commission Trend"
-          subtitle={"Last 12 months · ending " + month} defaultMetric="volume" icon="bar_chart" />
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap", marginBottom:16 }}>
+        <div className="hm-seg" role="tablist" aria-label="Salesperson role view">
+          {MYFUEL_VIEW_OPTIONS.map((option) => (
+            <button
+              key={option.key}
+              className={"hm-seg-btn" + (view === option.key ? " active" : "")}
+              onClick={() => onViewChange(option.key)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Search (filters list) + Month selector (page-level) */}
+      <MyFuelKPIHeader view={view} records={filteredRecords} month={month} />
+
+      <div>
+        <TrendBarChart
+          data={trendData}
+          title="Commission Trend"
+          subtitle={"Last 12 months · ending " + month}
+          defaultMetric="volume"
+          icon="bar_chart"
+          view={view}
+          stackedInAll
+        />
+      </div>
+
       <div className="hac-toolbar" style={{ marginTop:20 }}>
         <div className="hac-toolbar-left">
           <div className="hac-search-group">
-            <button className="hac-scope-pill">
-              Agent <HIcon name="arrow_drop_down" size={18} color="var(--green-600)" />
-            </button>
-            <div className="hac-search-bar">
+            <div className="hac-search-bar single">
               <HIcon name="search" size={18} color="var(--fg-tertiary)" />
-              <input className="hac-search-input" placeholder="Search by name or ID"
-                value={agentQ} onChange={e => onSearch(e.target.value)} />
-              {agentQ && (
+              <input
+                className="hac-search-input"
+                placeholder="Search Salesperson by name or ID"
+                value={salespersonQ}
+                onChange={(e) => onSearch(e.target.value)}
+              />
+              {salespersonQ && (
                 <button className="hac-search-clear" onClick={() => onSearch("")}>
                   <HIcon name="close" size={16} color="var(--fg-tertiary)" />
                 </button>
@@ -419,42 +614,47 @@ function MyFuelCommissionTab() {
           </div>
           <div className="hm-month-group">
             <label className="hm-month-label">Month</label>
-            <select className="hm-month-select" value={month} onChange={e => setMonth(e.target.value)}>
-              {MONTHS.map(m => <option key={m}>{m}</option>)}
+            <select className="hm-month-select" value={month} onChange={(e) => onMonthChange(e.target.value)}>
+              {MONTHS.map((item) => <option key={item}>{item}</option>)}
             </select>
           </div>
         </div>
       </div>
 
-      <MyFuelKPIHeader />
-
-      {/* Agent performance table */}
       <div className="hac-count" style={{ marginBottom:8 }}>
-        {records.length} agent{records.length !== 1 ? "s" : ""}
+        {filteredRecords.length} result{filteredRecords.length !== 1 ? "s" : ""}
       </div>
       <div className="ml-table-wrap">
-        <table className="ml-table" style={{ minWidth:780 }}>
+        <table className="ml-table" style={{ minWidth:900 }}>
           <thead>
             <tr>
-              <th>Agent</th>
+              <th>Salesperson</th>
+              <th>Role</th>
               <th>SP Accounts</th>
               <th>Total Volume (L)</th>
               <th>KPI Progress</th>
-              <th>Commission</th>
+              <th>Final Commission</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {pageData.map((r, i) => (
-              <tr key={i} onClick={() => setDrillRecord(r)} style={{ cursor:"pointer" }}>
-                <td>
-                  <div className="ml-cell-main">{r.agentName}</div>
-                  <div className="ml-cell-sub"><code className="hac-code">{r.agentId}</code></div>
+            {pageData.length === 0 ? (
+              <tr>
+                <td colSpan={7} style={{ textAlign:"center", padding:"24px 0", color:"var(--fg-tertiary)" }}>
+                  No results found for the current filters.
                 </td>
-                <td className="ml-mono">{r.spCount}</td>
-                <td className="ml-mono">{r.totalLiters.toLocaleString()}</td>
-                <td><KPIProgress pct={r.kpiPct} actual={r.totalLiters} target={r.kpiTarget} period="Dec 1–31" /></td>
-                <td className="ml-mono" style={{ fontWeight:600, color:"var(--navy-800)" }}>{HC.fmtRM(r.commission)}</td>
+              </tr>
+            ) : pageData.map((record, i) => (
+              <tr key={i} onClick={() => setDrillRecord(record)} style={{ cursor:"pointer" }}>
+                <td>
+                  <div className="ml-cell-main">{getRecordName(record)}</div>
+                  <div className="ml-cell-sub"><code className="hac-code">{getRecordId(record)}</code></div>
+                </td>
+                <td>{getRoleLabel(record)}</td>
+                <td className="ml-mono">{record.spCount}</td>
+                <td className="ml-mono">{record.totalLiters.toLocaleString()}</td>
+                <td><KPIProgress pct={record.kpiPct} actual={record.totalLiters} target={record.kpiTarget} period="Dec 1–31" phase={record.kpiPhase} /></td>
+                <td className="ml-mono" style={{ fontWeight:600, color:"var(--navy-800)" }}>{HC.fmtRM(record.commission)}</td>
                 <td className="hm-view-cell">
                   <HIcon name="chevron_right" size={20} color="var(--fg-tertiary)" />
                 </td>
@@ -463,7 +663,7 @@ function MyFuelCommissionTab() {
           </tbody>
         </table>
       </div>
-      <HPager page={page} perPage={perPage} total={records.length} onPage={setPage} onPerPage={setPerPage} />
+      <HPager page={page} perPage={perPage} total={filteredRecords.length} onPage={setPage} onPerPage={setPerPage} />
     </div>
   );
 }
