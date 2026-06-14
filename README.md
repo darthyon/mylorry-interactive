@@ -34,9 +34,8 @@ flows/
   commission-agent/     Agent — Commission (dashboard + history)
   fleet-card/           MyFuel — Fleet Card Bulk Actions
 reference/              PRD, analysis, screenshots (not deployed)
-dev-server.js           Local static server with route logging
-server.js               Plain static server
-vercel.json             Vercel config (static, serves repo root, no build)
+dev-server.js           Local static server (npm run dev / npm start)
+vercel.json             Vercel config (runs npm run build, serves repo root)
 ```
 
 Each flow folder holds its own `index.html`, its `.jsx` screens (+ generated
