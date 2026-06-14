@@ -97,10 +97,12 @@ server.listen(PORT, HOST, () => {
   const url = `http://${HOST}:${PORT}`;
   console.log(`\n  🚀 MyLorry Flows dev server running at ${url}\n`);
   console.log(`  📁 Project root: ${__dirname}`);
-  console.log(`  🔗 Available portals:`);
-  console.log(`     • ${url}/              → Homepage (flow directory)`);
-  console.log(`     • ${url}/fleet-card/     → Host Portal — Fleet Card — Bulk Actions`);
-  console.log(`     • ${url}/agent-portal/   → Agent Portal (placeholder)\n`);
+  console.log(`  🔗 Available routes:`);
+  console.log(`     • ${url}/                          → Homepage (flow directory)`);
+  console.log(`     • ${url}/design-system/            → Design System showcase`);
+  console.log(`     • ${url}/flows/commission-host/    → Host — Salesperson Commission Config`);
+  console.log(`     • ${url}/flows/commission-agent/   → Agent — Commission`);
+  console.log(`     • ${url}/flows/fleet-card/         → MyFuel — Fleet Card Bulk Actions\n`);
   console.log(`  Press Ctrl+C to stop\n`);
 });
 

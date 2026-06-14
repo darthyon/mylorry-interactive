@@ -1,0 +1,7 @@
+# Excluded from the deployed review surface (kept in git, not shipped)
+reference/
+node_modules/
+.DS_Store
+*.pem
+.env*
+PRODUCT.md

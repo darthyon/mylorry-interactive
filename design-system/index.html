@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyLorry — Design System</title>
+<link rel="stylesheet" href="../styles/tokens.css">
+<link rel="stylesheet" href="../styles/components.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
+<style>
+/* ── Page shell ─────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-sans);color:var(--fg-primary);background:#fff;font-size:14px;}
+.topbar{height:64px;background:var(--gradient-brand);display:flex;align-items:center;padding:0 32px;position:sticky;top:0;z-index:10;}
+.topbar img{height:24px;filter:brightness(0) invert(1);opacity:.95;}
+.topbar a{margin-left:auto;color:#fff;text-decoration:none;font-size:13px;font-weight:600;opacity:.9;display:inline-flex;align-items:center;gap:6px;}
+.wrap{max-width:1080px;margin:0 auto;padding:48px 40px 96px;}
+.page-h1{font-size:28px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px;}
+.page-sub{font-size:15px;color:var(--fg-secondary);margin-bottom:40px;}
+.sec{margin-bottom:56px;scroll-margin-top:80px;}
+.sec-h{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--fg-tertiary);padding-bottom:10px;border-bottom:2px solid var(--border-light);margin-bottom:24px;}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:center;}
+.stack{display:flex;flex-direction:column;gap:20px;}
+.lbl{font-size:11px;font-weight:600;color:var(--fg-tertiary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;}
+.ms{font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20;line-height:1;vertical-align:middle;display:inline-flex;align-items:center;}
+
+/* ── Token swatches ─────────────────────────────────────────── */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;}
+.sw{border:1px solid var(--border-light);border-radius:var(--radius-md);overflow:hidden;}
+.sw-chip{height:56px;}
+.sw-meta{padding:8px 10px;}
+.sw-name{font-size:12px;font-weight:600;}
+.sw-val{font-size:11px;color:var(--fg-tertiary);font-variant-numeric:tabular-nums;}
+.radii{display:flex;gap:18px;flex-wrap:wrap;}
+.radius-box{width:72px;height:72px;background:var(--green-50);border:1px solid var(--green-500);display:flex;align-items:flex-end;justify-content:center;padding:6px;font-size:11px;color:var(--green-600);font-weight:600;}
+.type-row{display:flex;align-items:baseline;gap:16px;padding:10px 0;border-bottom:1px solid var(--border-light);}
+.type-row .tname{width:80px;font-size:11px;color:var(--fg-tertiary);font-weight:600;flex-shrink:0;}
+
+/* ── Components (canonical — mirrors flow CSS, sourced from tokens) ── */
+/* status badges → ../styles/components.css */
+
+/* buttons (.ml-btn-*) → ../styles/components.css */
+
+.card{border:1px solid var(--border-light);border-radius:var(--radius-md);box-shadow:var(--shadow-card);padding:18px 20px;max-width:340px;background:#fff;}
+.card-h{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.card-ico{width:32px;height:32px;border-radius:var(--radius-sm);background:var(--green-50);display:flex;align-items:center;justify-content:center;color:var(--green-600);}
+.card-title{font-size:14px;font-weight:700;}
+.card-sub{font-size:12px;color:var(--fg-secondary);}
+.card-val{font-size:24px;font-weight:700;letter-spacing:-.3px;margin-top:6px;}
+
+/* .ml-table base/th/td → ../styles/components.css; showcase adds an outer border */
+table.ml-table{border:1px solid var(--border-medium);border-radius:6px;overflow:hidden;}
+
+.field{display:flex;flex-direction:column;gap:6px;max-width:280px;}
+.field label{font-size:12px;font-weight:600;color:var(--fg-secondary);}
+.field input,.field select{height:38px;padding:0 12px;border:1px solid var(--border-light);border-radius:var(--radius-sm);font-family:var(--font);font-size:14px;outline:none;background:#fff;}
+.field input:focus,.field select:focus{border-color:var(--green-500);box-shadow:0 0 0 3px rgba(0,170,79,.08);}
+.field.error input{border-color:var(--red-400);}
+.field .hint{font-size:11px;color:var(--fg-tertiary);}
+.field .err{font-size:11px;color:var(--red-400);}
+
+/* Modal */
+.modal-demo{position:relative;border:1px dashed var(--border-medium);border-radius:var(--radius-md);background:var(--bg-subtle);height:220px;overflow:hidden;}
+.modal-scrim{position:absolute;inset:0;background:rgba(0,0,0,.32);display:flex;align-items:center;justify-content:center;}
+.modal{background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow-md);width:300px;padding:20px;}
+.modal h4{font-size:15px;font-weight:700;margin-bottom:6px;}
+.modal p{font-size:13px;color:var(--fg-secondary);margin-bottom:16px;}
+.modal .actions{display:flex;justify-content:flex-end;gap:8px;}
+
+.note{font-size:12px;color:var(--fg-tertiary);margin-top:10px;}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:var(--bg-muted);padding:1px 5px;border-radius:3px;}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <img src="../flows/fleet-card/img_logo_white.svg" alt="MyLorry" />
+  <a href="../index.html"><span class="ms">arrow_back</span> Back to library</a>
+</header>
+
+<div class="wrap">
+  <h1 class="page-h1">Design System</h1>
+  <p class="page-sub">Vendored snapshot of the MyLorry design language used by these prototypes. Tokens live in <code>styles/tokens.css</code>; shared components in <code>shared/shared-shell.jsx</code>.</p>
+
+  <!-- Colors -->
+  <section class="sec" id="colors">
+    <div class="sec-h">Color tokens</div>
+    <div class="swatches" id="swColors"></div>
+  </section>
+
+  <!-- Radii -->
+  <section class="sec" id="radii">
+    <div class="sec-h">Border radius</div>
+    <div class="radii" id="radii"></div>
+  </section>
+
+  <!-- Type -->
+  <section class="sec" id="type">
+    <div class="sec-h">Typography</div>
+    <div id="typeScale"></div>
+  </section>
+
+  <!-- Buttons -->
+  <section class="sec" id="buttons">
+    <div class="sec-h">Buttons</div>
+    <div class="row">
+      <button class="ml-btn-primary"><span class="ms">add</span> Primary</button>
+      <button class="ml-btn-outline">Outline</button>
+      <button class="ml-btn-soft"><span class="ms">download</span> Soft</button>
+      <button class="ml-btn-primary" disabled>Disabled</button>
+    </div>
+  </section>
+
+  <!-- Badges + status (live, via consolidated StatusBadge) -->
+  <section class="sec" id="badges">
+    <div class="sec-h">Badges &amp; status states</div>
+    <div class="stack">
+      <div>
+        <div class="lbl">Generic badge — <code>Badge</code></div>
+        <div class="row" id="badgeKinds"></div>
+      </div>
+      <div>
+        <div class="lbl">Commission status — <code>StatusBadge</code></div>
+        <div class="row" id="commStatus"></div>
+      </div>
+      <div>
+        <div class="lbl">Account status — <code>StatusBadge</code> / <code>AccountStatusBadge</code></div>
+        <div class="row" id="acctStatus"></div>
+      </div>
+      <div>
+        <div class="lbl">Payout status</div>
+        <div class="row" id="payoutStatus"></div>
+      </div>
+    </div>
+    <p class="note">All status badges render through one metadata-driven <code>StatusBadge</code> in <code>shared-shell.jsx</code> — no more per-file copies.</p>
+  </section>
+
+  <!-- Cards -->
+  <section class="sec" id="cards">
+    <div class="sec-h">Cards</div>
+    <div class="row">
+      <div class="card">
+        <div class="card-h"><div class="card-ico"><span class="ms">local_gas_station</span></div>
+          <div><div class="card-title">Total Volume</div><div class="card-sub">Dec 2026</div></div></div>
+        <div class="card-val">213,400 L</div>
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="card-ico"><span class="ms">payments</span></div>
+          <div><div class="card-title">Commission</div><div class="card-sub">This period</div></div></div>
+        <div class="card-val">RM 2,347.00</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Table -->
+  <section class="sec" id="tables">
+    <div class="sec-h">Tables</div>
+    <table class="ml-table">
+      <thead><tr><th>SP Account</th><th>Org</th><th>Volume</th><th>Status</th></tr></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </section>
+
+  <!-- Form fields -->
+  <section class="sec" id="forms">
+    <div class="sec-h">Form fields</div>
+    <div class="row" style="align-items:flex-start;">
+      <div class="field"><label>KPI Target (L)</label><input value="200000"><span class="hint">Monthly target volume</span></div>
+      <div class="field"><label>Evaluation period</label>
+        <select><option>Last completed year</option><option>Trailing 12 months</option></select></div>
+      <div class="field error"><label>Commission rate</label><input value="-0.5"><span class="err">Rate must be positive</span></div>
+    </div>
+  </section>
+
+  <!-- Modal -->
+  <section class="sec" id="modals">
+    <div class="sec-h">Modal</div>
+    <div class="modal-demo">
+      <div class="modal-scrim">
+        <div class="modal">
+          <h4>Terminate agent?</h4>
+          <p>Commission stops on the end date. A pro-rated estimate is shown before you confirm.</p>
+          <div class="actions"><button class="ml-btn-outline">Cancel</button><button class="ml-btn-primary">Confirm</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="../shared/shared-shell.js?v=20260614"></script>
+<script src="app.js?v=20260614"></script>
+</body>
+</html>
