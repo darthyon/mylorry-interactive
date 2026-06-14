@@ -234,7 +234,7 @@ function TxnModal({ row, monthLabel = "Dec 2026", onClose }) {
                   <span className="ml-k">Volume</span>
                   <span className="ml-txn-value">{AC.fmtL(t.vol)}</span>
                 </div>
-                <div className="ml-txn-card-cell" style={{textAlign:"right"}}>
+                <div className="ml-txn-card-cell">
                   <span className="ml-k">Commission</span>
                   <span className="ml-txn-value ml-green">{AC.fmtRM(t.amt)}</span>
                 </div>
@@ -370,9 +370,6 @@ function Dashboard({ model, history, t }) {
             </div>
           </div>
         ))}
-        <div style={{fontSize:12,color:"var(--fg-tertiary)",paddingTop:4}}>
-          {month.activeCount} accounts · actual × KPI {month.mult}% = <b className="ml-green">{AC.fmtRM(month.summary.commission)}</b>
-        </div>
         <Pager page={spPage} perPage={spPerPage} total={month.rows.length} onPage={setSpPage} onPerPage={(v) => { setSpPerPage(v); setSpPage(1); }} perPageOptions={[10, 50, 100]} />
       </div>
 

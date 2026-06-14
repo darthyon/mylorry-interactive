@@ -884,7 +884,7 @@ function CommissionSection({ kpi, editing, showHistory, setShowHistory }) {
             )}
 
             <div className="hac-tiers-grid hac-thr-grid">
-              {[...kpiThresholds].sort((a, b) => b.minPct - a.minPct).map(t => {
+              {[...kpiThresholds].sort((a, b) => a.minPct - b.minPct).map(t => {
                 return (
                   <div key={t.id} className="hac-tier-item">
                     <div className="hac-tier-item-head">

@@ -41,13 +41,7 @@ body{font-family:var(--font-sans);color:var(--fg-primary);background:#fff;font-s
 /* ── Components (canonical — mirrors flow CSS, sourced from tokens) ── */
 /* status badges → ../styles/components.css */
 
-.ml-btn-primary{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:var(--radius-xs);border:none;background:var(--green-600);color:#fff;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;}
-.ml-btn-primary:hover{background:var(--green-500);}
-.ml-btn-outline{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--radius-xs);border:1px solid var(--green-500);background:#fff;color:var(--green-600);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;}
-.ml-btn-outline:hover{background:var(--green-50);}
-.ml-btn-soft{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--radius-xs);border:1px solid var(--border-light);background:var(--green-50);color:var(--green-600);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;}
-.ml-btn-soft:hover{background:#E4F8EE;}
-.ml-btn-primary:disabled,.ml-btn-outline:disabled{opacity:.5;cursor:not-allowed;}
+/* buttons (.ml-btn-*) → ../styles/components.css */
 
 .card{border:1px solid var(--border-light);border-radius:var(--radius-md);box-shadow:var(--shadow-card);padding:18px 20px;max-width:340px;background:#fff;}
 .card-h{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
@@ -56,9 +50,8 @@ body{font-family:var(--font-sans);color:var(--fg-primary);background:#fff;font-s
 .card-sub{font-size:12px;color:var(--fg-secondary);}
 .card-val{font-size:24px;font-weight:700;letter-spacing:-.3px;margin-top:6px;}
 
-table.ml-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--border-medium);border-radius:var(--radius-sm);overflow:hidden;}
-.ml-table th{background:var(--bg-muted);font-size:12.5px;font-weight:600;text-align:left;padding:11px 14px;color:var(--fg-primary);}
-.ml-table td{font-size:13px;padding:11px 14px;border-top:1px solid var(--border-light);}
+/* .ml-table base/th/td → ../styles/components.css; showcase adds an outer border */
+table.ml-table{border:1px solid var(--border-medium);border-radius:6px;overflow:hidden;}
 
 .field{display:flex;flex-direction:column;gap:6px;max-width:280px;}
 .field label{font-size:12px;font-weight:600;color:var(--fg-secondary);}
