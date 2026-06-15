@@ -34,6 +34,9 @@ b { font-weight: 600; }
 .ml-logo { display: flex; align-items: center; min-height: 27px; }
 .ml-logo-img { display: block; height: 27px; width: auto; }
 .ml-topbar-tag { color: rgba(255,255,255,.7); font-size: 8px; font-weight: 500; letter-spacing: .6px; text-transform: uppercase; white-space: nowrap; }
+.ml-topbar-spacer { flex: 1; }
+.ml-library-link { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid rgba(255,255,255,.28); border-radius: 999px; color: #fff; text-decoration: none; font-size: 12px; font-weight: 600; background: rgba(255,255,255,.08); transition: background .12s, border-color .12s, transform .12s; }
+.ml-library-link:hover { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.42); transform: translateY(-1px); }
 .ml-sidebar { grid-column: 1; grid-row: 1 / -1; overflow: visible; position: relative; z-index: 20; }
 .ml-sidebar-card { width: 69px; height: 100vh; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background: #fff; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; padding: 12px 5px 16px; }
 .ml-sidebar-card::-webkit-scrollbar { width: 2px; }
@@ -158,6 +161,10 @@ b { font-weight: 600; }
   .spa-tier-body { flex-direction: column; align-items: flex-start; gap: 12px; }
   .spa-subsidy-row { grid-template-columns: 1fr; }
   .spa-subsidy-action { min-width: 0; }
+}
+@media (max-width: 640px) {
+  .ml-library-link span { display: none; }
+  .ml-library-link { padding: 8px; }
 }
 </style>
 </head>

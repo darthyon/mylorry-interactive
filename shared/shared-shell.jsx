@@ -25,11 +25,15 @@ function TopBar() {
     <header className="ml-topbar">
       <button className="ml-burger" aria-label="Menu"><Icon name="menu" size={22} color="#fff" /></button>
       <div className="ml-topbar-brand">
-        <div className="ml-logo">
+        <a className="ml-logo" href="../../index.html" aria-label="Back to Prototype Library">
           <img className="ml-logo-img" src="/flows/fleet-card/img_logo_white.svg" alt="MyLorry" />
-        </div>
-        <div className="ml-topbar-tag">More Safety · More Savings · More Earnings</div>
+        </a>
       </div>
+      <div className="ml-topbar-spacer" />
+      <a className="ml-library-link" href="../../index.html">
+        <Icon name="arrow_back" size={16} color="#fff" />
+        <span>Back to Library</span>
+      </a>
     </header>
   );
 }
