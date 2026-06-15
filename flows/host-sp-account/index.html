@@ -98,19 +98,24 @@ b { font-weight: 600; }
 
 /* Tier cards (read view) */
 .spa-tier-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-.spa-tier-card { border: 1px solid var(--border-light); border-radius: 8px; padding: 13px 16px; background: #fff; }
-.spa-tier-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+.spa-tier-card { border: 1px solid var(--border-strong); border-radius: 12px; padding: 14px 18px; background: #fff; min-height: 108px; }
+.spa-tier-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.spa-tier-title-wrap { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .spa-tier-label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--navy-800); }
-.spa-final-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: #EAF6FB; color: var(--teal-600); }
-.spa-tier-body { display: flex; gap: 32px; }
+.spa-final-badge { font-size: 10px; font-weight: 700; padding: 8px 16px; border-radius: 999px; background: var(--bg-muted); color: var(--navy-800); }
+.spa-tier-more { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.spa-tier-body { display: flex; gap: 24px; align-items: flex-end; }
+.spa-tier-body > div { flex: 1 1 0; min-width: 0; }
 .spa-tier-body b { font-size: 14px; font-weight: 600; color: var(--fg-primary); }
 
 /* Salesperson blocks (read view) */
-.spa-sp-list { display: flex; flex-direction: column; }
-.spa-sp-block { padding: 14px 0; border-bottom: 1px solid var(--border-light); }
-.spa-sp-block:last-child { border-bottom: none; }
+.spa-sp-list { display: flex; flex-direction: column; gap: 18px; }
+.spa-person-card { border: 1px solid var(--border-light); border-radius: 16px; padding: 20px 22px; background: #fff; }
+.spa-person-top { display: flex; flex-direction: column; gap: 8px; }
+.spa-person-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.spa-person-more { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .spa-sp-name { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 700; color: var(--fg-primary); }
-.spa-sp-meta { font-size: 12px; color: var(--fg-secondary); margin: 3px 0 0 22px; }
+.spa-sp-meta { font-size: 12px; color: var(--fg-secondary); }
 .spa-role-chip { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: var(--bg-muted); color: var(--fg-secondary); text-transform: uppercase; letter-spacing: .3px; }
 
 /* Radios */
@@ -123,14 +128,22 @@ b { font-weight: 600; }
 .spa-tier-modal-row .hac-label { font-weight: 700; color: var(--fg-primary); }
 
 /* Subsidy rows */
-.spa-subsidy-rows { display: flex; flex-direction: column; gap: 8px; max-width: 420px; }
-.spa-subsidy-row { display: flex; align-items: center; gap: 8px; }
+.spa-subsidy-rows { display: flex; flex-direction: column; gap: 8px; max-width: 560px; }
+.spa-subsidy-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.spa-subsidy-row .hac-input { width: 100%; }
+.spa-subsidy-action { display: inline-flex; align-items: center; justify-content: flex-start; min-width: 150px; }
 
 /* Commission validity range readout (form) */
 .spa-range-readout { display: flex; align-items: center; gap: 7px; min-height: 38px; padding: 8px 11px; border: 1px dashed var(--border-medium); border-radius: var(--radius-xs); background: #fff; font-size: 13px; font-weight: 600; color: var(--navy-800); }
+.spa-label-with-info { display: inline-flex; align-items: center; gap: 6px; }
+.spa-info-wrap:focus-within .spa-info-tooltip,
+.spa-info-wrap:hover .spa-info-tooltip { opacity: 1; }
+.spa-info-trigger { display: inline-flex; align-items: center; justify-content: center; cursor: help; }
+.spa-info-tooltip { width: 220px; left: 0; transform: none; }
+.spa-info-tooltip::after { left: 14px; transform: none; }
 
 /* Salesperson card (form — added via modal, tiers edited inline) */
-.spa-sp-edit-card { border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px 18px; margin-bottom: 14px; background: var(--bg-hover); }
+.spa-sp-edit-card { border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px 18px; margin-bottom: 14px; background: #fff; }
 .spa-sp-edit-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 
 /* ── Responsive ──────────────────────────────────────────────────── */
@@ -140,6 +153,11 @@ b { font-weight: 600; }
   .ml-main { grid-column: 1; grid-row: 2; padding: 14px 14px 48px; }
   .ml-h1 { font-size: 20px; }
   .spa-tier-grid { grid-template-columns: 1fr; }
+  .spa-tier-card { min-height: auto; padding: 14px; }
+  .spa-tier-head { margin-bottom: 12px; }
+  .spa-tier-body { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .spa-subsidy-row { grid-template-columns: 1fr; }
+  .spa-subsidy-action { min-width: 0; }
 }
 </style>
 </head>

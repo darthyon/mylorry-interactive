@@ -3,7 +3,7 @@
 
 const { useState, useMemo, useRef, useEffect } = React;
 
-const { SP_ACCOUNTS, ORGS, PROVIDERS, FREEZING_TYPES, DURATIONS, AGENT_POOL, REFERRER_POOL,
+const { SP_ACCOUNTS, ORGS, PROVIDERS, FREEZING_TYPES, AGENT_POOL, REFERRER_POOL,
   fmtRM, fmtDate, validityRange, addMonths } = window.SPA;
 const { PetronLogo } = window.SharedShell;
 
@@ -277,28 +277,73 @@ function DField({ label, children }) {
   );
 }
 
-/* ─── Detail (view) ─────────────────────────────────────────────── */
-function SPDetailView({ account, onBack, onEdit }) {
-  const a = account;
-  const agents = a.agents.filter(x => x.role === "agent");
-  const referrers = a.agents.filter(x => x.role === "referrer");
+function FieldLabelWithInfo({ label, info }) {
+  return (
+    <label className="hac-label req spa-label-with-info">
+      <span>{label}</span>
+      <span className="ml-tooltip-wrap spa-info-wrap" tabIndex={0}>
+        <span className="spa-info-trigger" aria-label={`${label} help`}>
+          <HIcon name="info" size={14} color="var(--fg-tertiary)" />
+        </span>
+        <span className="ml-tooltip spa-info-tooltip">{info}</span>
+      </span>
+    </label>
+  );
+}
 
-  const TierGrid = ({ tiers }) => (
+function TierGrid({ tiers, amountLabel = "Commission Amount" }) {
+  return (
     <div className="spa-tier-grid">
       {tiers.map((t, i) => (
         <div className="spa-tier-card" key={i}>
           <div className="spa-tier-head">
-            <span className="spa-tier-label"><HIcon name="stacked_bar_chart" size={13} /> Tier {i + 1}</span>
-            {t.final && <span className="spa-final-badge">Final tier</span>}
+            <div className="spa-tier-title-wrap">
+              <span className="spa-tier-label"><HIcon name="stacked_bar_chart" size={13} /> Tier {i + 1}</span>
+              {t.final && <span className="spa-final-badge">Final tier</span>}
+            </div>
+            <span className="spa-tier-more" aria-hidden="true">
+              <HIcon name="more_horiz" size={16} color="var(--fg-disabled)" />
+            </span>
           </div>
           <div className="spa-tier-body">
             <div><span className="ml-k">Usage</span><b>{t.final ? "> " : "≤ "}{Number(t.usageMax).toLocaleString("en-MY")} ltr</b></div>
-            <div><span className="ml-k">Commission Amount</span><b>{t.commissionAmount}</b></div>
+            <div><span className="ml-k">{amountLabel}</span><b>{t.commissionAmount}</b></div>
           </div>
         </div>
       ))}
     </div>
   );
+}
+
+function SalespersonCommissionCard({ person }) {
+  const roleLabel = person.role === "referrer" ? "Referrer" : "Agent";
+  const iconName = person.role === "referrer" ? "group" : "work";
+
+  return (
+    <div className="spa-person-card">
+      <div className="spa-person-top">
+        <div className="spa-person-title-row">
+          <div className="spa-sp-name">
+            <HIcon name={iconName} size={15} color="var(--navy-800)" /> {person.name}
+          </div>
+          <span className="spa-person-more" aria-hidden="true">
+            <HIcon name="more_horiz" size={16} color="var(--fg-disabled)" />
+          </span>
+        </div>
+        <div className="spa-sp-meta">
+          {roleLabel} commission setting
+        </div>
+      </div>
+      <TierGrid tiers={person.tiers} />
+    </div>
+  );
+}
+
+/* ─── Detail (view) ─────────────────────────────────────────────── */
+function SPDetailView({ account, onBack, onEdit }) {
+  const a = account;
+  const agents = a.agents.filter(x => x.role === "agent");
+  const referrers = a.agents.filter(x => x.role === "referrer");
 
   return (
     <div>
@@ -347,7 +392,7 @@ function SPDetailView({ account, onBack, onEdit }) {
             <DField label="Rebate Beneficiary">{a.rebateBeneficiary}</DField>
             <DField label="Is Master">{a.isMaster ? "Yes" : "No"}</DField>
           </div>
-          <TierGrid tiers={a.rebateTiers} />
+          <TierGrid tiers={a.rebateTiers} amountLabel="Rebate Amount" />
         </Section>
 
         <Section title="Commission Setting">
@@ -361,19 +406,11 @@ function SPDetailView({ account, onBack, onEdit }) {
           <div className="spa-sp-list">
             {agents.length > 0 && <div className="hac-form-section-title" style={{ margin: "20px 0 4px" }}>Agent commission</div>}
             {agents.map((ag, i) => (
-              <div className="spa-sp-block" key={"a" + i}>
-                <div className="spa-sp-name"><HIcon name="support_agent" size={15} color="var(--navy-800)" /> {ag.name}</div>
-                <div className="spa-sp-meta">{ag.duration} · Start {fmtDate(ag.startDate)}</div>
-                <TierGrid tiers={ag.tiers} />
-              </div>
+              <SalespersonCommissionCard key={"a" + i} person={ag} />
             ))}
             {referrers.length > 0 && <div className="hac-form-section-title" style={{ margin: "20px 0 4px" }}>Referrer commission</div>}
             {referrers.map((rf, i) => (
-              <div className="spa-sp-block" key={"r" + i}>
-                <div className="spa-sp-name"><HIcon name="group" size={15} color="var(--navy-800)" /> {rf.name}</div>
-                <div className="spa-sp-meta">{rf.duration} · Start {fmtDate(rf.startDate)}</div>
-                <TierGrid tiers={rf.tiers} />
-              </div>
+              <SalespersonCommissionCard key={"r" + i} person={rf} />
             ))}
           </div>
         </Section>
@@ -417,6 +454,64 @@ function Modal({ title, onClose, children, footer }) {
         {footer && <div className="hac-modal-foot">{footer}</div>}
       </div>
     </div>
+  );
+}
+
+function TierCardMenu({ onEdit, onAddTier, onDelete }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
+  const dropRef = useRef(null);
+  const DROP_W = 160;
+
+  useEffect(() => {
+    if (!open) return;
+    const close = e => {
+      if (btnRef.current && btnRef.current.contains(e.target)) return;
+      if (dropRef.current && dropRef.current.contains(e.target)) return;
+      setOpen(false);
+    };
+    const dismiss = () => setOpen(false);
+    document.addEventListener("mousedown", close);
+    window.addEventListener("scroll", dismiss, true);
+    window.addEventListener("resize", dismiss);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      window.removeEventListener("scroll", dismiss, true);
+      window.removeEventListener("resize", dismiss);
+    };
+  }, [open]);
+
+  const toggle = e => {
+    e.stopPropagation();
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, left: r.right - DROP_W });
+    }
+    setOpen(v => !v);
+  };
+
+  return (
+    <div className="hac-ellipsis">
+      <button className="ml-icon-btn" ref={btnRef} onClick={toggle} title="More actions">
+        <HIcon name="more_horiz" size={18} />
+      </button>
+      {open && ReactDOM.createPortal(
+        <div className="hac-drop-fixed" ref={dropRef} style={{ top: pos.top, left: pos.left }}
+          onClick={e => e.stopPropagation()}>
+          <button className="hac-drop-item" onClick={() => { setOpen(false); onEdit(); }}><HIcon name="edit" size={15} /> Edit</button>
+          <button className="hac-drop-item" onClick={() => { setOpen(false); onAddTier(); }}><HIcon name="add" size={15} /> Add Tier</button>
+          <button className="hac-drop-item danger" onClick={() => { setOpen(false); onDelete(); }}><HIcon name="delete" size={15} color="currentColor" /> Delete</button>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+function SalespersonCardMenu({ onEdit, onAddTier, onDelete }) {
+  return (
+    <TierCardMenu onEdit={onEdit} onAddTier={onAddTier} onDelete={onDelete} />
   );
 }
 
@@ -479,9 +574,10 @@ function TierModal({ kind, tier, prevUsage, onClose, onSave }) {
 }
 
 /* ─── Editable tier list (cards + Add/Edit modal) ───────────────── */
-function EditableTiers({ kind, tiers, onChange }) {
+function EditableTiers({ kind, tiers, onChange, externalAddTick = 0 }) {
   const [modal, setModal] = useState(null); // { editIndex } | null
   const noun = kind === "rebate" ? "Rebate" : "Commission";
+  const prevAddTick = useRef(externalAddTick);
   // Previous tier's usage (highest non-final usageMax) — basis for a final tier.
   const prevUsage = tiers.filter(t => !t.final).reduce((m, t) => Math.max(m, Number(t.usageMax) || 0), 0);
 
@@ -492,11 +588,17 @@ function EditableTiers({ kind, tiers, onChange }) {
   };
   const remove = i => onChange(tiers.filter((_, j) => j !== i));
 
+  useEffect(() => {
+    if (externalAddTick !== prevAddTick.current) {
+      prevAddTick.current = externalAddTick;
+      setModal({ editIndex: null });
+    }
+  }, [externalAddTick]);
+
   return (
     <div>
       <div className="hac-sec-header-row" style={{ marginBottom: 10 }}>
         <span className="hac-form-section-title" style={{ margin: 0, color: "var(--navy-800)" }}>Tier Setting</span>
-        <button className="hac-add-tier-btn" onClick={() => setModal({ editIndex: null })}><HIcon name="add" size={15} /> Add Tier</button>
       </div>
       {tiers.length === 0 ? (
         <div className="hac-tier-empty"><span><HIcon name="error" size={15} /> Tier 1</span>At least one tier is required</div>
@@ -505,12 +607,15 @@ function EditableTiers({ kind, tiers, onChange }) {
           {tiers.map((t, i) => (
             <div className="spa-tier-card" key={i}>
               <div className="spa-tier-head">
-                <span className="spa-tier-label"><HIcon name="stacked_bar_chart" size={13} /> Tier {i + 1}</span>
-                <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <div className="spa-tier-title-wrap">
+                  <span className="spa-tier-label"><HIcon name="stacked_bar_chart" size={13} /> Tier {i + 1}</span>
                   {t.final && <span className="spa-final-badge">Final tier</span>}
-                  <button className="ml-icon-btn" onClick={() => setModal({ editIndex: i })} title="Edit"><HIcon name="edit" size={15} /></button>
-                  <button className="ml-icon-btn" onClick={() => remove(i)} title="Remove"><HIcon name="close" size={15} /></button>
                 </div>
+                <TierCardMenu
+                  onEdit={() => setModal({ editIndex: i })}
+                  onAddTier={() => setModal({ editIndex: null })}
+                  onDelete={() => remove(i)}
+                />
               </div>
               <div className="spa-tier-body">
                 <div><span className="ml-k">Usage</span><b>{t.final ? "> " : "≤ "}{Number(t.usageMax).toLocaleString("en-MY")} ltr</b></div>
@@ -531,21 +636,20 @@ function EditableTiers({ kind, tiers, onChange }) {
 }
 
 /* ─── Add salesperson modal ─────────────────────────────────────── */
-function AddSalespersonModal({ onClose, onSave }) {
-  const [role, setRole]         = useState("agent");
-  const [name, setName]         = useState("");
-  const [duration, setDuration] = useState("");
-  const [startDate, setStartDate] = useState("");
+function AddSalespersonModal({ initialValue = null, onClose, onSave }) {
+  const isEdit = !!initialValue;
+  const [role, setRole]         = useState(initialValue?.role || "agent");
+  const [name, setName]         = useState(initialValue?.name || "");
   const noun = role === "agent" ? "Agent" : "Referrer";
   const pool = role === "agent" ? AGENT_POOL : REFERRER_POOL;
-  const canSave = name && duration && startDate;
-  const save = () => { if (!canSave) return; onSave({ name, role, duration, startDate, tiers: [] }); onClose(); };
+  const canSave = !!name;
+  const save = () => { if (!canSave) return; onSave({ name, role, tiers: [] }); onClose(); };
 
   return (
-    <Modal title="Add Salesperson" onClose={onClose} footer={
+    <Modal title={isEdit ? "Edit Salesperson" : "Add Salesperson"} onClose={onClose} footer={
       <>
         <button className="hac-modal-cancel" onClick={onClose}>Cancel</button>
-        <button className="hac-modal-save" disabled={!canSave} onClick={save}>Save</button>
+        <button className="hac-modal-save" disabled={!canSave} onClick={save}>{isEdit ? "Save Changes" : "Save"}</button>
       </>
     }>
       <div className="spa-radio-group" style={{ marginBottom: 18 }}>
@@ -565,18 +669,6 @@ function AddSalespersonModal({ onClose, onSave }) {
           {pool.map(p => <option key={p}>{p}</option>)}
         </select>
       </div>
-      <div className="hac-fg" style={{ marginBottom: 16 }}>
-        <label className="hac-label req">Duration*</label>
-        <select className="hac-input hac-select-input" value={duration} onChange={e => setDuration(e.target.value)}>
-          <option value="">Choose the active period</option>
-          {DURATIONS.map(d => <option key={d}>{d}</option>)}
-        </select>
-      </div>
-      <div className="hac-fg">
-        <label className="hac-label req">Start Date*</label>
-        <input className="hac-input" type="date" placeholder="Pick the start date. e.g. 27 Jan 2025"
-          value={startDate} onChange={e => setStartDate(e.target.value)} />
-      </div>
     </Modal>
   );
 }
@@ -593,7 +685,8 @@ function SPFormView({ account, onBack, onSave }) {
     agents: [],
     payoutType: "Credit Note",
   });
-  const [spModalOpen, setSpModalOpen] = useState(false);
+  const [spModalState, setSpModalState] = useState(null); // null | { mode, index? }
+  const [agentTierAddTick, setAgentTierAddTick] = useState({});
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   // Subsidy numbers
@@ -607,7 +700,13 @@ function SPFormView({ account, onBack, onSave }) {
   // Salesperson — added via modal; tiers edited inline per card.
   const setAgent = (i, patch) => setForm(f => { const arr = [...f.agents]; arr[i] = { ...arr[i], ...patch }; return { ...f, agents: arr }; });
   const addAgent = person => setForm(f => ({ ...f, agents: [...f.agents, person] }));
+  const saveAgentDetails = (i, person) => setForm(f => {
+    const arr = [...f.agents];
+    arr[i] = { ...arr[i], name: person.name, role: person.role };
+    return { ...f, agents: arr };
+  });
   const removeAgent = i => setForm(f => ({ ...f, agents: f.agents.filter((_, j) => j !== i) }));
+  const requestAgentTierAdd = i => setAgentTierAddTick(ticks => ({ ...ticks, [i]: (ticks[i] || 0) + 1 }));
 
   const rangePreview = form.activationDate && form.commissionValidityMonths
     ? validityRange(form.activationDate, form.commissionValidityMonths)
@@ -659,15 +758,18 @@ function SPFormView({ account, onBack, onSave }) {
               <div className="spa-subsidy-row" key={i}>
                 <input className="hac-input" placeholder="Enter subsidy no." value={s}
                   onChange={e => setSubsidy(i, e.target.value)} />
-                {form.subsidyNos.length > 1 && (
-                  <button className="ml-icon-btn" onClick={() => removeSubsidy(i)} title="Remove"><HIcon name="close" size={16} /></button>
-                )}
+                <div className="spa-subsidy-action">
+                  {i === 0 ? (
+                    <button className="hac-add-tier-btn" onClick={addSubsidy}>
+                      <HIcon name="add" size={15} /> Add Subsidy No.
+                    </button>
+                  ) : (
+                    <button className="ml-icon-btn" onClick={() => removeSubsidy(i)} title="Remove"><HIcon name="close" size={16} /></button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
-          <button className="hac-add-tier-btn" style={{ marginTop: 10 }} onClick={addSubsidy}>
-            <HIcon name="add" size={15} /> Add Subsidy No.
-          </button>
         </Section>
 
         {/* Cards Settings */}
@@ -710,27 +812,27 @@ function SPFormView({ account, onBack, onSave }) {
         <Section title="Commission Setting">
           <div className="hac-form-grid3">
             <div className="hac-fg">
-              <label className="hac-label req">Activation Date*</label>
+              <FieldLabelWithInfo
+                label="Activation Date*"
+                info="First date the SP account is eligible for commission."
+              />
               <input className="hac-input" type="date" value={form.activationDate || ""}
                 onChange={e => set("activationDate", e.target.value)} />
-              <span className="hac-field-hint">First date the SP account is eligible for commission.</span>
             </div>
             <div className="hac-fg">
-              <label className="hac-label req">Commission Validity (months)*</label>
+              <FieldLabelWithInfo
+                label="Commission Validity (months)*"
+                info="Stays fixed if the account is transferred between agents."
+              />
               <input className="hac-input" type="number" min="1" placeholder="e.g. 36"
                 value={form.commissionValidityMonths} onChange={e => set("commissionValidityMonths", e.target.value)} />
-              <span className="hac-field-hint">Blanket setting for the whole SP account.</span>
-            </div>
-            <div className="hac-fg">
-              <label className="hac-label">Commission Validity Range</label>
-              <div className="spa-range-readout"><HIcon name="event" size={15} color="var(--navy-800)" /> {rangePreview}</div>
-              <span className="hac-field-hint">Stays fixed if the account is transferred between agents.</span>
+              <span className="hac-field-hint">{rangePreview}</span>
             </div>
           </div>
 
           <div className="hac-sec-header-row" style={{ margin: "20px 0 12px" }}>
             <span className="hac-form-section-title" style={{ margin: 0, color: "var(--navy-800)" }}>Salesperson Setting</span>
-            <button className="hac-add-tier-btn" onClick={() => setSpModalOpen(true)}><HIcon name="add" size={15} /> Add Salesperson</button>
+            <button className="hac-add-tier-btn" onClick={() => setSpModalState({ mode: "create" })}><HIcon name="add" size={15} /> Add Salesperson</button>
           </div>
 
           {form.agents.length === 0 && (
@@ -744,11 +846,19 @@ function SPFormView({ account, onBack, onSave }) {
                     <HIcon name={ag.role === "referrer" ? "group" : "support_agent"} size={15} color="var(--navy-800)" /> {ag.name}
                     <span className="spa-role-chip">{ag.role === "referrer" ? "Referrer" : "Agent"}</span>
                   </div>
-                  <div className="spa-sp-meta">{ag.duration} · Start {fmtDate(ag.startDate)}</div>
                 </div>
-                <button className="ml-icon-btn" onClick={() => removeAgent(ai)} title="Remove salesperson"><HIcon name="delete" size={18} /></button>
+                <SalespersonCardMenu
+                  onEdit={() => setSpModalState({ mode: "edit", index: ai })}
+                  onAddTier={() => requestAgentTierAdd(ai)}
+                  onDelete={() => removeAgent(ai)}
+                />
               </div>
-              <EditableTiers kind="commission" tiers={ag.tiers} onChange={t => setAgent(ai, { tiers: t })} />
+              <EditableTiers
+                kind="commission"
+                tiers={ag.tiers}
+                onChange={t => setAgent(ai, { tiers: t })}
+                externalAddTick={agentTierAddTick[ai] || 0}
+              />
             </div>
           ))}
         </Section>
@@ -769,8 +879,15 @@ function SPFormView({ account, onBack, onSave }) {
         </button>
       </div>
 
-      {spModalOpen && ReactDOM.createPortal(
-        <AddSalespersonModal onClose={() => setSpModalOpen(false)} onSave={addAgent} />,
+      {spModalState && ReactDOM.createPortal(
+        <AddSalespersonModal
+          initialValue={spModalState.mode === "edit" ? form.agents[spModalState.index] : null}
+          onClose={() => setSpModalState(null)}
+          onSave={person => {
+            if (spModalState.mode === "edit") saveAgentDetails(spModalState.index, person);
+            else addAgent(person);
+          }}
+        />,
         document.body
       )}
     </div>

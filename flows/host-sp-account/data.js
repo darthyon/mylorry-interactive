@@ -41,31 +41,27 @@
 
   // A wide salesperson roster so the list "+N more" popover is exercised.
   const AGENT_POOL = [
-    "Agent Ryan", "Tesla Agent", "Agent Yusuf", "Agent Lim", "Agent Devi",
-    "Agent Hakim", "Agent Wong", "Agent Suresh", "Agent Farah", "Agent Tan",
-    "Agent Aziz", "Agent Mei", "Agent Bala", "Agent Nadia", "Agent Chong",
+    "Ryan Tan Ruo Yen", "Yusuf Hakim", "Lim Wei Jian", "Devi Nair",
+    "Farah Syazwani", "Suresh Kumar", "Wong Jia Hao", "Tan Mei Lin",
+    "Azizul Rahman", "Nadia Sofea", "Chong Kai Wen", "Bala Krishnan",
+    "Hakim Zulkifli", "Aisyah Nabila", "Pravin Raj",
   ];
   const REFERRER_POOL = [
-    "Referrer Ryan", "Referrer Yusuf", "Referrer Devi", "Referrer Lim",
-    "Referrer Hakim", "Referrer Tan", "Referrer Farah",
+    "Darren Lee", "Nurul Huda", "Jason Teoh", "Shanti Menon",
+    "Marcus Goh", "Amirul Faiz", "Carmen Ooi",
   ];
-
-  const DURATIONS = ["12 months", "24 months", "36 months"];
 
   const defaultTiers = [
     tier(1000, 0.01),
     tier(2000, 0.02, true),
   ];
 
-  // role-specific active period + start date (the salesperson's own assignment),
-  // distinct from the account-level commission validity.
   const makeAgents = (nAgents, nReferrers) => {
     const out = [];
-    const starts = ["2025-01-27", "2024-11-01", "2025-03-15"];
     for (let i = 0; i < nAgents; i++)
-      out.push({ ...agent(AGENT_POOL[i % AGENT_POOL.length], "agent", defaultTiers), duration: DURATIONS[i % 3], startDate: starts[i % 3] });
+      out.push({ ...agent(AGENT_POOL[i % AGENT_POOL.length], "agent", defaultTiers) });
     for (let i = 0; i < nReferrers; i++)
-      out.push({ ...agent(REFERRER_POOL[i % REFERRER_POOL.length], "referrer", defaultTiers), duration: DURATIONS[i % 3], startDate: starts[i % 3] });
+      out.push({ ...agent(REFERRER_POOL[i % REFERRER_POOL.length], "referrer", defaultTiers) });
     return out;
   };
 
@@ -114,7 +110,7 @@
 
   window.SPA = {
     SP_ACCOUNTS,
-    ORGS, PROVIDERS, FREEZING_TYPES, DURATIONS,
+    ORGS, PROVIDERS, FREEZING_TYPES,
     AGENT_POOL, REFERRER_POOL,
     fmtRM, fmtL, fmtDate, addMonths, validityRange,
   };
