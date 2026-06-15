@@ -4,12 +4,13 @@
 const { useState, useMemo, useRef, useEffect } = React;
 
 const { SP_ACCOUNTS, ORGS, PROVIDERS, FREEZING_TYPES, AGENT_POOL, REFERRER_POOL,
-  fmtRM, fmtDate, validityRange, addMonths } = window.SPA;
+  fmtRM, fmtDate, addMonths } = window.SPA;
 const { PetronLogo } = window.SharedShell;
 
 const PAYOUT_TYPES = ["Credit Note", "Bank-in Personal", "Bank-in Company"];
 const OWNER_TYPES = ["Organization", "Individual"];
 const BENEFICIARIES = ["Individual", "Group", "Has Parent"];
+const DEFAULT_COMMISSION_VALIDITY_MONTHS = 36;
 
 /* ─── Agent cell — first name + "+N more" link with popover ──────── */
 function AgentCell({ names }) {
@@ -399,8 +400,18 @@ function SPDetailView({ account, onBack, onEdit }) {
           {/* Account-level validity — belongs to the SP account, not any agent */}
           <div className="hac-detail-grid">
             <DField label="Activation Date">{fmtDate(a.activationDate)}</DField>
-            <DField label="Commission Validity">{a.commissionValidityMonths} months</DField>
-            <DField label="Commission Validity Range">{validityRange(a.activationDate, a.commissionValidityMonths)}</DField>
+            <DField label="Commission Validity">
+              <div>
+                <span className="hac-view-val spa-dval" style={{ padding: 0, minHeight: "auto" }}>
+                  {DEFAULT_COMMISSION_VALIDITY_MONTHS} months
+                </span>
+                {a.activationDate && (
+                  <span className="hac-field-hint">
+                    {fmtDate(a.activationDate)} - {fmtDate(addMonths(a.activationDate, DEFAULT_COMMISSION_VALIDITY_MONTHS))}
+                  </span>
+                )}
+              </div>
+            </DField>
           </div>
 
           <div className="spa-sp-list">
@@ -681,7 +692,7 @@ function SPFormView({ account, onBack, onSave }) {
     freezingThresholdType: "", freezingThresholdAmount: "", balanceReminder: "",
     rebateBeneficiary: "Individual", isMaster: false,
     rebateTiers: [{ usageMax: 1000, commissionAmount: 0.01, final: true }],
-    activationDate: "", commissionValidityMonths: "",
+    activationDate: "", commissionValidityMonths: DEFAULT_COMMISSION_VALIDITY_MONTHS,
     agents: [],
     payoutType: "Credit Note",
   });
@@ -708,9 +719,10 @@ function SPFormView({ account, onBack, onSave }) {
   const removeAgent = i => setForm(f => ({ ...f, agents: f.agents.filter((_, j) => j !== i) }));
   const requestAgentTierAdd = i => setAgentTierAddTick(ticks => ({ ...ticks, [i]: (ticks[i] || 0) + 1 }));
 
-  const rangePreview = form.activationDate && form.commissionValidityMonths
-    ? validityRange(form.activationDate, form.commissionValidityMonths)
-    : "Set activation date and validity to preview the range.";
+  const normalizedValidityMonths = DEFAULT_COMMISSION_VALIDITY_MONTHS;
+  const validityInlineText = form.activationDate
+    ? `${fmtDate(form.activationDate)} - ${fmtDate(addMonths(form.activationDate, normalizedValidityMonths))}`
+    : "";
 
   return (
     <div style={{ paddingBottom: 90 }}>
@@ -812,21 +824,33 @@ function SPFormView({ account, onBack, onSave }) {
         <Section title="Commission Setting">
           <div className="hac-form-grid3">
             <div className="hac-fg">
-              <FieldLabelWithInfo
-                label="Activation Date*"
-                info="First date the SP account is eligible for commission."
-              />
-              <input className="hac-input" type="date" value={form.activationDate || ""}
-                onChange={e => set("activationDate", e.target.value)} />
+              {isEdit ? (
+                <>
+                  <FieldLabelWithInfo
+                    label="Activation Date"
+                    info="This date is system-generated from the first fuel transaction and cannot be edited."
+                  />
+                  <input className="hac-input" type="date" value={form.activationDate || ""} readOnly disabled />
+                </>
+              ) : (
+                <>
+                  <FieldLabelWithInfo
+                    label="Activation Date"
+                    info="This date is system-generated from the first fuel transaction and cannot be entered during creation."
+                  />
+                  <span className="hac-field-hint">
+                    Activation date will appear automatically after the first fuel transaction (first usage date).
+                  </span>
+                </>
+              )}
             </div>
             <div className="hac-fg">
               <FieldLabelWithInfo
-                label="Commission Validity (months)*"
-                info="Stays fixed if the account is transferred between agents."
+                label="Commission Validity"
+                info="Fixed at 36 months from activation date and stays with the SP account if it is transferred between agents."
               />
-              <input className="hac-input" type="number" min="1" placeholder="e.g. 36"
-                value={form.commissionValidityMonths} onChange={e => set("commissionValidityMonths", e.target.value)} />
-              <span className="hac-field-hint">{rangePreview}</span>
+              <input className="hac-input" type="text" value={`${normalizedValidityMonths} months`} readOnly disabled />
+              {validityInlineText && <span className="hac-field-hint">{validityInlineText}</span>}
             </div>
           </div>
 
@@ -874,7 +898,7 @@ function SPFormView({ account, onBack, onSave }) {
 
       <div className="hac-edit-bar">
         <button className="hac-cancel-btn" onClick={onBack}>Cancel</button>
-        <button className="hac-save-btn" onClick={() => onSave(form)}>
+        <button className="hac-save-btn" onClick={() => onSave({ ...form, commissionValidityMonths: normalizedValidityMonths })}>
           <HIcon name="check" size={15} /> {isEdit ? "Save Changes" : "Save"}
         </button>
       </div>

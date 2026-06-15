@@ -1,6 +1,8 @@
 // data.js — Hand-written mock data for the Host SP Account flow.
 // Tracked source of truth (NOT build output). Exposes window.SPA.
 (function () {
+  const DEFAULT_COMMISSION_VALIDITY_MONTHS = 36;
+
   /* ── Formatting helpers ─────────────────────────────────────── */
   const fmtRM = (n) =>
     "RM " + Number(n || 0).toLocaleString("en-MY", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -73,7 +75,6 @@
     const nReferrers = (i % 3);        // 0..2 referrers
     const activationDate = ["2025-01-27", "2024-11-01", "2025-03-15", "2024-06-30",
       "2025-05-10", "2023-12-01"][i % 6];
-    const validityMonths = [36, 24, 12, 36, 18, 36][i % 6];
     return {
       id: "sp-" + (i + 1),
       no: i + 1,
@@ -96,7 +97,7 @@
 
       // Commission Setting — ACCOUNT-LEVEL validity (survives agent transfer)
       activationDate,
-      commissionValidityMonths: validityMonths,
+      commissionValidityMonths: DEFAULT_COMMISSION_VALIDITY_MONTHS,
 
       agents: makeAgents(nAgents, nReferrers),
 
