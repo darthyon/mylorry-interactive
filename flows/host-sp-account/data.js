@@ -41,11 +41,12 @@
   const tier = (usageMax, commissionAmount, final = false) => ({ usageMax, commissionAmount, final });
   const agent = (name, role, tiers, kpiSplitPct = 0) => ({ name, role, tiers, kpiSplitPct });
 
-  // KPI Volume Attribution is an ACCOUNT-LEVEL allocation: one pie split across the
-  // roster, always summing to 100%. distributeSplit turns per-row weights into integer
-  // percentages that sum to exactly 100 (largest-remainder method — the leftover goes to
-  // the rows with the biggest fractional part). Used to seed valid data + the modal's
-  // "Auto-distribute". See sp-account.jsx for the UI that owns this invariant.
+  // KPI Volume Attribution is split independently within Agents and Referrers.
+  // Each role-specific pool sums to 100% of the same base usage volume.
+  // distributeSplit turns per-row weights into integer percentages that sum to exactly 100
+  // (largest-remainder method — the leftover goes to the rows with the biggest fractional part).
+  // Used to seed valid data + the modal's "Auto-distribute". See sp-account.jsx for the UI
+  // that owns these invariants.
   const distributeSplit = (weights) => {
     const n = weights.length;
     if (n === 0) return [];
@@ -83,9 +84,12 @@
       out.push({ ...agent(AGENT_POOL[i % AGENT_POOL.length], "agent", defaultTiers) });
     for (let i = 0; i < nReferrers; i++)
       out.push({ ...agent(REFERRER_POOL[i % REFERRER_POOL.length], "referrer", defaultTiers) });
-    // Seed a valid attribution: agents weighted higher than referrers, summing to 100%.
-    const split = distributeSplit(out.map((p) => (p.role === "referrer" ? 1 : 2)));
-    out.forEach((p, i) => { p.kpiSplitPct = split[i]; });
+    const agentRows = out.filter((p) => p.role === "agent");
+    const referrerRows = out.filter((p) => p.role === "referrer");
+    const agentSplit = distributeSplit(agentRows.map((_, i) => Math.max(1, agentRows.length - i)));
+    const referrerSplit = distributeSplit(referrerRows.map(() => 1));
+    agentRows.forEach((p, i) => { p.kpiSplitPct = agentSplit[i]; });
+    referrerRows.forEach((p, i) => { p.kpiSplitPct = referrerSplit[i]; });
     return out;
   };
 
@@ -126,7 +130,7 @@
       agents: makeAgents(nAgents, nReferrers),
 
       // KPI period total volume (litres). Illustrative — the basis for each
-      // salesperson's Attributed KPI Volume = periodVolume × their split %.
+      // agent's and referrer's attributed volume = periodVolume × their role-specific split %.
       periodVolume: 100000 + i * 10000,
 
       // Payout
