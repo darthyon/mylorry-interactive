@@ -381,20 +381,26 @@ function SalespersonCommissionEditor({ agents, onChange }) {
 }
 
 /* ─── KPI Volume Distribution ───────────────────────────────────── */
-// Model B: distribution is ONE account-level allocation (a pie split across the roster,
-// summing to 100%), not a per-person attribute. The table only PROJECTS each slice;
-// the allocation + its 100% invariant are owned at the section/modal level.
+// Model C: KPI attribution is split independently within Agents and Referrers.
+// Each role-specific pool must sum to 100% of the same base usage volume.
 const splitTotal = (roster) => roster.reduce((s, a) => s + (Number(a.kpiSplitPct) || 0), 0);
 const attributedVolume = (pct, periodVolume) =>
   Math.round((Number(periodVolume) || 0) * (Number(pct) || 0) / 100);
 const fmtLitres = (n) => Number(n || 0).toLocaleString("en-MY") + " ltr";
 const roleLabelOf = (role) => (role === "referrer" ? "Referrer" : "Agent");
+const roleTitleOf = (role) => (role === "referrer" ? "Referrer distribution" : "Agent distribution");
+const filterRosterByRole = (roster, role) => roster.filter((person) => person.role === role);
+const sortRosterBySplit = (roster) => [...roster].sort((a, b) => {
+  const diff = (Number(b.kpiSplitPct) || 0) - (Number(a.kpiSplitPct) || 0);
+  if (diff !== 0) return diff;
+  return a.name.localeCompare(b.name);
+});
 const clampPct = (v) => {
   const n = Math.round(Number(v));
   if (isNaN(n)) return 0;
   return Math.max(0, Math.min(100, n));
 };
-// Commission summary projected onto an attribution row (read-only context, not editable here).
+
 function commissionSummary(person) {
   const tiers = person.tiers || [];
   if (!tiers.length) return "No commission tiers";
@@ -402,83 +408,141 @@ function commissionSummary(person) {
   return `${tiers.length} tier${tiers.length !== 1 ? "s" : ""} · final ${final.commissionAmount}`;
 }
 
-// Proportion bar — the whole split at a glance. One hue; segments grow by %, separated by
-// thin gaps (identity comes from the table below, not from arbitrary colors).
-function KpiAttributionBar({ roster }) {
+function KpiRoleRows(roster, periodVolume) {
+  return sortRosterBySplit(roster).map((a, i) => ({
+    key: `${a.name}-${a.role}-${i}`,
+    rank: i + 1,
+    name: a.name,
+    role: a.role,
+    pct: Number(a.kpiSplitPct) || 0,
+    volume: periodVolume ? attributedVolume(a.kpiSplitPct, periodVolume) : null,
+  }));
+}
+
+function KpiAttributionOverview({ roster, periodVolume }) {
+  const agents = filterRosterByRole(roster, "agent");
+  const referrers = filterRosterByRole(roster, "referrer");
   return (
-    <div className="spa-attr-bar" role="img" aria-label="KPI volume distribution split">
-      {roster.map((a, i) => {
-        const pct = Number(a.kpiSplitPct) || 0;
-        return (
-          <div key={i} className="spa-attr-seg" style={{ flexGrow: pct }}
-            title={`${a.name} · ${pct}%`}>
-            {pct >= 12 && <span className="spa-attr-seg-label">{a.name.split(" ")[0]} {pct}%</span>}
+    <div className="spa-attr-overview">
+      <div className="spa-attr-overview-stat">
+        <strong>{periodVolume ? fmtLitres(periodVolume) : "—"}</strong>
+        <span>Base usage volume</span>
+      </div>
+      {agents.length > 0 && (
+        <div className="spa-attr-overview-stat">
+          <strong>{periodVolume ? fmtLitres(attributedVolume(splitTotal(agents), periodVolume)) : "—"}</strong>
+          <span>Agent total attributed</span>
+        </div>
+      )}
+      {referrers.length > 0 && (
+        <div className="spa-attr-overview-stat">
+          <strong>{periodVolume ? fmtLitres(attributedVolume(splitTotal(referrers), periodVolume)) : "—"}</strong>
+          <span>Referrer total attributed</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function KpiRoleBar({ roster, periodVolume }) {
+  const rows = KpiRoleRows(roster, periodVolume);
+  return (
+    <div className="spa-attr-stack" role="img" aria-label="KPI volume distribution split">
+      {rows.map((row) => (
+        <div
+          key={row.key}
+          className={"spa-attr-stack-seg" + (row.role === "referrer" ? " others" : "")}
+          style={{ flexGrow: row.pct }}
+          tabIndex={0}
+        >
+          <span className="ml-tooltip-wrap spa-attr-stack-tip-wrap">
+            <span className="ml-tooltip spa-attr-stack-tooltip">
+              {row.name} · {row.pct}% · {row.volume != null ? fmtLitres(row.volume) : "—"}
+            </span>
+          </span>
+          {row.pct >= 12 && <span className="spa-attr-stack-label">{row.pct}%</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function KpiRoleGrid({ roster, periodVolume }) {
+  const rows = KpiRoleRows(roster, periodVolume);
+  return (
+    <div className="spa-attr-card-grid">
+      {rows.map((a) => (
+        <div key={a.key} className="spa-attr-list-card">
+          <div className="spa-attr-list-card-row">
+            <div className="spa-attr-list-card-id">
+              <span className="spa-attr-rank">{a.rank}</span>
+              <div className="spa-attr-list-card-copy">
+                <div className="spa-attr-list-card-name-row">
+                  <span className="spa-sp-name">
+                    <HIcon name={a.role === "referrer" ? "group" : "support_agent"} size={15} color="var(--navy-800)" /> {a.name}
+                  </span>
+                  <span className="spa-role-chip">{roleLabelOf(a.role)}</span>
+                </div>
+                <div className="spa-attr-list-card-metrics">
+                  <div className="spa-attr-inline-metric">
+                    <span className="ml-k">Split %</span>
+                    <strong className="spa-attr-list-strong">{a.pct}%</strong>
+                  </div>
+                  <div className="spa-attr-inline-metric">
+                    <span className="ml-k">Attributed Volume</span>
+                    <strong className="spa-attr-list-strong">{periodVolume ? fmtLitres(a.volume) : "—"}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        );
-      })}
+        </div>
+      ))}
     </div>
   );
 }
 
-function KpiAttributionTable({ roster, periodVolume }) {
+function KpiRoleSection({ role, roster, periodVolume }) {
+  if (!roster.length) return null;
   return (
-    <div className="ml-table-wrap" style={{ marginTop: 14 }}>
-      <table className="ml-table">
-        <thead>
-          <tr><th>Salesperson</th><th>Role</th><th>Split %</th><th>Attributed Volume</th></tr>
-        </thead>
-        <tbody>
-          {roster.map((a, i) => (
-            <tr key={i}>
-              <td><span className="ml-cell-main">{a.name}</span></td>
-              <td><span className="spa-role-chip">{roleLabelOf(a.role)}</span></td>
-              <td className="ml-mono">{Number(a.kpiSplitPct) || 0}%</td>
-              <td className="ml-mono">{periodVolume ? fmtLitres(attributedVolume(a.kpiSplitPct, periodVolume)) : "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="spa-attr-role-section">
+      <div className="spa-attr-role-head">
+        <h4 className="spa-attr-role-title">{roleTitleOf(role)}</h4>
+      </div>
+      <KpiRoleBar roster={roster} periodVolume={periodVolume} />
+      <KpiRoleGrid roster={roster} periodVolume={periodVolume} />
     </div>
   );
 }
 
-function AttributionTotalReadout({ total }) {
+function AttributionTotalReadout({ total, label }) {
   const valid = total === 100;
   return (
     <span className={"spa-attr-total" + (valid ? "" : " warn")}>
       <HIcon name={valid ? "check_circle" : "error"} size={15} color="currentColor" />
-      {valid ? `Total ${total}%` : `Total ${total}% — must equal 100%`}
+      {valid ? `${label} ${total}%` : `${label} ${total}% · must equal 100%`}
     </span>
   );
 }
 
-// Edit modal — the WHOLE allocation, together. This is where the 100% invariant lives.
-function KpiAttributionModal({ roster, onClose, onSave }) {
-  const [draft, setDraft] = useState(() => roster.map(a => ({ ...a, kpiSplitPct: Number(a.kpiSplitPct) || 0 })));
-  const total = splitTotal(draft);
-  const valid = total === 100;
-  const setPct = (i, v) => setDraft(d => d.map((a, j) => j === i ? { ...a, kpiSplitPct: clampPct(v) } : a));
-  const autoDistribute = () => {
-    const dist = distributeSplit(draft.map(a => (a.role === "referrer" ? 1 : 2)));
-    setDraft(d => d.map((a, j) => ({ ...a, kpiSplitPct: dist[j] })));
-  };
-
+function KpiRoleEditor({ role, draft, onSetPct, onAutoDistribute }) {
+  const people = sortRosterBySplit(filterRosterByRole(draft, role));
+  const total = splitTotal(people);
+  if (!people.length) return null;
   return (
-    <Modal title="Edit KPI Volume Distribution" onClose={onClose} footer={
-      <>
-        <button className="hac-modal-cancel" onClick={onClose}>Cancel</button>
-        <button className="hac-modal-save" disabled={!valid} onClick={() => onSave(draft)}>Save Changes</button>
-      </>
-    }>
-      <div className="hac-field-hint" style={{ marginBottom: 16 }}>
-        Splits how transaction volume is attributed to each salesperson's KPI. Must total 100%.
-        Does not affect commission payments.
+    <div className="spa-attr-edit-group">
+      <div className="spa-attr-edit-group-head">
+        <h4 className="spa-attr-role-title">{roleTitleOf(role)}</h4>
+        <button className="hac-add-tier-btn" onClick={() => onAutoDistribute(role)}>
+          <HIcon name="balance" size={15} /> Auto-distribute
+        </button>
       </div>
       <div className="spa-attr-edit-list">
-        {draft.map((a, i) => (
-          <div className="spa-attr-edit-row" key={i}>
+        {people.map((a, i) => (
+          <div className="spa-attr-edit-row" key={a._idx}>
             <div className="spa-attr-edit-person">
               <div className="spa-sp-name">
+                <span className="spa-attr-rank">{i + 1}</span>
                 <HIcon name={a.role === "referrer" ? "group" : "support_agent"} size={15} color="var(--navy-800)" /> {a.name}
                 <span className="spa-role-chip">{roleLabelOf(a.role)}</span>
               </div>
@@ -486,32 +550,25 @@ function KpiAttributionModal({ roster, onClose, onSave }) {
             </div>
             <div className="spa-attr-edit-input">
               <input className="hac-input" type="number" min="0" max="100"
-                value={a.kpiSplitPct} onChange={e => setPct(i, e.target.value)} />
+                value={a.kpiSplitPct} onChange={e => onSetPct(a._idx, e.target.value)} />
               <span className="spa-attr-pct">%</span>
             </div>
           </div>
         ))}
       </div>
       <div className="spa-attr-modal-foot-row">
-        <button className="hac-add-tier-btn" onClick={autoDistribute}>
-          <HIcon name="balance" size={15} /> Auto-distribute
-        </button>
-        <AttributionTotalReadout total={total} />
+        <AttributionTotalReadout total={total} label={`${roleLabelOf(role)} total`} />
       </div>
-    </Modal>
+    </div>
   );
 }
 
-// Section shell — used by both detail (read) and form. Read-only bar + table; editing
-// is section-level (one modal over the whole roster), because you edit the allocation,
-// not a person.
 function KpiAttributionSection({ roster, periodVolume, onSave }) {
   const [open, setOpen] = useState(false);
   const hasRoster = roster.length > 0;
-
   const info = periodVolume
-    ? `Distributes the period's KPI volume (${fmtLitres(periodVolume)}) across salespersons. Does not affect commission payments.`
-    : "Distributes KPI volume across salespersons. Does not affect commission payments.";
+    ? `Distributes the period's KPI volume (${fmtLitres(periodVolume)}) independently across agents and referrers. Each group totals 100% of the same base usage volume. Does not affect commission payments.`
+    : "Distributes KPI volume independently across agents and referrers. Does not affect commission payments.";
 
   return (
     <Section title={
@@ -535,17 +592,58 @@ function KpiAttributionSection({ roster, periodVolume, onSave }) {
         <div className="hac-empty-state">Add a salesperson under Commission Setting to distribute KPI volume.</div>
       ) : (
         <>
-          <KpiAttributionBar roster={roster} />
-          <KpiAttributionTable roster={roster} periodVolume={periodVolume} />
+          <KpiAttributionOverview roster={roster} periodVolume={periodVolume} />
+          <KpiRoleSection role="agent" roster={filterRosterByRole(roster, "agent")} periodVolume={periodVolume} />
+          <KpiRoleSection role="referrer" roster={filterRosterByRole(roster, "referrer")} periodVolume={periodVolume} />
         </>
       )}
       {open && ReactDOM.createPortal(
-        <KpiAttributionModal roster={roster}
+        <KpiAttributionModal
+          roster={roster}
           onClose={() => setOpen(false)}
-          onSave={(next) => { onSave(next); setOpen(false); }} />,
+          onSave={(next) => { onSave(next); setOpen(false); }}
+        />,
         document.body
       )}
     </Section>
+  );
+}
+
+function KpiAttributionModal({ roster, onClose, onSave }) {
+  const [draft, setDraft] = useState(() => roster.map((a, idx) => ({ ...a, _idx: idx, kpiSplitPct: Number(a.kpiSplitPct) || 0 })));
+  const agents = filterRosterByRole(draft, "agent");
+  const referrers = filterRosterByRole(draft, "referrer");
+  const validAgents = agents.length === 0 || splitTotal(agents) === 100;
+  const validReferrers = referrers.length === 0 || splitTotal(referrers) === 100;
+  const valid = validAgents && validReferrers;
+  const setPct = (idx, v) => setDraft(d => d.map((a) => a._idx === idx ? { ...a, kpiSplitPct: clampPct(v) } : a));
+  const autoDistribute = (role) => {
+    const people = draft.filter((a) => a.role === role);
+    if (!people.length) return;
+    const dist = distributeSplit(people.map(() => 1));
+    let pointer = 0;
+    setDraft((current) => current.map((a) => {
+      if (a.role !== role) return a;
+      const nextPct = dist[pointer];
+      pointer += 1;
+      return { ...a, kpiSplitPct: nextPct };
+    }));
+  };
+
+  return (
+    <Modal title="Edit KPI Volume Distribution" onClose={onClose} footer={
+      <>
+        <button className="hac-modal-cancel" onClick={onClose}>Cancel</button>
+        <button className="hac-modal-save" disabled={!valid} onClick={() => onSave(draft.map(({ _idx, ...a }) => a))}>Save Changes</button>
+      </>
+    }>
+      <div className="hac-field-hint" style={{ marginBottom: 16 }}>
+        Agent and referrer attribution are configured separately. Each group must total 100% of the same base usage volume.
+        Does not affect commission payments.
+      </div>
+      <KpiRoleEditor role="agent" draft={draft} onSetPct={setPct} onAutoDistribute={autoDistribute} />
+      <KpiRoleEditor role="referrer" draft={draft} onSetPct={setPct} onAutoDistribute={autoDistribute} />
+    </Modal>
   );
 }
 
@@ -626,13 +724,13 @@ function SPDetailView({ account, onBack, onEdit }) {
                 {validityVal}
               </div>
             ) : (
-              <>
-                <div className="hac-detail-grid">{validityVal}</div>
-                <div className="spa-pending-callout">
+              <div className="spa-validity-layout">
+                {validityVal}
+                <div className="spa-pending-callout spa-pending-callout-inline">
                   <HIcon name="info" size={16} color="var(--fg-tertiary)" />
                   <span>Activation date is set automatically on the first fuel transaction. Commission validity runs <b>{months} months</b> from that date.</span>
                 </div>
-              </>
+              </div>
             );
           })()}
 
@@ -1056,13 +1154,25 @@ function SPFormView({ account, onBack, onSave }) {
               </div>
             ) : (
               // Pending — no first transaction yet: set the duration, explain the activation dependency.
-              <>
-                <div className="hac-form-grid3">{validityField}</div>
-                <div className="spa-pending-callout">
+              <div className="spa-validity-layout spa-validity-layout-form">
+                <div className="hac-fg spa-validity-field">
+                  <FieldLabelWithInfo
+                    label="Commission Validity"
+                    info="Defaults to 36 months from the activation date. Stays with the SP account if it is transferred between agents."
+                  />
+                  <div className="spa-validity-input">
+                    <input className="hac-input" type="number" min="1" placeholder="36"
+                      value={form.commissionValidityMonths}
+                      onChange={e => set("commissionValidityMonths", e.target.value)} />
+                    <span className="spa-validity-suffix">months</span>
+                  </div>
+                  {validityInlineText && <span className="hac-field-hint">{validityInlineText}</span>}
+                </div>
+                <div className="spa-pending-callout spa-pending-callout-inline">
                   <HIcon name="info" size={16} color="var(--fg-tertiary)" />
                   <span>Activation date is set automatically on the first fuel transaction. Commission validity runs <b>{validityMonths} months</b> from that date.</span>
                 </div>
-              </>
+              </div>
             );
           })()}
 
