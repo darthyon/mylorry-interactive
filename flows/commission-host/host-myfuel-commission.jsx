@@ -140,12 +140,10 @@ function TrendBarChart({
             {subtitle && <div className="hm-chart-sub">{subtitle}</div>}
           </div>
         </div>
-        <div className="hm-seg" role="tablist">
-          <button className={"hm-seg-btn" + (metric === "volume" ? " active" : "")}
-            onClick={() => setMetric("volume")}>Volume</button>
-          <button className={"hm-seg-btn" + (metric === "amount" ? " active" : "")}
-            onClick={() => setMetric("amount")}>Amount</button>
-        </div>
+        <Segmented value={metric} onChange={setMetric} options={[
+          { value: "volume", label: "Volume" },
+          { value: "amount", label: "Amount" },
+        ]} />
       </div>
 
       <div className="hm-chart-body">
@@ -557,17 +555,8 @@ function MyFuelCommissionTab() {
   return (
     <div>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap", marginBottom:16 }}>
-        <div className="hm-seg" role="tablist" aria-label="Salesperson role view">
-          {MYFUEL_VIEW_OPTIONS.map((option) => (
-            <button
-              key={option.key}
-              className={"hm-seg-btn" + (view === option.key ? " active" : "")}
-              onClick={() => onViewChange(option.key)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        <Segmented value={view} onChange={onViewChange}
+          options={MYFUEL_VIEW_OPTIONS.map((o) => ({ value: o.key, label: o.label }))} />
       </div>
 
       <MyFuelKPIHeader view={view} records={filteredRecords} month={month} />

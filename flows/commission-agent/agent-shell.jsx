@@ -1,7 +1,7 @@
 // agent-shell.jsx — Agent portal shell. Re-exports from shared-shell.jsx.
 // Adds Agent-specific nav and component aliases.
 
-const { Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu,
+const { Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu, Segmented,
   Pill, CurrencyPill, SummaryCard, KpiTierChip, AccountStatusBadge, KPIProgress,
   PetronLogo } = window.SharedShell;
 
@@ -37,6 +37,7 @@ Object.assign(window, {
   SummaryCard,
   CardHead,
   ExportMenu,
+  Segmented,
   Pager,
   PetronLogo,
   // Bonus re-exports for anything that might reference them

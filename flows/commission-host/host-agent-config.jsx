@@ -996,8 +996,11 @@ function CommissionConfigCard({ kpi, editing }) {
 function SPAccountsCard({ spAccounts: initSP }) {
   const [spAccounts, setSPAccounts] = useState(initSP);
   const [showModal, setShowModal]   = useState(false);
+  const [page, setPage]       = useState(1);
+  const [perPage, setPerPage] = useState(5);
   const existing = spAccounts.map(s => s.sp);
   const hasAccounts = spAccounts.length > 0;
+  const paginated = spAccounts.slice((page - 1) * perPage, page * perPage);
 
   const handleAdd = selectedSPs => {
     const added = SP_ORG_LIST
@@ -1016,13 +1019,14 @@ function SPAccountsCard({ spAccounts: initSP }) {
         </button>
       </div>
       {hasAccounts ? (
+        <>
         <div className="ml-table-wrap">
           <table className="ml-table" style={{ minWidth:820 }}>
             <thead>
               <tr><th>Owner</th><th>Volume (L)</th><th>KPI Attribution</th><th>Commission Status</th><th>Commission Validity</th><th>Exception</th><th></th></tr>
             </thead>
             <tbody>
-              {spAccounts.map((sp, i) => (
+              {paginated.map((sp, i) => (
                 <tr key={i}>
                   <td className="ml-cell-main">
                     {sp.org}
@@ -1033,7 +1037,7 @@ function SPAccountsCard({ spAccounts: initSP }) {
                   </td>
                   <td className="ml-mono">{sp.volume ? sp.volume.toLocaleString() : "—"}</td>
                   <td className="ml-mono">
-                    {sp.kpiVolume != null ? (
+                    {sp.commissionStatus !== "pending_onboarding" && sp.kpiVolume != null ? (
                       <>
                         {sp.kpiVolume.toLocaleString()}
                         <div className="ml-cell-sub">{sp.kpiSplitPct}% attributed</div>
@@ -1041,7 +1045,9 @@ function SPAccountsCard({ spAccounts: initSP }) {
                     ) : "—"}
                   </td>
                   <td><CommissionStatusBadge status={sp.commissionStatus || "activated"} /></td>
-                  <td className="ml-mono" style={{ fontSize:12 }}>{sp.eff} – {sp.end}</td>
+                  <td className="ml-mono" style={{ fontSize:12 }}>
+                    {sp.commissionStatus === "pending_onboarding" ? "—" : `${sp.eff} – ${sp.end}`}
+                  </td>
                   <td>
                     {sp.exception
                       ? <span className={"hac-exc-tag " + sp.exception.mode}>{sp.exception.mode === "auto" ? "Auto" : "Custom"} · {sp.exception.rate}%</span>
@@ -1053,6 +1059,10 @@ function SPAccountsCard({ spAccounts: initSP }) {
             </tbody>
           </table>
         </div>
+        <HPager page={page} perPage={perPage} total={spAccounts.length}
+          onPage={setPage} onPerPage={(v) => { setPerPage(v); setPage(1); }}
+          perPageOptions={[5, 10, 20]} />
+        </>
       ) : (
         <div className="hac-empty-state">
           No SP accounts assigned yet.

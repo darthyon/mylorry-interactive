@@ -42,7 +42,6 @@ function AgentApp() {
           </div>
           <div className="ml-page-head-right">
             <span className="ml-synced"><Icon name="sync" size={14} color="#999AA5" /> Synced {AC.AGENT.lastSync}</span>
-            <ExportMenu />
           </div>
         </div>
 

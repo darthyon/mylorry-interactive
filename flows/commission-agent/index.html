@@ -334,6 +334,29 @@ b{font-weight:600;}
 .ml-modal-foot{margin-top:auto;display:flex;align-items:center;gap:7px;font-size:12px;color:var(--fg-secondary);padding:12px 24px;border-top:1px solid var(--border-light);}
 .ml-footer-note{font-size:11.5px;color:var(--fg-tertiary);text-align:center;padding:8px 0 0;max-width:80ch;margin:0 auto;}
 
+/* ---------- CardHead actions (toggle + export) ---------- */
+.ml-cardhead-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+
+/* ---------- Export modal form ---------- */
+.ml-modal-sm{width:440px;}
+.ml-form{gap:18px;}
+.ml-field{display:flex;flex-direction:column;gap:7px;flex:1;}
+.ml-field-label{font-size:12px;font-weight:600;color:var(--fg-secondary);}
+.ml-field-row{display:flex;align-items:center;gap:10px;}
+.ml-field-row .ml-select{flex:1;}
+.ml-range-sep{color:var(--fg-tertiary);font-weight:600;flex-shrink:0;}
+.ml-select{appearance:none;width:100%;font-family:var(--font);font-size:13px;font-weight:500;color:var(--fg-primary);
+  background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23999AA5' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;
+  border:1px solid var(--border-medium);border-radius:8px;padding:9px 34px 9px 12px;cursor:pointer;}
+.ml-select:focus{outline:none;border-color:var(--green-500);}
+.ml-select:disabled{background-color:var(--bg-muted);color:var(--fg-tertiary);cursor:not-allowed;opacity:.7;}
+/* Radio / checkbox rows */
+.ml-radio-group{display:flex;gap:20px;padding-top:2px;}
+.ml-radio-row,.ml-check-row{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--fg-primary);}
+.ml-radio-row input,.ml-check-row input{width:16px;height:16px;accent-color:var(--green-600);cursor:pointer;margin:0;}
+.ml-check-row{margin-top:2px;}
+.ml-modal-actions{display:flex;justify-content:flex-end;gap:10px;padding:14px 24px;border-top:1px solid var(--border-light);}
+
 /* ---------- Tweaks hint ---------- */
 .twk-hint{font-size:11px;color:var(--fg-tertiary);padding:2px 2px 6px;line-height:1.45;}
 
