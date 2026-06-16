@@ -143,3 +143,23 @@ git push        # Vercel auto-deploys the branch
 ```bash
 /deploy
 ```
+
+## Production Deploy
+
+Use the guarded production deploy command when you want the live Vercel deploy to
+come from `main` only:
+
+```bash
+npm run deploy:prod
+```
+
+It will:
+- fail unless the current branch is `main`
+- fail if the working tree is dirty
+- fail if local `main` is not aligned with `origin/main`
+- run `npm run build`
+- push `main` to `origin`
+- run `vercel deploy --prod`
+
+For full safety, keep Vercel's Production Branch set to `main` in the project
+dashboard as well. That setting lives in Vercel, not in this repo.
