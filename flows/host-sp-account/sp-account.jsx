@@ -162,7 +162,7 @@ function SPListView({ onView, onEdit, onCreate }) {
   }, [q, scope, statusFilter]);
 
   const SCOPE_META = {
-    sp:       { label: "SP Account",       placeholder: "Search by Organization Name" },
+    sp:       { label: "Org",              placeholder: "Search by Organization Name" },
     provider: { label: "Provider Acc. No.", placeholder: "Search by Provider Acc. No." },
   };
 
@@ -176,7 +176,7 @@ function SPListView({ onView, onEdit, onCreate }) {
           <div className="hac-search-group scoped">
             <select className="hac-search-scope" value={scope}
               onChange={e => { setScope(e.target.value); setPage(1); }} aria-label="Search by">
-              <option value="sp">SP Account</option>
+              <option value="sp">Org</option>
               <option value="provider">Provider Acc. No.</option>
             </select>
             <div className="hac-search-bar">
@@ -459,10 +459,12 @@ function KpiRoleBar({ roster, periodVolume }) {
         >
           <span className="ml-tooltip-wrap spa-attr-stack-tip-wrap">
             <span className="ml-tooltip spa-attr-stack-tooltip">
-              {row.name} · {row.pct}% · {row.volume != null ? fmtLitres(row.volume) : "—"}
+              {row.name} · Split {row.pct}% · Attributed volume {row.volume != null ? fmtLitres(row.volume) : "—"}
             </span>
           </span>
-          {row.pct >= 12 && <span className="spa-attr-stack-label">{row.pct}%</span>}
+          {(row.pct >= 12 || (index === rows.length - 1 && row.pct >= 8)) && (
+            <span className="spa-attr-stack-label">{row.pct}%</span>
+          )}
         </div>
       ))}
     </div>
