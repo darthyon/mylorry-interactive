@@ -400,6 +400,12 @@ const clampPct = (v) => {
   if (isNaN(n)) return 0;
   return Math.max(0, Math.min(100, n));
 };
+const KPI_AGENT_BAR_COLORS = ["#009A49", "#12A95A", "#29B66B", "#46C27D", "#67CD93", "#8DD9AC"];
+const KPI_REFERRER_BAR_COLORS = ["#0C79B8", "#1F89C7", "#3A99D3", "#57AADF", "#79BDE8", "#9BD0F0"];
+const kpiBarColor = (role, index) => {
+  const palette = role === "referrer" ? KPI_REFERRER_BAR_COLORS : KPI_AGENT_BAR_COLORS;
+  return palette[Math.min(index, palette.length - 1)];
+};
 
 function commissionSummary(person) {
   const tiers = person.tiers || [];
@@ -428,18 +434,14 @@ function KpiAttributionOverview({ roster, periodVolume }) {
         <strong>{periodVolume ? fmtLitres(periodVolume) : "—"}</strong>
         <span>Base usage volume</span>
       </div>
-      {agents.length > 0 && (
-        <div className="spa-attr-overview-stat">
-          <strong>{periodVolume ? fmtLitres(attributedVolume(splitTotal(agents), periodVolume)) : "—"}</strong>
-          <span>Agent total attributed</span>
-        </div>
-      )}
-      {referrers.length > 0 && (
-        <div className="spa-attr-overview-stat">
-          <strong>{periodVolume ? fmtLitres(attributedVolume(splitTotal(referrers), periodVolume)) : "—"}</strong>
-          <span>Referrer total attributed</span>
-        </div>
-      )}
+      <div className="spa-attr-overview-stat">
+        <strong>{agents.length}</strong>
+        <span>{agents.length === 1 ? "Agent" : "Agents"}</span>
+      </div>
+      <div className="spa-attr-overview-stat">
+        <strong>{referrers.length}</strong>
+        <span>{referrers.length === 1 ? "Referrer" : "Referrers"}</span>
+      </div>
     </div>
   );
 }
@@ -448,11 +450,11 @@ function KpiRoleBar({ roster, periodVolume }) {
   const rows = KpiRoleRows(roster, periodVolume);
   return (
     <div className="spa-attr-stack" role="img" aria-label="KPI volume distribution split">
-      {rows.map((row) => (
+      {rows.map((row, index) => (
         <div
           key={row.key}
           className={"spa-attr-stack-seg" + (row.role === "referrer" ? " others" : "")}
-          style={{ flexGrow: row.pct }}
+          style={{ flexGrow: row.pct, background: kpiBarColor(row.role, index) }}
           tabIndex={0}
         >
           <span className="ml-tooltip-wrap spa-attr-stack-tip-wrap">
@@ -475,7 +477,6 @@ function KpiRoleGrid({ roster, periodVolume }) {
         <div key={a.key} className="spa-attr-list-card">
           <div className="spa-attr-list-card-row">
             <div className="spa-attr-list-card-id">
-              <span className="spa-attr-rank">{a.rank}</span>
               <div className="spa-attr-list-card-copy">
                 <div className="spa-attr-list-card-name-row">
                   <span className="spa-sp-name">
@@ -566,9 +567,7 @@ function KpiRoleEditor({ role, draft, onSetPct, onAutoDistribute }) {
 function KpiAttributionSection({ roster, periodVolume, onSave }) {
   const [open, setOpen] = useState(false);
   const hasRoster = roster.length > 0;
-  const info = periodVolume
-    ? `Distributes the period's KPI volume (${fmtLitres(periodVolume)}) independently across agents and referrers. Each group totals 100% of the same base usage volume. Does not affect commission payments.`
-    : "Distributes KPI volume independently across agents and referrers. Does not affect commission payments.";
+  const info = "Splits KPI volume separately across agents and referrers. Each group totals 100% of base usage. Does not affect commission payments.";
 
   return (
     <Section title={
