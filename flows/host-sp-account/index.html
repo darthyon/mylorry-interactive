@@ -145,9 +145,36 @@ b { font-weight: 600; }
 .spa-info-tooltip { width: 220px; left: 0; transform: none; }
 .spa-info-tooltip::after { left: 14px; transform: none; }
 
+/* Commission Validity — editable months input with suffix */
+.spa-validity-input { display: flex; align-items: center; gap: 8px; }
+.spa-validity-input .hac-input { width: 110px; }
+.spa-validity-suffix { font-size: 13px; color: var(--fg-secondary); }
+
+/* Pending callout — activation date not yet set (no first transaction) */
+.spa-pending-callout { display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; padding: 13px 16px; border: 1px solid var(--border-light); border-radius: var(--radius-md); background: var(--bg-subtle); font-size: 13px; line-height: 1.5; color: var(--fg-secondary); max-width: 640px; }
+.spa-pending-callout b { color: var(--fg-primary); font-weight: 600; }
+
 /* Salesperson card (form — added via modal, tiers edited inline) */
 .spa-sp-edit-card { border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px 18px; margin-bottom: 14px; background: #fff; }
 .spa-sp-edit-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+
+/* ── KPI Volume Distribution (account-level allocation) ──────────── */
+.spa-attr-title { display: inline-flex; align-items: center; gap: 7px; }
+/* Proportion bar — single hue; segments separated by thin gaps (identity from the table) */
+.spa-attr-bar { display: flex; gap: 2px; width: 100%; height: 34px; border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-muted); }
+.spa-attr-seg { flex-grow: 0; flex-basis: 0; min-width: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--green-500); transition: flex-grow .18s; }
+.spa-attr-seg-label { font-size: 11px; font-weight: 700; color: #fff; white-space: nowrap; padding: 0 6px; text-shadow: 0 1px 1px rgba(0,0,0,.18); }
+/* Total readout — valid (green) / warn */
+.spa-attr-total { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--green-600); }
+.spa-attr-total.warn { color: var(--red-400); }
+/* Edit modal rows */
+.spa-attr-edit-list { display: flex; flex-direction: column; gap: 10px; }
+.spa-attr-edit-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px; }
+.spa-attr-edit-person { min-width: 0; }
+.spa-attr-edit-input { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.spa-attr-edit-input .hac-input { width: 84px; text-align: right; }
+.spa-attr-pct { font-size: 13px; font-weight: 600; color: var(--fg-secondary); }
+.spa-attr-modal-foot-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
 
 /* ── Responsive ──────────────────────────────────────────────────── */
 @media (max-width: 768px) {

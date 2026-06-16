@@ -35,8 +35,8 @@ function NestedHead({ first }) {
       <tr>
         <th>{first}</th><th>Volume</th>
         <th>Commission Tier</th><th>Base Commission</th>
-        <th>KPI Tier</th>
-        <th style={{ textAlign: "right" }}>Commission</th>
+        <th>KPI Multiplier</th>
+        <th style={{ textAlign: "right" }}>Final Commission</th>
         <th style={{ width: 32 }}></th>
       </tr>
     </thead>
@@ -62,8 +62,8 @@ function ByMonth({ history, open, setOpen, onDrill }) {
                 <th style={{ width: 40 }}></th>
                 <th style={{ minWidth: 140 }}>Period</th>
                 <th>Volume</th>
-                <th>KPI Tier</th>
-                <th style={{ textAlign: "right" }}>Commission</th>
+                <th>KPI Multiplier</th>
+                <th style={{ textAlign: "right" }}>Final Commission</th>
               </tr>
             </thead>
             <tbody>
@@ -187,7 +187,7 @@ function BySp({ accounts, open, setOpen, onDrill }) {
                 <th style={{ minWidth: 240 }}>SP Account</th>
                 <th>Volume · YTD</th>
                 <th>Commission Tier</th>
-                <th style={{ textAlign: "right" }}>Commission · YTD</th>
+                <th style={{ textAlign: "right" }}>Final Commission · YTD</th>
               </tr>
             </thead>
             <tbody>

@@ -39,7 +39,26 @@
 
   /* ── Agent / tier builders ──────────────────────────────────── */
   const tier = (usageMax, commissionAmount, final = false) => ({ usageMax, commissionAmount, final });
-  const agent = (name, role, tiers) => ({ name, role, tiers });
+  const agent = (name, role, tiers, kpiSplitPct = 0) => ({ name, role, tiers, kpiSplitPct });
+
+  // KPI Volume Attribution is an ACCOUNT-LEVEL allocation: one pie split across the
+  // roster, always summing to 100%. distributeSplit turns per-row weights into integer
+  // percentages that sum to exactly 100 (largest-remainder method — the leftover goes to
+  // the rows with the biggest fractional part). Used to seed valid data + the modal's
+  // "Auto-distribute". See sp-account.jsx for the UI that owns this invariant.
+  const distributeSplit = (weights) => {
+    const n = weights.length;
+    if (n === 0) return [];
+    const total = weights.reduce((s, w) => s + w, 0) || 1;
+    const raw = weights.map((w) => (w / total) * 100);
+    const out = raw.map(Math.floor);
+    let rem = 100 - out.reduce((s, v) => s + v, 0);
+    const order = raw
+      .map((v, i) => i)
+      .sort((a, b) => (raw[b] - Math.floor(raw[b])) - (raw[a] - Math.floor(raw[a])));
+    for (let k = 0; k < rem; k++) out[order[k % n]] += 1;
+    return out;
+  };
 
   // A wide salesperson roster so the list "+N more" popover is exercised.
   const AGENT_POOL = [
@@ -64,6 +83,9 @@
       out.push({ ...agent(AGENT_POOL[i % AGENT_POOL.length], "agent", defaultTiers) });
     for (let i = 0; i < nReferrers; i++)
       out.push({ ...agent(REFERRER_POOL[i % REFERRER_POOL.length], "referrer", defaultTiers) });
+    // Seed a valid attribution: agents weighted higher than referrers, summing to 100%.
+    const split = distributeSplit(out.map((p) => (p.role === "referrer" ? 1 : 2)));
+    out.forEach((p, i) => { p.kpiSplitPct = split[i]; });
     return out;
   };
 
@@ -95,11 +117,17 @@
       isMaster: i % 3 === 0,
       rebateTiers: [tier(1000, 0.01), tier(2000, 0.015, true)],
 
-      // Commission Setting — ACCOUNT-LEVEL validity (survives agent transfer)
-      activationDate,
+      // Commission Setting — ACCOUNT-LEVEL validity (survives agent transfer).
+      // Last account is left pre-activation (no first transaction yet) to exercise the
+      // pending callout state.
+      activationDate: i === 11 ? "" : activationDate,
       commissionValidityMonths: DEFAULT_COMMISSION_VALIDITY_MONTHS,
 
       agents: makeAgents(nAgents, nReferrers),
+
+      // KPI period total volume (litres). Illustrative — the basis for each
+      // salesperson's Attributed KPI Volume = periodVolume × their split %.
+      periodVolume: 100000 + i * 10000,
 
       // Payout
       payoutType: ["Credit Note", "Bank-in Personal", "Bank-in Company"][i % 3],
@@ -113,6 +141,7 @@
     SP_ACCOUNTS,
     ORGS, PROVIDERS, FREEZING_TYPES,
     AGENT_POOL, REFERRER_POOL,
+    distributeSplit,
     fmtRM, fmtL, fmtDate, addMonths, validityRange,
   };
 })();

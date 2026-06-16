@@ -391,7 +391,11 @@ function AgentCommissionDrilldown({ record, onBack }) {
               <div className="hm-stat-icon"><HIcon name="track_changes" size={18} color="#00AA4F" /></div>
               <div>
                 <div className="hm-stat-title">KPI Progress</div>
-                <div className="hm-stat-subtitle">Target: {(record.kpiTarget || 200000).toLocaleString("en-US")} L · Dec 1–31</div>
+                <div className="hm-stat-subtitle">
+                  {record.attributedKpiVolume != null
+                    ? `${record.attributedKpiVolume.toLocaleString("en-US")} L attributed · target ${(record.kpiTarget || 200000).toLocaleString("en-US")} L`
+                    : `Target: ${(record.kpiTarget || 200000).toLocaleString("en-US")} L · Dec 1–31`}
+                </div>
               </div>
             </div>
           </div>
@@ -429,9 +433,6 @@ function AgentCommissionDrilldown({ record, onBack }) {
             <div className="hac-toolbar">
               <div className="hac-toolbar-left">
                 <div className="hac-search-group">
-                  <button className="hac-scope-pill">
-                    SP Account <HIcon name="arrow_drop_down" size={18} color="var(--green-600)" />
-                  </button>
                   <div className="hac-search-bar">
                     <HIcon name="search" size={18} color="var(--fg-tertiary)" />
                     <input className="hac-search-input" placeholder="Search SP account or code"
@@ -460,7 +461,8 @@ function AgentCommissionDrilldown({ record, onBack }) {
                   <tr>
                     <th>SP Account</th>
                     <th>Volume (L)</th>
-                    <th>Rate / Tier</th>
+                    <th>KPI Attribution</th>
+                    <th>Commission Tier</th>
                     <th>Base Commission</th>
                     <th>KPI Multiplier</th>
                     <th>Final Commission</th>
@@ -471,7 +473,7 @@ function AgentCommissionDrilldown({ record, onBack }) {
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
-                      <td colSpan={8} style={{ textAlign:"center", padding:"24px 0", color:"var(--fg-tertiary)" }}>
+                      <td colSpan={9} style={{ textAlign:"center", padding:"24px 0", color:"var(--fg-tertiary)" }}>
                         No SP accounts match “{spQ}”.
                       </td>
                     </tr>
@@ -482,12 +484,20 @@ function AgentCommissionDrilldown({ record, onBack }) {
                         <div className="ml-cell-sub"><code className="hac-code">{item.sp}</code></div>
                       </td>
                       <td className="ml-mono">{item.volume.toLocaleString()}</td>
+                      <td className="ml-mono">
+                        {item.kpiVolume != null ? (
+                          <>
+                            {item.kpiVolume.toLocaleString()}
+                            <div className="ml-cell-sub">{item.kpiSplitPct}% attributed</div>
+                          </>
+                        ) : "—"}
+                      </td>
                       <td>
                         <div className="ml-mono" style={{ fontWeight:600 }}>{HC.fmtRate(item.rate)}</div>
                         <div className="ml-cell-sub">{item.tier}</div>
                       </td>
                       <td className="ml-mono">{HC.fmtRM(item.baseCommission)}</td>
-                      <td className="ml-mono">×{(item.kpiMult / 100).toFixed(2)}</td>
+                      <td className="ml-mono">{item.kpiMult}%</td>
                       <td className="ml-mono" style={{ fontWeight:600, color:"var(--navy-800)" }}>{HC.fmtRM(item.finalCommission)}</td>
                       <td>
                         <div style={{ fontSize:12, color:"var(--fg-secondary)" }}>{item.eff} – {item.end}</div>
@@ -644,7 +654,7 @@ function MyFuelCommissionTab() {
                 <td>{getRoleLabel(record)}</td>
                 <td className="ml-mono">{record.spCount}</td>
                 <td className="ml-mono">{record.totalLiters.toLocaleString()}</td>
-                <td><KPIProgress pct={record.kpiPct} actual={record.totalLiters} target={record.kpiTarget} period="Dec 1–31" phase={record.kpiPhase} /></td>
+                <td><KPIProgress pct={record.kpiPct} actual={record.attributedKpiVolume ?? record.totalLiters} target={record.kpiTarget} period="Dec 1–31" phase={record.kpiPhase} /></td>
                 <td className="ml-mono" style={{ fontWeight:600, color:"var(--navy-800)" }}>{HC.fmtRM(record.commission)}</td>
                 <td className="hm-view-cell">
                   <HIcon name="chevron_right" size={20} color="var(--fg-tertiary)" />
