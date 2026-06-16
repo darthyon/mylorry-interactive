@@ -228,6 +228,7 @@ const STATUS_BADGE_META = {
   pending_onboarding: { label:"Pending Onboarding", cls:"comm-pending-ob"  },
   on_hold:            { label:"On Hold",            cls:"comm-on-hold"     },
   deactivated:        { label:"Deactivated",        cls:"comm-deactivated" },
+  expired:            { label:"Expired",            cls:"comm-expired"     },
   // Generic account status
   active:     { label:"Active",     cls:"acct-active"     },
   inactive:   { label:"Inactive",   cls:"acct-inactive"   },

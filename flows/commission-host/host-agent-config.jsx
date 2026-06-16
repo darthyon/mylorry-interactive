@@ -2,7 +2,6 @@
 
 const { useState, useMemo, useRef, useEffect } = React;
 const MyFuelCommissionTabView   = window.MyFuelCommissionTab;
-const SubscriptionCommissionTabView = window.SubscriptionCommissionTab;
 
 /* ─── Commission Status Badge — shared (window.HStatusBadge) ──── */
 const CommissionStatusBadge = window.HStatusBadge;
@@ -11,6 +10,7 @@ const CommissionStatusBadge = window.HStatusBadge;
 const KPIProgress = window.HKPIProgress;
 const KPIProgressMeta = window.KPIProgressMeta;
 const AccountStatusBadge = window.HAccountStatusBadge;
+const PetronLogo = window.SharedShell.PetronLogo;
 
 /* ─── KPI multiplier zones — derived from configurable thresholds ─────── */
 // Each threshold stores only a lower bound (minPct); the upper bound of a tier
@@ -1019,13 +1019,18 @@ function SPAccountsCard({ spAccounts: initSP }) {
         <div className="ml-table-wrap">
           <table className="ml-table" style={{ minWidth:820 }}>
             <thead>
-              <tr><th>SP Code</th><th>Organisation</th><th>Volume (L)</th><th>KPI Attribution</th><th>Commission Status</th><th>Commission Validity</th><th>Exception</th><th></th></tr>
+              <tr><th>Owner</th><th>Volume (L)</th><th>KPI Attribution</th><th>Commission Status</th><th>Commission Validity</th><th>Exception</th><th></th></tr>
             </thead>
             <tbody>
               {spAccounts.map((sp, i) => (
                 <tr key={i}>
-                  <td><code className="hac-code">{sp.sp}</code></td>
-                  <td className="ml-cell-main">{sp.org}</td>
+                  <td className="ml-cell-main">
+                    {sp.org}
+                    <div className="hac-owner-code">
+                      <PetronLogo size={14} />
+                      <code className="hac-code">{sp.sp}</code>
+                    </div>
+                  </td>
                   <td className="ml-mono">{sp.volume ? sp.volume.toLocaleString() : "—"}</td>
                   <td className="ml-mono">
                     {sp.kpiVolume != null ? (
@@ -1381,16 +1386,10 @@ function HostAgentConfig() {
               {[
                 { key:"list",         label:"Salesperson List",        icon:"group"            },
                 { key:"myfuel",       label:"MyFuel Commission",       icon:"local_gas_station" },
-                { key:"subscription", label:"Subscription Commission", icon:"workspace_premium" },
               ].map(t => (
                 <button key={t.key} className={"ml-tab" + (activeTab === t.key ? " active" : "")}
                   onClick={() => setActiveTab(t.key)}>
                   <HIcon name={t.icon} size={16} />{t.label}
-                  {t.key === "subscription" && (
-                    <span style={{ fontSize:10, fontWeight:700, background:"var(--amber-50)", color:"var(--amber-600)", padding:"1px 6px", borderRadius:4, marginLeft:4 }}>
-                      Soon
-                    </span>
-                  )}
                 </button>
               ))}
             </div>
@@ -1407,7 +1406,6 @@ function HostAgentConfig() {
           </>
         )}
         {activeTab === "myfuel"       && <MyFuelCommissionTabView />}
-        {activeTab === "subscription" && <SubscriptionCommissionTabView />}
 
       </main>
     </div>

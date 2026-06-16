@@ -330,14 +330,6 @@ function AgentCommissionDrilldown({ record, onBack }) {
   const roleLabel = getRoleLabel(record);
   const breakdown = HC.SP_COMMISSION_BREAKDOWN[recordId] || [];
   const history = HC.COMMISSION_HISTORY[recordId] || HC.COMMISSION_HISTORY._default;
-  const kpiMeta = KPIProgressMeta(record.kpiPct);
-  const kpiStatusLabel = kpiMeta.isAchieved
-    ? "Achieved"
-    : kpiMeta.tone === "green"
-      ? "On track"
-      : kpiMeta.tone === "amber"
-        ? "Mid performance"
-        : "Needs attention";
   const [spQ, setSpQ] = useMFC("");
   const [month, setMonth] = useMFC(record.period);
   const [page, setPage] = useMFC(1);
@@ -401,9 +393,6 @@ function AgentCommissionDrilldown({ record, onBack }) {
           </div>
           <div className="hm-stat-value-row">
             <span className="hm-stat-value">{record.kpiPhase === "future" ? "—" : `${record.kpiPct}%`}</span>
-            <span style={{ fontSize:12, fontWeight:600, color:record.kpiPhase === "future" ? "var(--fg-disabled)" : kpiMeta.solid, display:"inline-flex", alignItems:"center", gap:4 }}>
-              <span>{record.kpiPhase === "future" ? "Not started" : kpiStatusLabel}</span>
-            </span>
           </div>
         </div>
         <div className="hm-stat-card-a">
