@@ -59,6 +59,7 @@
       { sp:"PIN-PTN-033",  org:"Pinnacle Transport Solutions", volume:31500, kpiSplitPct:80, kpiVolume:25200, eff:"01 Jul 2026", end:"Dec 2028", exception:{ mode:"auto",   rate:100 },   commissionStatus:"activated"           },
       { sp:"RAP-PTN-021",  org:"Rapid Haulage Sdn Bhd",        volume:24600, kpiSplitPct:80, kpiVolume:19680, eff:"18 Feb 2026", end:"Dec 2028", exception:{ mode:"custom", rate:50 },    commissionStatus:"on_hold"             },
       { sp:"VAN-PTN-045",  org:"Vanguard Logistics Systems",   volume:0,     kpiSplitPct:0,  kpiVolume:0,     eff:"01 Jun 2026", end:"Dec 2028", exception:null,                         commissionStatus:"pending_onboarding"  },
+      { sp:"HOR-PTN-008",  org:"Horizon Freight Sdn Bhd",      volume:18300, kpiSplitPct:75, kpiVolume:13725, eff:"01 Jan 2024", end:"Dec 2025", exception:null,                         commissionStatus:"expired"             },
     ],
 
     availableSP: [

@@ -1,8 +1,8 @@
 // host-shell.jsx — Host portal shell. Re-exports from shared-shell.jsx.
 // Adds Host-specific nav and component aliases (HIcon, HostTopBar, HostSidebar, etc.).
 
-const { Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu,
-  CurrencyPill, StatusBadge, AccountStatusBadge, KPIProgress } = window.SharedShell;
+const { Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu, Segmented,
+  CurrencyPill, StatusBadge, AccountStatusBadge, KPIProgress, PetronLogo } = window.SharedShell;
 
 const HOST_NAV = [
   { key:"__label__",    label:"HOST",               icon:"" },
@@ -43,5 +43,5 @@ function HostTopBar() {
 // Re-export everything to window with the same names existing code expects
 Object.assign(window, {
   HIcon, HostTopBar, HostSidebar, HBadge, HAccountStatusBadge, HStatusBadge, HKPIProgress,
-  HCurrencyPill, HCardHead, HPager, HExportMenu,
+  HCurrencyPill, HCardHead, HPager, HExportMenu, Segmented, PetronLogo,
 });

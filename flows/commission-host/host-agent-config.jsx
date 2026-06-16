@@ -2,7 +2,6 @@
 
 const { useState, useMemo, useRef, useEffect } = React;
 const MyFuelCommissionTabView   = window.MyFuelCommissionTab;
-const SubscriptionCommissionTabView = window.SubscriptionCommissionTab;
 
 /* ─── Commission Status Badge — shared (window.HStatusBadge) ──── */
 const CommissionStatusBadge = window.HStatusBadge;
@@ -106,7 +105,9 @@ function KPIProgressBlock({ kpi, target, thresholds }) {
     const from = i * STEP;
     const sampled = kpiZoneOf(from + STEP / 2, zones) || {};
     const z = i === CELLS - 1 && finalZone?.from >= axisMax ? finalZone : sampled;
-    const meta = KPIProgressMeta(from + STEP / 2);
+    // Colour follows the cell's resolved tier (z), not the raw midpoint — the
+    // last cell is overridden to the final tier, so its colour must match.
+    const meta = KPIProgressMeta(z.from != null ? z.from : from + STEP / 2);
     const reached = !isFuture && pct > from;
     return {
       bg: reached ? meta.solid : meta.fill,
@@ -993,8 +994,11 @@ function CommissionConfigCard({ kpi, editing }) {
 function SPAccountsCard({ spAccounts: initSP }) {
   const [spAccounts, setSPAccounts] = useState(initSP);
   const [showModal, setShowModal]   = useState(false);
+  const [page, setPage]       = useState(1);
+  const [perPage, setPerPage] = useState(5);
   const existing = spAccounts.map(s => s.sp);
   const hasAccounts = spAccounts.length > 0;
+  const paginated = spAccounts.slice((page - 1) * perPage, page * perPage);
 
   const handleAdd = selectedSPs => {
     const added = SP_ORG_LIST
@@ -1013,19 +1017,22 @@ function SPAccountsCard({ spAccounts: initSP }) {
         </button>
       </div>
       {hasAccounts ? (
+        <>
         <div className="ml-table-wrap">
           <table className="ml-table" style={{ minWidth:820 }}>
             <thead>
-              <tr><th>SP Code</th><th>Organisation</th><th>Volume (L)</th><th>KPI Attribution</th><th>Commission Status</th><th>Commission Validity</th><th>Exception</th><th></th></tr>
+              <tr><th>Owner</th><th>Volume (L)</th><th>KPI Attribution</th><th>Commission Status</th><th>Commission Validity</th><th>Exception</th><th></th></tr>
             </thead>
             <tbody>
-              {spAccounts.map((sp, i) => (
+              {paginated.map((sp, i) => (
                 <tr key={i}>
-                  <td><code className="hac-code">{sp.sp}</code></td>
-                  <td className="ml-cell-main">{sp.org}</td>
+                  <td>
+                    <div className="ml-cell-main">{sp.org}</div>
+                    <div className="ml-cell-sub hac-sp-id"><PetronLogo size={14} /><code className="hac-code">{sp.sp}</code></div>
+                  </td>
                   <td className="ml-mono">{sp.volume ? sp.volume.toLocaleString() : "—"}</td>
                   <td className="ml-mono">
-                    {sp.kpiVolume != null ? (
+                    {sp.commissionStatus !== "pending_onboarding" && sp.kpiVolume != null ? (
                       <>
                         {sp.kpiVolume.toLocaleString()}
                         <div className="ml-cell-sub">{sp.kpiSplitPct}% attributed</div>
@@ -1033,7 +1040,9 @@ function SPAccountsCard({ spAccounts: initSP }) {
                     ) : "—"}
                   </td>
                   <td><CommissionStatusBadge status={sp.commissionStatus || "activated"} /></td>
-                  <td className="ml-mono" style={{ fontSize:12 }}>{sp.eff} – {sp.end}</td>
+                  <td className="ml-mono" style={{ fontSize:12 }}>
+                    {sp.commissionStatus === "pending_onboarding" ? "—" : `${sp.eff} – ${sp.end}`}
+                  </td>
                   <td>
                     {sp.exception
                       ? <span className={"hac-exc-tag " + sp.exception.mode}>{sp.exception.mode === "auto" ? "Auto" : "Custom"} · {sp.exception.rate}%</span>
@@ -1045,6 +1054,10 @@ function SPAccountsCard({ spAccounts: initSP }) {
             </tbody>
           </table>
         </div>
+        <HPager page={page} perPage={perPage} total={spAccounts.length}
+          onPage={setPage} onPerPage={(v) => { setPerPage(v); setPage(1); }}
+          perPageOptions={[5, 10, 20]} />
+        </>
       ) : (
         <div className="hac-empty-state">
           No SP accounts assigned yet.
@@ -1378,16 +1391,10 @@ function HostAgentConfig() {
               {[
                 { key:"list",         label:"Salesperson List",        icon:"group"            },
                 { key:"myfuel",       label:"MyFuel Commission",       icon:"local_gas_station" },
-                { key:"subscription", label:"Subscription Commission", icon:"workspace_premium" },
               ].map(t => (
                 <button key={t.key} className={"ml-tab" + (activeTab === t.key ? " active" : "")}
                   onClick={() => setActiveTab(t.key)}>
                   <HIcon name={t.icon} size={16} />{t.label}
-                  {t.key === "subscription" && (
-                    <span style={{ fontSize:10, fontWeight:700, background:"var(--amber-50)", color:"var(--amber-600)", padding:"1px 6px", borderRadius:4, marginLeft:4 }}>
-                      Soon
-                    </span>
-                  )}
                 </button>
               ))}
             </div>
@@ -1404,7 +1411,6 @@ function HostAgentConfig() {
           </>
         )}
         {activeTab === "myfuel"       && <MyFuelCommissionTabView />}
-        {activeTab === "subscription" && <SubscriptionCommissionTabView />}
 
       </main>
     </div>

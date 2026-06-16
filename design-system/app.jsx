@@ -45,6 +45,7 @@ mount("commStatus", <>
   <StatusBadge status="pending_onboarding" />
   <StatusBadge status="on_hold" />
   <StatusBadge status="deactivated" />
+  <StatusBadge status="expired" />
 </>);
 
 mount("acctStatus", <>

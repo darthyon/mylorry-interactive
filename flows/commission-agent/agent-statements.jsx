@@ -292,20 +292,112 @@ function BySp({ accounts, open, setOpen, onDrill }) {
   );
 }
 
+// ── Export modal: pick scope (Month / SP Account) then export ─────────
+// Reuses the shared ml-modal shell (same as TxnModal). Replaces the old
+// dropdown ExportMenu on this screen.
+function ExportModal({ accounts, history, onClose }) {
+  const months = [...history].reverse(); // latest first
+  const [by, setBy] = useStateS("month");           // month | sp
+  const [allMonths, setAllMonths] = useStateS(true); // checkbox: ignore range
+  const [from, setFrom] = useStateS(months[months.length - 1].key);
+  const [to, setTo] = useStateS(months[0].key);
+  const [sp, setSp] = useStateS(accounts[0].sp);
+  const [toast, setToast] = useStateS(null);
+
+  const doExport = () => {
+    setToast("Preparing export…");
+    setTimeout(onClose, 1400);
+  };
+
+  return (
+    <div className="ml-modal-overlay" onClick={onClose}>
+      <div className="ml-modal ml-modal-sm" onClick={(e) => e.stopPropagation()}>
+        <div className="ml-modal-head">
+          <div>
+            <div className="ml-modal-title">Export Commission Statement</div>
+            <div className="ml-modal-sub">Choose what to include in the export</div>
+          </div>
+          <button className="ml-icon-btn" onClick={onClose}><Icon name="close" size={20} /></button>
+        </div>
+
+        <div className="ml-modal-body ml-form">
+          <div className="ml-field">
+            <label className="ml-field-label">Export by</label>
+            <div className="ml-radio-group">
+              <label className="ml-radio-row">
+                <input type="radio" name="export-by" checked={by === "month"}
+                  onChange={() => setBy("month")} />
+                <span>Month</span>
+              </label>
+              <label className="ml-radio-row">
+                <input type="radio" name="export-by" checked={by === "sp"}
+                  onChange={() => setBy("sp")} />
+                <span>SP Account</span>
+              </label>
+            </div>
+          </div>
+
+          {by === "month" ? (
+            <div className="ml-field">
+              <label className="ml-field-label">Date range</label>
+              <div className="ml-field-row">
+                <select className="ml-select" value={from} disabled={allMonths}
+                  onChange={(e) => setFrom(e.target.value)}>
+                  {months.map((m) => <option key={m.key} value={m.key}>{m.key}</option>)}
+                </select>
+                <span className="ml-range-sep">–</span>
+                <select className="ml-select" value={to} disabled={allMonths}
+                  onChange={(e) => setTo(e.target.value)}>
+                  {months.map((m) => <option key={m.key} value={m.key}>{m.key}</option>)}
+                </select>
+              </div>
+              <label className="ml-check-row">
+                <input type="checkbox" checked={allMonths}
+                  onChange={(e) => setAllMonths(e.target.checked)} />
+                <span>All months</span>
+              </label>
+            </div>
+          ) : (
+            <div className="ml-field">
+              <label className="ml-field-label">SP account</label>
+              <select className="ml-select" value={sp} onChange={(e) => setSp(e.target.value)}>
+                {accounts.map((a) => <option key={a.sp} value={a.sp}>{a.org} · {a.sp}</option>)}
+              </select>
+            </div>
+          )}
+        </div>
+
+        <div className="ml-modal-actions">
+          <button className="ml-btn-outline" onClick={onClose}>Cancel</button>
+          <button className="ml-btn-primary" onClick={doExport}>
+            <Icon name="download" size={18} /> Export
+          </button>
+        </div>
+        {toast && <div className="ml-toast"><Icon name="check_circle" size={16} color="#00AA4F" /> {toast}</div>}
+      </div>
+    </div>
+  );
+}
+
 function Statements({ history }) {
   const [mode, setMode] = useStateS("month");
   const [open, setOpen] = useStateS("Dec 2026"); // month mode: latest open by default
   const [spOpen, setSpOpen] = useStateS(null);
   const [drawer, setDrawer] = useStateS(null);   // { row, monthLabel }
+  const [exporting, setExporting] = useStateS(false);
   const accounts = React.useMemo(() => AC.buildSpStatements(), []);
   const onDrill = (row, monthLabel) => setDrawer({ row, monthLabel });
 
-  const seg = (
-    <div className="ml-seg" role="tablist">
-      <button className={"ml-seg-btn" + (mode === "month" ? " active" : "")}
-        onClick={() => setMode("month")}>By Month</button>
-      <button className={"ml-seg-btn" + (mode === "sp" ? " active" : "")}
-        onClick={() => setMode("sp")}>By SP Account</button>
+  // Toggle (left) + Export trigger (most right).
+  const right = (
+    <div className="ml-cardhead-actions">
+      <Segmented value={mode} onChange={setMode} options={[
+        { value: "month", label: "By Month" },
+        { value: "sp", label: "By SP Account" },
+      ]} />
+      <button className="ml-btn-soft" onClick={() => setExporting(true)}>
+        <Icon name="download" size={18} /> Export
+      </button>
     </div>
   );
 
@@ -315,12 +407,16 @@ function Statements({ history }) {
         sub={mode === "month"
           ? "One row per month · expand for per-SP breakdown"
           : "One row per SP account · expand for monthly breakdown"}
-        right={seg} />
+        right={right} />
       {mode === "month"
         ? <ByMonth history={history} open={open} setOpen={setOpen} onDrill={onDrill} />
         : <BySp accounts={accounts} open={spOpen} setOpen={setSpOpen} onDrill={onDrill} />}
       <TxnModal row={drawer && drawer.row} monthLabel={drawer && drawer.monthLabel}
         onClose={() => setDrawer(null)} />
+      {exporting && (
+        <ExportModal accounts={accounts} history={history}
+          onClose={() => setExporting(false)} />
+      )}
     </div>
   );
 }

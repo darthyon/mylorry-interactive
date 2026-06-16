@@ -177,6 +177,22 @@ function ExportMenu({ comingSoon = false }) {
   );
 }
 
+/* ─── Segmented (pill toggle, dark highlight) ───────────────── */
+// Canonical view-of-same-data switch. CSS: .ml-seg / .ml-seg-btn in
+// styles/components.css (active = dark #3A3D46 pill). Replaces the hand-rolled
+// agent ml-seg buttons and the host hm-seg copy.
+function Segmented({ value, onChange, options }) {
+  return (
+    <div className="ml-seg" role="tablist">
+      {options.map((o) => (
+        <button key={o.value} role="tab" aria-selected={value === o.value}
+          className={"ml-seg-btn" + (value === o.value ? " active" : "")}
+          onClick={() => onChange(o.value)}>{o.label}</button>
+      ))}
+    </div>
+  );
+}
+
 /* ─── Pill ──────────────────────────────────────────────────── */
 function Pill({ tone = "navy", children }) {
   return <span className={"ml-pill ml-pill-" + tone}>{children}</span>;
@@ -228,6 +244,7 @@ const STATUS_BADGE_META = {
   pending_onboarding: { label:"Pending Onboarding", cls:"comm-pending-ob"  },
   on_hold:            { label:"On Hold",            cls:"comm-on-hold"     },
   deactivated:        { label:"Deactivated",        cls:"comm-deactivated" },
+  expired:            { label:"Expired",            cls:"comm-expired"     },
   // Generic account status
   active:     { label:"Active",     cls:"acct-active"     },
   inactive:   { label:"Inactive",   cls:"acct-inactive"   },
@@ -307,7 +324,7 @@ function PetronLogo({ size = 16 }) {
 
 /* ─── Export to window ─────────────────────────────────────── */
 window.SharedShell = {
-  Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu,
+  Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu, Segmented,
   Pill, CurrencyPill, SummaryCard, KpiTierChip,
   StatusBadge, AccountStatusBadge, KPIProgress, KPIProgressMeta,
   PetronLogo,
