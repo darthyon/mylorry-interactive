@@ -176,25 +176,28 @@ b { font-weight: 600; }
 .spa-attr-role-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-light); }
 .spa-attr-role-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .spa-attr-role-title { font-size: 15px; font-weight: 700; color: var(--navy-800); }
-.spa-attr-stack { display: flex; gap: 2px; width: 100%; height: 36px; border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-muted); }
-.spa-attr-stack-seg { position: relative; flex-grow: 0; flex-basis: 0; min-width: 0; display: flex; align-items: center; justify-content: center; background: var(--green-500); overflow: hidden; }
+.spa-attr-stack { display: flex; gap: 2px; width: 100%; height: 36px; border-radius: var(--radius-sm); overflow: visible; background: var(--bg-muted); }
+.spa-attr-stack-seg { position: relative; flex-grow: 0; flex-basis: 0; min-width: 0; display: flex; align-items: center; justify-content: center; background: var(--green-500); overflow: visible; }
 .spa-attr-stack-seg.others { background: var(--teal-600); }
+.spa-attr-stack-seg:first-child { border-top-left-radius: var(--radius-sm); border-bottom-left-radius: var(--radius-sm); }
+.spa-attr-stack-seg:last-child { border-top-right-radius: var(--radius-sm); border-bottom-right-radius: var(--radius-sm); }
 .spa-attr-stack-seg:focus-visible { outline: 2px solid rgba(255,255,255,.9); outline-offset: -2px; }
 .spa-attr-stack-tip-wrap { position: absolute; inset: 0; display: block; }
+.spa-attr-stack-seg:hover .spa-attr-stack-tooltip,
 .spa-attr-stack-tip-wrap:hover .spa-attr-stack-tooltip,
 .spa-attr-stack-seg:focus-visible .spa-attr-stack-tooltip { opacity: 1; }
-.spa-attr-stack-label { font-size: 11px; font-weight: 700; color: #fff; white-space: nowrap; padding: 0 6px; text-shadow: 0 1px 1px rgba(0,0,0,.18); }
-.spa-attr-stack-tooltip { width: auto; min-width: 180px; max-width: 260px; white-space: normal; }
+.spa-attr-stack-label { position: relative; z-index: 1; font-size: 11px; font-weight: 700; color: #fff; white-space: nowrap; padding: 0 6px; text-shadow: 0 1px 1px rgba(0,0,0,.18); }
+.spa-attr-stack-tooltip { width: auto; min-width: 180px; max-width: 260px; white-space: normal; z-index: 60; }
 .spa-attr-rank { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 22px; padding: 0 8px; border-radius: 999px; background: var(--green-50); color: var(--green-600); font-size: 11px; font-weight: 700; flex-shrink: 0; }
 .spa-attr-rank.muted { background: var(--bg-muted); color: var(--fg-secondary); }
 .spa-attr-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
 .spa-attr-list-card { border: 1px solid var(--border-light); border-radius: var(--radius-md); background: #fff; padding: 12px 14px; }
 .spa-attr-list-card-row { display: flex; align-items: flex-start; gap: 10px; }
-.spa-attr-list-card-id { display: flex; align-items: flex-start; gap: 10px; min-width: 0; flex: 1 1 auto; }
+.spa-attr-list-card-id { display: flex; align-items: flex-start; min-width: 0; flex: 1 1 auto; }
 .spa-attr-list-card-copy { min-width: 0; display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto; }
 .spa-attr-list-card-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .spa-attr-list-card-metrics { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
-.spa-attr-inline-metric { display: flex; align-items: center; gap: 8px; }
+.spa-attr-inline-metric { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 112px; }
 .spa-attr-inline-metric .ml-k { margin-bottom: 0; white-space: nowrap; }
 .spa-attr-list-strong { display: block; font-size: 14px; font-weight: 700; color: var(--navy-800); }
 /* Total readout — valid (green) / warn */
@@ -228,7 +231,7 @@ b { font-weight: 600; }
   .spa-attr-card-grid { grid-template-columns: 1fr; }
   .spa-attr-list-card-row { flex-direction: column; align-items: stretch; gap: 10px; }
   .spa-attr-list-card-metrics { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .spa-attr-inline-metric { justify-content: space-between; width: 100%; }
+  .spa-attr-inline-metric { width: 100%; }
   .spa-attr-edit-group-head { align-items: stretch; }
 }
 @media (max-width: 640px) {
