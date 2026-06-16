@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-16T00:00:00Z",
+  "title": "Design System: MyLorry Host Portal",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Action Green",
+        "canonical": "#00AA4F",
+        "tonalRamp": ["#0F3B24", "#176637", "#1B8B45", "#00AA4F", "#33BD6A", "#7DDBA0", "#CBEFD8", "#F3FDF8"]
+      },
+      "secondary": {
+        "role": "secondary",
+        "displayName": "Signal Teal",
+        "canonical": "#0081AA",
+        "tonalRamp": ["#072C39", "#0A4A5D", "#0D6883", "#0081AA", "#3A9FC1", "#88C8D8", "#D2EAF2", "#F1F8FB"]
+      },
+      "accent-navy": {
+        "role": "tertiary",
+        "displayName": "Ledger Navy",
+        "canonical": "#1A2472",
+        "tonalRamp": ["#0B1032", "#121950", "#172064", "#1A2472", "#394594", "#7680BD", "#C8CDE8", "#EEF0FA"]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Elevated Surface",
+        "canonical": "#FDFDFD",
+        "tonalRamp": ["#3C3C42", "#5A5B61", "#75757B", "#A5A6AB", "#C8C8CC", "#E3E3E5", "#F4F4F5", "#FDFDFD"]
+      },
+      "surface-muted": {
+        "role": "neutral",
+        "displayName": "Muted Surface",
+        "canonical": "#F5F5F5",
+        "tonalRamp": ["#393939", "#565656", "#717171", "#8E8E8E", "#B0B0B0", "#D1D1D1", "#ECECEC", "#F5F5F5"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page-level titles and high-authority headings."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Secondary screen headings and modal titles."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section headers, card titles, and structured subheads."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Operational copy, form values, and most control text."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field labels, chips, badges, and metadata."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-lift",
+        "value": "0px 0px 5px 0px rgba(0,0,0,0.08)",
+        "purpose": "Light separation for cards and quiet elevated surfaces."
+      },
+      {
+        "name": "overlay-lift",
+        "value": "0px 0px 10px 0px rgba(0,0,0,0.16)",
+        "purpose": "Menus, popovers, and floating utility layers."
+      },
+      {
+        "name": "modal-lift",
+        "value": "0 8px 40px rgba(0,0,0,0.22)",
+        "purpose": "Dialog interruption layer."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-fast",
+        "value": "120ms ease-out",
+        "purpose": "Default hover and state transitions on buttons, tabs, and list rows."
+      },
+      {
+        "name": "tooltip-fade",
+        "value": "150ms ease-out",
+        "purpose": "Tooltip and small overlay visibility transitions."
+      }
+    ],
+    "breakpoints": [
+      { "name": "compact", "value": "1100px" },
+      { "name": "tablet", "value": "900px" },
+      { "name": "mobile", "value": "768px" },
+      { "name": "narrow", "value": "640px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary task action for save, create, and confirm moments.",
+      "html": "<button class=\"ds-btn-primary\">Save</button>",
+      "css": ".ds-btn-primary { background: var(--green-600); color: #fff; border: none; border-radius: 4px; padding: 9px 16px; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; font-weight: 700; line-height: 1; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: background 120ms ease-out, opacity 120ms ease-out; } .ds-btn-primary:hover { background: var(--green-500); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(0,170,79,0.18); } .ds-btn-primary:active { background: #0d954a; }"
+    },
+    {
+      "name": "Outline Action Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action that still belongs to the main workflow.",
+      "html": "<button class=\"ds-btn-outline\">Edit distribution</button>",
+      "css": ".ds-btn-outline { background: #fff; color: var(--green-600); border: 1px solid var(--green-500); border-radius: 4px; padding: 8px 14px; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; font-weight: 700; line-height: 1; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: background 120ms ease-out, color 120ms ease-out; } .ds-btn-outline:hover { background: var(--green-50); } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(0,170,79,0.14); } .ds-btn-outline:active { background: #e4f8ee; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Default text-field style used across forms and modal editors.",
+      "html": "<input class=\"ds-input\" placeholder=\"Enter service provider's account number\" />",
+      "css": ".ds-input { width: 100%; background: #fff; color: var(--fg-primary); border: 1px solid var(--border-medium); border-radius: 2px; padding: 9px 11px; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; line-height: 1; outline: none; transition: border-color 120ms ease-out, box-shadow 120ms ease-out; } .ds-input::placeholder { color: var(--fg-disabled); } .ds-input:hover { border-color: #c7c7c7; } .ds-input:focus-visible { border-color: var(--green-500); box-shadow: 0 0 5px rgba(0,0,0,0.08); } .ds-input:disabled { background: var(--bg-muted); color: var(--fg-secondary); }"
+    },
+    {
+      "name": "Section Card",
+      "kind": "card",
+      "refersTo": "card-surface",
+      "description": "Primary content container for grouped admin tasks and read views.",
+      "html": "<section class=\"ds-card\"><header class=\"ds-card-head\">Commission Setting</header><div class=\"ds-card-body\">Structured controls and values live here.</div></section>",
+      "css": ".ds-card { background: #fff; border: 1px solid var(--border-light); border-radius: 12px; box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.08); overflow: hidden; } .ds-card-head { padding: 14px 22px; background: #fafafa; border-bottom: 1px solid var(--border-light); color: var(--navy-800); font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; font-weight: 700; line-height: 1; } .ds-card-body { padding: 18px 22px 20px; color: var(--fg-primary); font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.5; }"
+    },
+    {
+      "name": "Role Chip",
+      "kind": "chip",
+      "refersTo": "chip-role",
+      "description": "Compact categorical tag for agent, referrer, and similar classifications.",
+      "html": "<span class=\"ds-role-chip\">AGENT</span>",
+      "css": ".ds-role-chip { display: inline-flex; align-items: center; background: var(--bg-muted); color: var(--fg-secondary); border-radius: 4px; padding: 2px 7px; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.3px; line-height: 1; text-transform: uppercase; }"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "refersTo": "button-outline",
+      "description": "Icon-first shell navigation item with quiet inactive state and green active state.",
+      "html": "<button class=\"ds-nav-item active\"><span class=\"ds-nav-icon\">◈</span><span class=\"ds-nav-label\">SP Account</span></button>",
+      "css": ".ds-nav-item { width: 59px; height: 54px; border: none; border-radius: 8px; background: transparent; color: var(--fg-tertiary); display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; cursor: pointer; transition: background 120ms ease-out, color 120ms ease-out; } .ds-nav-icon { font-size: 14px; line-height: 1; } .ds-nav-label { font-size: 8px; font-weight: 500; line-height: 10px; text-align: center; } .ds-nav-item:hover { background: var(--bg-subtle); color: var(--fg-secondary); } .ds-nav-item.active { background: var(--green-50); color: var(--green-600); } .ds-nav-item:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(0,170,79,0.14); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Operations Control Ledger",
+    "overview": "This system is a working desk, not a showcase. It is built for internal ops staff who already understand commission mechanics, KPI periods, and SP account relationships. The interface should feel like a confident commercial instrument: compact, direct, and structurally predictable. It earns trust through ordered density, not through decoration.\n\nThe visual system uses a restrained product palette, one familiar sans family, and consistent sectional framing to keep repeated data-entry and review flows fast. Navigation, forms, cards, and tables should disappear into the task. Emphasis belongs to state, actions, and important values only. Decorative novelty is prohibited.\n\nThis system explicitly rejects consumer-fintech gloss and legacy-ERP heaviness. It must not drift into gradient-card dashboards, neon state signaling, or overstuffed grids that force users to decode too much at once. It also must not become so sparse that power users lose speed.",
+    "keyCharacteristics": [
+      "Dense but breathable",
+      "Bold in hierarchy, restrained in color",
+      "Familiar admin patterns, no invented affordances",
+      "State-driven emphasis, not decorative emphasis",
+      "Repeated structures tuned for fast scanning"
+    ],
+    "rules": [
+      {
+        "name": "The Green Means Action Rule",
+        "body": "Green is reserved for action, success, selection, and positive validation. It must not be sprayed across passive surfaces.",
+        "section": "colors"
+      },
+      {
+        "name": "The Navy Carries Structure Rule",
+        "body": "Navy is for hierarchy and commercial emphasis, not for interaction states. If a control is clickable, green owns it.",
+        "section": "colors"
+      },
+      {
+        "name": "The Quiet Surface Rule",
+        "body": "Most of the page should read as tinted white and light grey. If the interface feels colorful at a glance, the color balance is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Family Rule",
+        "body": "This system uses one sans family across headers, controls, tables, and labels. Hierarchy comes from weight, size, and spacing, not from changing voices.",
+        "section": "typography"
+      },
+      {
+        "name": "The Numbers Must Align Rule",
+        "body": "Monetary values, litres, percentages, and KPI figures should use tabular numeric alignment wherever comparison matters.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Resting surfaces should separate themselves with borders, radius, and spacing first. Shadows come in only when a surface must float.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Overlay Earns Depth Rule",
+        "body": "If a component interrupts the task, it may rise. If it merely groups content, keep it quiet.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use green for actions, success states, and selected controls only.",
+      "Do keep content surfaces mostly white and soft grey, with navy carrying hierarchy.",
+      "Do preserve predictable admin structures: section headers, aligned forms, compact lists, and stable navigation.",
+      "Do use density intentionally. Pack information tightly, but separate it with rhythm, headers, and repeated alignment.",
+      "Do make state tell the story. Future periods, pending states, warnings, and clean records should each feel different immediately.",
+      "Do keep repeated controls visually consistent across flows. If one save button looks different from another, one is wrong."
+    ],
+    "donts": [
+      "Don't introduce consumer-fintech styling. No gradient cards, no neon accent colors, no glowing revenue-chart energy. This is not Robinhood or a crypto dashboard.",
+      "Don't drift into legacy ERP heaviness. No information crammed into every pixel, no 12-field visual walls, no SAP-era table weight.",
+      "Don't use border-left or border-right accent stripes greater than 1px on cards, callouts, or list items.",
+      "Don't use gradient text, decorative glassmorphism, or oversized hero metrics inside product surfaces.",
+      "Don't replace comparison-heavy structures with identical card grids. If the task is ranking or numeric comparison, alignment wins.",
+      "Don't use heavy color on inactive states. Accent belongs to intent and state change, not passive decoration."
+    ]
+  }
+}

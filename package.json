@@ -6,7 +6,8 @@
     "build": "node build.js",
     "dev": "node dev-server.js",
     "start": "node dev-server.js",
-    "dev:python": "python3 -m http.server 8000"
+    "dev:python": "python3 -m http.server 8000",
+    "deploy:prod": "./scripts/deploy-production.sh"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
