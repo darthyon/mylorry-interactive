@@ -5,7 +5,7 @@
 (function () {
 
   const AGENTS = [
-    { id:"AG-0042", num:1,  referrer:false, name:"Kenneth Wang",               mobile:"0123456789", email:"kenneth@mylorry.ai",       ic:"820101-05-1234", bankName:"Maybank",      accNo:"112361629821", accName:"Kenneth Wang", joined:"Aug 2024", status:"active",      accountStatus:"active",     spCount:6,  volume:213400, commission:2347.00, kpiMult:100, kpiTarget:200000, kpiPct:106.7, kpiPhase:"active"   },
+    { id:"AG-0042", num:1,  referrer:false, name:"Kenneth Wang",               mobile:"0123456789", email:"kenneth@mylorry.ai",       ic:"820101-05-1234", bankName:"Maybank",      accNo:"112361629821", accName:"Kenneth Wang", joined:"Aug 2024", status:"active",      accountStatus:"active",     spCount:6,  volume:166720, commission:1093.25, kpiMult:50,  kpiTarget:200000, kpiPct:83.4,  kpiPhase:"active"   },
     { id:"RF-0019", num:2,  referrer:true,  name:"Ahmad Faris",                mobile:"0133029991", email:"ahmad.faris@gmail.com",    ic:"780515-08-6473", bankName:"CIMB",         accNo:"6364296502",   accName:"Ahmad Faris",         joined:"Jan 2022", status:"active",      accountStatus:"active",     spCount:11, volume:245600, commission:2890.00, kpiMult:100, kpiTarget:220000, kpiPct:111.6, kpiPhase:"active"   },
     { id:"AG-0031", num:3,  referrer:false, name:"Priya Nair",                 mobile:"0176699017", email:"priya.nair@gmail.com",     ic:"890322-10-5033", bankName:"Maybank",      accNo:"151333033049", accName:"Priya Nair", joined:"Mar 2023", status:"active",      accountStatus:"active",     spCount:8,  volume:180000, commission:1890.00, kpiMult:50,  kpiTarget:200000, kpiPct:90.0,  kpiPhase:"active"   },
     { id:"RF-0038", num:4,  referrer:true,  name:"Siti Rahimah",               mobile:"0193088813", email:"siti.rahimah@mylorry.ai", ic:"900611-05-5240", bankName:"Public Bank",  accNo:"3241880123",   accName:"Siti Rahimah Binti Aziz", joined:"Jun 2023", status:"active",      accountStatus:"active",     spCount:7,  volume:120000, commission:1260.00, kpiMult:50,  kpiTarget:200000, kpiPct:60.0,  kpiPhase:"complete" },
@@ -27,7 +27,9 @@
     kpi: {
       evalPeriodOpt: "Last completed year",
       progressPeriod: "Dec 1–31",
-      actual: 213400,
+      // De-inflated: KPI actual = Σ attributed volume across SP accounts (was 213,400 raw
+      // full-volume, the piggybacking number). 166,720 / 200,000 = 83.4% → Tier 2 (×0.50).
+      actual: 166720,
       locked: false,
       current: {
         version:3, effective:"Dec 2026", target:200000,
@@ -51,12 +53,12 @@
     ],
 
     spAccounts: [
-      { sp:"CK-PTN-001",   org:"CK Timber Transport Sdn Bhd",  volume:52400, eff:"01 Jan 2026", end:"Dec 2028", exception:null,                         commissionStatus:"activated"           },
-      { sp:"SUM-PTN-012",  org:"Summit Global Logistics",      volume:46900, eff:"01 Jan 2026", end:"Dec 2028", exception:null,                         commissionStatus:"activated"           },
-      { sp:"MEGA-PTN-007", org:"Mega Fleet Logistics",         volume:38200, eff:"01 Jan 2026", end:"Dec 2028", exception:null,                         commissionStatus:"activated"           },
-      { sp:"PIN-PTN-033",  org:"Pinnacle Transport Solutions", volume:31500, eff:"01 Jul 2026", end:"Dec 2028", exception:{ mode:"auto",   rate:100 },   commissionStatus:"activated"           },
-      { sp:"RAP-PTN-021",  org:"Rapid Haulage Sdn Bhd",        volume:24600, eff:"18 Feb 2026", end:"Dec 2028", exception:{ mode:"custom", rate:50 },    commissionStatus:"on_hold"             },
-      { sp:"VAN-PTN-045",  org:"Vanguard Logistics Systems",   volume:0,     eff:"01 Jun 2026", end:"Dec 2028", exception:null,                         commissionStatus:"pending_onboarding"  },
+      { sp:"CK-PTN-001",   org:"CK Timber Transport Sdn Bhd",  volume:52400, kpiSplitPct:90, kpiVolume:47160, eff:"01 Jan 2026", end:"Dec 2028", exception:null,                         commissionStatus:"activated"           },
+      { sp:"SUM-PTN-012",  org:"Summit Global Logistics",      volume:46900, kpiSplitPct:90, kpiVolume:42210, eff:"01 Jan 2026", end:"Dec 2028", exception:null,                         commissionStatus:"activated"           },
+      { sp:"MEGA-PTN-007", org:"Mega Fleet Logistics",         volume:38200, kpiSplitPct:85, kpiVolume:32470, eff:"01 Jan 2026", end:"Dec 2028", exception:null,                         commissionStatus:"activated"           },
+      { sp:"PIN-PTN-033",  org:"Pinnacle Transport Solutions", volume:31500, kpiSplitPct:80, kpiVolume:25200, eff:"01 Jul 2026", end:"Dec 2028", exception:{ mode:"auto",   rate:100 },   commissionStatus:"activated"           },
+      { sp:"RAP-PTN-021",  org:"Rapid Haulage Sdn Bhd",        volume:24600, kpiSplitPct:80, kpiVolume:19680, eff:"18 Feb 2026", end:"Dec 2028", exception:{ mode:"custom", rate:50 },    commissionStatus:"on_hold"             },
+      { sp:"VAN-PTN-045",  org:"Vanguard Logistics Systems",   volume:0,     kpiSplitPct:0,  kpiVolume:0,     eff:"01 Jun 2026", end:"Dec 2028", exception:null,                         commissionStatus:"pending_onboarding"  },
     ],
 
     availableSP: [
@@ -84,7 +86,7 @@
 
   /* ─── MyFuel Commission Records (current period) ─────────────── */
   const MYFUEL_RECORDS = [
-    { agentId:"AG-0042", agentName:"Kenneth Wang",               spCount:6,  totalLiters:213400, kpiTarget:200000, kpiPct:106.7, commission:2347.00, payout:"Pending",  period:"Jun 2026" },
+    { agentId:"AG-0042", agentName:"Kenneth Wang",               spCount:6,  totalLiters:193600, attributedKpiVolume:166720, kpiTarget:200000, kpiPct:83.4,  commission:1093.25, payout:"Pending",  period:"Jun 2026" },
     { agentId:"RF-0019", agentName:"Ahmad Faris",                spCount:11, totalLiters:245600, kpiTarget:220000, kpiPct:111.6, commission:2890.00, payout:"Approved", period:"Jun 2026" },
     { agentId:"AG-0031", agentName:"Priya Nair",                 spCount:8,  totalLiters:180000, kpiTarget:200000, kpiPct:90.0,  kpiPhase:"active",   commission:1890.00, payout:"Pending",  period:"Jun 2026" },
     { agentId:"RF-0038", agentName:"Siti Rahimah",               spCount:7,  totalLiters:120000, kpiTarget:200000, kpiPct:60.0,  kpiPhase:"complete", commission:1260.00, payout:"Paid",     period:"Jun 2026" },
@@ -96,17 +98,24 @@
   ];
 
   /* ─── Per-SP Account breakdown (for drill-down) ──────────────────────────
-     baseCommission = volume × rate (before KPI multiplier)
-     finalCommission = baseCommission × kpiMult/100 (after KPI multiplier)
-     eff / end = commission validity window (not payout) ──────────────────── */
+     volume          = commission BASIS (full account volume) — NOT split by attribution
+     kpiSplitPct     = this salesperson's KPI attribution share on the account (Model B)
+     kpiVolume       = volume × kpiSplitPct/100  (the de-inflated KPI credit)
+     baseCommission  = volume × rate (before KPI multiplier)
+     kpiMult         = the AGENT's KPI multiplier, derived from Σ kpiVolume vs target
+                       (Reading A: honest KPI achievement scales commission)
+     finalCommission = baseCommission × kpiMult/100
+     eff / end       = commission validity window (not payout) ──────────────── */
   const SP_COMMISSION_BREAKDOWN = {
+    // AG-0042 (Kenneth) — worked example. Attributed KPI volume sums to 166,720 L →
+    // 83.4% of target → Tier 2 → ×0.50. Commission basis volumes are unchanged.
     "AG-0042": [
-      { sp:"CK-PTN-001",   org:"CK Timber Transport Sdn Bhd",  volume:52400, tier:"Tier 3", rate:0.015, kpiMult:100, baseCommission:786.00, finalCommission:786.00, eff:"01 Jan 2026", end:"31 Dec 2028", commissionStatus:"activated"          },
-      { sp:"SUM-PTN-012",  org:"Summit Global Logistics",       volume:46900, tier:"Tier 3", rate:0.015, kpiMult:100, baseCommission:703.50, finalCommission:703.50, eff:"01 Jan 2026", end:"31 Dec 2028", commissionStatus:"activated"          },
-      { sp:"MEGA-PTN-007", org:"Mega Fleet Logistics",          volume:38200, tier:"Tier 2", rate:0.010, kpiMult:100, baseCommission:382.00, finalCommission:382.00, eff:"01 Jan 2026", end:"31 Dec 2028", commissionStatus:"activated"          },
-      { sp:"PIN-PTN-033",  org:"Pinnacle Transport Solutions",  volume:31500, tier:"Tier 2", rate:0.010, kpiMult:100, baseCommission:315.00, finalCommission:315.00, eff:"01 Jul 2026", end:"31 Dec 2028", commissionStatus:"activated"          },
-      { sp:"RAP-PTN-021",  org:"Rapid Haulage Sdn Bhd",         volume:24600, tier:"Tier 1", rate:0.005, kpiMult:100, baseCommission:123.00, finalCommission:0,      eff:"18 Feb 2026", end:"31 Dec 2028", commissionStatus:"on_hold"            },
-      { sp:"VAN-PTN-045",  org:"Vanguard Logistics Systems",    volume:0,     tier:"Tier 1", rate:0.005, kpiMult:100, baseCommission:0,      finalCommission:0,      eff:"01 Jun 2026", end:"31 Dec 2028", commissionStatus:"pending_onboarding" },
+      { sp:"CK-PTN-001",   org:"CK Timber Transport Sdn Bhd",  volume:52400, kpiSplitPct:90, kpiVolume:47160, tier:"Tier 3", rate:0.015, kpiMult:50, baseCommission:786.00, finalCommission:393.00, eff:"01 Jan 2026", end:"31 Dec 2028", commissionStatus:"activated"          },
+      { sp:"SUM-PTN-012",  org:"Summit Global Logistics",       volume:46900, kpiSplitPct:90, kpiVolume:42210, tier:"Tier 3", rate:0.015, kpiMult:50, baseCommission:703.50, finalCommission:351.75, eff:"01 Jan 2026", end:"31 Dec 2028", commissionStatus:"activated"          },
+      { sp:"MEGA-PTN-007", org:"Mega Fleet Logistics",          volume:38200, kpiSplitPct:85, kpiVolume:32470, tier:"Tier 2", rate:0.010, kpiMult:50, baseCommission:382.00, finalCommission:191.00, eff:"01 Jan 2026", end:"31 Dec 2028", commissionStatus:"activated"          },
+      { sp:"PIN-PTN-033",  org:"Pinnacle Transport Solutions",  volume:31500, kpiSplitPct:80, kpiVolume:25200, tier:"Tier 2", rate:0.010, kpiMult:50, baseCommission:315.00, finalCommission:157.50, eff:"01 Jul 2026", end:"31 Dec 2028", commissionStatus:"activated"          },
+      { sp:"RAP-PTN-021",  org:"Rapid Haulage Sdn Bhd",         volume:24600, kpiSplitPct:80, kpiVolume:19680, tier:"Tier 1", rate:0.005, kpiMult:50, baseCommission:123.00, finalCommission:0,      eff:"18 Feb 2026", end:"31 Dec 2028", commissionStatus:"on_hold"            },
+      { sp:"VAN-PTN-045",  org:"Vanguard Logistics Systems",    volume:0,     kpiSplitPct:0,  kpiVolume:0,     tier:"Tier 1", rate:0.005, kpiMult:50, baseCommission:0,      finalCommission:0,      eff:"01 Jun 2026", end:"31 Dec 2028", commissionStatus:"pending_onboarding" },
     ],
     "RF-0019": [
       { sp:"ARC-PTN-001",  org:"Arcadian Haulage",              volume:38400, tier:"Tier 2", rate:0.010, kpiMult:100, baseCommission:384.00, finalCommission:384.00, eff:"01 Jan 2026", end:"31 Dec 2028", commissionStatus:"activated" },

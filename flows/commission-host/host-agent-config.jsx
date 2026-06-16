@@ -1014,9 +1014,9 @@ function SPAccountsCard({ spAccounts: initSP }) {
       </div>
       {hasAccounts ? (
         <div className="ml-table-wrap">
-          <table className="ml-table" style={{ minWidth:680 }}>
+          <table className="ml-table" style={{ minWidth:820 }}>
             <thead>
-              <tr><th>SP Code</th><th>Organisation</th><th>Volume (L)</th><th>Commission Status</th><th>Commission Validity</th><th>Exception</th><th></th></tr>
+              <tr><th>SP Code</th><th>Organisation</th><th>Volume (L)</th><th>KPI Attribution</th><th>Commission Status</th><th>Commission Validity</th><th>Exception</th><th></th></tr>
             </thead>
             <tbody>
               {spAccounts.map((sp, i) => (
@@ -1024,6 +1024,14 @@ function SPAccountsCard({ spAccounts: initSP }) {
                   <td><code className="hac-code">{sp.sp}</code></td>
                   <td className="ml-cell-main">{sp.org}</td>
                   <td className="ml-mono">{sp.volume ? sp.volume.toLocaleString() : "—"}</td>
+                  <td className="ml-mono">
+                    {sp.kpiVolume != null ? (
+                      <>
+                        {sp.kpiVolume.toLocaleString()}
+                        <div className="ml-cell-sub">{sp.kpiSplitPct}% attributed</div>
+                      </>
+                    ) : "—"}
+                  </td>
                   <td><CommissionStatusBadge status={sp.commissionStatus || "activated"} /></td>
                   <td className="ml-mono" style={{ fontSize:12 }}>{sp.eff} – {sp.end}</td>
                   <td>
