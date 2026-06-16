@@ -30,7 +30,7 @@
 .ml-badge.comm-pending-ob  { background: #FFF8E1;         color: #F57F17;          }
 .ml-badge.comm-on-hold     { background: #FFF8E1;         color: #F57F17;          }
 .ml-badge.comm-deactivated { background: #FFF0F0;         color: var(--red-400);   }
-.ml-badge.comm-expired     { background: var(--bg-muted); color: var(--fg-secondary); }
+.ml-badge.comm-expired     { background: #F0F0F2;         color: var(--fg-secondary); }
 
 /* Account status */
 .ml-badge.acct-active     { background: var(--green-50); color: var(--green-600);    }

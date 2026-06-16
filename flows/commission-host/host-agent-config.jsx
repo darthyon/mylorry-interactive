@@ -10,6 +10,7 @@ const CommissionStatusBadge = window.HStatusBadge;
 const KPIProgress = window.HKPIProgress;
 const KPIProgressMeta = window.KPIProgressMeta;
 const AccountStatusBadge = window.HAccountStatusBadge;
+const PetronLogo = window.SharedShell.PetronLogo;
 
 /* ─── KPI multiplier zones — derived from configurable thresholds ─────── */
 // Each threshold stores only a lower bound (minPct); the upper bound of a tier
@@ -35,6 +36,9 @@ const kpiZoneOf = (pct, zones) =>
 const zoneRange = z => z.isFinal
   ? `≥ ${z.from}%`
   : `${z.from}%–${(z.to - 0.01).toFixed(2)}%`;
+// Tint a cell by its zone's multiplier band (not cell-center %), so the final
+// tier turns green even though no cell center reaches 100. Mirrors agent-parts.jsx.
+const zoneMeta = z => KPIProgressMeta(z?.mult >= 100 ? 100 : z?.mult >= 50 ? 75 : 0);
 const monthKeyOfDate = value => (value ? value.slice(0, 7) : "");
 const currentMonthKey = () => {
   const now = new Date();
@@ -105,9 +109,7 @@ function KPIProgressBlock({ kpi, target, thresholds }) {
     const from = i * STEP;
     const sampled = kpiZoneOf(from + STEP / 2, zones) || {};
     const z = i === CELLS - 1 && finalZone?.from >= axisMax ? finalZone : sampled;
-    // Colour follows the cell's resolved tier (z), not the raw midpoint — the
-    // last cell is overridden to the final tier, so its colour must match.
-    const meta = KPIProgressMeta(z.from != null ? z.from : from + STEP / 2);
+    const meta = zoneMeta(z);
     const reached = !isFuture && pct > from;
     return {
       bg: reached ? meta.solid : meta.fill,
@@ -753,7 +755,7 @@ function CommissionSection({ kpi, editing, showHistory, setShowHistory }) {
             )}
 
             {/* Right: Evaluation Period + Target Volume */}
-            <div className="hac-kpi-summary-right">
+            <div className={"hac-kpi-summary-right" + (editing ? "" : " cols2")}>
               {editing ? (
                 <div className={"hac-kpi-edit-grid" + (evalPeriod === "Custom range" ? " custom-range" : "")}>
                   <div className="hac-kpi-summary-group">
@@ -839,6 +841,14 @@ function CommissionSection({ kpi, editing, showHistory, setShowHistory }) {
                 <>
                   <div className="hac-kpi-summary-group">
                     <div className="hac-kpi-summary-label">
+                      KPI Target Volume
+                      <InfoTip text="Total fuel volume the agent must reach within the evaluation period." />
+                    </div>
+                    <span className="hac-big-num" style={{ marginTop:2 }}>{HC.fmtL(kpiTarget)}</span>
+                  </div>
+
+                  <div className="hac-kpi-summary-group">
+                    <div className="hac-kpi-summary-label">
                       Evaluation Period
                       <button className="ml-info-btn" type="button" aria-label="How evaluation periods work" onClick={() => setShowEvalHelp(true)}>
                         <HIcon name="info" size={14} />
@@ -850,14 +860,6 @@ function CommissionSection({ kpi, editing, showHistory, setShowHistory }) {
                         {evalPeriod === "Custom range" ? formatRangeDisplay(customStartDate, customEndDate) : evalPeriodSummary(evalPeriod)}
                       </span>
                     </div>
-                  </div>
-
-                  <div className="hac-kpi-summary-group">
-                    <div className="hac-kpi-summary-label">
-                      KPI Target Volume
-                      <InfoTip text="Total fuel volume the agent must reach within the evaluation period." />
-                    </div>
-                    <span className="hac-big-num" style={{ marginTop:2 }}>{HC.fmtL(kpiTarget)}</span>
                   </div>
                 </>
               )}
@@ -1026,9 +1028,12 @@ function SPAccountsCard({ spAccounts: initSP }) {
             <tbody>
               {paginated.map((sp, i) => (
                 <tr key={i}>
-                  <td>
-                    <div className="ml-cell-main">{sp.org}</div>
-                    <div className="ml-cell-sub hac-sp-id"><PetronLogo size={14} /><code className="hac-code">{sp.sp}</code></div>
+                  <td className="ml-cell-main">
+                    {sp.org}
+                    <div className="hac-owner-code">
+                      <PetronLogo size={14} />
+                      <code className="hac-code">{sp.sp}</code>
+                    </div>
                   </td>
                   <td className="ml-mono">{sp.volume ? sp.volume.toLocaleString() : "—"}</td>
                   <td className="ml-mono">
