@@ -2,6 +2,13 @@
 // Account switch. Same 12-month data, two pivots. Exports window.Statements.
 const { useState: useStateS } = React;
 
+function fmtAttribution(volume, total) {
+  const pct = total > 0 ? (volume / total) * 100 : 0;
+  const rounded = Math.round(pct * 10) / 10;
+  const pctLabel = Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1);
+  return `${AC.fmtL(volume)} · ${pctLabel}%`;
+}
+
 // Per-key pagination state helper (months expand to SPs, or SPs expand to months).
 function useNestedPaging(defaultPer) {
   const [page, setPage] = useStateS({});
@@ -15,11 +22,12 @@ function useNestedPaging(defaultPer) {
 }
 
 // Shared nested subtable row (one SP-or-month line, clickable → TxnModal drill).
-function LeafRow({ periodCell, r, onDrill }) {
+function LeafRow({ periodCell, r, attributionTotal, onDrill }) {
   return (
     <tr style={{ cursor: "pointer" }} onClick={() => onDrill(r)}>
       <td>{periodCell}</td>
       <td>{AC.fmtL(r.vol != null ? r.vol : r.volume)}</td>
+      <td>{fmtAttribution(r.vol != null ? r.vol : r.volume, attributionTotal)}</td>
       <td><TierCell r={r} /></td>
       <td>{AC.fmtRM(r.base)}</td>
       <td><KpiTierCell r={r} /></td>
@@ -33,9 +41,9 @@ function NestedHead({ first }) {
   return (
     <thead>
       <tr>
-        <th>{first}</th><th>Volume</th>
-        <th>Commission Tier</th><th>Base Commission</th>
-        <th>KPI Multiplier</th>
+        <th>{first}</th><th>Commission Volume</th>
+        <th>KPI Attribution</th><th>Tier / Rate</th><th>Base Commission</th>
+        <th>Multiplier</th>
         <th style={{ textAlign: "right" }}>Final Commission</th>
         <th style={{ width: 32 }}></th>
       </tr>
@@ -61,8 +69,8 @@ function ByMonth({ history, open, setOpen, onDrill }) {
               <tr>
                 <th style={{ width: 40 }}></th>
                 <th style={{ minWidth: 140 }}>Period</th>
-                <th>Volume</th>
-                <th>KPI Multiplier</th>
+                <th>Commission Volume</th>
+                <th>Multiplier</th>
                 <th style={{ textAlign: "right" }}>Final Commission</th>
               </tr>
             </thead>
@@ -89,7 +97,7 @@ function ByMonth({ history, open, setOpen, onDrill }) {
                               <NestedHead first="SP Account" />
                               <tbody>
                                 {rows.map((r) => (
-                                  <LeafRow key={r.sp} r={r} onDrill={() => onDrill(r, h.label)}
+                                  <LeafRow key={r.sp} r={r} attributionTotal={h.volume} onDrill={() => onDrill(r, h.label)}
                                     periodCell={<SpAccountCell r={r} />} />
                                 ))}
                               </tbody>
@@ -100,10 +108,6 @@ function ByMonth({ history, open, setOpen, onDrill }) {
                                 onPerPage={(v) => nest.setPer(h.key, v)}
                                 perPageOptions={[5, 10, 20]} />
                             )}
-                            <div className="ml-expand-note">
-                              <Icon name="info" size={14} color="#999AA5" />
-                              One row per SP account · tap a row for settled transactions.
-                            </div>
                           </div>
                         </td>
                       </tr>
@@ -136,7 +140,7 @@ function ByMonth({ history, open, setOpen, onDrill }) {
                 </div>
               </div>
               <div className="ml-hist-mob-metas">
-                <div><span className="ml-k">Volume</span><b>{AC.fmtL(h.volume)}</b></div>
+                <div><span className="ml-k">Commission volume</span><b>{AC.fmtL(h.volume)}</b></div>
                 <div><span className="ml-k">Multiplier</span><b>{h.mult}%</b></div>
                 <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "flex-end" }}>
                   <Icon name={isOpen ? "expand_less" : "expand_more"} size={18} color="#BBBBBB" />
@@ -150,7 +154,7 @@ function ByMonth({ history, open, setOpen, onDrill }) {
                         padding: "7px 0", borderBottom: "1px solid var(--bg-subtle)", cursor: "pointer" }}>
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 500, color: "var(--fg-primary)" }}>{r.org}</div>
-                        <div style={{ fontSize: 11, color: "var(--fg-tertiary)" }}>{r.sp} · {AC.fmtL(r.vol)}</div>
+                        <div style={{ fontSize: 11, color: "var(--fg-tertiary)" }}>{r.sp} · {fmtAttribution(r.vol, h.volume)}</div>
                       </div>
                       <b style={{ fontSize: 13, color: "var(--fg-primary)", flexShrink: 0, marginLeft: 8 }}>{AC.fmtRM(r.commission)}</b>
                     </div>
@@ -185,8 +189,8 @@ function BySp({ accounts, open, setOpen, onDrill }) {
               <tr>
                 <th style={{ width: 40 }}></th>
                 <th style={{ minWidth: 240 }}>SP Account</th>
-                <th>Volume · YTD</th>
-                <th>Commission Tier</th>
+                <th>Commission Volume · YTD</th>
+                <th>Tier / Rate</th>
                 <th style={{ textAlign: "right" }}>Final Commission · YTD</th>
               </tr>
             </thead>
@@ -213,7 +217,7 @@ function BySp({ accounts, open, setOpen, onDrill }) {
                               <NestedHead first="Period" />
                               <tbody>
                                 {months.map((m) => (
-                                  <LeafRow key={m.key} r={m} onDrill={() => onDrill(m, m.label)}
+                                  <LeafRow key={m.key} r={m} attributionTotal={a.volume} onDrill={() => onDrill(m, m.label)}
                                     periodCell={<b>{m.key}</b>} />
                                 ))}
                               </tbody>
@@ -224,10 +228,6 @@ function BySp({ accounts, open, setOpen, onDrill }) {
                                 onPerPage={(v) => nest.setPer(a.sp, v)}
                                 perPageOptions={[6, 12]} />
                             )}
-                            <div className="ml-expand-note">
-                              <Icon name="info" size={14} color="#999AA5" />
-                              One row per month · tap a row for settled transactions.
-                            </div>
                           </div>
                         </td>
                       </tr>
@@ -260,8 +260,8 @@ function BySp({ accounts, open, setOpen, onDrill }) {
                 </div>
               </div>
               <div className="ml-hist-mob-metas">
-                <div><span className="ml-k">Volume · YTD</span><b>{AC.fmtL(a.volume)}</b></div>
-                <div><span className="ml-k">Tier</span><b>{AC.fmtRate(a.tier.rate)}</b></div>
+                <div><span className="ml-k">Commission volume · YTD</span><b>{AC.fmtL(a.volume)}</b></div>
+                <div><span className="ml-k">Tier / Rate</span><b>{AC.fmtRate(a.tier.rate)}</b></div>
                 <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "flex-end" }}>
                   <Icon name={isOpen ? "expand_less" : "expand_more"} size={18} color="#BBBBBB" />
                 </div>
@@ -274,7 +274,7 @@ function BySp({ accounts, open, setOpen, onDrill }) {
                         padding: "7px 0", borderBottom: "1px solid var(--bg-subtle)", cursor: "pointer" }}>
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 500, color: "var(--fg-primary)" }}>{m.key}</div>
-                        <div style={{ fontSize: 11, color: "var(--fg-tertiary)" }}>{AC.fmtL(m.volume)} · KPI {m.appliedMult}%</div>
+                        <div style={{ fontSize: 11, color: "var(--fg-tertiary)" }}>{fmtAttribution(m.volume, a.volume)} · KPI {m.appliedMult}%</div>
                       </div>
                       <b style={{ fontSize: 13, color: "var(--fg-primary)", flexShrink: 0, marginLeft: 8 }}>{AC.fmtRM(m.commission)}</b>
                     </div>

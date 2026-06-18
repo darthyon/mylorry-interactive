@@ -131,7 +131,7 @@ function CardHead({ icon, title, sub, right }) {
   return (
     <div className="ml-cardhead">
       <div className="ml-cardhead-left">
-        <div className="ml-stat-icon"><Icon name={icon} size={18} /></div>
+        <div className="ml-stat-icon"><Icon name={icon} size={18} color="#00AA4F" /></div>
         <div>
           <div className="ml-cardhead-title">{title}</div>
           {sub && <div className="ml-cardhead-sub">{sub}</div>}
