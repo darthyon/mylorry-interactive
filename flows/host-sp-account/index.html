@@ -100,25 +100,35 @@ b { font-weight: 600; }
 .spa-dval { padding: 2px 0 0; min-height: auto; align-items: flex-start; }
 
 /* Tier stack (read + edit) — full-width cards stacked vertically (commission tiers) */
-.spa-tier-stack { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
-.spa-tier-stack-card { display: grid; grid-template-columns: 1.2fr 1fr 1fr; align-items: center; gap: 18px; border: 1px solid var(--border-strong); border-radius: 14px; padding: 16px 20px; background: #fff; }
-.spa-tier-stack.is-edit .spa-tier-stack-card { grid-template-columns: 1.2fr 1fr 1fr auto; }
+.spa-tier-stack { display: flex; flex-direction: column; gap: 0; margin-top: 12px; border: 1px solid var(--border-light); border-radius: 16px; overflow: hidden; background: #fff; }
+.spa-tier-stack.compact { max-width: 760px; }
+.spa-rebate-layout { display: flex; flex-direction: column; gap: 16px; }
+.spa-rebate-layout .hac-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; }
+.spa-rebate-layout .spa-tier-stack,
+.spa-rebate-layout .spa-tier-stack.compact { max-width: 760px; margin-top: 0; }
+.spa-rebate-side { min-width: 0; }
+.spa-tier-stack-card { display: grid; grid-template-columns: minmax(132px, 0.88fr) minmax(0, 1.04fr) minmax(0, 1.08fr); align-items: center; gap: 18px; border-top: 1px solid var(--border-light); padding: 16px 22px 16px 18px; background: #fff; }
+.spa-tier-stack-card:first-child { border-top: none; }
+.spa-tier-stack.is-edit .spa-tier-stack-card { grid-template-columns: minmax(132px, 0.88fr) minmax(0, 1.04fr) minmax(0, 1.08fr) auto; }
 .spa-tier-stack-id { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.spa-tier-stack-field { display: flex; flex-direction: column; min-width: 0; }
-.spa-tier-stack-field b { font-size: 14px; font-weight: 600; color: var(--fg-primary); }
+.spa-tier-stack-field { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.spa-tier-stack-field b { font-size: 13px; font-weight: 600; color: var(--fg-primary); }
+.spa-tier-stack-field b,
+.spa-tier-body b { white-space: nowrap; }
 .spa-tier-stack.is-edit .spa-tier-stack-card > *:last-child { justify-self: end; }
 /* shared tier label + final badge (commission stack + rebate cards) */
 .spa-tier-label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--navy-800); }
-.spa-final-badge { font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--bg-muted); color: var(--navy-800); }
+.spa-final-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border: 1px solid var(--border-light); border-radius: 999px; background: var(--bg-subtle); color: var(--fg-secondary); }
+.spa-tier-stack-field .ml-k,
+.spa-tier-body .ml-k { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0; flex-shrink: 0; }
 
-/* Tier cards (variant="cards" — full-width Rebate Setting) */
-.spa-tier-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-.spa-tier-card { border: 1px solid var(--border-strong); border-radius: 12px; padding: 14px 18px; background: #fff; }
-.spa-tier-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.spa-tier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 320px)); justify-content: start; gap: 12px; margin-top: 12px; }
+.spa-tier-card { border: 1px solid var(--border-light); border-radius: 14px; padding: 14px 16px; background: #fff; }
+.spa-tier-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .spa-tier-title-wrap { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.spa-tier-body { display: flex; gap: 24px; align-items: flex-end; }
-.spa-tier-body > div { flex: 1 1 0; min-width: 0; }
-.spa-tier-body b { font-size: 14px; font-weight: 600; color: var(--fg-primary); }
+.spa-tier-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 16px; align-items: baseline; }
+.spa-tier-body > div { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.spa-tier-body b { font-size: 13px; font-weight: 600; color: var(--fg-primary); }
 
 /* Salesperson blocks (read view) */
 .spa-sp-list { display: flex; flex-direction: column; gap: 18px; }
@@ -164,7 +174,7 @@ b { font-weight: 600; }
 /* ── Salesperson Setting (umbrella: account fields + per-role commission/KPI) ─ */
 /* Per-role group */
 .spa-role-group { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--border-light); }
-.spa-role-group:first-of-type { margin-top: 18px; }
+.spa-role-group:first-of-type { margin-top: 18px; padding-top: 0; border-top: none; }
 .spa-role-group-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
 .spa-role-group-title { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .spa-role-group-meta { font-size: 12px; color: var(--fg-secondary); }
@@ -179,8 +189,12 @@ b { font-weight: 600; }
 /* Umbrella card: identity + tiering + KPI footer */
 .spa-sp-umbrella-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .spa-sp-umbrella-card { border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px 18px; background: #fff; display: flex; flex-direction: column; }
-.spa-umbrella-tiers-label { font-size: 12px; font-weight: 700; color: var(--fg-secondary); margin-bottom: 2px; }
-.spa-sp-kpi-foot { display: flex; flex-wrap: wrap; gap: 14px 24px; margin: 16px -18px -16px; padding: 14px 18px; background: var(--bg-subtle); border-top: 1px solid var(--border-light); border-bottom-left-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md); }
+.spa-umbrella-tiers-label { font-size: 13px; font-weight: 600; color: var(--navy-800); margin-bottom: 10px; }
+.spa-tier-meta-row { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-bottom: 12px; }
+.spa-tier-meta-item { display: flex; flex-direction: column; gap: 2px; min-width: 160px; }
+.spa-tier-meta-item .ml-k { margin-bottom: 0; }
+.spa-tier-meta-value { font-size: 13px; font-weight: 600; color: var(--fg-primary); }
+.spa-sp-kpi-foot { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; margin: 16px -18px -16px; padding: 14px 18px; background: var(--bg-subtle); border-top: 1px solid var(--border-light); border-bottom-left-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md); }
 .spa-attr-role-title { font-size: 15px; font-weight: 700; color: var(--navy-800); }
 .spa-attr-stack { display: flex; gap: 2px; width: 100%; height: 36px; border-radius: var(--radius-sm); overflow: visible; background: var(--bg-muted); }
 .spa-attr-stack-seg { position: relative; flex-grow: 0; flex-basis: 0; min-width: 0; display: flex; align-items: center; justify-content: center; background: var(--green-500); overflow: visible; }
@@ -196,7 +210,14 @@ b { font-weight: 600; }
 .spa-attr-stack-tooltip { width: auto; min-width: 180px; max-width: 260px; white-space: normal; z-index: 60; }
 .spa-attr-inline-metric { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 112px; }
 .spa-attr-inline-metric .ml-k { margin-bottom: 0; white-space: nowrap; }
-.spa-attr-list-strong { display: block; font-size: 12.5px; font-weight: 600; color: var(--navy-800); }
+.spa-sp-kpi-foot .ml-k,
+.spa-tier-meta-item .ml-k,
+.spa-tier-stack-field .ml-k,
+.spa-tier-body .ml-k { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--fg-secondary); }
+.spa-attr-list-strong { display: block; font-size: 13px; font-weight: 600; color: var(--navy-800); }
+.spa-tier-stack-field b,
+.spa-tier-body b,
+.spa-tier-meta-value { font-size: 13px; font-weight: 600; color: var(--fg-primary); }
 /* Total readout — valid (green) / warn */
 .spa-attr-total { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--green-600); }
 .spa-attr-total.warn { color: var(--red-400); }
@@ -223,13 +244,15 @@ b { font-weight: 600; }
   .spa-tier-stack.is-edit .spa-tier-stack-card { grid-template-columns: 1fr 1fr; padding-right: 38px; }
   .spa-tier-stack.is-edit .spa-tier-stack-card > *:last-child { position: absolute; top: 12px; right: 14px; }
   .spa-tier-grid { grid-template-columns: 1fr; }
-  .spa-tier-body { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .spa-tier-body { grid-template-columns: 1fr; }
   .spa-subsidy-row { grid-template-columns: 1fr; }
   .spa-subsidy-action { min-width: 0; }
   .spa-sp-umbrella-grid { grid-template-columns: 1fr; }
   .spa-attr-overview-row .spa-attr-stack { max-width: none; }
   .spa-attr-inline-metric { width: 100%; }
   .spa-attr-edit-group-head { align-items: stretch; }
+  .spa-sp-kpi-foot { grid-template-columns: 1fr; }
+  .spa-rebate-layout .hac-detail-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
   .ml-library-link span { display: none; }
