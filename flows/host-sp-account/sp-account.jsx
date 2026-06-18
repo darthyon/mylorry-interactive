@@ -311,24 +311,39 @@ function FieldLabelWithInfo({ label, info }) {
   );
 }
 
-function TierGrid({ tiers, amountLabel = "Commission Amount" }) {
-  return (
-    <div className="spa-tier-grid">
-      {tiers.map((t, i) => (
-        <div className="spa-tier-card" key={i}>
-          <div className="spa-tier-head">
-            <div className="spa-tier-title-wrap">
-              <span className="spa-tier-label"><HIcon name="stacked_bar_chart" size={13} /> Tier {i + 1}</span>
-              {t.final && <span className="spa-final-badge">Final tier</span>}
+// variant="list" (compact rows, used in the cramped salesperson umbrella cards)
+// variant="cards" (full-width 2-col cards, used by Rebate Setting which has the space).
+function TierGrid({ tiers, amountLabel = "Comm. Amount", variant = "list" }) {
+  if (variant === "cards") {
+    return (
+      <div className="spa-tier-grid">
+        {tiers.map((t, i) => (
+          <div className="spa-tier-card" key={i}>
+            <div className="spa-tier-head">
+              <div className="spa-tier-title-wrap">
+                <span className="spa-tier-label"><HIcon name="stacked_bar_chart" size={13} /> Tier {i + 1}</span>
+                {t.final && <span className="spa-final-badge">Final</span>}
+              </div>
             </div>
-            <span className="spa-tier-more" aria-hidden="true">
-              <HIcon name="more_horiz" size={16} color="var(--fg-disabled)" />
-            </span>
+            <div className="spa-tier-body">
+              <div><span className="ml-k">Usage</span><b>{t.final ? "> " : "≤ "}{Number(t.usageMax).toLocaleString("en-MY")} ltr</b></div>
+              <div><span className="ml-k">{amountLabel}</span><b>{t.commissionAmount}</b></div>
+            </div>
           </div>
-          <div className="spa-tier-body">
-            <div><span className="ml-k">Usage</span><b>{t.final ? "> " : "≤ "}{Number(t.usageMax).toLocaleString("en-MY")} ltr</b></div>
-            <div><span className="ml-k">{amountLabel}</span><b>{t.commissionAmount}</b></div>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="spa-tier-stack">
+      {tiers.map((t, i) => (
+        <div className="spa-tier-stack-card" key={i}>
+          <div className="spa-tier-stack-id">
+            <span className="spa-tier-label"><HIcon name="stacked_bar_chart" size={13} /> Tier {i + 1}</span>
+            {t.final && <span className="spa-final-badge">Final</span>}
           </div>
+          <div className="spa-tier-stack-field"><span className="ml-k">Usage</span><b>{t.final ? "> " : "≤ "}{Number(t.usageMax).toLocaleString("en-MY")} ltr</b></div>
+          <div className="spa-tier-stack-field"><span className="ml-k">{amountLabel}</span><b>{t.commissionAmount}</b></div>
         </div>
       ))}
     </div>
@@ -352,8 +367,8 @@ function SalespersonTopFields({ mode, periodVolume, activationDate, validityMont
         <DField label="Activation Date" info={activationInfo}>{activationText}</DField>
         <DField label="Commission Validity">
           <div>
-            <span className="hac-view-val spa-dval" style={{ padding: 0, minHeight: "auto" }}>{months} months</span>
-            {rangeText && <span className="hac-field-hint">{rangeText}</span>}
+            <span className="hac-view-val spa-dval" style={{ padding: 0, minHeight: "auto" }}>{rangeText || `${months} months`}</span>
+            {rangeText && <span className="hac-field-hint">{months} months</span>}
           </div>
         </DField>
       </div>
@@ -388,9 +403,12 @@ function SalespersonTopFields({ mode, periodVolume, activationDate, validityMont
 
 // One salesperson = one umbrella card: identity + commission tiering + KPI attribution footer.
 // View renders read-only TierGrid; edit renders EditableTiers + the card menu.
-function SalespersonUmbrellaCard({ person, periodVolume, mode, onTiersChange, onEditDetails, onAddTier, onDelete, tierAddTick }) {
+function SalespersonUmbrellaCard({ person, periodVolume, activationDate, validityMonths, mode, onTiersChange, onEditDetails, onAddTier, onDelete, tierAddTick }) {
   const pct = Number(person.kpiSplitPct) || 0;
   const volume = periodVolume ? attributedVolume(pct, periodVolume) : null;
+  const months = Number(validityMonths) || DEFAULT_COMMISSION_VALIDITY_MONTHS;
+  const activationText = activationDate ? fmtDate(activationDate) : "Pending first transaction";
+  const validityText = activationDate ? `${fmtDate(activationDate)} - ${fmtDate(addMonths(activationDate, months))}` : `${months} months`;
   return (
     <div className="spa-sp-umbrella-card">
       <div className="spa-sp-edit-head">
@@ -417,6 +435,14 @@ function SalespersonUmbrellaCard({ person, periodVolume, mode, onTiersChange, on
           <span className="ml-k">KPI Volume Counted</span>
           <strong className="spa-attr-list-strong">{volume != null ? fmtLitres(volume) : "—"}</strong>
         </div>
+        <div className="spa-attr-inline-metric">
+          <span className="ml-k">Activation Date</span>
+          <strong className="spa-attr-list-strong">{activationText}</strong>
+        </div>
+        <div className="spa-attr-inline-metric">
+          <span className="ml-k">Comm. Validity</span>
+          <strong className="spa-attr-list-strong">{validityText}</strong>
+        </div>
       </div>
     </div>
   );
@@ -427,7 +453,7 @@ function SalespersonUmbrellaCard({ person, periodVolume, mode, onTiersChange, on
 // Shared by the detail (mode="view") and form (mode="edit") views so editing logic isn't forked.
 function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDate, validityMonths, onValidityChange }) {
   const [spModalState, setSpModalState] = useState(null);
-  const [kpiModalOpen, setKpiModalOpen] = useState(false);
+  const [kpiModalRole, setKpiModalRole] = useState(null);
   const [tierAddTick, setTierAddTick] = useState({});
   const isEdit = mode === "edit";
 
@@ -454,12 +480,12 @@ function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDa
       <div className="spa-role-group" key={role}>
         <div className="spa-role-group-head">
           <div className="spa-role-group-title">
-            <span className="hac-form-section-title" style={{ margin: 0, color: "var(--navy-800)" }}>{noun} KPI Attribution</span>
+            <span className="hac-form-section-title" style={{ margin: 0, color: "var(--navy-800)" }}>{noun} Setting</span>
             <span className="spa-role-group-meta">{countLabel}</span>
           </div>
           {isEdit && (
             <div className="spa-role-group-actions">
-              {count > 0 && <button className="hac-add-tier-btn" onClick={() => setKpiModalOpen(true)}><HIcon name="tune" size={15} /> Edit attribution</button>}
+              {count > 0 && <button className="hac-add-tier-btn" onClick={() => setKpiModalRole(role)}><HIcon name="tune" size={15} /> Edit attribution</button>}
               <button className="hac-add-tier-btn" onClick={() => setSpModalState({ mode: "create", role })}><HIcon name="add" size={15} /> Add {noun}</button>
             </div>
           )}
@@ -469,7 +495,7 @@ function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDa
         ) : (
           <>
             <div className="spa-attr-overview-row">
-              <AttributionTotalReadout total={total} label="Total attribution" />
+              <AttributionTotalReadout total={total} label="Total KPI Attribution" />
               <KpiRoleBar roster={people} periodVolume={periodVolume} />
             </div>
             <div className="spa-sp-umbrella-grid">
@@ -478,6 +504,8 @@ function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDa
                   key={i}
                   person={a}
                   periodVolume={periodVolume}
+                  activationDate={activationDate}
+                  validityMonths={validityMonths}
                   mode={mode}
                   onTiersChange={t => setAgent(i, { tiers: t })}
                   onEditDetails={() => setSpModalState({ mode: "edit", index: i })}
@@ -513,11 +541,12 @@ function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDa
         />,
         document.body
       )}
-      {kpiModalOpen && ReactDOM.createPortal(
+      {kpiModalRole && ReactDOM.createPortal(
         <KpiAttributionModal
           roster={roster}
-          onClose={() => setKpiModalOpen(false)}
-          onSave={(next) => { onChange(next); setKpiModalOpen(false); }}
+          role={kpiModalRole}
+          onClose={() => setKpiModalRole(null)}
+          onSave={(next) => { onChange(next); setKpiModalRole(null); }}
         />,
         document.body
       )}
@@ -551,13 +580,6 @@ const kpiBarColor = (role, index) => {
   const palette = role === "referrer" ? KPI_REFERRER_BAR_COLORS : KPI_AGENT_BAR_COLORS;
   return palette[Math.min(index, palette.length - 1)];
 };
-
-function commissionSummary(person) {
-  const tiers = person.tiers || [];
-  if (!tiers.length) return "No commission tiers";
-  const final = tiers.find(t => t.final) || tiers[tiers.length - 1];
-  return `${tiers.length} tier${tiers.length !== 1 ? "s" : ""} · final ${final.commissionAmount}`;
-}
 
 function KpiRoleRows(roster, periodVolume) {
   return sortRosterBySplit(roster).map((a, i) => ({
@@ -618,15 +640,13 @@ function KpiRoleEditor({ role, draft, onSetPct, onAutoDistribute }) {
         </button>
       </div>
       <div className="spa-attr-edit-list">
-        {people.map((a, i) => (
+        {people.map((a) => (
           <div className="spa-attr-edit-row" key={a._idx}>
             <div className="spa-attr-edit-person">
               <div className="spa-sp-name">
-                <span className="spa-attr-rank">{i + 1}</span>
                 <HIcon name={a.role === "referrer" ? "group" : "support_agent"} size={15} color="var(--navy-800)" /> {a.name}
                 <span className="spa-role-chip">{roleLabelOf(a.role)}</span>
               </div>
-              <div className="ml-cell-sub">{commissionSummary(a)}</div>
             </div>
             <div className="spa-attr-edit-input">
               <input className="hac-input" type="number" min="0" max="100"
@@ -643,13 +663,10 @@ function KpiRoleEditor({ role, draft, onSetPct, onAutoDistribute }) {
   );
 }
 
-function KpiAttributionModal({ roster, onClose, onSave }) {
+function KpiAttributionModal({ roster, role, onClose, onSave }) {
   const [draft, setDraft] = useState(() => roster.map((a, idx) => ({ ...a, _idx: idx, kpiSplitPct: Number(a.kpiSplitPct) || 0 })));
-  const agents = filterRosterByRole(draft, "agent");
-  const referrers = filterRosterByRole(draft, "referrer");
-  const validAgents = agents.length === 0 || splitTotal(agents) === 100;
-  const validReferrers = referrers.length === 0 || splitTotal(referrers) === 100;
-  const valid = validAgents && validReferrers;
+  const people = filterRosterByRole(draft, role);
+  const valid = people.length === 0 || splitTotal(people) === 100;
   const setPct = (idx, v) => setDraft(d => d.map((a) => a._idx === idx ? { ...a, kpiSplitPct: clampPct(v) } : a));
   const autoDistribute = (role) => {
     const people = draft.filter((a) => a.role === role);
@@ -665,18 +682,17 @@ function KpiAttributionModal({ roster, onClose, onSave }) {
   };
 
   return (
-    <Modal title="Edit KPI Volume Distribution" onClose={onClose} footer={
+    <Modal title={`Edit ${roleLabelOf(role)} KPI Attribution`} onClose={onClose} footer={
       <>
         <button className="hac-modal-cancel" onClick={onClose}>Cancel</button>
         <button className="hac-modal-save" disabled={!valid} onClick={() => onSave(draft.map(({ _idx, ...a }) => a))}>Save Changes</button>
       </>
     }>
       <div className="hac-field-hint" style={{ marginBottom: 16 }}>
-        Agent and referrer attribution are configured separately. Each group must total 100% of the same base usage volume.
-        Does not affect commission payments.
+        {roleLabelOf(role)} attribution must total 100% of the base usage volume. Agent and referrer attribution are
+        configured separately. Does not affect commission payments.
       </div>
-      <KpiRoleEditor role="agent" draft={draft} onSetPct={setPct} onAutoDistribute={autoDistribute} />
-      <KpiRoleEditor role="referrer" draft={draft} onSetPct={setPct} onAutoDistribute={autoDistribute} />
+      <KpiRoleEditor role={role} draft={draft} onSetPct={setPct} onAutoDistribute={autoDistribute} />
     </Modal>
   );
 }
@@ -733,7 +749,7 @@ function SPDetailView({ account, onBack, onEdit }) {
             <DField label="Rebate Beneficiary">{a.rebateBeneficiary}</DField>
             <DField label="Is Master">{a.isMaster ? "Yes" : "No"}</DField>
           </div>
-          <TierGrid tiers={a.rebateTiers} amountLabel="Rebate Amount" />
+          <TierGrid tiers={a.rebateTiers} amountLabel="Rebate Amount" variant="cards" />
         </Section>
 
         <SalespersonSetting
@@ -830,7 +846,7 @@ function TierCardMenu({ onEdit, onAddTier, onDelete }) {
         <div className="hac-drop-fixed" ref={dropRef} style={{ top: pos.top, left: pos.left }}
           onClick={e => e.stopPropagation()}>
           <button className="hac-drop-item" onClick={() => { setOpen(false); onEdit(); }}><HIcon name="edit" size={15} /> Edit</button>
-          <button className="hac-drop-item" onClick={() => { setOpen(false); onAddTier(); }}><HIcon name="add" size={15} /> Add Tier</button>
+          {onAddTier && <button className="hac-drop-item" onClick={() => { setOpen(false); onAddTier(); }}><HIcon name="add" size={15} /> Add Tier</button>}
           <button className="hac-drop-item danger" onClick={() => { setOpen(false); onDelete(); }}><HIcon name="delete" size={15} color="currentColor" /> Delete</button>
         </div>,
         document.body
@@ -907,6 +923,7 @@ function TierModal({ kind, tier, prevUsage, onClose, onSave }) {
 function EditableTiers({ kind, tiers, onChange, externalAddTick = 0 }) {
   const [modal, setModal] = useState(null); // { editIndex } | null
   const noun = kind === "rebate" ? "Rebate" : "Commission";
+  const amountLabel = kind === "rebate" ? "Rebate Amount" : "Comm. Amount";
   const prevAddTick = useRef(externalAddTick);
   // Previous tier's usage (highest non-final usageMax) — basis for a final tier.
   const prevUsage = tiers.filter(t => !t.final).reduce((m, t) => Math.max(m, Number(t.usageMax) || 0), 0);
@@ -932,14 +949,14 @@ function EditableTiers({ kind, tiers, onChange, externalAddTick = 0 }) {
       </div>
       {tiers.length === 0 ? (
         <div className="hac-tier-empty"><span><HIcon name="error" size={15} /> Tier 1</span>At least one tier is required</div>
-      ) : (
+      ) : kind === "rebate" ? (
         <div className="spa-tier-grid">
           {tiers.map((t, i) => (
             <div className="spa-tier-card" key={i}>
               <div className="spa-tier-head">
                 <div className="spa-tier-title-wrap">
                   <span className="spa-tier-label"><HIcon name="stacked_bar_chart" size={13} /> Tier {i + 1}</span>
-                  {t.final && <span className="spa-final-badge">Final tier</span>}
+                  {t.final && <span className="spa-final-badge">Final</span>}
                 </div>
                 <TierCardMenu
                   onEdit={() => setModal({ editIndex: i })}
@@ -949,8 +966,25 @@ function EditableTiers({ kind, tiers, onChange, externalAddTick = 0 }) {
               </div>
               <div className="spa-tier-body">
                 <div><span className="ml-k">Usage</span><b>{t.final ? "> " : "≤ "}{Number(t.usageMax).toLocaleString("en-MY")} ltr</b></div>
-                <div><span className="ml-k">{noun} Amount</span><b>{t.commissionAmount}</b></div>
+                <div><span className="ml-k">{amountLabel}</span><b>{t.commissionAmount}</b></div>
               </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="spa-tier-stack is-edit">
+          {tiers.map((t, i) => (
+            <div className="spa-tier-stack-card" key={i}>
+              <div className="spa-tier-stack-id">
+                <span className="spa-tier-label"><HIcon name="stacked_bar_chart" size={13} /> Tier {i + 1}</span>
+                {t.final && <span className="spa-final-badge">Final</span>}
+              </div>
+              <div className="spa-tier-stack-field"><span className="ml-k">Usage</span><b>{t.final ? "> " : "≤ "}{Number(t.usageMax).toLocaleString("en-MY")} ltr</b></div>
+              <div className="spa-tier-stack-field"><span className="ml-k">{amountLabel}</span><b>{t.commissionAmount}</b></div>
+              <TierCardMenu
+                onEdit={() => setModal({ editIndex: i })}
+                onDelete={() => remove(i)}
+              />
             </div>
           ))}
         </div>
