@@ -131,9 +131,11 @@ b{font-weight:600;}
 
 .ml-view{display:flex;flex-direction:column;gap:18px;}
 .ml-row{display:flex;gap:14px;flex-wrap:wrap;}
+.ml-top-grid{display:grid;grid-template-columns:minmax(280px,.9fr) minmax(420px,1.6fr);gap:14px;align-items:stretch;}
+.ml-section-heading{font-size:18px;font-weight:700;color:var(--fg-primary);margin-top:4px;margin-bottom:-2px;}
 .ml-cards4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
 .ml-cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
-@media(max-width:1080px){.ml-cards4{grid-template-columns:repeat(2,1fr);}.ml-cards3{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:1080px){.ml-cards4{grid-template-columns:repeat(2,1fr);}.ml-cards3{grid-template-columns:repeat(2,1fr);}.ml-top-grid{grid-template-columns:1fr;}}
 @media(max-width:640px){.ml-library-link span{display:none;}.ml-library-link{padding:8px;}}
 
 /* ---------- Stat card A ---------- */
@@ -149,6 +151,31 @@ b{font-weight:600;}
 .ml-trend{display:inline-flex;align-items:center;gap:2px;font-size:12px;font-weight:500;}
 .ml-trend.up{color:var(--green-600);} .ml-trend.down{color:var(--red-400);}
 
+/* ---------- Top summary cards ---------- */
+.ml-summary-card{position:relative;border:1px solid var(--border-light);border-radius:14px;background:#fff;padding:18px 22px;box-shadow:0 0 5px rgba(0,0,0,.05);display:flex;flex-direction:column;}
+.ml-summary-card-commission{justify-content:flex-start;gap:10px;min-height:198px;padding-top:14px;padding-bottom:14px;}
+.ml-summary-card-kpi{gap:12px;min-height:198px;overflow:visible;padding-bottom:0;}
+.ml-summary-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+.ml-summary-card-head-left{display:flex;align-items:center;gap:8px;min-width:0;}
+.ml-summary-card-title{font-size:14px;font-weight:700;color:var(--fg-primary);}
+.ml-summary-card-value{font-size:24px;font-weight:800;letter-spacing:-.03em;line-height:1.05;margin-top:0;}
+.ml-summary-card-meta{font-size:13px;color:var(--fg-secondary);}
+.ml-card-month-group{margin-left:auto;}
+.ml-card-month-select{min-width:142px;padding:9px 38px 9px 14px;font-size:14px;}
+.ml-commission-amountblock{display:flex;flex-direction:column;gap:10px;min-width:0;}
+.ml-calc-wrap{position:relative;display:flex;align-items:flex-start;margin-top:2px;}
+.ml-calc-pop-wrap{position:relative;}
+.ml-btn-calc{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;}
+.ml-calc-pop{position:absolute;left:0;top:0;z-index:15;width:min(320px,calc(100vw - 72px));background:#fff;border:1px solid var(--border-light);border-radius:14px;box-shadow:0 10px 30px rgba(12,19,30,.12);padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+.ml-calc-pop-title{font-size:13px;font-weight:700;color:var(--fg-primary);}
+.ml-calc-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;font-size:12px;color:var(--fg-secondary);}
+.ml-calc-row b{font-size:13px;color:var(--fg-primary);white-space:nowrap;}
+.ml-calc-row-stack{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
+.ml-calc-row-stack span{font-size:11px;color:var(--fg-tertiary);text-align:right;}
+.ml-calc-row-total{padding-top:10px;border-top:1px solid var(--border-light);}
+.ml-inline-link{display:inline-flex;align-items:center;gap:3px;border:none;background:none;padding:0;font-size:13px;font-weight:600;color:var(--green-600);cursor:pointer;}
+.ml-inline-link:hover{opacity:.82;}
+
 /* ---------- KPI hero (new) ---------- */
 .ml-kpi-hero{border:1px solid var(--border-light);border-radius:14px;background:#fff;padding:22px 24px;
   display:flex;gap:28px;align-items:center;}
@@ -161,9 +188,11 @@ b{font-weight:600;}
 .ml-gauge-pct{font-size:23px;font-weight:700;color:var(--fg-primary);letter-spacing:-.3px;}
 .ml-gauge-cap{font-size:11px;color:var(--fg-secondary);font-weight:500;}
 .ml-kpi-body{flex:1;display:flex;flex-direction:column;gap:18px;min-width:0;overflow:visible;}
-.ml-kpi-headrow{display:flex;justify-content:space-between;align-items:center;gap:16px;width:100%;}
-.ml-kpi-title{font-size:15px;font-weight:700;color:var(--fg-primary);flex-shrink:1;min-width:0;}
+.ml-kpi-headrow{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;width:100%;}
+.ml-kpi-headcopy{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap;}
+.ml-kpi-title{font-size:14px;font-weight:700;color:var(--fg-primary);flex-shrink:1;min-width:0;}
 .ml-kpi-headrow .ml-tierchip{flex-shrink:0;}
+.ml-kpi-period{font-size:12px;color:var(--fg-secondary);white-space:nowrap;}
 .ml-kpi-sub{font-size:12px;color:var(--fg-secondary);margin-top:2px;}
 .ml-kpi-mainrow{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(320px,.95fr);gap:32px;align-items:start;}
 .ml-kpi-metrics-col{display:flex;flex-direction:column;gap:18px;min-width:0;}
@@ -171,7 +200,7 @@ b{font-weight:600;}
 .ml-kpi-bar{position:relative;height:10px;background:var(--border-light);border-radius:6px;overflow:visible;}
 .ml-kpi-fill{height:100%;border-radius:6px;transition:width .35s ease;}
 .ml-kpi-target{position:absolute;top:-4px;width:2px;height:18px;background:var(--navy-800);}
-.ml-kpi-nums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px 28px;padding-top:14px;border-top:none;}
+.ml-kpi-nums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 24px;padding-top:6px;border-top:none;}
 .ml-kpi-nums .ml-k,.ml-formula .ml-k,.ml-drawer-summary .ml-k{display:block;font-size:11px;color:var(--fg-tertiary);
   font-weight:500;margin-bottom:2px;}
 .ml-kpi-nums b{font-size:15px;font-weight:700;color:var(--navy-800);}
@@ -296,8 +325,14 @@ b{font-weight:600;}
 
 /* ---------- Bars chart ---------- */
 .ml-bars{display:flex;align-items:flex-end;gap:10px;height:120px;padding-top:8px;}
-.ml-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end;}
-.ml-bar{width:100%;max-width:30px;border-radius:3px 3px 0 0;background:var(--green-500);min-height:4px;transition:height .3s;}
+.ml-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end;cursor:pointer;}
+.ml-bar-track{position:relative;width:100%;height:100%;display:flex;align-items:flex-end;justify-content:center;border-radius:8px;transition:background .15s;}
+.ml-bar-track.active,.ml-bar-col:hover .ml-bar-track{background:rgba(0,0,0,.045);}
+.ml-bar{width:100%;max-width:30px;border-radius:3px 3px 0 0;background:var(--green-500);min-height:4px;transition:height .3s,filter .15s;}
+.ml-bar.active,.ml-bar-col:hover .ml-bar{filter:brightness(.97);}
+.ml-bar-tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) translateY(-10px);background:#fff;padding:9px 13px;border:1px solid var(--border-light);border-radius:10px;white-space:nowrap;z-index:5;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.12);text-align:left;}
+.ml-bar-tip-val{font-size:17px;font-weight:700;color:var(--green-600);line-height:1.15;}
+.ml-bar-tip-period{font-size:12px;font-weight:500;color:var(--fg-tertiary);margin-top:2px;}
 .ml-bar-x{font-size:10px;color:var(--fg-tertiary);}
 
 /* ---------- Expand rows ---------- */
@@ -308,7 +343,6 @@ b{font-weight:600;}
 .ml-subtable th{background:transparent;font-size:11px;color:var(--fg-tertiary);font-weight:600;
   text-align:left;padding:6px 10px;border-bottom:1px solid var(--border-light);}
 .ml-subtable td{font-size:12.5px;padding:9px 10px;border-bottom:1px solid var(--bg-subtle);}
-.ml-expand-note{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--fg-tertiary);margin-top:10px;font-style:italic;}
 .ml-pagination{display:flex;justify-content:flex-end;font-size:12px;color:var(--fg-secondary);padding-top:10px;}
 
 /* ---------- Modal ---------- */
@@ -444,6 +478,12 @@ b{font-weight:600;}
   .ml-kpi-hero{padding:16px;}
   .ml-kpi-mainrow{grid-template-columns:1fr;gap:18px;}
   .ml-kpi-progress-wrap{max-width:none;padding-right:0;}
+  .ml-summary-card{padding:16px;}
+  .ml-summary-card-commission{padding-top:14px;padding-bottom:14px;gap:12px;min-height:auto;}
+  .ml-summary-card-kpi{padding-bottom:0;}
+  .ml-card-month-group{width:100%;}
+  .ml-card-month-select{width:100%;min-width:0;}
+  .ml-kpi-headcopy{align-items:flex-start;}
 
   /* Formula → compact one-liner (values + operators only) */
   .ml-formula{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;
@@ -464,6 +504,8 @@ b{font-weight:600;}
   .ml-kpi-nums{grid-template-columns:1fr;gap:9px;}
   .ml-kpi-nums>div{display:flex;justify-content:space-between;align-items:baseline;}
   .ml-kpi-nums .ml-k{margin-bottom:0;}
+  .ml-section-heading{font-size:17px;}
+  .ml-calc-pop{width:min(300px,calc(100vw - 36px));}
 }
 
 /* ---------- Compact density ---------- */

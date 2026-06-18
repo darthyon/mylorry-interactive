@@ -64,63 +64,117 @@ function KpiSegBar({ pct }) {
   );
 }
 
-function KpiHero({ m, visual }) {
+function CommissionThisMonthCard({ m, selectedMonth, monthOptions, onMonthChange }) {
+  const [open, setOpen] = React.useState(false);
+  const popRef = React.useRef(null);
+  if (!m) return null;
+
+  React.useEffect(() => {
+    if (!open) return undefined;
+    const handlePointerDown = (event) => {
+      if (popRef.current && !popRef.current.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [open]);
+
+  const adjustmentsLabel = !m.hasAdjustments
+    ? "None"
+    : `${m.rows.filter((r) => !!r.exception).length} SP account override${m.rows.filter((r) => !!r.exception).length > 1 ? "s" : ""}`;
+
+  return (
+    <div className="ml-summary-card ml-summary-card-commission">
+      <div className="ml-summary-card-head">
+        <div className="ml-summary-card-head-left">
+          <div className="ml-stat-icon"><Icon name="payments" size={18} color="#00AA4F" /></div>
+          <div className="ml-summary-card-title">Monthly Commission</div>
+          <div className="ml-tooltip-wrap">
+            <button className="ml-info-btn" tabIndex={0}><Icon name="info" size={15} /></button>
+            <div className="ml-tooltip">Final commission for the selected month after KPI multiplier and SP account adjustments.</div>
+          </div>
+        </div>
+        <div className="hm-month-group ml-card-month-group">
+          <span className="hm-month-label">Month</span>
+          <select className="hm-month-select ml-card-month-select" value={selectedMonth} onChange={(e) => onMonthChange(e.target.value)}>
+            {monthOptions.map((month) => <option key={month} value={month}>{month}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="ml-commission-amountblock">
+        <div className="ml-summary-card-value ml-green">{AC.fmtRM(m.summary.commission)}</div>
+        <div className="ml-summary-card-meta">Commission volume · {AC.fmtL(m.actual)}</div>
+      </div>
+      <div className="ml-calc-wrap">
+        <button className="ml-btn-soft ml-btn-calc" type="button" onClick={() => setOpen((v) => !v)}>
+          <Icon name="receipt_long" size={18} /> View Calculation
+        </button>
+      </div>
+      <div className="ml-calc-pop-wrap">
+        {open && (
+          <div className="ml-calc-pop" ref={popRef}>
+            <div className="ml-calc-pop-title">Calculation summary</div>
+            <div className="ml-calc-row">
+              <span>Base commission</span>
+              <b>{AC.fmtRM(m.summary.base)}</b>
+            </div>
+            <div className="ml-calc-row">
+              <span>Applied multiplier</span>
+              <b>{m.mult}%</b>
+            </div>
+            <div className="ml-calc-row">
+              <span>Adjustments / exclusions</span>
+              <div className="ml-calc-row-stack">
+                <b>{m.adjustment === 0 ? "None" : `${m.adjustment > 0 ? "+" : "−"}${AC.fmtRM(Math.abs(m.adjustment))}`}</b>
+                <span>{adjustmentsLabel}</span>
+              </div>
+            </div>
+            <div className="ml-calc-row ml-calc-row-total">
+              <span>Final commission</span>
+              <b className="ml-green">{AC.fmtRM(m.summary.commission)}</b>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function KpiProgressCard({ m }) {
+  if (!m) return null;
   const pct = m.achievementPct;
   const progressMeta = KPIProgressMeta(pct);
 
-  const head = (
-    <div className="ml-kpi-headrow">
-      <div style={{display:"flex",alignItems:"center",gap:7,minWidth:0}}>
-        <div className="ml-kpi-title">KPI Progress</div>
-        <div className="ml-tooltip-wrap">
-          <button className="ml-info-btn" tabIndex={0}><Icon name="info" size={15} /></button>
-          <div className="ml-tooltip">Evaluation period: {AC.KPI.windowLabel}. This period determines the KPI multiplier applied to commission.</div>
-        </div>
-      </div>
-      <KpiTierChip mult={m.mult} />
-    </div>
-  );
-
-  const nums = (
-    <div className="ml-kpi-nums">
-      <div><span className="ml-k">Portfolio volume</span><b style={{color:"var(--navy-800)"}}>{AC.fmtL(m.actual)}</b></div>
-      <div><span className="ml-k">Target volume</span><b style={{color:"var(--navy-800)"}}>{AC.fmtL(m.target)}</b></div>
-      <div>
-        <span className="ml-k">Target KPI</span>
-        <b style={{color:progressMeta.solid, display:"inline-flex", alignItems:"center", gap:4}}>
-          <span>{pct.toFixed(1)}%</span>
-          {progressMeta.isAchieved && <span style={{ fontSize:11, lineHeight:1 }}>✓</span>}
-        </b>
-      </div>
-      <div><span className="ml-k">Applied multiplier</span><b style={{color:"var(--navy-800)"}}>{m.mult}%</b></div>
-    </div>
-  );
-
-  const formulaInner = (
-    <div className="ml-formula">
-      <span className="ml-f-step"><span className="ml-k">Base Commission</span><b>{AC.fmtRM(m.summary.base)}</b><span className="ml-f-note">Σ volume × tier rate</span></span>
-      <Icon name="close" size={14} color="#999AA5" />
-      <span className="ml-f-step"><span className="ml-k">KPI multiplier</span><b>{m.mult}%</b><span className="ml-f-note">{m.note}</span></span>
-      <span style={{fontSize:16,color:"#999AA5",fontWeight:600,lineHeight:1,flexShrink:0}}>=</span>
-      <span className="ml-f-step ml-f-total"><span className="ml-k">Commission</span><b className="ml-green">{AC.fmtRM(m.summary.commission)}</b><span className="ml-f-note">this month</span></span>
-    </div>
-  );
-
   return (
-    <div className="ml-kpi-hero col">
-      <div className="ml-kpi-body">
-        {head}
-        <div className="ml-kpi-mainrow">
-          <div className="ml-kpi-metrics-col">
-            {nums}
-            <div className="ml-kpi-progress-wrap">
-              <KpiSegBar pct={pct} />
-            </div>
-          </div>
-          <div className="ml-kpi-formula-col">
-            {formulaInner}
+    <div className="ml-summary-card ml-summary-card-kpi">
+      <div className="ml-kpi-headrow">
+        <div className="ml-kpi-headcopy">
+          <div className="ml-stat-icon"><Icon name="track_changes" size={18} color="#00AA4F" /></div>
+          <div className="ml-kpi-title">KPI Progress</div>
+          <div className="ml-kpi-period">Evaluation period: {AC.KPI.windowLabel}</div>
+          <div className="ml-tooltip-wrap">
+            <button className="ml-info-btn" tabIndex={0}><Icon name="info" size={15} /></button>
+            <div className="ml-tooltip">This period determines the KPI multiplier applied to commission.</div>
           </div>
         </div>
+        <KpiTierChip mult={m.mult} />
+      </div>
+
+      <div className="ml-kpi-nums">
+        <div><span className="ml-k">KPI volume</span><b style={{color:"var(--navy-800)"}}>{AC.fmtL(m.actual)}</b></div>
+        <div><span className="ml-k">Target volume</span><b style={{color:"var(--navy-800)"}}>{AC.fmtL(m.target)}</b></div>
+        <div>
+          <span className="ml-k">KPI progress</span>
+          <b style={{color:progressMeta.solid, display:"inline-flex", alignItems:"center", gap:4}}>
+            <span>{pct.toFixed(1)}%</span>
+            {progressMeta.isAchieved && <span style={{ fontSize:11, lineHeight:1 }}>✓</span>}
+          </b>
+        </div>
+        <div><span className="ml-k">Applied multiplier</span><b style={{color:"var(--navy-800)"}}>{m.mult}%</b></div>
+      </div>
+
+      <div className="ml-kpi-progress-wrap">
+        <KpiSegBar pct={pct} />
       </div>
     </div>
   );
@@ -147,10 +201,11 @@ function TierCell({ r }) {
 
 // KPI Tier — applied multiplier primary; "New SP Account" sublabel for new/pending.
 function KpiTierCell({ r }) {
+  const sublabel = r.pending ? "New SP Account" : r.isException ? "Exception applied" : "KPI tier";
   return (
     <div className="ml-stack">
       <span className="ml-mult">{r.appliedMult}%</span>
-      <span className="ml-sub-xs">{(r.isException || r.pending) ? "New SP Account" : "KPI tier"}</span>
+      <span className="ml-sub-xs">{sublabel}</span>
     </div>
   );
 }
@@ -230,4 +285,4 @@ function SpAccountCell({ r }) {
   );
 }
 
-Object.assign(window, { KpiHero, TierCell, KpiTierCell, SpAccountCell, TxnModal });
+Object.assign(window, { CommissionThisMonthCard, KpiProgressCard, TierCell, KpiTierCell, SpAccountCell, TxnModal });

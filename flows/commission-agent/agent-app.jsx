@@ -21,14 +21,79 @@ function buildModel(t) {
     mult: th.mult, tier: th.tier, note: th.note, rows, summary };
 }
 
+function buildSelectedMonthModel(monthEntry, target) {
+  if (!monthEntry) return null;
+  const rows = monthEntry.rows.map((r) => ({ ...r, defaultMult: monthEntry.mult }));
+  const summary = monthEntry.summary || AC.summarise(rows);
+  const adjustment = rows.reduce((sum, r) => {
+    if (!r.exception) return sum;
+    return sum + (r.commission - (r.base * monthEntry.mult) / 100);
+  }, 0);
+
+  return {
+    key: monthEntry.key,
+    label: monthEntry.label,
+    target,
+    actual: monthEntry.volume,
+    achievementPct: monthEntry.target > 0 ? (monthEntry.volume / monthEntry.target) * 100 : 0,
+    mult: monthEntry.mult,
+    tier: monthEntry.tier,
+    note: monthEntry.note,
+    rows,
+    summary,
+    adjustment,
+    accountCount: rows.length,
+    hasAdjustments: rows.some((r) => !!r.exception),
+  };
+}
+
+function MonthlyCommissionChart({ history, maxC }) {
+  const [hover, setHover] = React.useState(null);
+
+  return (
+    <div className="ml-bars">
+      {history.map((h, index) => (
+        <div
+          className="ml-bar-col"
+          key={h.key}
+          onMouseEnter={() => setHover(index)}
+          onMouseLeave={() => setHover(null)}
+          onClick={() => setHover((current) => current === index ? null : index)}
+        >
+          <div className={"ml-bar-track" + (hover === index ? " active" : "")}>
+            <div
+              className={"ml-bar" + (hover === index ? " active" : "")}
+              style={{ height: (h.commission / maxC * 100) + "%", opacity: h.index === 11 ? 0.5 : 1 }}
+            />
+            {hover === index && (
+              <div className="ml-bar-tip">
+                <div className="ml-bar-tip-val">{AC.fmtRM(h.commission)}</div>
+                <div className="ml-bar-tip-period">{h.key}</div>
+              </div>
+            )}
+          </div>
+          <span className="ml-bar-x">{h.month}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function AgentApp() {
   const t = AC_CONFIG;
   const model = buildModel(t);
   const history = React.useMemo(() => AC.buildHistory(), []);
+  const monthOptions = React.useMemo(() => [...history].reverse().map((h) => h.key), [history]);
+  const [selectedMonth, setSelectedMonth] = React.useState("Dec 2026");
   const ytdCommission = history.reduce((s, h) => s + h.commission, 0);
   const ytdVolume = history.reduce((s, h) => s + h.volume, 0);
   const activeSp = history[history.length - 1].activeCount;
   const maxC = Math.max(...history.map((h) => h.commission));
+  const selectedMonthEntry = history.find((h) => h.key === selectedMonth) || history[history.length - 1];
+  const monthModel = React.useMemo(
+    () => buildSelectedMonthModel(selectedMonthEntry, model.target),
+    [selectedMonthEntry, model.target],
+  );
 
   return (
     <div className={"ml-app density-" + t.density}>
@@ -46,35 +111,31 @@ function AgentApp() {
         </div>
 
         <div className="ml-view">
-          {/* 1 — Live KPI progress (current standing, not month-filtered) */}
-          <KpiHero m={model} visual={t.kpiVisual} />
+          <div className="ml-top-grid">
+            <CommissionThisMonthCard
+              m={monthModel}
+              selectedMonth={selectedMonth}
+              monthOptions={monthOptions}
+              onMonthChange={setSelectedMonth}
+            />
+            <KpiProgressCard m={model} />
+          </div>
 
-          {/* 2 — Year-to-date summary */}
+          <div className="ml-section-heading">Overview</div>
           <div className="ml-cards3">
-            <SummaryCard icon="summarize" title="Commission · 2026 YTD" sub="Jan–Dec 2026"
+            <SummaryCard icon="summarize" title="Commission YTD" sub="Jan–Dec 2026"
               value={AC.fmtRM(ytdCommission)} trend={{ dir: "up", val: "12%" }} />
-            <SummaryCard icon="local_gas_station" title="Volume · 2026 YTD" sub="All SP accounts"
+            <SummaryCard icon="local_gas_station" title="Volume YTD" sub="All SP accounts"
               value={AC.fmtL(ytdVolume)} />
-            <SummaryCard icon="account_balance" title="Active SP Accounts" sub="Transacting this month"
+            <SummaryCard icon="account_balance" title="Active SP Accounts" sub="Jan–Dec 2026"
               value={String(activeSp)} />
           </div>
 
-          {/* 3 — 12-month trend */}
           <div className="ml-card">
-            <CardHead icon="bar_chart" title="Monthly Commission" sub="Last 12 months · 2026" />
-            <div className="ml-bars">
-              {history.map((h) => (
-                <div className="ml-bar-col" key={h.key}>
-                  <div className="ml-bar"
-                    style={{ height: (h.commission / maxC * 100) + "%", opacity: h.index === 11 ? 0.5 : 1 }}
-                    title={AC.fmtRM(h.commission)} />
-                  <span className="ml-bar-x">{h.month}</span>
-                </div>
-              ))}
-            </div>
+            <CardHead icon="bar_chart" title="Commission History" sub="Last 12 months · 2026" />
+            <MonthlyCommissionChart history={history} maxC={maxC} />
           </div>
 
-          {/* 4 — Unified statements (By Month / By SP Account) */}
           <Statements history={history} />
         </div>
 
