@@ -618,16 +618,17 @@ b { font-weight: 600; }
 
 .ml-tooltip-wrap:hover .ml-tooltip { opacity: 1; }
 
-/* ── Tier cards (Figma pattern) ─────────────────────────────────── */
-.hac-tiers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
-.hac-tier-item { border: 1px solid var(--border-light); border-radius: 8px; padding: 14px 16px; background: #fff; transition: border-color .15s; }
-.hac-tier-item.editing { border-color: var(--border-light); }
-.hac-tier-item-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.hac-tier-item-label { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; color: var(--navy-800); }
-.hac-final-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: var(--green-50); color: var(--green-600); margin-left: 4px; }
-.hac-tier-item-body { display: flex; gap: 28px; flex-wrap: wrap; }
-.hac-tier-item-body > div { display: flex; flex-direction: column; gap: 3px; }
-.hac-tier-item-body b { font-size: 14px; font-weight: 600; color: var(--fg-primary); }
+/* ── Tier listing (match SP Account tier stack) ─────────────────── */
+.hac-tier-stack { display: flex; flex-direction: column; gap: 0; margin-top: 10px; max-width: 760px; border: 1px solid var(--border-light); border-radius: 16px; overflow: hidden; background: #fff; }
+.hac-tier-stack-card { display: grid; grid-template-columns: minmax(132px, 0.88fr) minmax(0, 1.04fr) minmax(0, 1.08fr) auto; align-items: center; gap: 18px; border-top: 1px solid var(--border-light); padding: 16px 22px 16px 18px; background: #fff; }
+.hac-tier-stack-card:first-child { border-top: none; }
+.hac-tier-stack-id { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.hac-tier-item-label { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 13px; font-weight: 700; color: var(--navy-800); }
+.hac-tier-stack-field { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.hac-tier-stack-field .ml-k { margin-bottom: 0; font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--fg-secondary); flex-shrink: 0; }
+.hac-tier-stack-field b { font-size: 13px; font-weight: 600; color: var(--fg-primary); white-space: nowrap; }
+.hac-final-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border: 1px solid var(--border-light); border-radius: 999px; background: var(--bg-subtle); color: var(--fg-secondary); margin-left: 0; }
+.hac-tier-stack-card > *:last-child { justify-self: end; }
 .hac-tier-form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 /* Add tier button */
 .hac-add-tier-btn {
@@ -934,6 +935,7 @@ b { font-weight: 600; }
 .ml-cell-sub { font-size: 11px; color: var(--fg-tertiary); margin-top: 2px; }
 .hm-sp-account-cell { display: flex; align-items: center; gap: 8px; min-width: 220px; }
 .hm-sp-account-cell .ml-petron-logo { flex-shrink: 0; }
+.hm-sp-account-code { display: inline-flex; align-items: center; gap: 8px; }
 
 /* ── Row View action ──────────────────────────────────────────────── */
 .hm-view-cell { text-align: right; white-space: nowrap; }
@@ -985,7 +987,9 @@ b { font-weight: 600; }
   .hac-form-grid3  { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 768px) {
-  .hac-tiers-grid   { grid-template-columns: 1fr; }
+  .hac-tier-stack-card { grid-template-columns: 1fr 1fr; gap: 10px 16px; position: relative; padding-right: 38px; }
+  .hac-tier-stack-id { grid-column: 1 / -1; }
+  .hac-tier-stack-card > *:last-child { position: absolute; top: 12px; right: 14px; }
   .hac-tier-form-row { grid-template-columns: 1fr 1fr; }
   .ml-app { grid-template-columns: 1fr; }
   .ml-sidebar { display: none !important; }
