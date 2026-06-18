@@ -334,6 +334,81 @@ b { font-weight: 600; }
   flex-direction: column;
   gap: 2px;
 }
+.hac-kpi-flat {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.hac-kpi-flat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.hac-kpi-flat-titlewrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.hac-kpi-hero-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--green-50);
+  flex-shrink: 0;
+}
+.hac-kpi-flat-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fg-primary);
+}
+.hac-kpi-flat-period {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--fg-secondary);
+}
+.hac-kpi-flat-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #ECF8EF;
+  color: var(--green-600);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.hac-kpi-flat-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+.hac-kpi-flat-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.hac-kpi-flat-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #9393A3;
+}
+.hac-kpi-flat-value {
+  font-size: 22px;
+  line-height: 1.05;
+  font-weight: 700;
+  color: var(--navy-800);
+  letter-spacing: -.4px;
+  font-variant-numeric: tabular-nums;
+}
 .hac-kpi-date-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -424,6 +499,10 @@ b { font-weight: 600; }
   }
   .hac-date-range-input {
     min-width: 140px;
+  }
+  .hac-kpi-flat-metrics {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 20px;
   }
 }
 
@@ -736,6 +815,8 @@ b { font-weight: 600; }
 .hac-kpiaxis-readout { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--fg-secondary); }
 .hac-kpiaxis-readout b { color: var(--fg-primary); font-weight: 700; font-variant-numeric: tabular-nums; }
 .hac-kpiaxis-readout span:last-child { font-weight: 700; }
+.hac-kpi-progress-block { display: flex; flex-direction: column; gap: 6px; }
+.hac-kpi-flat .hac-kpi-progress-block { gap: 0; }
 
 .hac-kpiaxis { position: relative; margin-top: 4px; }
 .hac-kpiaxis-bar { position: relative; height: 16px; }
@@ -851,6 +932,8 @@ b { font-weight: 600; }
 
 /* ── Two-line table cell (primary + subtext) ──────────────────────── */
 .ml-cell-sub { font-size: 11px; color: var(--fg-tertiary); margin-top: 2px; }
+.hm-sp-account-cell { display: flex; align-items: center; gap: 8px; min-width: 220px; }
+.hm-sp-account-cell .ml-petron-logo { flex-shrink: 0; }
 
 /* ── Row View action ──────────────────────────────────────────────── */
 .hm-view-cell { text-align: right; white-space: nowrap; }
@@ -930,7 +1013,7 @@ b { font-weight: 600; }
 <script src="data.js?v=20260614"></script>
 <script src="../../shared/shared-shell.js?v=20260614"></script>
 <script src="host-shell.js?v=20260614"></script>
-<script src="host-myfuel-commission.js?v=20260614"></script>
-<script src="host-agent-config.js?v=20260614"></script>
+<script src="host-myfuel-commission.js?v=20260618"></script>
+<script src="host-agent-config.js?v=20260618"></script>
 </body>
 </html>

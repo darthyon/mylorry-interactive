@@ -183,7 +183,7 @@ function TrendBarChart({
                             width: "100%",
                             maxWidth: "none",
                             background: ROLE_META.referrer.accent,
-                            borderRadius: values.agent > 0 ? "0" : "4px 4px 0 0",
+                            borderRadius: "4px 4px 0 0",
                           }} />
                         )}
                         {values.agent > 0 && (
@@ -192,7 +192,7 @@ function TrendBarChart({
                             width: "100%",
                             maxWidth: "none",
                             background: ROLE_META.agent.accent,
-                            borderRadius: values.referrer > 0 ? "4px 4px 0 0" : "4px 4px 0 0",
+                            borderRadius: values.referrer > 0 ? "0" : "4px 4px 0 0",
                           }} />
                         )}
                       </div>
@@ -467,8 +467,13 @@ function AgentCommissionDrilldown({ record, onBack }) {
                   ) : pageRows.map((item, i) => (
                     <tr key={i}>
                       <td>
-                        <div className="ml-cell-main">{item.org}</div>
-                        <div className="ml-cell-sub"><code className="hac-code">{item.sp}</code></div>
+                        <div className="hm-sp-account-cell">
+                          <PetronLogo size={18} />
+                          <div>
+                            <div className="ml-cell-main">{item.org}</div>
+                            <div className="ml-cell-sub"><code className="hac-code">{item.sp}</code></div>
+                          </div>
+                        </div>
                       </td>
                       <td className="ml-mono">{item.volume.toLocaleString()}</td>
                       <td className="ml-mono">

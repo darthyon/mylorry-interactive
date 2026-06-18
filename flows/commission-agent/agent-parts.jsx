@@ -122,13 +122,6 @@ function CommissionThisMonthCard({ m, selectedMonth, monthOptions, onMonthChange
               <span>Applied multiplier</span>
               <b>{m.mult}%</b>
             </div>
-            <div className="ml-calc-row">
-              <span>Adjustments / exclusions</span>
-              <div className="ml-calc-row-stack">
-                <b>{m.adjustment === 0 ? "None" : `${m.adjustment > 0 ? "+" : "−"}${AC.fmtRM(Math.abs(m.adjustment))}`}</b>
-                <span>{adjustmentsLabel}</span>
-              </div>
-            </div>
             <div className="ml-calc-row ml-calc-row-total">
               <span>Final commission</span>
               <b className="ml-green">{AC.fmtRM(m.summary.commission)}</b>
