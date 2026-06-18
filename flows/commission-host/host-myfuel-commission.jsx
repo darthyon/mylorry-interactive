@@ -333,6 +333,7 @@ function AgentCommissionDrilldown({ record, onBack }) {
   const [page, setPage] = useMFC(1);
   const [perPage, setPerPage] = useMFC(10);
   const onSpSearch = (value) => { setSpQ(value); setPage(1); };
+  const isPendingOnboarding = (item) => item.commissionStatus === "pending_onboarding";
 
   const rows = spQ
     ? breakdown.filter((item) => {
@@ -468,16 +469,20 @@ function AgentCommissionDrilldown({ record, onBack }) {
                     <tr key={i}>
                       <td>
                         <div className="hm-sp-account-cell">
-                          <PetronLogo size={18} />
                           <div>
                             <div className="ml-cell-main">{item.org}</div>
-                            <div className="ml-cell-sub"><code className="hac-code">{item.sp}</code></div>
+                            <div className="ml-cell-sub hm-sp-account-code">
+                              <PetronLogo size={18} />
+                              <code className="hac-code">{item.sp}</code>
+                            </div>
                           </div>
                         </div>
                       </td>
-                      <td className="ml-mono">{item.volume.toLocaleString()}</td>
                       <td className="ml-mono">
-                        {item.kpiVolume != null ? (
+                        {isPendingOnboarding(item) || item.volume == null ? "—" : item.volume.toLocaleString()}
+                      </td>
+                      <td className="ml-mono">
+                        {!isPendingOnboarding(item) && item.kpiVolume != null ? (
                           <>
                             {item.kpiVolume.toLocaleString()}
                             <div className="ml-cell-sub">{item.kpiSplitPct}% attributed</div>
@@ -485,14 +490,22 @@ function AgentCommissionDrilldown({ record, onBack }) {
                         ) : "—"}
                       </td>
                       <td>
-                        <div className="ml-mono" style={{ fontWeight:600 }}>{HC.fmtRate(item.rate)}</div>
-                        <div className="ml-cell-sub">{item.tier}</div>
+                        {isPendingOnboarding(item) || item.rate == null ? (
+                          <span className="ml-mono">—</span>
+                        ) : (
+                          <>
+                            <div className="ml-mono" style={{ fontWeight:600 }}>{HC.fmtRate(item.rate)}</div>
+                            <div className="ml-cell-sub">{item.tier}</div>
+                          </>
+                        )}
                       </td>
-                      <td className="ml-mono">{HC.fmtRM(item.baseCommission)}</td>
-                      <td className="ml-mono">{item.kpiMult}%</td>
-                      <td className="ml-mono" style={{ fontWeight:600, color:"var(--navy-800)" }}>{HC.fmtRM(item.finalCommission)}</td>
+                      <td className="ml-mono">{isPendingOnboarding(item) || item.baseCommission == null ? "—" : HC.fmtRM(item.baseCommission)}</td>
+                      <td className="ml-mono">{isPendingOnboarding(item) || item.kpiMult == null ? "—" : `${item.kpiMult}%`}</td>
+                      <td className="ml-mono" style={{ fontWeight:600, color:"var(--navy-800)" }}>{isPendingOnboarding(item) || item.finalCommission == null ? "—" : HC.fmtRM(item.finalCommission)}</td>
                       <td>
-                        <div style={{ fontSize:12, color:"var(--fg-secondary)" }}>{item.eff} – {item.end}</div>
+                        <div style={{ fontSize:12, color:"var(--fg-secondary)" }}>
+                          {isPendingOnboarding(item) || !item.eff || !item.end ? "—" : `${item.eff} – ${item.end}`}
+                        </div>
                       </td>
                       <td><MFCommStatusBadge status={item.commissionStatus} /></td>
                     </tr>

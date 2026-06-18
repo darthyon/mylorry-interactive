@@ -429,6 +429,7 @@ function AgentCommissionDrilldown({
     setSpQ(value);
     setPage(1);
   };
+  const isPendingOnboarding = item => item.commissionStatus === "pending_onboarding";
   const rows = spQ ? breakdown.filter(item => {
     const q = spQ.toLowerCase();
     return item.org.toLowerCase().includes(q) || item.sp.toLowerCase().includes(q);
@@ -598,43 +599,45 @@ function AgentCommissionDrilldown({
     key: i
   }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("div", {
     className: "hm-sp-account-cell"
-  }, /*#__PURE__*/React.createElement(PetronLogo, {
-    size: 18
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "ml-cell-main"
   }, item.org), /*#__PURE__*/React.createElement("div", {
-    className: "ml-cell-sub"
-  }, /*#__PURE__*/React.createElement("code", {
+    className: "ml-cell-sub hm-sp-account-code"
+  }, /*#__PURE__*/React.createElement(PetronLogo, {
+    size: 18
+  }), /*#__PURE__*/React.createElement("code", {
     className: "hac-code"
   }, item.sp))))), /*#__PURE__*/React.createElement("td", {
     className: "ml-mono"
-  }, item.volume.toLocaleString()), /*#__PURE__*/React.createElement("td", {
+  }, isPendingOnboarding(item) || item.volume == null ? "—" : item.volume.toLocaleString()), /*#__PURE__*/React.createElement("td", {
     className: "ml-mono"
-  }, item.kpiVolume != null ? /*#__PURE__*/React.createElement(React.Fragment, null, item.kpiVolume.toLocaleString(), /*#__PURE__*/React.createElement("div", {
+  }, !isPendingOnboarding(item) && item.kpiVolume != null ? /*#__PURE__*/React.createElement(React.Fragment, null, item.kpiVolume.toLocaleString(), /*#__PURE__*/React.createElement("div", {
     className: "ml-cell-sub"
-  }, item.kpiSplitPct, "% attributed")) : "—"), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("div", {
+  }, item.kpiSplitPct, "% attributed")) : "—"), /*#__PURE__*/React.createElement("td", null, isPendingOnboarding(item) || item.rate == null ? /*#__PURE__*/React.createElement("span", {
+    className: "ml-mono"
+  }, "\u2014") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "ml-mono",
     style: {
       fontWeight: 600
     }
   }, HC.fmtRate(item.rate)), /*#__PURE__*/React.createElement("div", {
     className: "ml-cell-sub"
-  }, item.tier)), /*#__PURE__*/React.createElement("td", {
+  }, item.tier))), /*#__PURE__*/React.createElement("td", {
     className: "ml-mono"
-  }, HC.fmtRM(item.baseCommission)), /*#__PURE__*/React.createElement("td", {
+  }, isPendingOnboarding(item) || item.baseCommission == null ? "—" : HC.fmtRM(item.baseCommission)), /*#__PURE__*/React.createElement("td", {
     className: "ml-mono"
-  }, item.kpiMult, "%"), /*#__PURE__*/React.createElement("td", {
+  }, isPendingOnboarding(item) || item.kpiMult == null ? "—" : `${item.kpiMult}%`), /*#__PURE__*/React.createElement("td", {
     className: "ml-mono",
     style: {
       fontWeight: 600,
       color: "var(--navy-800)"
     }
-  }, HC.fmtRM(item.finalCommission)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("div", {
+  }, isPendingOnboarding(item) || item.finalCommission == null ? "—" : HC.fmtRM(item.finalCommission)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "var(--fg-secondary)"
     }
-  }, item.eff, " \u2013 ", item.end)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(MFCommStatusBadge, {
+  }, isPendingOnboarding(item) || !item.eff || !item.end ? "—" : `${item.eff} – ${item.end}`)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(MFCommStatusBadge, {
     status: item.commissionStatus
   }))))))), rows.length > 0 && /*#__PURE__*/React.createElement(HPager, {
     page: page,

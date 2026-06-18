@@ -73,14 +73,26 @@ const monthLabel = value => {
 function buildAgentConfig(agent) {
   const base = window.HC.AGENT_CONFIG;
   const row = agent || base;
+  const spAccountsByAgent = window.HC.AGENT_SP_ACCOUNTS || {};
+  const terminationByAgent = window.HC.TERMINATION_CONFIG_BY_AGENT || {};
   return {
     ...base,
     id: row.id,
     name: row.name,
+    mobile: row.mobile || base.mobile,
+    email: row.email || base.email,
+    ic: row.ic || base.ic,
+    bankName: row.bankName || base.bankName,
+    accNo: row.accNo || base.accNo,
+    accName: row.accName || base.accName,
     referrer: row.referrer,
     joined: row.joined,
     status: row.status || base.status,
     accountStatus: row.accountStatus || base.accountStatus,
+    spCount: row.spCount ?? base.spCount,
+    spAccounts: (spAccountsByAgent[row.id] || base.spAccounts || []).map(sp => ({
+      ...sp
+    })),
     kpi: {
       ...base.kpi,
       actual: row.volume ?? base.kpi.actual,
@@ -91,16 +103,20 @@ function buildAgentConfig(agent) {
         target: row.kpiTarget ?? base.kpi.current.target
       }
     },
-    termination: row.id === base.id ? {
-      ...base.termination,
-      scheduledTransfer: base.termination?.scheduledTransfer ? {
-        ...base.termination.scheduledTransfer
+    termination: terminationByAgent[row.id] ? {
+      ...terminationByAgent[row.id],
+      scheduledTransfer: terminationByAgent[row.id]?.scheduledTransfer ? {
+        ...terminationByAgent[row.id].scheduledTransfer
       } : null
     } : {
       date: "",
       commissionEndDate: "",
       scheduledTransfer: null
-    }
+    },
+    otherAgents: (window.HC.AGENTS || []).filter(candidate => candidate.id !== row.id).map(candidate => ({
+      id: candidate.id,
+      name: candidate.name
+    }))
   };
 }
 
@@ -1308,13 +1324,13 @@ function CommissionSection({
       marginTop: 4
     }
   }, m))), /*#__PURE__*/React.createElement("div", {
-    className: "hac-tiers-grid hac-thr-grid"
+    className: "hac-tier-stack"
   }, [...kpiThresholds].sort((a, b) => a.minPct - b.minPct).map(t => {
     return /*#__PURE__*/React.createElement("div", {
       key: t.id,
-      className: "hac-tier-item"
+      className: "hac-tier-stack-card"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "hac-tier-item-head"
+      className: "hac-tier-stack-id"
     }, /*#__PURE__*/React.createElement("div", {
       className: "hac-tier-item-label"
     }, /*#__PURE__*/React.createElement(HIcon, {
@@ -1323,20 +1339,22 @@ function CommissionSection({
       color: "var(--navy-800)"
     }), t.tier, t.isFinal && /*#__PURE__*/React.createElement("span", {
       className: "hac-final-badge"
-    }, "Final Tier")), editing && /*#__PURE__*/React.createElement(CardMenu, {
+    }, "Final Tier"))), /*#__PURE__*/React.createElement("div", {
+      className: "hac-tier-stack-field"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "ml-k"
+    }, "Progress range"), /*#__PURE__*/React.createElement("b", null, getThresholdRange(t))), /*#__PURE__*/React.createElement("div", {
+      className: "hac-tier-stack-field"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "ml-k"
+    }, "Multiplier"), /*#__PURE__*/React.createElement("b", null, t.mult, "%")), editing && /*#__PURE__*/React.createElement(CardMenu, {
       deleteDisabled: kpiThresholds.length <= 1,
       onEdit: () => {
         setEditingThreshold(t);
         setShowThresholdModal(true);
       },
       onDelete: () => deleteThreshold(t.id)
-    })), /*#__PURE__*/React.createElement("div", {
-      className: "hac-tier-item-body"
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
-      className: "ml-k"
-    }, "Progress range"), /*#__PURE__*/React.createElement("b", null, getThresholdRange(t))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
-      className: "ml-k"
-    }, "Multiplier"), /*#__PURE__*/React.createElement("b", null, t.mult, "%"))));
+    }));
   })))), showThresholdModal && /*#__PURE__*/React.createElement(ThresholdModal, {
     editThreshold: editingThreshold,
     siblings: kpiThresholds,
@@ -1448,9 +1466,11 @@ function SPAccountsCard({
     const added = SP_ORG_LIST.filter(o => selectedSPs.includes(o.sp)).map(o => ({
       sp: o.sp,
       org: o.org,
-      volume: 0,
-      eff: "—",
-      end: "Dec 2028",
+      volume: null,
+      kpiSplitPct: null,
+      kpiVolume: null,
+      eff: null,
+      end: null,
       exception: null,
       commissionStatus: "pending_onboarding"
     }));
@@ -1495,7 +1515,7 @@ function SPAccountsCard({
     className: "hac-code"
   }, sp.sp))), /*#__PURE__*/React.createElement("td", {
     className: "ml-mono"
-  }, sp.volume ? sp.volume.toLocaleString() : "—"), /*#__PURE__*/React.createElement("td", {
+  }, sp.commissionStatus === "pending_onboarding" || sp.volume == null ? "—" : sp.volume.toLocaleString()), /*#__PURE__*/React.createElement("td", {
     className: "ml-mono"
   }, sp.commissionStatus !== "pending_onboarding" && sp.kpiVolume != null ? /*#__PURE__*/React.createElement(React.Fragment, null, sp.kpiVolume.toLocaleString(), /*#__PURE__*/React.createElement("div", {
     className: "ml-cell-sub"
@@ -1583,7 +1603,7 @@ function TerminationCard({
     name: "warning",
     size: 15,
     color: "#B26A00"
-  }), /*#__PURE__*/React.createElement("span", null, "This agent is in a ", /*#__PURE__*/React.createElement("b", null, "terminating"), " state. Finalise below.")), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("span", null, "This agent is in a ", /*#__PURE__*/React.createElement("b", null, "terminating"), " state.")), /*#__PURE__*/React.createElement("div", {
     className: "hac-term-stack"
   }, editing ? /*#__PURE__*/React.createElement("div", {
     className: "hac-term-grid"

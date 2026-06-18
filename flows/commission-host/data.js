@@ -3,6 +3,8 @@
    Plain JS, loaded before Babel components. Exposes window.HC.*
    ============================================================ */
 (function () {
+  const PRIMARY_AGENT_ID = "AG-0042";
+  const CURRENT_PERIOD = "Jun 2026";
 
   const AGENTS = [
     { id:"AG-0042", num:1,  referrer:false, name:"Kenneth Wang",               mobile:"0123456789", email:"kenneth@mylorry.ai",       ic:"820101-05-1234", bankName:"Maybank",      accNo:"112361629821", accName:"Kenneth Wang", joined:"Aug 2024", status:"active",      accountStatus:"active",     spCount:6,  volume:166720, commission:1093.25, kpiMult:50,  kpiTarget:200000, kpiPct:83.4,  kpiPhase:"active"   },
@@ -15,13 +17,23 @@
     { id:"RF-0083", num:8,  referrer:true,  name:"Marcus Yong",                mobile:"0162173396", email:"marcusyong@mylorry.ai",    ic:"820609-05-5073", bankName:"-",            accNo:"-",            accName:"-",         joined:"Sep 2021", status:"active",      accountStatus:"active",     spCount:14, volume:240000, commission:3120.00, kpiMult:100, kpiTarget:240000, kpiPct:100.0, kpiPhase:"complete" },
     { id:"AG-0091", num:9,  referrer:false, name:"Cheah Kok Bin",              mobile:"0123040700", email:"max@maxador.com",          ic:"781008-08-6473", bankName:"Public Bank",  accNo:"6364296502",   accName:"Cheah Kok Bin", joined:"Dec 2023", status:"active",      accountStatus:"active",     spCount:6,  volume:135000, commission:1470.00, kpiMult:100, kpiTarget:150000, kpiPct:90.0,  kpiPhase:"active"   },
   ];
+  const AGENT_LOOKUP = Object.fromEntries(AGENTS.map((agent) => [agent.id, agent]));
+  const PRIMARY_AGENT = AGENT_LOOKUP[PRIMARY_AGENT_ID];
 
   const AGENT_CONFIG = {
-    id:"AG-0042", num:1, name:"Kenneth Wang",
-    mobile:"0123456789", email:"kenneth@mylorry.ai", ic:"820101-05-1234",
-    bankName:"Maybank", accNo:"112361629821", accName:"Kenneth Wang",
-    referrer:false, joined:"Aug 2024", status:"active",
-    accountStatus:"active",
+    id: PRIMARY_AGENT.id,
+    num: PRIMARY_AGENT.num,
+    name: PRIMARY_AGENT.name,
+    mobile: PRIMARY_AGENT.mobile,
+    email: PRIMARY_AGENT.email,
+    ic: PRIMARY_AGENT.ic,
+    bankName: PRIMARY_AGENT.bankName,
+    accNo: PRIMARY_AGENT.accNo,
+    accName: PRIMARY_AGENT.accName,
+    referrer: PRIMARY_AGENT.referrer,
+    joined: PRIMARY_AGENT.joined,
+    status: PRIMARY_AGENT.status,
+    accountStatus: PRIMARY_AGENT.accountStatus,
     bank:"Maybank · ****4821", lastSync:"09 Jun 2026, 09:15",
 
     kpi: {
@@ -29,10 +41,10 @@
       progressPeriod: "Dec 1–31",
       // De-inflated: KPI actual = Σ attributed volume across SP accounts (was 213,400 raw
       // full-volume, the piggybacking number). 166,720 / 200,000 = 83.4% → Tier 2 (×0.50).
-      actual: 166720,
-      locked: false,
+      actual: PRIMARY_AGENT.volume,
+      locked: PRIMARY_AGENT.kpiPhase === "complete",
       current: {
-        version:3, effective:"Dec 2026", target:200000,
+        version:3, effective:"Dec 2026", target: PRIMARY_AGENT.kpiTarget,
         thresholds: [
           { tier:"Tier 3", minPct:100, mult:100, isFinal:true },
           { tier:"Tier 2", minPct:75,  mult:50  },
@@ -77,26 +89,40 @@
       },
     },
 
-    otherAgents: [
-      { id:"RF-0019", name:"Ahmad Faris"  },
-      { id:"AG-0031", name:"Priya Nair"   },
-      { id:"RF-0038", name:"Siti Rahimah" },
-      { id:"AG-0055", name:"Tan Wei Lin"  },
-    ],
+    otherAgents: AGENTS
+      .filter((agent) => agent.id !== PRIMARY_AGENT_ID)
+      .slice(0, 4)
+      .map((agent) => ({ id: agent.id, name: agent.name })),
   };
 
   /* ─── MyFuel Commission Records (current period) ─────────────── */
-  const MYFUEL_RECORDS = [
-    { agentId:"AG-0042", agentName:"Kenneth Wang",               spCount:6,  totalLiters:193600, attributedKpiVolume:166720, kpiTarget:200000, kpiPct:83.4,  commission:1093.25, payout:"Pending",  period:"Jun 2026" },
-    { agentId:"RF-0019", agentName:"Ahmad Faris",                spCount:11, totalLiters:245600, kpiTarget:220000, kpiPct:111.6, commission:2890.00, payout:"Approved", period:"Jun 2026" },
-    { agentId:"AG-0031", agentName:"Priya Nair",                 spCount:8,  totalLiters:180000, kpiTarget:200000, kpiPct:90.0,  kpiPhase:"active",   commission:1890.00, payout:"Pending",  period:"Jun 2026" },
-    { agentId:"RF-0038", agentName:"Siti Rahimah",               spCount:7,  totalLiters:120000, kpiTarget:200000, kpiPct:60.0,  kpiPhase:"complete", commission:1260.00, payout:"Paid",     period:"Jun 2026" },
-    { agentId:"AG-0055", agentName:"Tan Wei Lin",                spCount:4,  totalLiters:98300,  kpiTarget:200000, kpiPct:49.2,  kpiPhase:"active",   commission:0,       payout:"Pending",  period:"Jun 2026" },
-    { agentId:"RF-0067", agentName:"Raj Selvam",                 spCount:3,  totalLiters:61200,  kpiTarget:200000, kpiPct:30.6,  kpiPhase:"complete", commission:0,       payout:"Rejected", period:"Jun 2026" },
-    { agentId:"AG-0071", agentName:"Norafizah B. Mohd Yasin",    spCount:5,  totalLiters:120000, kpiTarget:120000, kpiPct:100.0, kpiPhase:"active",   commission:1280.00, payout:"Pending",  period:"Jun 2026" },
-    { agentId:"RF-0083", agentName:"Marcus Yong",                spCount:14, totalLiters:240000, kpiTarget:240000, kpiPct:100.0, kpiPhase:"complete", commission:3120.00, payout:"Approved", period:"Jun 2026" },
-    { agentId:"AG-0091", agentName:"Cheah Kok Bin",              spCount:6,  totalLiters:135000, kpiTarget:150000, kpiPct:90.0,  kpiPhase:"active",   commission:1470.00, payout:"Pending",  period:"Jun 2026" },
-  ];
+  const RECORD_OVERRIDES = {
+    "AG-0042": { totalLiters: 193600, attributedKpiVolume: 166720, payout: "Pending" },
+    "RF-0019": { payout: "Approved" },
+    "AG-0031": { payout: "Pending" },
+    "RF-0038": { payout: "Paid" },
+    "AG-0055": { payout: "Pending" },
+    "RF-0067": { attributedKpiVolume: 61200, payout: "Rejected" },
+    "AG-0071": { agentName: "Norafizah B. Mohd Yasin", payout: "Pending" },
+    "RF-0083": { payout: "Approved" },
+    "AG-0091": { payout: "Pending" },
+  };
+  const MYFUEL_RECORDS = AGENTS.map((agent) => {
+    const override = RECORD_OVERRIDES[agent.id] || {};
+    return {
+      agentId: agent.id,
+      agentName: override.agentName || agent.name,
+      spCount: agent.spCount,
+      totalLiters: override.totalLiters != null ? override.totalLiters : agent.volume,
+      attributedKpiVolume: override.attributedKpiVolume,
+      kpiTarget: agent.kpiTarget,
+      kpiPct: agent.kpiPct,
+      kpiPhase: agent.kpiPhase,
+      commission: agent.commission,
+      payout: override.payout || "Pending",
+      period: CURRENT_PERIOD,
+    };
+  });
 
   /* ─── Per-SP Account breakdown (for drill-down) ──────────────────────────
      volume          = commission BASIS (full account volume) — NOT split by attribution
@@ -117,6 +143,11 @@
       { sp:"PIN-PTN-033",  org:"Pinnacle Transport Solutions",  volume:31500, kpiSplitPct:80, kpiVolume:25200, tier:"Tier 2", rate:0.010, kpiMult:50, baseCommission:315.00, finalCommission:157.50, eff:"01 Jul 2026", end:"31 Dec 2028", commissionStatus:"activated"          },
       { sp:"RAP-PTN-021",  org:"Rapid Haulage Sdn Bhd",         volume:24600, kpiSplitPct:80, kpiVolume:19680, tier:"Tier 1", rate:0.005, kpiMult:50, baseCommission:123.00, finalCommission:0,      eff:"18 Feb 2026", end:"31 Dec 2028", commissionStatus:"on_hold"            },
       { sp:"VAN-PTN-045",  org:"Vanguard Logistics Systems",    volume:0,     kpiSplitPct:0,  kpiVolume:0,     tier:"Tier 1", rate:0.005, kpiMult:50, baseCommission:0,      finalCommission:0,      eff:"01 Jun 2026", end:"31 Dec 2028", commissionStatus:"pending_onboarding" },
+    ],
+    "RF-0067": [
+      { sp:"RGT-PTN-041",  org:"Rightlane Transport",           volume:28600, kpiSplitPct:70, kpiVolume:20020, tier:"Tier 2", rate:0.010, kpiMult:0, baseCommission:286.00, finalCommission:0, eff:"01 Jan 2026", end:"31 Dec 2028", commissionStatus:"activated" },
+      { sp:"MSL-PTN-042",  org:"Miles Logistics",               volume:18300, kpiSplitPct:60, kpiVolume:10980, tier:"Tier 1", rate:0.005, kpiMult:0, baseCommission:91.50, finalCommission:0, eff:"14 Mar 2026", end:"31 Dec 2028", commissionStatus:"on_hold" },
+      { sp:"NBL-PTN-043",  org:"Nimble Freight Network",        volume:null,  kpiSplitPct:null, kpiVolume:null, tier:null, rate:null, kpiMult:null, baseCommission:null, finalCommission:null, eff:null, end:null, commissionStatus:"pending_onboarding" },
     ],
     "RF-0019": [
       { sp:"ARC-PTN-001",  org:"Arcadian Haulage",              volume:38400, tier:"Tier 2", rate:0.010, kpiMult:100, baseCommission:384.00, finalCommission:384.00, eff:"01 Jan 2026", end:"31 Dec 2028", commissionStatus:"activated" },
@@ -147,6 +178,36 @@
       { sp:"PRM-PTN-033",  org:"Premium Logistics Sdn Bhd",     volume:6300,  tier:"Tier 1", rate:0.005, kpiMult:100, baseCommission:31.50,  finalCommission:31.50,  eff:"01 Jan 2026", end:"31 Dec 2028", commissionStatus:"activated" },
       { sp:"STR-PTN-034",  org:"Starfleet Transport",           volume:5200,  tier:"Tier 1", rate:0.005, kpiMult:100, baseCommission:26.00,  finalCommission:26.00,  eff:"01 Jan 2026", end:"31 Dec 2028", commissionStatus:"activated" },
     ],
+  };
+  const AGENT_SP_ACCOUNTS = {
+    [PRIMARY_AGENT_ID]: AGENT_CONFIG.spAccounts,
+    "RF-0067": SP_COMMISSION_BREAKDOWN["RF-0067"].map((row) => ({
+      sp: row.sp,
+      org: row.org,
+      volume: row.volume,
+      kpiSplitPct: row.kpiSplitPct,
+      kpiVolume: row.kpiVolume,
+      eff: row.eff || "—",
+      end: row.end || "—",
+      exception: row.exception || null,
+      commissionStatus: row.commissionStatus,
+    })),
+  };
+  const TERMINATION_CONFIG_BY_AGENT = {
+    [PRIMARY_AGENT_ID]: {
+      ...AGENT_CONFIG.termination,
+      scheduledTransfer: AGENT_CONFIG.termination?.scheduledTransfer
+        ? { ...AGENT_CONFIG.termination.scheduledTransfer }
+        : null,
+    },
+    "RF-0067": {
+      date: "2026-08-31",
+      commissionEndDate: "2026-07-31",
+      scheduledTransfer: {
+        toAgentId: "AG-0031",
+        effectiveCommissionMonth: "2026-08",
+      },
+    },
   };
 
   /* ─── Commission history — last 12 months per agent ──────────────────────
@@ -201,11 +262,10 @@
   /* ─── MyFuel summary KPIs ────────────────────────────────────── */
   const MYFUEL_SUMMARY = {
     totalPayable: 15251.50,
-    activeAgents: 7,
-    period: "Jun 2026",
+    activeAgents: AGENTS.filter((agent) => agent.status === "active" && agent.commission > 0).length,
+    period: CURRENT_PERIOD,
   };
 
-  const AGENT_LOOKUP = Object.fromEntries(AGENTS.map((agent) => [agent.id, agent]));
   const MYFUEL_SALESPERSON_RECORDS = MYFUEL_RECORDS.map((record) => {
     const salesperson = AGENT_LOOKUP[record.agentId] || {};
     const role = salesperson.referrer ? "Referrer" : "Agent";
@@ -260,6 +320,7 @@
   window.HC = {
     AGENTS,
     AGENT_CONFIG,
+    AGENT_SP_ACCOUNTS,
     BANKS,
     MONTHS,
     MYFUEL_RECORDS,
@@ -269,6 +330,7 @@
     MYFUEL_TREND,
     MYFUEL_ROLE_TREND,
     MYFUEL_SUMMARY,
+    TERMINATION_CONFIG_BY_AGENT,
     fmtRM,
     fmtL,
     fmtRate

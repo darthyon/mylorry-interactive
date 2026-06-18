@@ -59,14 +59,24 @@ const monthLabel = value => {
 function buildAgentConfig(agent) {
   const base = window.HC.AGENT_CONFIG;
   const row  = agent || base;
+  const spAccountsByAgent = window.HC.AGENT_SP_ACCOUNTS || {};
+  const terminationByAgent = window.HC.TERMINATION_CONFIG_BY_AGENT || {};
   return {
     ...base,
     id: row.id,
     name: row.name,
+    mobile: row.mobile || base.mobile,
+    email: row.email || base.email,
+    ic: row.ic || base.ic,
+    bankName: row.bankName || base.bankName,
+    accNo: row.accNo || base.accNo,
+    accName: row.accName || base.accName,
     referrer: row.referrer,
     joined: row.joined,
     status: row.status || base.status,
     accountStatus: row.accountStatus || base.accountStatus,
+    spCount: row.spCount ?? base.spCount,
+    spAccounts: (spAccountsByAgent[row.id] || base.spAccounts || []).map((sp) => ({ ...sp })),
     kpi: {
       ...base.kpi,
       actual: row.volume ?? base.kpi.actual,
@@ -74,14 +84,17 @@ function buildAgentConfig(agent) {
       phase: row.kpiPhase || "active",
       current: { ...base.kpi.current, target: row.kpiTarget ?? base.kpi.current.target },
     },
-    termination: row.id === base.id
+    termination: terminationByAgent[row.id]
       ? {
-          ...base.termination,
-          scheduledTransfer: base.termination?.scheduledTransfer
-            ? { ...base.termination.scheduledTransfer }
+          ...terminationByAgent[row.id],
+          scheduledTransfer: terminationByAgent[row.id]?.scheduledTransfer
+            ? { ...terminationByAgent[row.id].scheduledTransfer }
             : null,
         }
       : { date:"", commissionEndDate:"", scheduledTransfer:null },
+    otherAgents: (window.HC.AGENTS || [])
+      .filter((candidate) => candidate.id !== row.id)
+      .map((candidate) => ({ id: candidate.id, name: candidate.name })),
   };
 }
 
@@ -900,33 +913,31 @@ function CommissionSection({ kpi, editing, showHistory, setShowHistory }) {
               </div>
             )}
 
-            <div className="hac-tiers-grid hac-thr-grid">
+            <div className="hac-tier-stack">
               {[...kpiThresholds].sort((a, b) => a.minPct - b.minPct).map(t => {
                 return (
-                  <div key={t.id} className="hac-tier-item">
-                    <div className="hac-tier-item-head">
+                  <div key={t.id} className="hac-tier-stack-card">
+                    <div className="hac-tier-stack-id">
                       <div className="hac-tier-item-label">
                         <HIcon name="stacked_bar_chart" size={16} color="var(--navy-800)" />
                         {t.tier}
                         {t.isFinal && <span className="hac-final-badge">Final Tier</span>}
                       </div>
-                      {editing && (
-                        <CardMenu
-                          deleteDisabled={kpiThresholds.length <= 1}
-                          onEdit={() => { setEditingThreshold(t); setShowThresholdModal(true); }}
-                          onDelete={() => deleteThreshold(t.id)} />
-                      )}
                     </div>
-                    <div className="hac-tier-item-body">
-                      <div>
-                        <span className="ml-k">Progress range</span>
-                        <b>{getThresholdRange(t)}</b>
-                      </div>
-                      <div>
-                        <span className="ml-k">Multiplier</span>
-                        <b>{t.mult}%</b>
-                      </div>
+                    <div className="hac-tier-stack-field">
+                      <span className="ml-k">Progress range</span>
+                      <b>{getThresholdRange(t)}</b>
                     </div>
+                    <div className="hac-tier-stack-field">
+                      <span className="ml-k">Multiplier</span>
+                      <b>{t.mult}%</b>
+                    </div>
+                    {editing && (
+                      <CardMenu
+                        deleteDisabled={kpiThresholds.length <= 1}
+                        onEdit={() => { setEditingThreshold(t); setShowThresholdModal(true); }}
+                        onDelete={() => deleteThreshold(t.id)} />
+                    )}
                   </div>
                 );
               })}
@@ -1019,7 +1030,7 @@ function SPAccountsCard({ spAccounts: initSP }) {
   const handleAdd = selectedSPs => {
     const added = SP_ORG_LIST
       .filter(o => selectedSPs.includes(o.sp))
-      .map(o => ({ sp:o.sp, org:o.org, volume:0, eff:"—", end:"Dec 2028", exception:null, commissionStatus:"pending_onboarding" }));
+      .map(o => ({ sp:o.sp, org:o.org, volume:null, kpiSplitPct:null, kpiVolume:null, eff:null, end:null, exception:null, commissionStatus:"pending_onboarding" }));
     setSPAccounts(prev => [...prev, ...added]);
   };
 
@@ -1049,7 +1060,9 @@ function SPAccountsCard({ spAccounts: initSP }) {
                       <code className="hac-code">{sp.sp}</code>
                     </div>
                   </td>
-                  <td className="ml-mono">{sp.volume ? sp.volume.toLocaleString() : "—"}</td>
+                  <td className="ml-mono">
+                    {sp.commissionStatus === "pending_onboarding" || sp.volume == null ? "—" : sp.volume.toLocaleString()}
+                  </td>
                   <td className="ml-mono">
                     {sp.commissionStatus !== "pending_onboarding" && sp.kpiVolume != null ? (
                       <>
@@ -1122,7 +1135,7 @@ function TerminationCard({ cfg, editing = false }) {
       {cfg.status === "terminating" && (
         <div className="hac-warn-banner" style={{ marginBottom:14 }}>
           <HIcon name="warning" size={15} color="#B26A00" />
-          <span>This agent is in a <b>terminating</b> state. Finalise below.</span>
+          <span>This agent is in a <b>terminating</b> state.</span>
         </div>
       )}
       <div className="hac-term-stack">
