@@ -276,10 +276,22 @@ function Section({ title, right, children }) {
   );
 }
 
-function DField({ label, children }) {
+function DField({ label, info, children }) {
   return (
     <div className="hac-fg spa-dfield">
-      <label className="hac-label">{label}</label>
+      {info ? (
+        <label className="hac-label spa-label-with-info">
+          <span>{label}</span>
+          <span className="ml-tooltip-wrap spa-info-wrap" tabIndex={0}>
+            <span className="spa-info-trigger" aria-label={`${label} help`}>
+              <HIcon name="info" size={14} color="var(--fg-tertiary)" />
+            </span>
+            <span className="ml-tooltip spa-info-tooltip">{info}</span>
+          </span>
+        </label>
+      ) : (
+        <label className="hac-label">{label}</label>
+      )}
       <span className="hac-view-val spa-dval">{children}</span>
     </div>
   );
@@ -323,51 +335,176 @@ function TierGrid({ tiers, amountLabel = "Commission Amount" }) {
   );
 }
 
-// Editable salesperson commission list — ellipsis (edit / add tier / delete), inline tier
-// editing, add salesperson. Shared by the form and the detail view so the editing logic
-// isn't forked. `agents` + `onChange` own the roster.
-function SalespersonCommissionEditor({ agents, onChange }) {
-  const [spModalState, setSpModalState] = useState(null);
-  const [tierAddTick, setTierAddTick] = useState({});
+// Account-level fields above the salesperson cards: base usage volume, activation date,
+// commission validity — plain fields like the other detail sections. Pre-activation accounts
+// keep the disclaimer callout (activation is set automatically on the first fuel transaction).
+function SalespersonTopFields({ mode, periodVolume, activationDate, validityMonths, onValidityChange }) {
+  const months = Number(validityMonths) || DEFAULT_COMMISSION_VALIDITY_MONTHS;
+  const rangeText = activationDate ? `${fmtDate(activationDate)} - ${fmtDate(addMonths(activationDate, months))}` : "";
+  const volumeText = periodVolume ? fmtLitres(periodVolume) : "—";
+  const activationText = activationDate ? fmtDate(activationDate) : "Pending first transaction";
+  const activationInfo = `Activation date is set automatically on the first fuel transaction. Commission validity runs ${months} months from that date.`;
 
-  const setAgent = (i, patch) => onChange(agents.map((a, j) => j === i ? { ...a, ...patch } : a));
-  const addAgent = person => onChange([...agents, person]);
-  const removeAgent = i => onChange(agents.filter((_, j) => j !== i));
-  const saveAgentDetails = (i, person) => onChange(agents.map((a, j) => j === i ? { ...a, name: person.name, role: person.role } : a));
-  const requestTierAdd = i => setTierAddTick(t => ({ ...t, [i]: (t[i] || 0) + 1 }));
-
-  const card = (a, i) => (
-    <div className="spa-sp-edit-card" key={i}>
-      <div className="spa-sp-edit-head">
-        <div>
-          <div className="spa-sp-name">
-            <HIcon name={a.role === "referrer" ? "group" : "support_agent"} size={15} color="var(--navy-800)" /> {a.name}
-            <span className="spa-role-chip">{a.role === "referrer" ? "Referrer" : "Agent"}</span>
+  if (mode === "view") {
+    return (
+      <div className="hac-detail-grid">
+        <DField label="Base Usage Volume">{volumeText}</DField>
+        <DField label="Activation Date" info={activationInfo}>{activationText}</DField>
+        <DField label="Commission Validity">
+          <div>
+            <span className="hac-view-val spa-dval" style={{ padding: 0, minHeight: "auto" }}>{months} months</span>
+            {rangeText && <span className="hac-field-hint">{rangeText}</span>}
           </div>
-        </div>
-        <SalespersonCardMenu
-          onEdit={() => setSpModalState({ mode: "edit", index: i })}
-          onAddTier={() => requestTierAdd(i)}
-          onDelete={() => removeAgent(i)}
-        />
+        </DField>
       </div>
-      <EditableTiers kind="commission" tiers={a.tiers} onChange={t => setAgent(i, { tiers: t })} externalAddTick={tierAddTick[i] || 0} />
-    </div>
-  );
+    );
+  }
 
   return (
-    <>
-      <div className="hac-sec-header-row" style={{ margin: "20px 0 12px" }}>
-        <span className="hac-form-section-title" style={{ margin: 0, color: "var(--navy-800)" }}>Salesperson Setting</span>
-        <button className="hac-add-tier-btn" onClick={() => setSpModalState({ mode: "create" })}><HIcon name="add" size={15} /> Add Salesperson</button>
+    <div className="hac-form-grid3">
+      <div className="hac-fg">
+        <label className="hac-label">Base Usage Volume</label>
+        <span className="hac-view-val spa-dval">{volumeText}</span>
       </div>
-      {agents.length === 0 && (
-        <div className="hac-empty-state">No salesperson added yet. Click “Add Salesperson” to assign one.</div>
+      <div className="hac-fg">
+        <FieldLabelWithInfo label="Activation Date" info={activationInfo} />
+        <span className="hac-view-val spa-dval">{activationText}</span>
+      </div>
+      <div className="hac-fg">
+        <FieldLabelWithInfo
+          label="Commission Validity"
+          info="Defaults to 36 months from the activation date. Stays with the SP account if it is transferred between agents."
+        />
+        <div className="spa-validity-input">
+          <input className="hac-input" type="number" min="1" placeholder="36"
+            value={validityMonths} onChange={e => onValidityChange(e.target.value)} />
+          <span className="spa-validity-suffix">months</span>
+        </div>
+        {rangeText && <span className="hac-field-hint">{rangeText}</span>}
+      </div>
+    </div>
+  );
+}
+
+// One salesperson = one umbrella card: identity + commission tiering + KPI attribution footer.
+// View renders read-only TierGrid; edit renders EditableTiers + the card menu.
+function SalespersonUmbrellaCard({ person, periodVolume, mode, onTiersChange, onEditDetails, onAddTier, onDelete, tierAddTick }) {
+  const pct = Number(person.kpiSplitPct) || 0;
+  const volume = periodVolume ? attributedVolume(pct, periodVolume) : null;
+  return (
+    <div className="spa-sp-umbrella-card">
+      <div className="spa-sp-edit-head">
+        <div className="spa-sp-name">
+          <HIcon name={person.role === "referrer" ? "group" : "support_agent"} size={15} color="var(--navy-800)" /> {person.name}
+          <span className="spa-role-chip">{roleLabelOf(person.role)}</span>
+        </div>
+        {mode === "edit" && (
+          <SalespersonCardMenu onEdit={onEditDetails} onAddTier={onAddTier} onDelete={onDelete} />
+        )}
+      </div>
+      <div className="spa-umbrella-tiers">
+        {mode === "view" && <div className="spa-umbrella-tiers-label">Commission tiering</div>}
+        {mode === "edit"
+          ? <EditableTiers kind="commission" tiers={person.tiers} onChange={onTiersChange} externalAddTick={tierAddTick} />
+          : <TierGrid tiers={person.tiers} />}
+      </div>
+      <div className="spa-sp-kpi-foot">
+        <div className="spa-attr-inline-metric">
+          <span className="ml-k">KPI Attribution</span>
+          <strong className="spa-attr-list-strong">{pct}%</strong>
+        </div>
+        <div className="spa-attr-inline-metric">
+          <span className="ml-k">KPI Volume Counted</span>
+          <strong className="spa-attr-list-strong">{volume != null ? fmtLitres(volume) : "—"}</strong>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Salesperson = the umbrella. One merged section: account-level dates, then per-role groups
+// (Agent / Referrer), each with its own constrained distribution bar + umbrella cards.
+// Shared by the detail (mode="view") and form (mode="edit") views so editing logic isn't forked.
+function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDate, validityMonths, onValidityChange }) {
+  const [spModalState, setSpModalState] = useState(null);
+  const [kpiModalOpen, setKpiModalOpen] = useState(false);
+  const [tierAddTick, setTierAddTick] = useState({});
+  const isEdit = mode === "edit";
+
+  const setAgent = (i, patch) => onChange(roster.map((a, j) => j === i ? { ...a, ...patch } : a));
+  const addAgent = person => onChange([...roster, person]);
+  const removeAgent = i => onChange(roster.filter((_, j) => j !== i));
+  const saveAgentDetails = (i, person) => onChange(roster.map((a, j) => j === i ? { ...a, name: person.name, role: person.role } : a));
+  const requestTierAdd = i => setTierAddTick(t => ({ ...t, [i]: (t[i] || 0) + 1 }));
+
+  const roleGroup = (role) => {
+    // Keep each person's original roster index for correct mutation; sort display by split desc
+    // (matches the bar order).
+    const rows = roster
+      .map((a, i) => ({ a, i }))
+      .filter(({ a }) => a.role === role)
+      .sort((x, y) => (Number(y.a.kpiSplitPct) || 0) - (Number(x.a.kpiSplitPct) || 0) || x.a.name.localeCompare(y.a.name));
+    if (!isEdit && rows.length === 0) return null;
+    const people = rows.map(r => r.a);
+    const count = people.length;
+    const total = splitTotal(people);
+    const noun = roleLabelOf(role);
+    const countLabel = `${count} ${count === 1 ? noun.toLowerCase() : noun.toLowerCase() + "s"}`;
+    return (
+      <div className="spa-role-group" key={role}>
+        <div className="spa-role-group-head">
+          <div className="spa-role-group-title">
+            <span className="hac-form-section-title" style={{ margin: 0, color: "var(--navy-800)" }}>{noun} KPI Attribution</span>
+            <span className="spa-role-group-meta">{countLabel}</span>
+          </div>
+          {isEdit && (
+            <div className="spa-role-group-actions">
+              {count > 0 && <button className="hac-add-tier-btn" onClick={() => setKpiModalOpen(true)}><HIcon name="tune" size={15} /> Edit attribution</button>}
+              <button className="hac-add-tier-btn" onClick={() => setSpModalState({ mode: "create", role })}><HIcon name="add" size={15} /> Add {noun}</button>
+            </div>
+          )}
+        </div>
+        {count === 0 ? (
+          <div className="hac-empty-state">No {noun.toLowerCase()} added yet.</div>
+        ) : (
+          <>
+            <div className="spa-attr-overview-row">
+              <AttributionTotalReadout total={total} label="Total attribution" />
+              <KpiRoleBar roster={people} periodVolume={periodVolume} />
+            </div>
+            <div className="spa-sp-umbrella-grid">
+              {rows.map(({ a, i }) => (
+                <SalespersonUmbrellaCard
+                  key={i}
+                  person={a}
+                  periodVolume={periodVolume}
+                  mode={mode}
+                  onTiersChange={t => setAgent(i, { tiers: t })}
+                  onEditDetails={() => setSpModalState({ mode: "edit", index: i })}
+                  onAddTier={() => requestTierAdd(i)}
+                  onDelete={() => removeAgent(i)}
+                  tierAddTick={tierAddTick[i] || 0}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <Section title="Salesperson Setting">
+      <SalespersonTopFields mode={mode} periodVolume={periodVolume} activationDate={activationDate} validityMonths={validityMonths} onValidityChange={onValidityChange} />
+      {roster.length === 0 && !isEdit && (
+        <div className="hac-empty-state">No salesperson added yet.</div>
       )}
-      {agents.map((a, i) => card(a, i))}
+      {roleGroup("agent")}
+      {roleGroup("referrer")}
       {spModalState && ReactDOM.createPortal(
         <AddSalespersonModal
-          initialValue={spModalState.mode === "edit" ? agents[spModalState.index] : null}
+          initialValue={spModalState.mode === "edit" ? roster[spModalState.index] : null}
+          defaultRole={spModalState.role || "agent"}
           onClose={() => setSpModalState(null)}
           onSave={person => {
             if (spModalState.mode === "edit") saveAgentDetails(spModalState.index, person);
@@ -376,7 +513,15 @@ function SalespersonCommissionEditor({ agents, onChange }) {
         />,
         document.body
       )}
-    </>
+      {kpiModalOpen && ReactDOM.createPortal(
+        <KpiAttributionModal
+          roster={roster}
+          onClose={() => setKpiModalOpen(false)}
+          onSave={(next) => { onChange(next); setKpiModalOpen(false); }}
+        />,
+        document.body
+      )}
+    </Section>
   );
 }
 
@@ -425,27 +570,6 @@ function KpiRoleRows(roster, periodVolume) {
   }));
 }
 
-function KpiAttributionOverview({ roster, periodVolume }) {
-  const agents = filterRosterByRole(roster, "agent");
-  const referrers = filterRosterByRole(roster, "referrer");
-  return (
-    <div className="spa-attr-overview">
-      <div className="spa-attr-overview-stat">
-        <strong>{periodVolume ? fmtLitres(periodVolume) : "—"}</strong>
-        <span>Base usage volume</span>
-      </div>
-      <div className="spa-attr-overview-stat">
-        <strong>{agents.length}</strong>
-        <span>{agents.length === 1 ? "Agent" : "Agents"}</span>
-      </div>
-      <div className="spa-attr-overview-stat">
-        <strong>{referrers.length}</strong>
-        <span>{referrers.length === 1 ? "Referrer" : "Referrers"}</span>
-      </div>
-    </div>
-  );
-}
-
 function KpiRoleBar({ roster, periodVolume }) {
   const rows = KpiRoleRows(roster, periodVolume);
   return (
@@ -467,53 +591,6 @@ function KpiRoleBar({ roster, periodVolume }) {
           )}
         </div>
       ))}
-    </div>
-  );
-}
-
-function KpiRoleGrid({ roster, periodVolume }) {
-  const rows = KpiRoleRows(roster, periodVolume);
-  return (
-    <div className="spa-attr-card-grid">
-      {rows.map((a) => (
-        <div key={a.key} className="spa-attr-list-card">
-          <div className="spa-attr-list-card-row">
-            <div className="spa-attr-list-card-id">
-              <div className="spa-attr-list-card-copy">
-                <div className="spa-attr-list-card-name-row">
-                  <span className="spa-sp-name">
-                    <HIcon name={a.role === "referrer" ? "group" : "support_agent"} size={15} color="var(--navy-800)" /> {a.name}
-                  </span>
-                  <span className="spa-role-chip">{roleLabelOf(a.role)}</span>
-                </div>
-                <div className="spa-attr-list-card-metrics">
-                  <div className="spa-attr-inline-metric">
-                    <span className="ml-k">Split %</span>
-                    <strong className="spa-attr-list-strong">{a.pct}%</strong>
-                  </div>
-                  <div className="spa-attr-inline-metric">
-                    <span className="ml-k">Attributed Volume</span>
-                    <strong className="spa-attr-list-strong">{periodVolume ? fmtLitres(a.volume) : "—"}</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function KpiRoleSection({ role, roster, periodVolume }) {
-  if (!roster.length) return null;
-  return (
-    <div className="spa-attr-role-section">
-      <div className="spa-attr-role-head">
-        <h4 className="spa-attr-role-title">{roleTitleOf(role)}</h4>
-      </div>
-      <KpiRoleBar roster={roster} periodVolume={periodVolume} />
-      <KpiRoleGrid roster={roster} periodVolume={periodVolume} />
     </div>
   );
 }
@@ -563,50 +640,6 @@ function KpiRoleEditor({ role, draft, onSetPct, onAutoDistribute }) {
         <AttributionTotalReadout total={total} label={`${roleLabelOf(role)} total`} />
       </div>
     </div>
-  );
-}
-
-function KpiAttributionSection({ roster, periodVolume, onSave }) {
-  const [open, setOpen] = useState(false);
-  const hasRoster = roster.length > 0;
-  const info = "Splits KPI volume separately across agents and referrers. Each group totals 100% of base usage. Does not affect commission payments.";
-
-  return (
-    <Section title={
-      <span className="spa-attr-title">
-        KPI Volume Distribution
-        <span className="ml-tooltip-wrap spa-info-wrap" tabIndex={0}>
-          <span className="spa-info-trigger" aria-label="About KPI volume distribution">
-            <HIcon name="info" size={14} color="var(--fg-tertiary)" />
-          </span>
-          <span className="ml-tooltip spa-info-tooltip">{info}</span>
-        </span>
-      </span>
-    } right={
-      hasRoster ? (
-        <button className="hac-add-tier-btn" onClick={() => setOpen(true)}>
-          <HIcon name="edit" size={15} /> Edit distribution
-        </button>
-      ) : null
-    }>
-      {!hasRoster ? (
-        <div className="hac-empty-state">Add a salesperson under Commission Setting to distribute KPI volume.</div>
-      ) : (
-        <>
-          <KpiAttributionOverview roster={roster} periodVolume={periodVolume} />
-          <KpiRoleSection role="agent" roster={filterRosterByRole(roster, "agent")} periodVolume={periodVolume} />
-          <KpiRoleSection role="referrer" roster={filterRosterByRole(roster, "referrer")} periodVolume={periodVolume} />
-        </>
-      )}
-      {open && ReactDOM.createPortal(
-        <KpiAttributionModal
-          roster={roster}
-          onClose={() => setOpen(false)}
-          onSave={(next) => { onSave(next); setOpen(false); }}
-        />,
-        document.body
-      )}
-    </Section>
   );
 }
 
@@ -703,42 +736,14 @@ function SPDetailView({ account, onBack, onEdit }) {
           <TierGrid tiers={a.rebateTiers} amountLabel="Rebate Amount" />
         </Section>
 
-        <Section title="Commission Setting">
-          {/* Account-level validity — belongs to the SP account, not any agent */}
-          {(() => {
-            const months = a.commissionValidityMonths || DEFAULT_COMMISSION_VALIDITY_MONTHS;
-            const validityVal = (
-              <DField label="Commission Validity">
-                <div>
-                  <span className="hac-view-val spa-dval" style={{ padding: 0, minHeight: "auto" }}>{months} months</span>
-                  {a.activationDate && (
-                    <span className="hac-field-hint">
-                      {fmtDate(a.activationDate)} - {fmtDate(addMonths(a.activationDate, months))}
-                    </span>
-                  )}
-                </div>
-              </DField>
-            );
-            return a.activationDate ? (
-              <div className="hac-detail-grid">
-                <DField label="Activation Date">{fmtDate(a.activationDate)}</DField>
-                {validityVal}
-              </div>
-            ) : (
-              <div className="spa-validity-layout">
-                {validityVal}
-                <div className="spa-pending-callout spa-pending-callout-inline">
-                  <HIcon name="info" size={16} color="var(--fg-tertiary)" />
-                  <span>Activation date is set automatically on the first fuel transaction. Commission validity runs <b>{months} months</b> from that date.</span>
-                </div>
-              </div>
-            );
-          })()}
-
-          <SalespersonCommissionEditor agents={roster} onChange={setRoster} />
-        </Section>
-
-        <KpiAttributionSection roster={roster} periodVolume={a.periodVolume} onSave={setRoster} />
+        <SalespersonSetting
+          mode="view"
+          roster={roster}
+          onChange={setRoster}
+          periodVolume={a.periodVolume}
+          activationDate={a.activationDate}
+          validityMonths={a.commissionValidityMonths}
+        />
 
         <Section title="Payout Setting">
           <div className="hac-detail-grid">
@@ -961,9 +966,9 @@ function EditableTiers({ kind, tiers, onChange, externalAddTick = 0 }) {
 }
 
 /* ─── Add salesperson modal ─────────────────────────────────────── */
-function AddSalespersonModal({ initialValue = null, onClose, onSave }) {
+function AddSalespersonModal({ initialValue = null, defaultRole = "agent", onClose, onSave }) {
   const isEdit = !!initialValue;
-  const [role, setRole]         = useState(initialValue?.role || "agent");
+  const [role, setRole]         = useState(initialValue?.role || defaultRole);
   const [name, setName]         = useState(initialValue?.name || "");
   const noun = role === "agent" ? "Agent" : "Referrer";
   const pool = role === "agent" ? AGENT_POOL : REFERRER_POOL;
@@ -1019,13 +1024,10 @@ function SPFormView({ account, onBack, onSave }) {
 
   // Rebate tiers
   const setRebateTiers = t => set("rebateTiers", t);
-  // Salesperson commission editing is handled inline by <SalespersonCommissionEditor>.
+  // Salesperson commission + KPI editing is handled inline by <SalespersonSetting>.
 
   // Validity defaults to 36 months on create but is editable (not fixed).
   const validityMonths = Number(form.commissionValidityMonths) || DEFAULT_COMMISSION_VALIDITY_MONTHS;
-  const validityInlineText = form.activationDate
-    ? `${fmtDate(form.activationDate)} - ${fmtDate(addMonths(form.activationDate, validityMonths))}`
-    : "";
 
   return (
     <div style={{ paddingBottom: 90 }}>
@@ -1123,68 +1125,15 @@ function SPFormView({ account, onBack, onSave }) {
           <EditableTiers kind="rebate" tiers={form.rebateTiers} onChange={setRebateTiers} />
         </Section>
 
-        {/* Commission Setting — account-level validity at the top */}
-        <Section title="Commission Setting">
-          {(() => {
-            const validityField = (
-              <div className="hac-fg">
-                <FieldLabelWithInfo
-                  label="Commission Validity"
-                  info="Defaults to 36 months from the activation date. Stays with the SP account if it is transferred between agents."
-                />
-                <div className="spa-validity-input">
-                  <input className="hac-input" type="number" min="1" placeholder="36"
-                    value={form.commissionValidityMonths}
-                    onChange={e => set("commissionValidityMonths", e.target.value)} />
-                  <span className="spa-validity-suffix">months</span>
-                </div>
-                {validityInlineText && <span className="hac-field-hint">{validityInlineText}</span>}
-              </div>
-            );
-            return form.activationDate ? (
-              // Resolved — activation has happened: show the system date + the validity window.
-              <div className="hac-form-grid3">
-                <div className="hac-fg">
-                  <FieldLabelWithInfo
-                    label="Activation Date"
-                    info="System-generated from the first fuel transaction; cannot be edited."
-                  />
-                  <span className="hac-view-val spa-dval">{fmtDate(form.activationDate)}</span>
-                </div>
-                {validityField}
-              </div>
-            ) : (
-              // Pending — no first transaction yet: set the duration, explain the activation dependency.
-              <div className="spa-validity-layout spa-validity-layout-form">
-                <div className="hac-fg spa-validity-field">
-                  <FieldLabelWithInfo
-                    label="Commission Validity"
-                    info="Defaults to 36 months from the activation date. Stays with the SP account if it is transferred between agents."
-                  />
-                  <div className="spa-validity-input">
-                    <input className="hac-input" type="number" min="1" placeholder="36"
-                      value={form.commissionValidityMonths}
-                      onChange={e => set("commissionValidityMonths", e.target.value)} />
-                    <span className="spa-validity-suffix">months</span>
-                  </div>
-                  {validityInlineText && <span className="hac-field-hint">{validityInlineText}</span>}
-                </div>
-                <div className="spa-pending-callout spa-pending-callout-inline">
-                  <HIcon name="info" size={16} color="var(--fg-tertiary)" />
-                  <span>Activation date is set automatically on the first fuel transaction. Commission validity runs <b>{validityMonths} months</b> from that date.</span>
-                </div>
-              </div>
-            );
-          })()}
-
-          <SalespersonCommissionEditor agents={form.agents} onChange={next => setForm(f => ({ ...f, agents: next }))} />
-        </Section>
-
-        {/* KPI Volume Attribution — account-level allocation across the same roster */}
-        <KpiAttributionSection
+        {/* Salesperson Setting — umbrella: account-level dates + per-role groups (commission + KPI) */}
+        <SalespersonSetting
+          mode="edit"
           roster={form.agents}
+          onChange={next => setForm(f => ({ ...f, agents: next }))}
           periodVolume={form.periodVolume}
-          onSave={next => setForm(f => ({ ...f, agents: next }))}
+          activationDate={form.activationDate}
+          validityMonths={form.commissionValidityMonths}
+          onValidityChange={v => set("commissionValidityMonths", v)}
         />
 
         {/* Payout Setting */}
