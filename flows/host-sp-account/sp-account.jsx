@@ -165,6 +165,7 @@ function SPListView({ onView, onEdit, onCreate }) {
     sp:       { label: "Org",              placeholder: "Search by Organization Name" },
     provider: { label: "Provider Acc. No.", placeholder: "Search by Provider Acc. No." },
   };
+  const scopeWidthCh = Math.max(6, SCOPE_META[scope].label.length + 2);
 
   const pageData = filtered.slice((page - 1) * perPage, page * perPage);
 
@@ -175,7 +176,8 @@ function SPListView({ onView, onEdit, onCreate }) {
           {/* Search — leading scope dropdown (what to search by) + input */}
           <div className="hac-search-group scoped">
             <select className="hac-search-scope" value={scope}
-              onChange={e => { setScope(e.target.value); setPage(1); }} aria-label="Search by">
+              onChange={e => { setScope(e.target.value); setPage(1); }} aria-label="Search by"
+              style={{ width: `calc(${scopeWidthCh}ch + 28px)` }}>
               <option value="sp">Org</option>
               <option value="provider">Provider Acc. No.</option>
             </select>
@@ -400,9 +402,11 @@ function TierMetaRow({ activationText, validityText }) {
 function SalespersonUmbrellaCard({ person, periodVolume, activationDate, validityMonths, mode, onTiersChange, onEditDetails, onAddTier, onDelete, tierAddTick }) {
   const pct = Number(person.kpiSplitPct) || 0;
   const volume = periodVolume ? attributedVolume(pct, periodVolume) : null;
-  const months = Number(validityMonths) || DEFAULT_COMMISSION_VALIDITY_MONTHS;
-  const activationText = activationDate ? fmtDate(activationDate) : "Pending first transaction";
-  const validityText = activationDate ? `${fmtDate(activationDate)} - ${fmtDate(addMonths(activationDate, months))}` : `${months} months`;
+  const effectiveActivationDate = person.activationDate ?? activationDate;
+  const effectiveValidityMonths = person.commissionValidityMonths ?? validityMonths;
+  const months = Number(effectiveValidityMonths) || DEFAULT_COMMISSION_VALIDITY_MONTHS;
+  const activationText = effectiveActivationDate ? fmtDate(effectiveActivationDate) : "Pending first transaction";
+  const validityText = effectiveActivationDate ? `${fmtDate(effectiveActivationDate)} - ${fmtDate(addMonths(effectiveActivationDate, months))}` : `${months} months`;
   return (
     <div className="spa-sp-umbrella-card">
       <div className="spa-sp-edit-head">
@@ -410,9 +414,11 @@ function SalespersonUmbrellaCard({ person, periodVolume, activationDate, validit
           <HIcon name={person.role === "referrer" ? "group" : "support_agent"} size={15} color="var(--navy-800)" /> {person.name}
           <span className="spa-role-chip">{roleLabelOf(person.role)}</span>
         </div>
-        {mode === "edit" && (
-          <SalespersonCardMenu onEdit={onEditDetails} onAddTier={onAddTier} onDelete={onDelete} />
-        )}
+        <SalespersonCardMenu
+          onEdit={onEditDetails}
+          onAddTier={mode === "edit" ? onAddTier : null}
+          onDelete={mode === "edit" ? onDelete : null}
+        />
       </div>
       <div className="spa-umbrella-tiers">
         {mode === "view" && <TierMetaRow activationText={activationText} validityText={validityText} />}
@@ -438,7 +444,7 @@ function SalespersonUmbrellaCard({ person, periodVolume, activationDate, validit
 // Salesperson = the umbrella. One merged section: account-level dates, then per-role groups
 // (Agent / Referrer), each with its own constrained distribution bar + umbrella cards.
 // Shared by the detail (mode="view") and form (mode="edit") views so editing logic isn't forked.
-function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDate, validityMonths, onValidityChange }) {
+function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDate, validityMonths, onValidityChange, onOpenEditMode }) {
   const [spModalState, setSpModalState] = useState(null);
   const [kpiModalRole, setKpiModalRole] = useState(null);
   const [tierAddTick, setTierAddTick] = useState({});
@@ -447,7 +453,7 @@ function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDa
   const setAgent = (i, patch) => onChange(roster.map((a, j) => j === i ? { ...a, ...patch } : a));
   const addAgent = person => onChange([...roster, person]);
   const removeAgent = i => onChange(roster.filter((_, j) => j !== i));
-  const saveAgentDetails = (i, person) => onChange(roster.map((a, j) => j === i ? { ...a, name: person.name, role: person.role } : a));
+  const saveAgentDetails = (i, person) => onChange(roster.map((a, j) => j === i ? { ...a, ...person } : a));
   const requestTierAdd = i => setTierAddTick(t => ({ ...t, [i]: (t[i] || 0) + 1 }));
 
   const roleGroup = (role) => {
@@ -495,7 +501,10 @@ function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDa
                   validityMonths={validityMonths}
                   mode={mode}
                   onTiersChange={t => setAgent(i, { tiers: t })}
-                  onEditDetails={() => setSpModalState({ mode: "edit", index: i })}
+                  onEditDetails={() => {
+                    if (isEdit) setSpModalState({ mode: "edit", index: i });
+                    else if (onOpenEditMode) onOpenEditMode();
+                  }}
                   onAddTier={() => requestTierAdd(i)}
                   onDelete={() => removeAgent(i)}
                   tierAddTick={tierAddTick[i] || 0}
@@ -520,8 +529,10 @@ function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDa
         <AddSalespersonModal
           initialValue={spModalState.mode === "edit" ? roster[spModalState.index] : null}
           defaultRole={spModalState.role || "agent"}
+          activationDate={activationDate}
+          validityMonths={validityMonths}
           onClose={() => setSpModalState(null)}
-          onSave={person => {
+          onSave={({ person }) => {
             if (spModalState.mode === "edit") saveAgentDetails(spModalState.index, person);
             else addAgent(person);
           }}
@@ -752,6 +763,7 @@ function SPDetailView({ account, onBack, onEdit }) {
           periodVolume={a.periodVolume}
           activationDate={a.activationDate}
           validityMonths={a.commissionValidityMonths}
+          onOpenEditMode={onEdit}
         />
 
         <Section title="Payout Setting">
@@ -971,14 +983,34 @@ function EditableTiers({ kind, tiers, onChange, externalAddTick = 0 }) {
 }
 
 /* ─── Add salesperson modal ─────────────────────────────────────── */
-function AddSalespersonModal({ initialValue = null, defaultRole = "agent", onClose, onSave }) {
+function AddSalespersonModal({ initialValue = null, defaultRole = "agent", activationDate = "", validityMonths, onClose, onSave }) {
   const isEdit = !!initialValue;
   const [role, setRole]         = useState(initialValue?.role || defaultRole);
   const [name, setName]         = useState(initialValue?.name || "");
+  const [draftActivationDate, setDraftActivationDate] = useState(initialValue?.activationDate ?? activationDate ?? "");
+  const [draftValidityMonths, setDraftValidityMonths] = useState(
+    String(initialValue?.commissionValidityMonths ?? validityMonths ?? DEFAULT_COMMISSION_VALIDITY_MONTHS)
+  );
   const noun = role === "agent" ? "Agent" : "Referrer";
   const pool = role === "agent" ? AGENT_POOL : REFERRER_POOL;
   const canSave = !!name;
-  const save = () => { if (!canSave) return; onSave({ name, role, tiers: [] }); onClose(); };
+  const months = Number(draftValidityMonths) || DEFAULT_COMMISSION_VALIDITY_MONTHS;
+  const validityText = draftActivationDate
+    ? `${fmtDate(draftActivationDate)} - ${fmtDate(addMonths(draftActivationDate, months))}`
+    : `${months} months from activation`;
+  const save = () => {
+    if (!canSave) return;
+    onSave({
+      person: {
+        name,
+        role,
+        tiers: initialValue?.tiers || [],
+        activationDate: draftActivationDate,
+        commissionValidityMonths: months,
+      },
+    });
+    onClose();
+  };
 
   return (
     <Modal title={isEdit ? "Edit Salesperson" : "Add Salesperson"} onClose={onClose} footer={
@@ -1004,6 +1036,35 @@ function AddSalespersonModal({ initialValue = null, defaultRole = "agent", onClo
           {pool.map(p => <option key={p}>{p}</option>)}
         </select>
       </div>
+      {isEdit && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="hac-detail-grid" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "8px 18px", alignItems: "start" }}>
+            <div className="hac-fg">
+              <label className="hac-label">Activation Date</label>
+              <input
+                className="hac-input"
+                type="date"
+                value={draftActivationDate}
+                onChange={e => setDraftActivationDate(e.target.value)}
+              />
+            </div>
+            <div className="hac-fg">
+              <label className="hac-label">Commission Validity</label>
+              <div className="spa-validity-input">
+                <input
+                  className="hac-input"
+                  type="number"
+                  min="1"
+                  value={draftValidityMonths}
+                  onChange={e => setDraftValidityMonths(e.target.value)}
+                />
+                <span className="spa-validity-suffix">months</span>
+              </div>
+              <div className="spa-inline-help">{validityText}</div>
+            </div>
+          </div>
+        </div>
+      )}
     </Modal>
   );
 }
