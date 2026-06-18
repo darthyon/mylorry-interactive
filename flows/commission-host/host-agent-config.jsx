@@ -86,7 +86,7 @@ function buildAgentConfig(agent) {
 }
 
 /* ─── KPI Progress block (segmented axis) — inline inside KPI Config ─── */
-function KPIProgressBlock({ kpi, target, thresholds }) {
+function KPIProgressBlock({ kpi, target, thresholds, showSummary = true }) {
   const actual = kpi?.actual ?? 0;
   const period = kpi?.progressPeriod || "Dec 1–31";
   const phase  = kpi?.phase || (kpi?.locked ? "complete" : "active");
@@ -118,22 +118,23 @@ function KPIProgressBlock({ kpi, target, thresholds }) {
   });
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      {/* Metric row */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <div className="hac-kpiaxis-pct" style={{ color: markerCol, lineHeight: .9, display:"inline-flex", alignItems:"center", gap:5 }}>
-          <span>{isFuture ? "–" : pct + "%"}</span>
-          {!isFuture && progressMeta.isAchieved && <span style={{ fontSize:11, lineHeight:1 }}>✓</span>}
+    <div className="hac-kpi-progress-block">
+      {showSummary && (
+        <div className="hac-kpiaxis-top">
+          <div className="hac-kpiaxis-pct" style={{ color: markerCol, display:"inline-flex", alignItems:"center", gap:5 }}>
+            <span>{isFuture ? "–" : pct + "%"}</span>
+            {!isFuture && progressMeta.isAchieved && <span style={{ fontSize:11, lineHeight:1 }}>✓</span>}
+          </div>
+          <div className="hac-kpiaxis-readout">
+            <span>Achieved <b>{isFuture ? "–" : actual.toLocaleString("en-US") + " L"}</b></span>
+            {!isFuture && zone && (
+              <span style={{ color: "var(--fg-secondary)" }}>
+                Current multiplier {zone.mult}%
+              </span>
+            )}
+          </div>
         </div>
-        <div className="hac-kpiaxis-readout" style={{ gap: 2 }}>
-          <span>Achieved <b>{isFuture ? "–" : actual.toLocaleString("en-US") + " L"}</b></span>
-          {!isFuture && zone && (
-            <span style={{ color: "var(--fg-secondary)" }}>
-              Current multiplier {zone.mult}%
-            </span>
-          )}
-        </div>
-      </div>
+      )}
       {/* Segmented axis directly underneath */}
       <div className={"hac-kpiaxis" + (isFuture ? " future" : "")} style={{ marginTop: 0 }}>
         <div className="hac-kpiseg">
@@ -608,7 +609,7 @@ const EVAL_PERIOD_GROUPS = [
   {
     label: "Custom period",
     options: [
-      { label: "Custom range", description: "Choose a start and end date manually. Default shortcut: Jan 1 - Dec 31." },
+      { label: "Custom range", description: "Choose a start and end date manually. Default window: Dec 1 - Dec 31." },
     ],
   },
   {
@@ -625,7 +626,7 @@ const EVAL_PERIOD_GROUPS = [
     options: [
       { label: "Last completed quarter", description: "Uses the previous completed calendar quarter." },
       { label: "Last completed half year", description: "Uses the previous completed half-year period, H1 or H2." },
-      { label: "Last completed year", description: "Uses the previous completed calendar year, Jan 1 - Dec 31." },
+      { label: "Last completed year", description: "Uses the previous completed KPI window to set the following year's multiplier." },
     ],
   },
 ];
@@ -673,9 +674,9 @@ function evalPeriodSummary(period) {
     "Last 12 completed months": "Most recent 12 completed reporting months",
     "Last completed quarter": "Previous completed calendar quarter",
     "Last completed half year": "Previous completed half-year period, H1 or H2",
-    "Last completed year": "Previous completed calendar year, Jan 1 - Dec 31",
+    "Last completed year": "Period used to calculate KPI achievement and set the following year's multiplier. Default: Dec 1 - Dec 31, configurable.",
   };
-  return map[period] || "Previous completed calendar year, Jan 1 - Dec 31";
+  return map[period] || "Period used to calculate KPI achievement and set the following year's multiplier. Default: Dec 1 - Dec 31, configurable.";
 }
 
 /* ─── KPI config section ─────────────────────────────────────── */
@@ -701,6 +702,16 @@ function CommissionSection({ kpi, editing, showHistory, setShowHistory }) {
   );
   const [showThresholdModal, setShowThresholdModal] = useState(false);
   const [editingThreshold, setEditingThreshold]   = useState(null);
+  const progressPct = kpiTarget ? Math.round(((kpi?.actual ?? 0) / kpiTarget) * 1000) / 10 : 0;
+  const { zones: progressZones } = kpiZones(kpiThresholds);
+  const activeZone = progressZones.length ? kpiZoneOf(progressPct, progressZones) : null;
+  const progressMeta = KPIProgressMeta(progressPct);
+  const evaluationWindowLabel = evalPeriod === "Custom range"
+    ? formatRangeDisplay(customStartDate, customEndDate)
+    : (kpi?.progressPeriod || evalPeriod);
+  const evaluationWindowSummary = evalPeriod === "Custom range"
+    ? "Custom KPI evaluation window"
+    : evalPeriodSummary(evalPeriod);
 
   // Final tier enforced single — clear the flag on every other tier when set.
   const handleSaveThreshold = (data, editId) => {
@@ -743,127 +754,130 @@ function CommissionSection({ kpi, editing, showHistory, setShowHistory }) {
         <div className="hac-cc-section">
           {/* KPI Summary — 2-column split */}
           <div className={"hac-kpi-summary" + (editing ? " editing" : "")}>
-            {/* Left: KPI Progress (view-only) */}
-            {!editing && kpiTarget > 0 && (
-              <div className="hac-kpi-summary-left">
-                <div className="hac-kpi-summary-label">
-                  KPI Progress
-                  <InfoTip text="KPI progress sets the multiplier applied to the agent's commission." />
+            {editing ? (
+              <div className={"hac-kpi-edit-grid" + (evalPeriod === "Custom range" ? " custom-range" : "")}>
+                <div className="hac-kpi-summary-group">
+                  <div className="hac-kpi-summary-label">
+                    Evaluation Period
+                    <button className="ml-info-btn" type="button" aria-label="How evaluation periods work" onClick={() => setShowEvalHelp(true)}>
+                      <HIcon name="info" size={14} />
+                    </button>
+                  </div>
+                  <select className="hac-select hac-kpi-field" value={evalPeriod} onChange={e => setEvalPeriod(e.target.value)}>
+                    {EVAL_PERIOD_GROUPS.map(group => (
+                      <optgroup key={group.label} label={group.label}>
+                        {group.options.map(option => <option key={option.label} value={option.label}>{option.label}</option>)}
+                      </optgroup>
+                    ))}
+                  </select>
                 </div>
-                <KPIProgressBlock kpi={kpi} target={kpiTarget} thresholds={kpiThresholds} />
+
+                {evalPeriod === "Custom range" && (
+                  <div className="hac-kpi-summary-group">
+                    <div className="hac-kpi-summary-label">Date range</div>
+                    <div className="hac-date-range-field">
+                      <input
+                        className="hac-date-range-input"
+                        type="date"
+                        value={customStartDate}
+                        onChange={e => {
+                          const next = e.target.value;
+                          setCustomStartDate(next);
+                          if (useDefaultRange && (next !== defaultCustomStart || customEndDate !== defaultCustomEnd)) {
+                            setUseDefaultRange(false);
+                          }
+                        }}
+                      />
+                      <span className="hac-date-range-sep">-</span>
+                      <input
+                        className="hac-date-range-input"
+                        type="date"
+                        value={customEndDate}
+                        onChange={e => {
+                          const next = e.target.value;
+                          setCustomEndDate(next);
+                          if (useDefaultRange && (customStartDate !== defaultCustomStart || next !== defaultCustomEnd)) {
+                            setUseDefaultRange(false);
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="hac-kpi-shortcut">
+                      <label className="hac-check-row hac-kpi-default-check">
+                        <input
+                          type="checkbox"
+                          checked={useDefaultRange}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setUseDefaultRange(true);
+                              setCustomStartDate(defaultCustomStart);
+                              setCustomEndDate(defaultCustomEnd);
+                            } else {
+                              setUseDefaultRange(false);
+                            }
+                          }}
+                        />
+                        <span>Use Dec 1 - Dec 31 default</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                <div className="hac-kpi-summary-group">
+                  <div className="hac-kpi-summary-label">
+                    KPI Target Volume
+                    <InfoTip text="Total fuel volume the agent must reach within the evaluation period." />
+                  </div>
+                  <div className="hac-kpi-input-unit">
+                    <input className="hac-input hac-kpi-field" type="number" value={kpiTarget}
+                      onChange={e => setKpiTarget(+e.target.value)} />
+                    <span className="hac-kpi-unit">L</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="hac-kpi-flat">
+                <div className="hac-kpi-flat-head">
+                  <div className="hac-kpi-flat-titlewrap">
+                    <div className="hac-kpi-hero-icon">
+                      <HIcon name="track_changes" size={18} color="var(--green-600)" />
+                    </div>
+                    <div className="hac-kpi-flat-title">KPI Progress</div>
+                    <div className="hac-kpi-flat-period">Evaluation period: {evaluationWindowLabel}</div>
+                    <button className="ml-info-btn" type="button" aria-label="How evaluation periods work" onClick={() => setShowEvalHelp(true)}>
+                      <HIcon name="info" size={14} />
+                    </button>
+                  </div>
+                  {activeZone && (
+                    <div className="hac-kpi-flat-chip">{activeZone.tier} · {activeZone.mult}%</div>
+                  )}
+                </div>
+
+                <div className="hac-kpi-flat-metrics">
+                  <div className="hac-kpi-flat-metric">
+                    <span className="hac-kpi-flat-label">KPI volume</span>
+                    <b className="hac-kpi-flat-value">{HC.fmtL(kpi?.actual ?? 0)}</b>
+                  </div>
+                  <div className="hac-kpi-flat-metric">
+                    <span className="hac-kpi-flat-label">Target volume</span>
+                    <b className="hac-kpi-flat-value">{HC.fmtL(kpiTarget)}</b>
+                  </div>
+                  <div className="hac-kpi-flat-metric">
+                    <span className="hac-kpi-flat-label">KPI progress</span>
+                    <b className="hac-kpi-flat-value" style={{ color: progressMeta.solid, display:"inline-flex", alignItems:"center", gap:5 }}>
+                      <span>{progressPct.toFixed(1)}%</span>
+                      {progressMeta.isAchieved && <span style={{ fontSize:11, lineHeight:1 }}>✓</span>}
+                    </b>
+                  </div>
+                  <div className="hac-kpi-flat-metric">
+                    <span className="hac-kpi-flat-label">Applied multiplier</span>
+                    <b className="hac-kpi-flat-value">{activeZone ? `${activeZone.mult}%` : "—"}</b>
+                  </div>
+                </div>
+
+                <KPIProgressBlock kpi={kpi} target={kpiTarget} thresholds={kpiThresholds} showSummary={false} />
               </div>
             )}
-
-            {/* Right: Evaluation Period + Target Volume */}
-            <div className={"hac-kpi-summary-right" + (editing ? "" : " cols2")}>
-              {editing ? (
-                <div className={"hac-kpi-edit-grid" + (evalPeriod === "Custom range" ? " custom-range" : "")}>
-                  <div className="hac-kpi-summary-group">
-                    <div className="hac-kpi-summary-label">
-                      Evaluation Period
-                      <button className="ml-info-btn" type="button" aria-label="How evaluation periods work" onClick={() => setShowEvalHelp(true)}>
-                        <HIcon name="info" size={14} />
-                      </button>
-                    </div>
-                    <select className="hac-select hac-kpi-field" value={evalPeriod} onChange={e => setEvalPeriod(e.target.value)}>
-                      {EVAL_PERIOD_GROUPS.map(group => (
-                        <optgroup key={group.label} label={group.label}>
-                          {group.options.map(option => <option key={option.label} value={option.label}>{option.label}</option>)}
-                        </optgroup>
-                      ))}
-                    </select>
-                  </div>
-
-                  {evalPeriod === "Custom range" && (
-                    <div className="hac-kpi-summary-group">
-                      <div className="hac-kpi-summary-label">Date range</div>
-                      <div className="hac-date-range-field">
-                        <input
-                          className="hac-date-range-input"
-                          type="date"
-                          value={customStartDate}
-                          onChange={e => {
-                            const next = e.target.value;
-                            setCustomStartDate(next);
-                            if (useDefaultRange && (next !== defaultCustomStart || customEndDate !== defaultCustomEnd)) {
-                              setUseDefaultRange(false);
-                            }
-                          }}
-                        />
-                        <span className="hac-date-range-sep">-</span>
-                        <input
-                          className="hac-date-range-input"
-                          type="date"
-                          value={customEndDate}
-                          onChange={e => {
-                            const next = e.target.value;
-                            setCustomEndDate(next);
-                            if (useDefaultRange && (customStartDate !== defaultCustomStart || next !== defaultCustomEnd)) {
-                              setUseDefaultRange(false);
-                            }
-                          }}
-                        />
-                      </div>
-                      <div className="hac-kpi-shortcut">
-                        <label className="hac-check-row hac-kpi-default-check">
-                          <input
-                            type="checkbox"
-                            checked={useDefaultRange}
-                            onChange={e => {
-                              if (e.target.checked) {
-                                setUseDefaultRange(true);
-                                setCustomStartDate(defaultCustomStart);
-                                setCustomEndDate(defaultCustomEnd);
-                              } else {
-                                setUseDefaultRange(false);
-                              }
-                            }}
-                          />
-                          <span>Use Jan-Dec default</span>
-                        </label>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="hac-kpi-summary-group">
-                    <div className="hac-kpi-summary-label">
-                      KPI Target Volume
-                      <InfoTip text="Total fuel volume the agent must reach within the evaluation period." />
-                    </div>
-                    <div className="hac-kpi-input-unit">
-                      <input className="hac-input hac-kpi-field" type="number" value={kpiTarget}
-                        onChange={e => setKpiTarget(+e.target.value)} />
-                      <span className="hac-kpi-unit">L</span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="hac-kpi-summary-group">
-                    <div className="hac-kpi-summary-label">
-                      KPI Target Volume
-                      <InfoTip text="Total fuel volume the agent must reach within the evaluation period." />
-                    </div>
-                    <span className="hac-big-num" style={{ marginTop:2 }}>{HC.fmtL(kpiTarget)}</span>
-                  </div>
-
-                  <div className="hac-kpi-summary-group">
-                    <div className="hac-kpi-summary-label">
-                      Evaluation Period
-                      <button className="ml-info-btn" type="button" aria-label="How evaluation periods work" onClick={() => setShowEvalHelp(true)}>
-                        <HIcon name="info" size={14} />
-                      </button>
-                    </div>
-                    <div className="hac-kpi-readout">
-                      <span className="hac-kpi-readout-main">{evalPeriod}</span>
-                      <span className="hac-kpi-readout-sub">
-                        {evalPeriod === "Custom range" ? formatRangeDisplay(customStartDate, customEndDate) : evalPeriodSummary(evalPeriod)}
-                      </span>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
           </div>
 
           {/* Multiplier thresholds — card UI */}
@@ -951,7 +965,7 @@ function CommissionSection({ kpi, editing, showHistory, setShowHistory }) {
           onClose={() => setShowEvalHelp(false)}
           footer={<button className="hac-modal-save" onClick={() => setShowEvalHelp(false)}>Got it</button>}
         >
-          <div className="hac-help-subtitle">Choose how KPI performance is measured over time.</div>
+          <div className="hac-help-subtitle">Choose the period used to calculate KPI achievement. That result sets the multiplier for the following year.</div>
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
             {[
               { label: "Custom period", description: "Set a specific start and end date." },
