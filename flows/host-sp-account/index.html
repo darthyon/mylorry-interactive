@@ -121,6 +121,21 @@ b { font-weight: 600; }
 .spa-final-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border: 1px solid var(--border-light); border-radius: 999px; background: var(--bg-subtle); color: var(--fg-secondary); }
 .spa-tier-stack-field .ml-k,
 .spa-tier-body .ml-k { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0; flex-shrink: 0; }
+.spa-sp-umbrella-card .spa-tier-stack.is-edit .spa-tier-stack-card {
+  grid-template-columns: minmax(120px, 0.9fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 14px 16px;
+}
+.spa-sp-umbrella-card .spa-tier-stack-field {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px;
+  align-items: baseline;
+}
+.spa-sp-umbrella-card .spa-tier-stack-field b {
+  min-width: 0;
+  white-space: nowrap;
+}
 
 .spa-tier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 320px)); justify-content: start; gap: 12px; margin-top: 12px; }
 .spa-tier-card { border: 1px solid var(--border-light); border-radius: 14px; padding: 14px 16px; background: #fff; }
@@ -168,6 +183,8 @@ b { font-weight: 600; }
 .spa-validity-input { display: flex; align-items: center; gap: 8px; }
 .spa-validity-input .hac-input { width: 110px; }
 .spa-validity-suffix { font-size: 13px; color: var(--fg-secondary); }
+.spa-inline-readout { min-height: 30px; display: flex; align-items: center; font-size: 13px; font-weight: 600; color: var(--fg-primary); }
+.spa-inline-help { margin-top: 4px; font-size: 12px; line-height: 1.35; color: var(--fg-secondary); }
 
 .spa-sp-edit-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 
@@ -242,6 +259,7 @@ b { font-weight: 600; }
   .spa-tier-stack-card { grid-template-columns: 1fr 1fr; gap: 10px 16px; position: relative; }
   .spa-tier-stack-id { grid-column: 1 / -1; }
   .spa-tier-stack.is-edit .spa-tier-stack-card { grid-template-columns: 1fr 1fr; padding-right: 38px; }
+  .spa-sp-umbrella-card .spa-tier-stack-field { display: flex; }
   .spa-tier-stack.is-edit .spa-tier-stack-card > *:last-child { position: absolute; top: 12px; right: 14px; }
   .spa-tier-grid { grid-template-columns: 1fr; }
   .spa-tier-body { grid-template-columns: 1fr; }
