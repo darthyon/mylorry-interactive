@@ -311,31 +311,11 @@ function FieldLabelWithInfo({ label, info }) {
   );
 }
 
-// variant="list" (compact rows, used in the cramped salesperson umbrella cards)
-// variant="cards" (full-width 2-col cards, used by Rebate Setting which has the space).
+// variant="list" is the default commission-style stacked container.
+// variant="compact" keeps the same internal row language, but constrains width for secondary sections.
 function TierGrid({ tiers, amountLabel = "Comm. Amount", variant = "list" }) {
-  if (variant === "cards") {
-    return (
-      <div className="spa-tier-grid">
-        {tiers.map((t, i) => (
-          <div className="spa-tier-card" key={i}>
-            <div className="spa-tier-head">
-              <div className="spa-tier-title-wrap">
-                <span className="spa-tier-label"><HIcon name="stacked_bar_chart" size={13} /> Tier {i + 1}</span>
-                {t.final && <span className="spa-final-badge">Final</span>}
-              </div>
-            </div>
-            <div className="spa-tier-body">
-              <div><span className="ml-k">Usage</span><b>{t.final ? "> " : "≤ "}{Number(t.usageMax).toLocaleString("en-MY")} ltr</b></div>
-              <div><span className="ml-k">{amountLabel}</span><b>{t.commissionAmount}</b></div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
   return (
-    <div className="spa-tier-stack">
+    <div className={"spa-tier-stack" + (variant === "compact" ? " compact" : "")}>
       {tiers.map((t, i) => (
         <div className="spa-tier-stack-card" key={i}>
           <div className="spa-tier-stack-id">
@@ -350,9 +330,8 @@ function TierGrid({ tiers, amountLabel = "Comm. Amount", variant = "list" }) {
   );
 }
 
-// Account-level fields above the salesperson cards: base usage volume, activation date,
-// commission validity — plain fields like the other detail sections. Pre-activation accounts
-// keep the disclaimer callout (activation is set automatically on the first fuel transaction).
+// Shared account-level context above the salesperson groups. Base usage volume remains at the
+// section level; activation/validity move into each commission tier block in view mode.
 function SalespersonTopFields({ mode, periodVolume, activationDate, validityMonths, onValidityChange }) {
   const months = Number(validityMonths) || DEFAULT_COMMISSION_VALIDITY_MONTHS;
   const rangeText = activationDate ? `${fmtDate(activationDate)} - ${fmtDate(addMonths(activationDate, months))}` : "";
@@ -401,6 +380,21 @@ function SalespersonTopFields({ mode, periodVolume, activationDate, validityMont
   );
 }
 
+function TierMetaRow({ activationText, validityText }) {
+  return (
+    <div className="spa-tier-meta-row">
+      <div className="spa-tier-meta-item">
+        <span className="ml-k">Activation Date</span>
+        <span className="spa-tier-meta-value">{activationText}</span>
+      </div>
+      <div className="spa-tier-meta-item">
+        <span className="ml-k">Comm. Validity</span>
+        <span className="spa-tier-meta-value">{validityText}</span>
+      </div>
+    </div>
+  );
+}
+
 // One salesperson = one umbrella card: identity + commission tiering + KPI attribution footer.
 // View renders read-only TierGrid; edit renders EditableTiers + the card menu.
 function SalespersonUmbrellaCard({ person, periodVolume, activationDate, validityMonths, mode, onTiersChange, onEditDetails, onAddTier, onDelete, tierAddTick }) {
@@ -421,6 +415,7 @@ function SalespersonUmbrellaCard({ person, periodVolume, activationDate, validit
         )}
       </div>
       <div className="spa-umbrella-tiers">
+        {mode === "view" && <TierMetaRow activationText={activationText} validityText={validityText} />}
         {mode === "view" && <div className="spa-umbrella-tiers-label">Commission tiering</div>}
         {mode === "edit"
           ? <EditableTiers kind="commission" tiers={person.tiers} onChange={onTiersChange} externalAddTick={tierAddTick} />
@@ -434,14 +429,6 @@ function SalespersonUmbrellaCard({ person, periodVolume, activationDate, validit
         <div className="spa-attr-inline-metric">
           <span className="ml-k">KPI Volume Counted</span>
           <strong className="spa-attr-list-strong">{volume != null ? fmtLitres(volume) : "—"}</strong>
-        </div>
-        <div className="spa-attr-inline-metric">
-          <span className="ml-k">Activation Date</span>
-          <strong className="spa-attr-list-strong">{activationText}</strong>
-        </div>
-        <div className="spa-attr-inline-metric">
-          <span className="ml-k">Comm. Validity</span>
-          <strong className="spa-attr-list-strong">{validityText}</strong>
         </div>
       </div>
     </div>
@@ -745,11 +732,17 @@ function SPDetailView({ account, onBack, onEdit }) {
         </Section>
 
         <Section title="Rebate Setting">
-          <div className="hac-detail-grid">
-            <DField label="Rebate Beneficiary">{a.rebateBeneficiary}</DField>
-            <DField label="Is Master">{a.isMaster ? "Yes" : "No"}</DField>
+          <div className="spa-rebate-layout">
+            <div className="spa-rebate-side">
+              <div className="hac-detail-grid">
+                <DField label="Rebate Beneficiary">{a.rebateBeneficiary}</DField>
+                <DField label="Is Master">{a.isMaster ? "Yes" : "No"}</DField>
+              </div>
+            </div>
+            <div className="spa-rebate-side">
+              <TierGrid tiers={a.rebateTiers} amountLabel="Rebate Amount" variant="compact" />
+            </div>
           </div>
-          <TierGrid tiers={a.rebateTiers} amountLabel="Rebate Amount" variant="cards" />
         </Section>
 
         <SalespersonSetting
@@ -949,30 +942,8 @@ function EditableTiers({ kind, tiers, onChange, externalAddTick = 0 }) {
       </div>
       {tiers.length === 0 ? (
         <div className="hac-tier-empty"><span><HIcon name="error" size={15} /> Tier 1</span>At least one tier is required</div>
-      ) : kind === "rebate" ? (
-        <div className="spa-tier-grid">
-          {tiers.map((t, i) => (
-            <div className="spa-tier-card" key={i}>
-              <div className="spa-tier-head">
-                <div className="spa-tier-title-wrap">
-                  <span className="spa-tier-label"><HIcon name="stacked_bar_chart" size={13} /> Tier {i + 1}</span>
-                  {t.final && <span className="spa-final-badge">Final</span>}
-                </div>
-                <TierCardMenu
-                  onEdit={() => setModal({ editIndex: i })}
-                  onAddTier={() => setModal({ editIndex: null })}
-                  onDelete={() => remove(i)}
-                />
-              </div>
-              <div className="spa-tier-body">
-                <div><span className="ml-k">Usage</span><b>{t.final ? "> " : "≤ "}{Number(t.usageMax).toLocaleString("en-MY")} ltr</b></div>
-                <div><span className="ml-k">{amountLabel}</span><b>{t.commissionAmount}</b></div>
-              </div>
-            </div>
-          ))}
-        </div>
       ) : (
-        <div className="spa-tier-stack is-edit">
+        <div className={"spa-tier-stack is-edit" + (kind === "rebate" ? " compact" : "")}>
           {tiers.map((t, i) => (
             <div className="spa-tier-stack-card" key={i}>
               <div className="spa-tier-stack-id">
@@ -1148,15 +1119,21 @@ function SPFormView({ account, onBack, onSave }) {
 
         {/* Rebate Setting */}
         <Section title="Rebate Setting">
-          <div className="hac-fg" style={{ marginBottom: 14 }}>
-            <label className="hac-label">Rebate Beneficiary</label>
-            <RadioRow name="beneficiary" options={BENEFICIARIES} value={form.rebateBeneficiary} onChange={v => set("rebateBeneficiary", v)} />
+          <div className="spa-rebate-layout">
+            <div className="spa-rebate-side">
+              <div className="hac-fg" style={{ marginBottom: 14 }}>
+                <label className="hac-label">Rebate Beneficiary</label>
+                <RadioRow name="beneficiary" options={BENEFICIARIES} value={form.rebateBeneficiary} onChange={v => set("rebateBeneficiary", v)} />
+              </div>
+              <label className="hac-check-row">
+                <input type="checkbox" checked={form.isMaster} onChange={e => set("isMaster", e.target.checked)} />
+                <span>Is Master</span>
+              </label>
+            </div>
+            <div className="spa-rebate-side">
+              <EditableTiers kind="rebate" tiers={form.rebateTiers} onChange={setRebateTiers} />
+            </div>
           </div>
-          <label className="hac-check-row" style={{ marginBottom: 16 }}>
-            <input type="checkbox" checked={form.isMaster} onChange={e => set("isMaster", e.target.checked)} />
-            <span>Is Master</span>
-          </label>
-          <EditableTiers kind="rebate" tiers={form.rebateTiers} onChange={setRebateTiers} />
         </Section>
 
         {/* Salesperson Setting — umbrella: account-level dates + per-role groups (commission + KPI) */}
