@@ -101,5 +101,31 @@ window.FLOWS = {
         { id: "agent-settings",    name: "Settings",           status: "planned" },
       ],
     },
+    {
+      id: "referrer",
+      name: "Referrer Portal",
+      icon: "group",
+      flows: [
+        {
+          id: "commission-referrer",
+          name: "Commission",
+          status: "ready",
+          route: "flows/commission-referrer/index.html",
+          desc: "One page — live KPI, YTD summary, 12-month trend, statements by month or SP account",
+          screens: [
+            { label: "Commission", note: "Live KPI hero + YTD cards + monthly trend, with a By Month / By SP Account statement switch and drill-to-transaction." },
+          ],
+        },
+        { id: "referrer-sp-account",  name: "SP Account",         status: "planned" },
+        { id: "referrer-fleet-card",  name: "Fleet Card",         status: "planned" },
+        { id: "referrer-transaction", name: "Transaction",        status: "planned" },
+        { id: "referrer-rebate",      name: "Rebate",             status: "planned" },
+        { id: "referrer-subsidy",     name: "Subsidy Settlement", status: "planned" },
+        { id: "referrer-topup",       name: "Top-Up",             status: "planned" },
+        { id: "referrer-payment",     name: "Payment History",    status: "planned" },
+        { id: "referrer-report",      name: "Report",             status: "planned" },
+        { id: "referrer-settings",    name: "Settings",           status: "planned" },
+      ],
+    },
   ],
 };
