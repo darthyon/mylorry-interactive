@@ -68,8 +68,7 @@ function Sidebar() {
           {icon:'grid_view',       label:'Dashboard'},
           {icon:'manage_accounts', label:'Host User'},
           {icon:'swap_horiz',      label:'User Activity'},
-          {icon:'support_agent',   label:'Agent'},
-          {icon:'paid',            label:'Commission'},
+          {icon:'support_agent',   label:'Salesperson'},
           {icon:'diamond',         label:'Subscription'},
           {icon:'campaign',        label:'Announce..'},
         ].map(({icon,label}) => (
@@ -169,20 +168,21 @@ function StatusCell({ status, pending, failed, utype }) {
 }
 
 /* ── Status Strip ──────────────────────────────────────────────── */
-function StatusStrip({ state, utype, count, failCount, onView, onDismiss, fading }) {
+function StatusStrip({ state, utype, count, failCount, eta, onView, onDismiss, fading }) {
   if (!state) return null;
   const tw = utype === 'status' ? 'status' : 'limits';
   const cards = n => `${n} fleet ${n === 1 ? 'card' : 'cards'}`;
   const C = {
-    updating: { ico: <div className="strip-spinner"></div>,         primary: `Updating ${tw} for ${cards(count)}…`,       sec: 'Auto-refreshing affected fields' },
-    delayed:  { ico: <div className="strip-spinner"></div>,         primary: 'Still updating…',                            sec: 'This is taking longer than usual' },
-    success:  { ico: <Icon name="check_circle" size={18} fill={1} style={{color:'#00AA4F'}} />, primary: `${cards(count)} updated`, sec: null },
-    partial:  { ico: <Icon name="warning"      size={18} fill={1} style={{color:'#E6A700'}} />, primary: `${count - failCount} updated, ${failCount} needs attention`, sec: null },
-    failure:  { ico: <Icon name="error"        size={18} fill={1} style={{color:'#FF7476'}} />, primary: 'Update failed. No changes were applied.', sec: null },
+    updating: { ico: <div className="strip-spinner"></div>,         primary: `Updating ${tw} for ${cards(count)}…`,       sec: 'Auto-refreshing affected fields', bg: 'rgba(0,0,0,0.02)' },
+    queued:   { ico: <Icon name="hourglass_empty" size={18} style={{color:'#E6A700'}} />, primary: eta?.primary ?? 'Update queued…', sec: eta?.sec ?? null, bg: 'rgba(230,167,0,0.07)' },
+    delayed:  { ico: <div className="strip-spinner"></div>,         primary: 'Still updating…',                            sec: 'This is taking longer than usual', bg: 'rgba(0,0,0,0.02)' },
+    success:  { ico: <Icon name="check_circle" size={18} fill={1} style={{color:'#00AA4F'}} />, primary: `${cards(count)} updated`, sec: null, bg: 'rgba(0,170,79,0.07)' },
+    partial:  { ico: <Icon name="warning"      size={18} fill={1} style={{color:'#E6A700'}} />, primary: `${count - failCount} updated, ${failCount} needs attention`, sec: null, bg: 'rgba(230,167,0,0.07)' },
+    failure:  { ico: <Icon name="error"        size={18} fill={1} style={{color:'#FF7476'}} />, primary: 'Update failed. No changes were applied.', sec: null, bg: 'rgba(255,116,118,0.08)' },
   }[state];
   if (!C) return null;
   return (
-    <div className={`strip${fading ? ' strip-fade-out' : ''}`}>
+    <div className={`strip${fading ? ' strip-fade-out' : ''}`} style={{background: C.bg}}>
       <div className="strip-icon">{C.ico}</div>
       <div className="strip-body">
         <span className="strip-primary">{C.primary}</span>
@@ -192,7 +192,7 @@ function StatusStrip({ state, utype, count, failCount, onView, onDismiss, fading
         {(state === 'partial' || state === 'failure') && (
           <button className="btn-view" onClick={onView}>View</button>
         )}
-        {(state === 'partial' || state === 'failure' || state === 'delayed') && (
+        {(state === 'partial' || state === 'failure' || state === 'delayed' || state === 'queued') && (
           <button className="btn-x" onClick={onDismiss}><Icon name="close" size={15} /></button>
         )}
       </div>
@@ -279,8 +279,7 @@ function EditLimitModal({ count, onClose, onDone }) {
 
 /* ── Tweaks defaults ───────────────────────────────────────────── */
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "outcome": "success",
-  "delay": false
+  "outcome": "success"
 }/*EDITMODE-END*/;
 
 /* ── App ───────────────────────────────────────────────────────── */
@@ -288,12 +287,13 @@ function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const [sel, setSel]         = useState(new Set([3,4,5]));
   const [modal, setModal]     = useState(null);   // 'status' | 'limit'
-  const [strip, setStrip]     = useState(null);   // 'updating'|'delayed'|'success'|'partial'|'failure'
+  const [strip, setStrip]     = useState(null);   // 'updating'|'queued'|'delayed'|'success'|'partial'|'failure'
   const [utype, setUtype]     = useState(null);   // 'status' | 'limit'
   const [ucount, setUcount]   = useState(0);
   const [pending, setPending] = useState(new Set());
   const [failed, setFailed]   = useState(new Set());
   const [fading, setFading]   = useState(false);
+  const [eta, setEta]         = useState(null);   // { phase, primary, sec }
   const lastRows = useRef(new Set());
   const timers   = useRef([]);
 
@@ -305,6 +305,27 @@ function App() {
   const allChk   = sel.size === ROWS.length;
   const someChk  = sel.size > 0 && !allChk;
 
+  const resolve = useCallback((rowSet) => {
+    if (t.outcome === 'success') {
+      setStrip('success');
+      setPending(new Set());
+      addTimer(() => {
+        setFading(true);
+        addTimer(() => { setStrip(null); setFading(false); setEta(null); }, 550);
+      }, 2200);
+    } else if (t.outcome === 'partial') {
+      const arr = [...rowSet];
+      setFailed(new Set([arr[arr.length - 1]]));
+      setPending(new Set());
+      setStrip('partial');
+    } else {
+      setFailed(rowSet);
+      setPending(new Set());
+      setStrip('failure');
+    }
+  // eslint-disable-next-line
+  }, [t.outcome]);
+
   const doStart = useCallback((type, rows) => {
     clearTimers();
     const rowSet = new Set(rows);
@@ -314,32 +335,17 @@ function App() {
     setPending(rowSet);
     setFailed(new Set());
     setSel(new Set());
-    setStrip('updating');
     setFading(false);
+    setEta(null);
 
-    const resolvMs = t.delay ? 9000 : 3500;
-    addTimer(() => {
-      if (t.delay) { setStrip('delayed'); return; }
-      if (t.outcome === 'success') {
-        setStrip('success');
-        setPending(new Set());
-        addTimer(() => {
-          setFading(true);
-          addTimer(() => { setStrip(null); setFading(false); }, 550);
-        }, 2200);
-      } else if (t.outcome === 'partial') {
-        const arr = [...rowSet];
-        setFailed(new Set([arr[arr.length - 1]]));
-        setPending(new Set());
-        setStrip('partial');
-      } else {
-        setFailed(rowSet);
-        setPending(new Set());
-        setStrip('failure');
-      }
-    }, resolvMs);
+    setStrip('queued');
+    setEta({ phase: 0, primary: 'Update queued — est. ~30 min', sec: 'High traffic period' });
+    addTimer(() => setEta({ phase: 1, primary: 'Update in progress — est. ~10 min', sec: 'High traffic period' }), 3000);
+    addTimer(() => setEta({ phase: 2, primary: 'Update in progress — est. ~8 min',  sec: null }), 6000);
+    addTimer(() => setEta({ phase: 3, primary: 'Almost done — est. ~1 min',          sec: null }), 9000);
+    addTimer(() => resolve(rowSet), 12000);
   // eslint-disable-next-line
-  }, [t.outcome, t.delay]);
+  }, [resolve]);
 
   const selRef = useRef(new Set([3,4,5]));
   useEffect(() => { selRef.current = sel; }, [sel]);
@@ -349,8 +355,8 @@ function App() {
     doStart(type, [...selRef.current]);
   }, [doStart]);
 
-  const handleView = () => { clearTimers(); setSel(new Set(failed)); setStrip(null); setFading(false); };
-  const handleDismiss = () => { clearTimers(); setSel(new Set()); setFailed(new Set()); setStrip(null); setFading(false); };
+  const handleView = () => { clearTimers(); setSel(new Set(failed)); setStrip(null); setFading(false); setEta(null); };
+  const handleDismiss = () => { clearTimers(); setSel(new Set()); setFailed(new Set()); setPending(new Set()); setStrip(null); setFading(false); setEta(null); };
 
   const toggleRow = id => setSel(prev => {
     const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
@@ -415,6 +421,7 @@ function App() {
               utype={utype}
               count={ucount}
               failCount={failed.size}
+              eta={eta}
               onView={handleView}
               onDismiss={handleDismiss}
               fading={fading}
@@ -544,12 +551,6 @@ function App() {
           value={t.outcome}
           options={['success', 'partial', 'failure']}
           onChange={v => setTweak('outcome', v)}
-        />
-        <TweakSection label="Timing" />
-        <TweakToggle
-          label="Simulate delay (20–30s)"
-          value={t.delay}
-          onChange={v => setTweak('delay', v)}
         />
       </TweaksPanel>
     </div>
