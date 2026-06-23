@@ -226,6 +226,32 @@ function SummaryCard({ icon, title, sub, value, trend, accent }) {
   );
 }
 
+/* ─── CountCard (icon + big count + split-stat band) ────────── */
+// Canonical fleet/count card: icon + big number, label, sub, then a gray
+// footer band of split stats. Used for Vehicles, Drivers, Fleet Cards, etc.
+// (host dashboard + org dashboard). One component — don't re-roll the band.
+// stats: [{ n, label, tone }]  tone: "green" | "gray" | "red" | "amber".
+function CountCard({ icon, count, label, sub, stats = [], fill = false }) {
+  return (
+    <div className={"ml-statcard" + (fill ? " fill" : "")}>
+      <div className="ml-statcard-head">
+        <div className="ml-statcard-ico"><Icon name={icon} size={20} fill={1} /></div>
+        <div className="ml-statcard-count">{count}</div>
+      </div>
+      <div className="ml-statcard-label">{label}</div>
+      {sub && <div className="ml-statcard-sub">{sub}</div>}
+      <div className="ml-statcard-band">
+        {stats.map((s, i) => (
+          <div key={i} className="ml-statcard-cell">
+            <div className={"ml-statcard-n " + (s.tone || "gray")}>{s.n}</div>
+            <div className="ml-statcard-l">{s.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ─── KPI Tier Chip ─────────────────────────────────────────── */
 function KpiTierChip({ mult }) {
   const tone = mult >= 100 ? "good" : mult >= 50 ? "mid" : "bad";
@@ -305,6 +331,35 @@ function KPIProgress({ pct, actual, target, period, commissionLabel, phase }) {
   );
 }
 
+/* ─── LockSection (subscription gate) ───────────────────────── */
+// Section-level upsell gate. Renders real content underneath, then overlays a
+// scrim + blur + lock badge + single CTA when `locked`. NOT an inline "Unlock"
+// button on a live card — the whole section reads as one locked unit. Behind the
+// blur is deliberately dummy data (the upsell preview, PRD §6.1.4). Reuse this
+// everywhere a tier gate is needed; don't fork a per-section lock.
+const TIER_LABEL = { lite: "Lite", premium: "Premium", enterprise: "Enterprise" };
+function LockSection({ locked = false, tier = "premium", cta, note, children }) {
+  if (!locked) return children;
+  const tierName = TIER_LABEL[tier] || "Premium";
+  return (
+    <div className="ml-lock">
+      <div className="ml-lock-content" aria-hidden="true">{children}</div>
+      <div className="ml-lock-scrim">
+        <div className="ml-lock-card">
+          <div className="ml-lock-icon"><Icon name="lock" size={22} color="#fff" /></div>
+          <div className="ml-lock-badge">{tierName} plan required</div>
+          {note && <div className="ml-lock-note">{note}</div>}
+          {cta && (
+            <button className="ml-lock-cta">
+              {cta} <Icon name="arrow_outward" size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Petron provider logo mark ─────────────────────────────── */
 const PETRON_LOGO_SRC = "/flows/fleet-card/petron.png";
 
@@ -325,8 +380,8 @@ function PetronLogo({ size = 16 }) {
 /* ─── Export to window ─────────────────────────────────────── */
 window.SharedShell = {
   Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu, Segmented,
-  Pill, CurrencyPill, SummaryCard, KpiTierChip,
+  Pill, CurrencyPill, SummaryCard, CountCard, KpiTierChip,
   StatusBadge, AccountStatusBadge, KPIProgress, KPIProgressMeta,
-  PetronLogo,
+  LockSection, PetronLogo,
 };
 window.KPIProgressMeta = KPIProgressMeta;

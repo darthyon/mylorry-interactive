@@ -21,6 +21,32 @@ window.FLOWS = {
 
   portals: [
     {
+      id: "org",
+      name: "Organization Portal",
+      icon: "domain",
+      flows: [
+        {
+          id: "org-dashboard",
+          name: "Org Dashboard — Revamp",
+          status: "ready",
+          route: "flows/org-dashboard/index.html",
+          desc: "Fleet command surface on login — fuel, vehicles, drivers, trips. Subscription gating + empty state via Tweaks (⌘⇧E).",
+          screens: [
+            { label: "Top Pulse", note: "Balance · Operating Cost (today) · Vehicles · Drivers. Card = today snapshot; all counts clickable." },
+            { label: "Your Modules", note: "MyFuel/MyAdmin/MyTrip/MyInsurance/MyTraining with per-tier Active / Locked / Coming soon state." },
+            { label: "Operating Cost Trend", note: "Today/MTD/6mo · Overall/Per-vehicle. Fuel-only v1; other categories 'coming soon'. Per-vehicle gated on Free." },
+            { label: "Trips Today", note: "Completed/ongoing/pending/paused. LockSection upsell preview below Premium." },
+            { label: "Action Needed", note: "Triage strip — items overdue, docs expiring, checklist issues. No vehicle/driver duplication." },
+            { label: "Action Preview", note: "Tabbed table: Fuel TXNs / Due Statuses / Checklists / Trips (if active). Row → filtered page." },
+            { label: "Gating tweak", note: "⌘⇧E → switch Free/Lite/Premium; toggle empty (new org). Lock wins over empty." },
+          ],
+        },
+        { id: "org-myfuel-dashboard", name: "MyFuel — Dashboard",  status: "planned" },
+        { id: "org-myadmin-dashboard", name: "MyAdmin — Dashboard", status: "planned" },
+        { id: "org-mytrip-dashboard", name: "MyTrip — Dashboard",  status: "planned" },
+      ],
+    },
+    {
       id: "host",
       name: "Host Portal",
       icon: "business",

@@ -1,4 +1,4 @@
-const { Badge, StatusBadge, AccountStatusBadge } = window.SharedShell;
+const { Badge, StatusBadge, AccountStatusBadge, LockSection, CountCard } = window.SharedShell;
 
 /* ── Token swatches (read straight from tokens.css via getComputedStyle) ── */
 const COLOR_TOKENS = [
@@ -60,6 +60,39 @@ document.getElementById("payoutStatus").innerHTML = `
   <span class="ml-badge payout-approved">Approved</span>
   <span class="ml-badge payout-paid">Paid</span>
   <span class="ml-badge payout-rejected">Rejected</span>`;
+
+/* ── CountCard ── */
+mount("countCards", <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+  <div style={{ width: 240 }}>
+    <CountCard icon="local_shipping" count={16} label="Vehicles" sub="Total in fleet"
+      stats={[
+        { n: 3, label: "In use", tone: "green" },
+        { n: 12, label: "Unused", tone: "gray" },
+        { n: 1, label: "Inactive", tone: "red" },
+      ]} />
+  </div>
+  <div style={{ width: 240 }}>
+    <CountCard icon="groups" count={13} label="Drivers" sub="Total registered"
+      stats={[
+        { n: 5, label: "On duty", tone: "green" },
+        { n: 8, label: "Off duty", tone: "gray" },
+      ]} />
+  </div>
+</div>);
+
+/* ── LockSection ── */
+const lockDemo = (
+  <div style={{ padding: 18, width: 280, background: "#fff", border: "1px solid var(--border-light)", borderRadius: 12 }}>
+    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Trips Today</div>
+    <div style={{ fontSize: 22, fontWeight: 800 }}>85 / 120</div>
+    <div style={{ fontSize: 12, color: "var(--fg-tertiary)" }}>completed today</div>
+  </div>
+);
+mount("lockOpen", <LockSection locked={false}>{lockDemo}</LockSection>);
+mount("lockPremium", <LockSection locked tier="premium" cta="Unlock MyTrip"
+  note="Track trip progress and driver locations in real time.">{lockDemo}</LockSection>);
+mount("lockLite", <LockSection locked tier="lite"
+  note="See fuel spend broken down per vehicle on Lite and above.">{lockDemo}</LockSection>);
 
 /* ── Table body with a live status badge ── */
 const ROWS = [
