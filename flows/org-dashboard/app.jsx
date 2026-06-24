@@ -21,8 +21,7 @@ const balanceTone = (days) => (days >= 14 ? "" : days >= 5 ? " amber" : " red");
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "subscription": "premium",
-  "emptyData": false,
-  "mytripVisual": "stacked"
+  "emptyData": false
 }/*EDITMODE-END*/;
 
 const PLAN_LABEL = { free: "Free Plan", lite: "Lite Plan", premium: "Premium Plan" };
@@ -383,24 +382,7 @@ function CostTrend({ tier, empty }) {
 }
 
 /* ── Section 4: MyTrip ──────────────────────────────────────────── */
-function TripBreakdown({ assigned, segments }) {
-  return (
-    <div className="od-trips-legend">
-      <div className="od-trip-stat assigned">
-        <span className="od-trip-k"><span className="od-leg-dot" style={{ background: "var(--navy-800)" }} /> Assigned</span>
-        <span className="od-trip-v">{assigned}</span>
-      </div>
-      {segments.map((s) => (
-        <div key={s.key} className="od-trip-stat">
-          <span className="od-trip-k"><span className="od-leg-dot" style={{ background: s.color }} /> {s.label}</span>
-          <span className="od-trip-v">{s.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function TripsTodayInner({ empty, visual = "stacked" }) {
+function TripsTodayInner({ empty }) {
   const t = D.trips;
   if (empty) return (
     <div style={{ marginTop: 8 }}>
@@ -410,82 +392,60 @@ function TripsTodayInner({ empty, visual = "stacked" }) {
   const assigned = t.total;
   const completed = t.completed;
   const pct = assigned ? Math.round(completed / assigned * 100) : 0;
-  const segments = [
-    { key: "completed", label: "Completed", value: completed, color: "var(--green-500)" },
-    { key: "ongoing", label: "Ongoing", value: t.ongoing, color: "var(--green-400)" },
-    { key: "pending", label: "Pending", value: t.pending, color: "var(--amber-500)" },
-    { key: "paused", label: "Paused", value: t.paused, color: "var(--fg-disabled)" },
+  const statuses = [
+    { key: "completed", label: "Completed", value: completed, tone: "green" },
+    { key: "ongoing", label: "Ongoing", value: t.ongoing, tone: "teal" },
+    { key: "pending", label: "Pending", value: t.pending, tone: "amber" },
+    { key: "paused", label: "Paused", value: t.paused, tone: "gray" },
   ];
-  const cursor = { value: 0 };
-  const donutStops = segments.map((s) => {
-    const start = assigned ? (cursor.value / assigned) * 100 : 0;
-    cursor.value += s.value;
-    const end = assigned ? (cursor.value / assigned) * 100 : 0;
-    return `${s.color} ${start}% ${end}%`;
-  }).join(", ");
-
-  if (visual === "donut") {
-    return (
-      <div className="od-trips">
-        <div className="od-trips-body donut">
-          <div className="od-trip-donut-row">
-            <div className="od-trip-donut" style={{ background: `conic-gradient(${donutStops}, var(--bg-muted) 0)` }}>
-              <div className="od-trip-donut-inner">
-                <div className="od-trip-donut-total">{completed}/{assigned}</div>
-                <div className="od-trip-donut-caption">completed</div>
-              </div>
-            </div>
-            <div className="od-trip-donut-side">
-              <div className="od-trip-pct">{pct}%</div>
-              <div className="od-trip-caption">completion rate</div>
-              <TripBreakdown assigned={assigned} segments={segments} />
-            </div>
-          </div>
-          <div className="od-trips-actions">
-            <button className="ml-btn-primary">View trips</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="od-trips">
       <div className="od-trips-body">
-        <div className="od-trip-summary">
-          <div>
-            <div className="od-trip-total">{completed}/{assigned}</div>
-            <div className="od-trip-caption">completed trips</div>
+        <div className="od-trip-hero">
+          <div className="od-trip-metric">
+            <div className="od-trip-metric-ico"><Icon name="route" size={18} /></div>
+            <div className="od-trip-metric-n">{assigned}</div>
+            <div className="od-trip-metric-l">assigned trips</div>
           </div>
-          <div className="od-trip-pct">{pct}%</div>
+          <div className="od-trip-metric">
+            <div className="od-trip-metric-ico"><Icon name="check_circle" size={18} /></div>
+            <div className="od-trip-metric-n">{pct}%</div>
+            <div className="od-trip-metric-l">completion rate</div>
+          </div>
         </div>
-        <div className="od-trip-stack" aria-label="Trip status breakdown">
-          {segments.map((s) => (
-            <span
-              key={s.key}
-              className="od-trip-seg"
-              data-tip={`${s.label}: ${s.value} trips`}
-              tabIndex={0}
-              style={{ width: (assigned ? (s.value / assigned) * 100 : 0) + "%", background: s.color }}
-            />
-          ))}
-        </div>
-        <TripBreakdown assigned={assigned} segments={segments} />
-        <div className="od-trips-actions">
-          <button className="ml-btn-primary">View trips</button>
+        <div className="od-trip-rows" role="list" aria-label="Trip status breakdown">
+          {statuses.map((s) => {
+            const rowPct = assigned ? Math.round(s.value / assigned * 100) : 0;
+            return (
+              <div key={s.key} className={"od-trip-row " + s.tone} role="listitem">
+                <div className="od-trip-row-meta">
+                  <span className="od-trip-dot" />
+                  <span className="od-trip-row-l">{s.label}</span>
+                </div>
+                <div className="od-trip-row-bar" aria-hidden="true">
+                  <div className="od-trip-row-fill" style={{ width: rowPct + "%" }} />
+                </div>
+                <div className="od-trip-row-val">{s.value} ({rowPct}%)</div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }
-function TripsToday({ tier, empty, visual }) {
+function TripsToday({ tier, empty }) {
   const locked = rank(tier) < rank("premium");
   return (
     <div className="od-card od-mytrip-card">
-      <div className="od-sec-title">MyTrip</div>
+      <button type="button" className="od-mytrip-head" aria-label="Open MyTrip">
+        <div className="od-sec-title">MyTrip</div>
+        <span className="od-card-arrow"><Icon name="arrow_forward" size={15} /></span>
+      </button>
       <LockSection locked={locked} tier="premium"
         note="Track live trip progress and driver locations.">
-        <TripsTodayInner empty={empty && !locked} visual={visual} />
+        <TripsTodayInner empty={empty && !locked} />
       </LockSection>
     </div>
   );
@@ -659,7 +619,7 @@ function App() {
           {/* 3 + 4 — Trend / MyTrip */}
           <div className="od-row">
             <CostTrend tier={tier} empty={empty} />
-            <TripsToday tier={tier} empty={empty} visual={t.mytripVisual} />
+            <TripsToday tier={tier} empty={empty} />
           </div>
 
           {/* 5 — Action Needed */}
@@ -681,13 +641,7 @@ function App() {
           onChange={(v) => setTweak("subscription", v)} />
         <TweakSection label="Data" />
         <TweakToggle label="Empty (new org)" value={t.emptyData} onChange={(v) => setTweak("emptyData", v)} />
-        <TweakSection label="MyTrip" />
-        <TweakSelect label="Chart" value={t.mytripVisual}
-          options={[
-            { value: "stacked", label: "Stacked bar" },
-            { value: "donut", label: "Donut" },
-          ]}
-          onChange={(v) => setTweak("mytripVisual", v)} />
+
       </TweaksPanel>
     </div>
   );
