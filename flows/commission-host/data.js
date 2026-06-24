@@ -7,15 +7,16 @@
   const CURRENT_PERIOD = "Jun 2026";
 
   const AGENTS = [
-    { id:"AG-0042", num:1,  referrer:false, name:"Kenneth Wang",               mobile:"0123456789", email:"kenneth@mylorry.ai",       ic:"820101-05-1234", bankName:"Maybank",      accNo:"112361629821", accName:"Kenneth Wang", joined:"Aug 2024", status:"active",      accountStatus:"active",     spCount:6,  volume:166720, commission:1093.25, kpiMult:50,  kpiTarget:200000, kpiPct:83.4,  kpiPhase:"active"   },
-    { id:"RF-0019", num:2,  referrer:true,  name:"Ahmad Faris",                mobile:"0133029991", email:"ahmad.faris@gmail.com",    ic:"780515-08-6473", bankName:"CIMB",         accNo:"6364296502",   accName:"Ahmad Faris",         joined:"Jan 2022", status:"active",      accountStatus:"active",     spCount:11, volume:245600, commission:2890.00, kpiMult:100, kpiTarget:220000, kpiPct:111.6, kpiPhase:"active"   },
-    { id:"AG-0031", num:3,  referrer:false, name:"Priya Nair",                 mobile:"0176699017", email:"priya.nair@gmail.com",     ic:"890322-10-5033", bankName:"Maybank",      accNo:"151333033049", accName:"Priya Nair", joined:"Mar 2023", status:"active",      accountStatus:"active",     spCount:8,  volume:180000, commission:1890.00, kpiMult:50,  kpiTarget:200000, kpiPct:90.0,  kpiPhase:"active"   },
-    { id:"RF-0038", num:4,  referrer:true,  name:"Siti Rahimah",               mobile:"0193088813", email:"siti.rahimah@mylorry.ai", ic:"900611-05-5240", bankName:"Public Bank",  accNo:"3241880123",   accName:"Siti Rahimah Binti Aziz", joined:"Jun 2023", status:"active",      accountStatus:"active",     spCount:7,  volume:120000, commission:1260.00, kpiMult:50,  kpiTarget:200000, kpiPct:60.0,  kpiPhase:"complete" },
-    { id:"AG-0055", num:5,  referrer:false, name:"Tan Wei Lin",                mobile:"0123456789", email:"tansuemei@gmail.com",      ic:"950110-10-6344", bankName:"Public Bank",  accNo:"162469343518", accName:"Tan Wei Lin", joined:"Nov 2024", status:"active",      accountStatus:"active",     spCount:4,  volume:98300,  commission:0,        kpiMult:0,   kpiTarget:200000, kpiPct:49.2,  kpiPhase:"active"   },
-    { id:"RF-0067", num:6,  referrer:true,  name:"Raj Selvam",                 mobile:"0107899028", email:"raj@mylorry.ai",           ic:"851204-14-3598", bankName:"-",            accNo:"-",            accName:"-", joined:"Feb 2025", status:"terminating", accountStatus:"terminated", spCount:3,  volume:61200,  commission:0,        kpiMult:0,   kpiTarget:200000, kpiPct:30.6,  kpiPhase:"complete" },
-    { id:"AG-0071", num:7,  referrer:false, name:"Norafizah Binti Mohd Yasin", mobile:"0123456789", email:"norafizah@gmail.com",      ic:"801218-05-5240", bankName:"Maybank",      accNo:"151333033049", accName:"Norafizah Binti Mohd Yasin", joined:"Mar 2024", status:"active",      accountStatus:"active",     spCount:5,  volume:120000, commission:1280.00, kpiMult:100, kpiTarget:120000, kpiPct:100.0, kpiPhase:"active"   },
-    { id:"RF-0083", num:8,  referrer:true,  name:"Marcus Yong",                mobile:"0162173396", email:"marcusyong@mylorry.ai",    ic:"820609-05-5073", bankName:"-",            accNo:"-",            accName:"-",         joined:"Sep 2021", status:"active",      accountStatus:"active",     spCount:14, volume:240000, commission:3120.00, kpiMult:100, kpiTarget:240000, kpiPct:100.0, kpiPhase:"complete" },
-    { id:"AG-0091", num:9,  referrer:false, name:"Cheah Kok Bin",              mobile:"0123040700", email:"max@maxador.com",          ic:"781008-08-6473", bankName:"Public Bank",  accNo:"6364296502",   accName:"Cheah Kok Bin", joined:"Dec 2023", status:"active",      accountStatus:"active",     spCount:6,  volume:135000, commission:1470.00, kpiMult:100, kpiTarget:150000, kpiPct:90.0,  kpiPhase:"active"   },
+    { id:"AG-0042", num:1,  referrer:false, name:"Kenneth Wang",               mobile:"0123456789", email:"kenneth@mylorry.ai",       ic:"820101-05-1234", bankName:"Maybank",      accNo:"112361629821", accName:"Kenneth Wang", joined:"Aug 2024", status:"active",      accountStatus:"active",              spCount:6,  volume:166720, commission:1093.25, kpiMult:50,  kpiTarget:200000, kpiPct:83.4,  kpiPhase:"active",   lastEvaluation:{ tier:"Tier 2", mult:50,  pct:83.4,  period:"Dec 1–31, 2025" } },
+    { id:"RF-0019", num:2,  referrer:true,  name:"Ahmad Faris",                mobile:"0133029991", email:"ahmad.faris@gmail.com",    ic:"780515-08-6473", bankName:"CIMB",         accNo:"6364296502",   accName:"Ahmad Faris",         joined:"Jan 2022", status:"active",      accountStatus:"active",              spCount:11, volume:245600, commission:2890.00, kpiMult:100, kpiTarget:220000, kpiPct:111.6, kpiPhase:"active",   lastEvaluation:{ tier:"Tier 3", mult:100, pct:111.6, period:"Dec 1–31, 2025" } },
+    { id:"AG-0031", num:3,  referrer:false, name:"Priya Nair",                 mobile:"0176699017", email:"priya.nair@gmail.com",     ic:"890322-10-5033", bankName:"Maybank",      accNo:"151333033049", accName:"Priya Nair", joined:"Mar 2023", status:"active",      accountStatus:"active",              spCount:8,  volume:180000, commission:1890.00, kpiMult:50,  kpiTarget:200000, kpiPct:90.0,  kpiPhase:"active",   lastEvaluation:{ tier:"Tier 2", mult:50,  pct:90.0,  period:"Dec 1–31, 2025" } },
+    { id:"RF-0038", num:4,  referrer:true,  name:"Siti Rahimah",               mobile:"0193088813", email:"siti.rahimah@mylorry.ai", ic:"900611-05-5240", bankName:"Public Bank",  accNo:"3241880123",   accName:"Siti Rahimah Binti Aziz", joined:"Jun 2023", status:"active",      accountStatus:"active",              spCount:7,  volume:120000, commission:1260.00, kpiMult:50,  kpiTarget:200000, kpiPct:60.0,  kpiPhase:"complete", lastEvaluation:{ tier:"Tier 2", mult:50,  pct:60.0,  period:"Dec 1–31, 2025" } },
+    { id:"AG-0055", num:5,  referrer:false, name:"Tan Wei Lin",                mobile:"0123456789", email:"tansuemei@gmail.com",      ic:"950110-10-6344", bankName:"Public Bank",  accNo:"162469343518", accName:"Tan Wei Lin", joined:"Mar 2026", status:"active",      accountStatus:"active",              spCount:4,  volume:98300,  commission:0,        kpiMult:0,   kpiTarget:200000, kpiPct:49.2,  kpiPhase:"active",   lastEvaluation:null },
+    { id:"RF-0067", num:6,  referrer:true,  name:"Raj Selvam",                 mobile:"0107899028", email:"raj@mylorry.ai",           ic:"851204-14-3598", bankName:"-",            accNo:"-",            accName:"-", joined:"Feb 2025", status:"terminating", accountStatus:"pending_termination", spCount:3,  volume:61200,  commission:0,        kpiMult:0,   kpiTarget:200000, kpiPct:30.6,  kpiPhase:"complete", lastEvaluation:{ tier:"Tier 1", mult:0,   pct:30.6,  period:"Dec 1–31, 2025" } },
+    { id:"AG-0071", num:7,  referrer:false, name:"Norafizah Binti Mohd Yasin", mobile:"0123456789", email:"norafizah@gmail.com",      ic:"801218-05-5240", bankName:"Maybank",      accNo:"151333033049", accName:"Norafizah Binti Mohd Yasin", joined:"Mar 2024", status:"active",      accountStatus:"active",              spCount:5,  volume:120000, commission:1280.00, kpiMult:100, kpiTarget:120000, kpiPct:100.0, kpiPhase:"active",   lastEvaluation:{ tier:"Tier 3", mult:100, pct:100.0, period:"Dec 1–31, 2025" } },
+    { id:"RF-0083", num:8,  referrer:true,  name:"Marcus Yong",                mobile:"0162173396", email:"marcusyong@mylorry.ai",    ic:"820609-05-5073", bankName:"-",            accNo:"-",            accName:"-",         joined:"Sep 2021", status:"active",      accountStatus:"active",              spCount:14, volume:240000, commission:3120.00, kpiMult:100, kpiTarget:240000, kpiPct:100.0, kpiPhase:"complete", lastEvaluation:{ tier:"Tier 3", mult:100, pct:100.0, period:"Dec 1–31, 2025" } },
+    { id:"AG-0091", num:9,  referrer:false, name:"Cheah Kok Bin",              mobile:"0123040700", email:"max@maxador.com",          ic:"781008-08-6473", bankName:"Public Bank",  accNo:"6364296502",   accName:"Cheah Kok Bin", joined:"Dec 2023", status:"active",      accountStatus:"active",              spCount:6,  volume:135000, commission:1470.00, kpiMult:100, kpiTarget:150000, kpiPct:90.0,  kpiPhase:"active",   lastEvaluation:{ tier:"Tier 3", mult:100, pct:90.0,  period:"Dec 1–31, 2025" } },
+    { id:"AG-0099", num:10, referrer:false, name:"Goh Teck Chuan",             mobile:"0112334455", email:"goh.teckchuan@gmail.com", ic:"760505-08-1234", bankName:"-",            accNo:"-",            accName:"-",         joined:"Jan 2022", status:"terminated",  accountStatus:"terminated",          spCount:0,  volume:90000,  commission:0,        kpiMult:0,   kpiTarget:200000, kpiPct:45.0,  kpiPhase:"complete", lastEvaluation:{ tier:"Tier 1", mult:0,   pct:45.0,  period:"Dec 1–31, 2025" } },
   ];
   const AGENT_LOOKUP = Object.fromEntries(AGENTS.map((agent) => [agent.id, agent]));
   const PRIMARY_AGENT = AGENT_LOOKUP[PRIMARY_AGENT_ID];
@@ -106,6 +107,7 @@
     "AG-0071": { agentName: "Norafizah B. Mohd Yasin", payout: "Pending" },
     "RF-0083": { payout: "Approved" },
     "AG-0091": { payout: "Pending" },
+    "AG-0099": { payout: "Paid" },
   };
   const MYFUEL_RECORDS = AGENTS.map((agent) => {
     const override = RECORD_OVERRIDES[agent.id] || {};
@@ -181,6 +183,7 @@
   };
   const AGENT_SP_ACCOUNTS = {
     [PRIMARY_AGENT_ID]: AGENT_CONFIG.spAccounts,
+    "AG-0099": [],
     "RF-0067": SP_COMMISSION_BREAKDOWN["RF-0067"].map((row) => ({
       sp: row.sp,
       org: row.org,
@@ -206,6 +209,14 @@
       scheduledTransfer: {
         toAgentId: "AG-0031",
         effectiveCommissionMonth: "2026-08",
+      },
+    },
+    "AG-0099": {
+      date: "2026-03-31",
+      commissionEndDate: "2026-03-15",
+      scheduledTransfer: {
+        toAgentId: "AG-0031",
+        effectiveCommissionMonth: "2026-04",
       },
     },
   };

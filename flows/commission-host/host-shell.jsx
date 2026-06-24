@@ -2,7 +2,7 @@
 // Adds Host-specific nav and component aliases (HIcon, HostTopBar, HostSidebar, etc.).
 
 const { Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu, Segmented,
-  CurrencyPill, StatusBadge, AccountStatusBadge, KPIProgress, PetronLogo } = window.SharedShell;
+  CurrencyPill, StatusBadge, AccountStatusBadge, KPIProgress, KpiTierChip, PetronLogo } = window.SharedShell;
 
 const HOST_NAV = [
   { key:"__label__",    label:"HOST",               icon:"" },
@@ -31,6 +31,7 @@ const HExportMenu = ({ comingSoon = true }) => <ExportMenu comingSoon={comingSoo
 const HAccountStatusBadge = AccountStatusBadge;
 const HStatusBadge = StatusBadge;
 const HKPIProgress = KPIProgress;
+const HKpiTierChip = KpiTierChip;
 
 // Host-specific wrappers
 function HostSidebar({ active = "agent" }) {
@@ -42,6 +43,6 @@ function HostTopBar() {
 
 // Re-export everything to window with the same names existing code expects
 Object.assign(window, {
-  HIcon, HostTopBar, HostSidebar, HBadge, HAccountStatusBadge, HStatusBadge, HKPIProgress,
+  HIcon, HostTopBar, HostSidebar, HBadge, HAccountStatusBadge, HStatusBadge, HKPIProgress, HKpiTierChip,
   HCurrencyPill, HCardHead, HPager, HExportMenu, Segmented, PetronLogo,
 });

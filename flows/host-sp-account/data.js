@@ -127,6 +127,9 @@
       activationDate: i === 11 ? "" : activationDate,
       commissionValidityMonths: DEFAULT_COMMISSION_VALIDITY_MONTHS,
 
+      // New Org Exception — KPI multiplier override for the org's first eligible year.
+      newOrgException: i === 2 ? { mode:"custom", rate:50 } : i === 7 ? { mode:"none" } : { mode:"auto", rate:100 },
+
       agents: makeAgents(nAgents, nReferrers),
 
       // KPI period total volume (litres). Illustrative — the basis for each

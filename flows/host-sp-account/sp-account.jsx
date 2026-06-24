@@ -441,10 +441,32 @@ function SalespersonUmbrellaCard({ person, periodVolume, activationDate, validit
   );
 }
 
+// New Org Exception — KPI multiplier override for the org's first eligible year.
+const EXCEPTION_OPTIONS = ["Auto 100%", "Custom %", "No Exception"];
+const exceptionRadioValue = (exc) => {
+  if (!exc) return "Auto 100%";
+  if (exc.mode === "auto") return "Auto 100%";
+  if (exc.mode === "custom") return "Custom %";
+  if (exc.mode === "none") return "No Exception";
+  return "Auto 100%";
+};
+const exceptionRadioToData = (v, prev) => {
+  if (v === "Auto 100%") return { mode: "auto", rate: 100 };
+  if (v === "Custom %") return { mode: "custom", rate: prev?.mode === "custom" ? prev.rate : 50 };
+  if (v === "No Exception") return { mode: "none" };
+  return { mode: "auto", rate: 100 };
+};
+const exceptionLabel = (exc) => {
+  if (!exc || exc.mode === "auto") return "Auto 100%";
+  if (exc.mode === "custom") return `Custom · ${exc.rate}%`;
+  if (exc.mode === "none") return "No Exception";
+  return "Auto 100%";
+};
+
 // Salesperson = the umbrella. One merged section: account-level dates, then per-role groups
 // (Agent / Referrer), each with its own constrained distribution bar + umbrella cards.
 // Shared by the detail (mode="view") and form (mode="edit") views so editing logic isn't forked.
-function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDate, validityMonths, onValidityChange, onOpenEditMode }) {
+function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDate, validityMonths, onValidityChange, onOpenEditMode, newOrgException, onExceptionChange }) {
   const [spModalState, setSpModalState] = useState(null);
   const [kpiModalRole, setKpiModalRole] = useState(null);
   const [tierAddTick, setTierAddTick] = useState({});
@@ -520,6 +542,28 @@ function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDa
   return (
     <Section title="Salesperson Setting">
       <SalespersonTopFields mode={mode} periodVolume={periodVolume} activationDate={activationDate} validityMonths={validityMonths} onValidityChange={onValidityChange} />
+      {isEdit ? (
+        <div className="hac-fg" style={{ marginBottom: 20 }}>
+          <FieldLabelWithInfo label="New Org Exception" info="Overrides the KPI multiplier for this organization's first eligible year." />
+          <RadioRow name="orgException" options={EXCEPTION_OPTIONS}
+            value={exceptionRadioValue(newOrgException)}
+            onChange={v => onExceptionChange(exceptionRadioToData(v, newOrgException))} />
+          {newOrgException?.mode === "custom" && (
+            <div className="spa-validity-input" style={{ marginTop: 8 }}>
+              <input className="hac-input" type="number" min="0" max="100" placeholder="50"
+                value={newOrgException.rate ?? ""}
+                onChange={e => onExceptionChange({ mode: "custom", rate: Number(e.target.value) })} />
+              <span className="spa-validity-suffix">% multiplier</span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="hac-detail-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 20 }}>
+          <DField label="New Org Exception" info="Overrides the KPI multiplier for this organization's first eligible year.">
+            {exceptionLabel(newOrgException)}
+          </DField>
+        </div>
+      )}
       {roster.length === 0 && !isEdit && (
         <div className="hac-empty-state">No salesperson added yet.</div>
       )}
@@ -763,6 +807,7 @@ function SPDetailView({ account, onBack, onEdit }) {
           periodVolume={a.periodVolume}
           activationDate={a.activationDate}
           validityMonths={a.commissionValidityMonths}
+          newOrgException={a.newOrgException}
           onOpenEditMode={onEdit}
         />
 
@@ -1078,6 +1123,7 @@ function SPFormView({ account, onBack, onSave }) {
     rebateBeneficiary: "Individual", isMaster: false,
     rebateTiers: [{ usageMax: 1000, commissionAmount: 0.01, final: true }],
     activationDate: "", commissionValidityMonths: DEFAULT_COMMISSION_VALIDITY_MONTHS,
+    newOrgException: { mode: "auto", rate: 100 },
     agents: [],
     payoutType: "Credit Note",
   });
@@ -1206,6 +1252,8 @@ function SPFormView({ account, onBack, onSave }) {
           activationDate={form.activationDate}
           validityMonths={form.commissionValidityMonths}
           onValidityChange={v => set("commissionValidityMonths", v)}
+          newOrgException={form.newOrgException}
+          onExceptionChange={v => set("newOrgException", v)}
         />
 
         {/* Payout Setting */}

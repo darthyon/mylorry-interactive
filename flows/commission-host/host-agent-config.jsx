@@ -6,9 +6,9 @@ const MyFuelCommissionTabView   = window.MyFuelCommissionTab;
 /* ─── Commission Status Badge — shared (window.HStatusBadge) ──── */
 const CommissionStatusBadge = window.HStatusBadge;
 
-/* ─── KPI progress bar — shared (window.HKPIProgress) ───────── */
-const KPIProgress = window.HKPIProgress;
+/* ─── KPI progress meta — shared (window.KPIProgressMeta) ────── */
 const KPIProgressMeta = window.KPIProgressMeta;
+const KpiTierChip = window.HKpiTierChip;
 const AccountStatusBadge = window.HAccountStatusBadge;
 const PetronLogo = window.SharedShell.PetronLogo;
 
@@ -350,6 +350,7 @@ function AgentsListView({ onView, onEdit, onCreate, onTerminate }) {
               <select value={pendingStatus} onChange={e => setPendingStatus(e.target.value)}>
                 <option value="all">All statuses</option>
                 <option value="active">Active</option>
+                <option value="pending_termination">Pending Termination</option>
                 <option value="terminated">Terminated</option>
               </select>
             </div>
@@ -368,7 +369,7 @@ function AgentsListView({ onView, onEdit, onCreate, onTerminate }) {
           <thead>
             <tr>
               <th>No.</th><th>Salesperson</th><th>Role</th>
-              <th>KPI Progress</th><th>Status</th>
+              <th>KPI Evaluation Result</th><th>Status</th>
               <th>Mobile Number</th><th>Email</th><th>IC Number</th>
               <th>Bank Name</th><th>Account Number</th><th>Account Name</th>
               <th></th>
@@ -383,7 +384,14 @@ function AgentsListView({ onView, onEdit, onCreate, onTerminate }) {
                   <div className="ml-cell-sub"><code className="hac-code">{a.id}</code></div>
                 </td>
                 <td>{a.referrer ? "Referrer" : "Agent"}</td>
-                <td><KPIProgress pct={a.kpiPct} actual={a.volume} target={a.kpiTarget} period="Dec 1–31" phase={a.kpiPhase} /></td>
+                <td>
+                  {a.lastEvaluation
+                    ? <span className="ml-tooltip-wrap">
+                        <KpiTierChip mult={a.lastEvaluation.mult} />
+                        <span className="ml-tooltip">Last evaluation: {a.lastEvaluation.period}</span>
+                      </span>
+                    : <span style={{ color:"var(--fg-disabled)", fontSize:12 }}>N/A</span>}
+                </td>
                 <td><AccountStatusBadge status={a.accountStatus} /></td>
                 <td className="ml-mono">{a.mobile}</td>
                 <td style={{ color:"var(--fg-secondary)", fontSize:12 }}>{a.email}</td>
@@ -491,56 +499,6 @@ function ThresholdModal({ editThreshold, siblings, onClose, onSave }) {
         <input className="hac-input" type="number" placeholder="e.g. 50" value={mult}
           onChange={e => setMult(e.target.value)} />
         <div className="hac-field-hint">Applied to the commission earned by the agent</div>
-      </div>
-    </Modal>
-  );
-}
-
-/* ─── Add SP Account modal ───────────────────────────────────── */
-const SP_ORG_LIST = [
-  { sp:"ARC-PTN-063", org:"Arcadian Haulage"          }, { sp:"BLU-PTN-088", org:"Bluechip Freight Sdn Bhd" },
-  { sp:"GLD-PTN-071", org:"Golden Transport Corp"     }, { sp:"EAG-PTN-012", org:"Eagle Logistics Sdn Bhd"  },
-  { sp:"SWF-PTN-034", org:"SwiftHaul Transport"       }, { sp:"IRT-PTN-056", org:"IronTrail Trucking"        },
-  { sp:"CGP-PTN-078", org:"CargoPulse Express"        }, { sp:"GSR-PTN-091", org:"GoSwift Rides"             },
-  { sp:"TRW-PTN-102", org:"TransWorld Cargo"          }, { sp:"CLN-PTN-115", org:"CleanShift Transit"        },
-];
-function AddSPModal({ onClose, onAdd, existing }) {
-  const [q, setQ]           = useState("");
-  const [selected, setSelected] = useState(new Set());
-  const available = SP_ORG_LIST.filter(o => !existing.includes(o.sp));
-  const filtered  = available.filter(o => o.org.toLowerCase().includes(q.toLowerCase()));
-  const toggle    = sp => setSelected(s => { const n = new Set(s); n.has(sp) ? n.delete(sp) : n.add(sp); return n; });
-  return (
-    <Modal title="Add SP Account" onClose={onClose} footer={
-      <>
-        <button className="hac-modal-cancel" onClick={onClose}>Cancel</button>
-        <button className="hac-modal-save" disabled={selected.size === 0}
-          onClick={() => { onAdd([...selected]); onClose(); }}>Add SP Account{selected.size > 0 ? ` (${selected.size})` : ""}</button>
-      </>
-    }>
-      <div className="hac-sp-search-wrap">
-        <HIcon name="search" size={15} color="var(--fg-tertiary)" />
-        <input className="hac-search" style={{ flex:1, minWidth:0 }} placeholder="Search organisation"
-          value={q} onChange={e => setQ(e.target.value)} />
-      </div>
-      {selected.size > 0 && (
-        <div style={{ textAlign:"right", margin:"6px 0 2px" }}>
-          <button className="hac-clear-sel" onClick={() => setSelected(new Set())}>Clear selection</button>
-        </div>
-      )}
-      <div className="hac-sp-list">
-        {filtered.map(o => {
-          const checked = selected.has(o.sp);
-          return (
-            <label key={o.sp} className={"hac-sp-item" + (checked ? " checked" : "")} onClick={() => toggle(o.sp)}>
-              <div className={"hac-sp-checkbox" + (checked ? " checked" : "")}>
-                {checked && <HIcon name="check" size={13} color="#fff" />}
-              </div>
-              <span>{o.org}</span>
-              <code className="hac-code" style={{ marginLeft:"auto", fontSize:11 }}>{o.sp}</code>
-            </label>
-          );
-        })}
       </div>
     </Modal>
   );
@@ -1019,29 +977,17 @@ function CommissionConfigCard({ kpi, editing }) {
 
 /* ─── SP Accounts card ───────────────────────────────────────── */
 function SPAccountsCard({ spAccounts: initSP }) {
-  const [spAccounts, setSPAccounts] = useState(initSP);
-  const [showModal, setShowModal]   = useState(false);
+  const [spAccounts] = useState(initSP);
   const [page, setPage]       = useState(1);
   const [perPage, setPerPage] = useState(5);
-  const existing = spAccounts.map(s => s.sp);
   const hasAccounts = spAccounts.length > 0;
   const paginated = spAccounts.slice((page - 1) * perPage, page * perPage);
-
-  const handleAdd = selectedSPs => {
-    const added = SP_ORG_LIST
-      .filter(o => selectedSPs.includes(o.sp))
-      .map(o => ({ sp:o.sp, org:o.org, volume:null, kpiSplitPct:null, kpiVolume:null, eff:null, end:null, exception:null, commissionStatus:"pending_onboarding" }));
-    setSPAccounts(prev => [...prev, ...added]);
-  };
 
   return (
     <div className="ml-card hac-detail-card">
       <div className="hac-sec-header">SP Accounts</div>
       <div className="hac-dcard-head" style={{ marginBottom:hasAccounts ? 12 : 0 }}>
         <div className="hac-dcard-sub">{spAccounts.length} assigned account{spAccounts.length !== 1 ? "s" : ""}</div>
-        <button className="ml-btn-outline" style={{ fontSize:13 }} onClick={() => setShowModal(true)}>
-          <HIcon name="add" size={15} /> Add Account
-        </button>
       </div>
       {hasAccounts ? (
         <>
@@ -1095,7 +1041,6 @@ function SPAccountsCard({ spAccounts: initSP }) {
           No SP accounts assigned yet.
         </div>
       )}
-      {showModal && <AddSPModal onClose={() => setShowModal(false)} onAdd={handleAdd} existing={existing} />}
     </div>
   );
 }
@@ -1333,7 +1278,7 @@ function AgentFormView({ agent, onBack, onSave }) {
             ]}}}
             editing={true} />
         </div>
-        <SPAccountsCard spAccounts={[]} />
+        {isEdit && <SPAccountsCard spAccounts={editCfg.spAccounts} />}
         {isEdit && <TerminationCard cfg={editCfg} editing={true} />}
       </div>
       <div className="hac-edit-bar">

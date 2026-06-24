@@ -281,10 +281,11 @@ const STATUS_BADGE_META = {
   deactivated:        { label:"Deactivated",        cls:"comm-deactivated" },
   expired:            { label:"Expired",            cls:"comm-expired"     },
   // Generic account status
-  active:     { label:"Active",     cls:"acct-active"     },
-  inactive:   { label:"Inactive",   cls:"acct-inactive"   },
-  suspended:  { label:"Suspended",  cls:"acct-suspended"  },
-  terminated: { label:"Terminated", cls:"acct-terminated" },
+  active:               { label:"Active",              cls:"acct-active"     },
+  inactive:             { label:"Inactive",            cls:"acct-inactive"   },
+  suspended:            { label:"Suspended",           cls:"acct-suspended"  },
+  pending_termination:  { label:"Pending Termination", cls:"acct-pending-term" },
+  terminated:           { label:"Terminated",          cls:"acct-terminated" },
 };
 function StatusBadge({ status, prefix, fallback = "activated" }) {
   const m = STATUS_BADGE_META[status] || STATUS_BADGE_META[fallback] || { label: status, cls: "" };
