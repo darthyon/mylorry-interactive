@@ -8,6 +8,13 @@
   /* ── Brand Gradient ─────────────────────────────────────── */
   --gradient-brand: linear-gradient(to right, rgb(0,129,170), rgb(0,170,79));
 
+  /* ── Balance Gradients (semantic — fleet balance health) ──── */
+  /* Drive a balance/amount card by remaining runway: green healthy,
+     amber low, red critical. Diagonal, brighter→deeper. */
+  --gradient-balance-green: linear-gradient(145deg, #2BAE63 0%, #0F7B45 100%);
+  --gradient-balance-amber: linear-gradient(145deg, #F5A623 0%, #C2730E 100%);
+  --gradient-balance-red:   linear-gradient(145deg, #F1635F 0%, #BE2F2C 100%);
+
   /* ── Primary / Green ────────────────────────────────────── */
   --green-600: #00AA4F;   /* rgb(0,170,79)  — primary actions, active states */
   --green-500: #00AB46;   /* rgb(0,171,70)  — buttons, links, icons */

@@ -89,6 +89,34 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;back
     <div class="swatches" id="swColors"></div>
   </section>
 
+  <!-- Gradients -->
+  <section class="sec" id="gradients">
+    <div class="sec-h">Gradients</div>
+    <div class="row" style="gap:14px;flex-wrap:wrap;">
+      <div style="width:200px;">
+        <div style="height:72px;border-radius:12px;background:var(--gradient-brand);"></div>
+        <div class="sw-name" style="margin-top:6px;">--gradient-brand</div>
+        <div class="sw-val">Brand / shell · teal→green</div>
+      </div>
+      <div style="width:200px;">
+        <div style="height:72px;border-radius:12px;background:var(--gradient-balance-green);"></div>
+        <div class="sw-name" style="margin-top:6px;">--gradient-balance-green</div>
+        <div class="sw-val">Balance healthy (≥14d runway)</div>
+      </div>
+      <div style="width:200px;">
+        <div style="height:72px;border-radius:12px;background:var(--gradient-balance-amber);"></div>
+        <div class="sw-name" style="margin-top:6px;">--gradient-balance-amber</div>
+        <div class="sw-val">Balance low (5–13d)</div>
+      </div>
+      <div style="width:200px;">
+        <div style="height:72px;border-radius:12px;background:var(--gradient-balance-red);"></div>
+        <div class="sw-name" style="margin-top:6px;">--gradient-balance-red</div>
+        <div class="sw-val">Balance critical (&lt;5d)</div>
+      </div>
+    </div>
+    <p class="note">Balance gradients are semantic — a balance/amount card picks its gradient from remaining runway (green → amber → red). Inner overlays on these cards use black-transparent (<code>rgba(0,0,0,.14)</code>), not white.</p>
+  </section>
+
   <!-- Radii -->
   <section class="sec" id="radii">
     <div class="sec-h">Border radius</div>
@@ -134,6 +162,33 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;back
       </div>
     </div>
     <p class="note">All status badges render through one metadata-driven <code>StatusBadge</code> in <code>shared-shell.jsx</code> — no more per-file copies.</p>
+  </section>
+
+  <!-- CountCard -->
+  <section class="sec" id="countcard">
+    <div class="sec-h">Count card — <code>CountCard</code></div>
+    <div class="row" id="countCards" style="gap:14px;flex-wrap:wrap;align-items:stretch;"></div>
+    <p class="note">Icon + big count, label, sub, and a gray split-stat band. One component for Vehicles, Drivers, Fleet Cards, etc. (host + org dashboards). Stats take a <code>tone</code>: green / gray / red / amber. Don't re-roll the band per flow.</p>
+  </section>
+
+  <!-- LockSection -->
+  <section class="sec" id="lock">
+    <div class="sec-h">Subscription gate — <code>LockSection</code></div>
+    <div class="stack">
+      <div>
+        <div class="lbl">Unlocked — renders content as-is</div>
+        <div class="row" id="lockOpen"></div>
+      </div>
+      <div>
+        <div class="lbl">Locked (Premium) — blurred preview + scrim + CTA</div>
+        <div class="row" id="lockPremium"></div>
+      </div>
+      <div>
+        <div class="lbl">Locked (Lite) — note only, no CTA</div>
+        <div class="row" id="lockLite"></div>
+      </div>
+    </div>
+    <p class="note">Section-level upsell gate. Content stays underneath (blurred, non-interactive); the whole section reads as one locked unit — not an inline "Unlock" button. Reuse for every tier gate; don't fork a per-section lock.</p>
   </section>
 
   <!-- Cards -->
