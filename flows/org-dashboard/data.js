@@ -4,18 +4,26 @@
    this file holds the "populated / premium" baseline only. */
 window.ORG_DASH = {
   org: {
-    name: "Org 13",
-    plan: "Organisation Plan",
+    id: "padu",
+    name: "Padu Logistik Sdn. Bhd.",
     lastUpdated: "9 Jun 2026, 12:48 AM",
     date: "9 Jun 2026",
   },
+
+  orgs: [
+    { id: "padu", name: "Padu Logistik Sdn. Bhd.", role: "Admin" },
+    { id: "swift", name: "Swift Cargo Express", role: "Admin" },
+    { id: "bintang", name: "Bintang Freight Sdn. Bhd.", role: "Viewer" },
+  ],
 
   /* ── Top Pulse KPIs ─────────────────────────────────────────── */
   balance: {
     amount: 12450.80,
     daysRemaining: 18,
     currentUsage: 1963.68,   // RM, current month
+    currentUsageLitres: 748.58,
     lastMonthUsage: 9999.89, // RM
+    lastMonthUsageLitres: 3816.75,
   },
   operatingCost: {
     today: 12500,      // RM total today
@@ -29,11 +37,11 @@ window.ORG_DASH = {
   /* ── Modules (state resolved per-tier in app.jsx) ───────────── */
   // baseState: "active" (gated on tier) | "soon" (coming soon, never unlocks in v1)
   modules: [
-    { key: "myfuel",      name: "MyFuel",      icon: "local_gas_station", minTier: "free"    },
-    { key: "myadmin",     name: "MyAdmin",     icon: "badge",             minTier: "lite"    },
-    { key: "mytrip",      name: "MyTrip",      icon: "local_shipping",    minTier: "premium" },
-    { key: "myinsurance", name: "MyInsurance", icon: "verified_user",     soon: true         },
-    { key: "mytraining",  name: "MyTraining",  icon: "school",            soon: true         },
+    { key: "myfuel",      name: "MyFuel",      iconSrc: "icons/myfuel.svg",      minTier: "free"    },
+    { key: "myadmin",     name: "MyAdmin",     iconSrc: "icons/myadmin.svg",     minTier: "lite"    },
+    { key: "mytrip",      name: "MyTrip",      iconSrc: "icons/mytrip.svg",      minTier: "premium" },
+    { key: "myinsurance", name: "MyInsurance", iconSrc: "icons/myinsurance.svg", soon: true         },
+    { key: "mytraining",  name: "MyTraining",  iconSrc: "icons/mytraining.svg",  soon: true         },
   ],
 
   /* ── Operating Cost Trend ───────────────────────────────────── */
@@ -54,6 +62,13 @@ window.ORG_DASH = {
       { label: "VANB791", fuel: 2600 },
       { label: "WXX1234", fuel: 1700 },
       { label: "HINO300", fuel: 900  },
+      { label: "STG0848", fuel: 780  },
+      { label: "STG2190", fuel: 690  },
+      { label: "VANB112", fuel: 620  },
+      { label: "JQB4410", fuel: 540  },
+      { label: "STG7782", fuel: 460  },
+      { label: "HINO512", fuel: 390  },
+      { label: "WXX8821", fuel: 310  },
     ],
   },
 
@@ -70,8 +85,18 @@ window.ORG_DASH = {
   /* ── Action Preview (tabbed) ────────────────────────────────── */
   preview: {
     fuel: [
-      { date: "9 Jun 2026, 10:42 AM", item: "STG0234 · P-R&R TAWAR",      cat: "Fuel Transaction", catTone: "green", detail: "Diesel · $2.62/L · 96.45 L",  amount: "−$469.69" },
-      { date: "8 Jun 2026, 11:05 AM", item: "STG1161 · P-JERANGAU TRG",   cat: "Fuel Transaction", catTone: "green", detail: "Diesel · $2.60/L · 180.01 L", amount: "−$876.63" },
+      {
+        date: "9 Jun 2026, 10:42 AM", item: "STG0234 · P-R&R Tawar", cat: "Fuel Transaction", catTone: "green",
+        detail: "Diesel · RM 2.62/L · 96.45 L", amount: "−RM 469.69",
+        spAccount: "STG-PTN-034", station: "P-R&R Tawar", direction: "Westbound Kedah", volume: "96.45 L", txnNo: "#91602488",
+        subsidy: "RM 262.34", subsidyUsed: 262.34, subsidyLimit: 500,
+      },
+      {
+        date: "8 Jun 2026, 11:05 AM", item: "STG1161 · P-Jerangau TRG", cat: "Fuel Transaction", catTone: "green",
+        detail: "Diesel · RM 2.60/L · 180.01 L", amount: "−RM 876.63",
+        spAccount: "STG-PTN-161", station: "P-Jerangau TRG", direction: "Eastbound Terengganu", volume: "180.01 L", txnNo: "#91602173",
+        subsidy: "RM 401.18", subsidyUsed: 401.18, subsidyLimit: 600,
+      },
     ],
     due: [
       { date: "9 Jun 2026, 08:15 AM", item: "VANB791 · NISSAN NV200", cat: "Maintenance Due", catTone: "amber", detail: "Engine Oil Change · Due in 2 days", amount: "—" },

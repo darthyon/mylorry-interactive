@@ -231,15 +231,24 @@ function SummaryCard({ icon, title, sub, value, trend, accent }) {
 // footer band of split stats. Used for Vehicles, Drivers, Fleet Cards, etc.
 // (host dashboard + org dashboard). One component — don't re-roll the band.
 // stats: [{ n, label, tone }]  tone: "green" | "gray" | "red" | "amber".
-function CountCard({ icon, count, label, sub, stats = [], fill = false }) {
+function CountCard({ icon, count, label, sub, stats = [], fill = false, actionLabel }) {
   return (
     <div className={"ml-statcard" + (fill ? " fill" : "")}>
       <div className="ml-statcard-head">
-        <div className="ml-statcard-ico"><Icon name={icon} size={20} fill={1} /></div>
-        <div className="ml-statcard-count">{count}</div>
+        <div className="ml-statcard-main">
+          <div className="ml-statcard-ico"><Icon name={icon} size={20} fill={1} /></div>
+          <div className="ml-statcard-count">{count}</div>
+        </div>
+        {actionLabel && (
+          <button className="ml-statcard-action" aria-label={actionLabel}>
+            <Icon name="arrow_forward" size={15} />
+          </button>
+        )}
       </div>
-      <div className="ml-statcard-label">{label}</div>
-      {sub && <div className="ml-statcard-sub">{sub}</div>}
+      <div className="ml-statcard-labelrow">
+        <span className="ml-statcard-label">{label}</span>
+        {sub && <span className="ml-statcard-sub">{sub}</span>}
+      </div>
       <div className="ml-statcard-band">
         {stats.map((s, i) => (
           <div key={i} className="ml-statcard-cell">
@@ -333,12 +342,9 @@ function KPIProgress({ pct, actual, target, period, commissionLabel, phase }) {
 
 /* ─── LockSection (subscription gate) ───────────────────────── */
 // Section-level upsell gate. Renders real content underneath, then overlays a
-// scrim + blur + lock badge + single CTA when `locked`. NOT an inline "Unlock"
-// button on a live card — the whole section reads as one locked unit. Behind the
-// blur is deliberately dummy data (the upsell preview, PRD §6.1.4). Reuse this
-// everywhere a tier gate is needed; don't fork a per-section lock.
+// compact scrim + lock badge + generic upgrade CTA when `locked`.
 const TIER_LABEL = { lite: "Lite", premium: "Premium", enterprise: "Enterprise" };
-function LockSection({ locked = false, tier = "premium", cta, note, children }) {
+function LockSection({ locked = false, tier = "premium", cta = "Upgrade plan", note, children }) {
   if (!locked) return children;
   const tierName = TIER_LABEL[tier] || "Premium";
   return (
@@ -346,14 +352,12 @@ function LockSection({ locked = false, tier = "premium", cta, note, children }) 
       <div className="ml-lock-content" aria-hidden="true">{children}</div>
       <div className="ml-lock-scrim">
         <div className="ml-lock-card">
-          <div className="ml-lock-icon"><Icon name="lock" size={22} color="#fff" /></div>
+          <div className="ml-lock-icon"><Icon name="lock" size={16} color="#fff" /></div>
           <div className="ml-lock-badge">{tierName} plan required</div>
           {note && <div className="ml-lock-note">{note}</div>}
-          {cta && (
-            <button className="ml-lock-cta">
-              {cta} <Icon name="arrow_outward" size={16} />
-            </button>
-          )}
+          <button className="ml-lock-cta">
+            {cta} <Icon name="arrow_outward" size={15} />
+          </button>
         </div>
       </div>
     </div>
