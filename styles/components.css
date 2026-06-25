@@ -48,7 +48,7 @@
 /* KPI Tier Chip — window.SharedShell.KpiTierChip */
 .ml-tierchip { font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 9999px; white-space: nowrap; }
 .ml-tierchip.good { background: var(--green-50); color: var(--green-600); }
-.ml-tierchip.mid  { background: #EAF6FB;        color: var(--teal-600); }
+.ml-tierchip.mid  { background: var(--amber-50); color: var(--amber-600); }
 .ml-tierchip.bad  { background: #FFF1F1;        color: #D14B4D; }
 
 /* ── Shared component styles (identical across flows; moved from inline) ── */

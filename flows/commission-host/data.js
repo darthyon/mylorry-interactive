@@ -287,6 +287,7 @@
       role,
       roleKey: role.toLowerCase(),
       status: salesperson.status || "active",
+      lastEvaluation: salesperson.lastEvaluation || null,
     };
   });
 

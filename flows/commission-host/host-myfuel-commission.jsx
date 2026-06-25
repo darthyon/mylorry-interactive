@@ -629,7 +629,7 @@ function MyFuelCommissionTab() {
               <th>Role</th>
               <th>SP Accounts</th>
               <th>Total Volume (L)</th>
-              <th>KPI Progress</th>
+              <th>KPI Evaluation Result</th>
               <th>Final Commission</th>
               <th></th>
             </tr>
@@ -650,7 +650,14 @@ function MyFuelCommissionTab() {
                 <td>{getRoleLabel(record)}</td>
                 <td className="ml-mono">{record.spCount}</td>
                 <td className="ml-mono">{record.totalLiters.toLocaleString()}</td>
-                <td><KPIProgress pct={record.kpiPct} actual={record.attributedKpiVolume ?? record.totalLiters} target={record.kpiTarget} period="Dec 1–31" phase={record.kpiPhase} /></td>
+                <td>
+                  {record.lastEvaluation
+                    ? <span className="ml-tooltip-wrap">
+                        <HKpiTierChip mult={record.lastEvaluation.mult} />
+                        <span className="ml-tooltip">Last evaluation: {record.lastEvaluation.period}</span>
+                      </span>
+                    : <span style={{ color:"var(--fg-disabled)", fontSize:12 }}>N/A</span>}
+                </td>
                 <td className="ml-mono" style={{ fontWeight:600, color:"var(--navy-800)" }}>{HC.fmtRM(record.commission)}</td>
                 <td className="hm-view-cell">
                   <HIcon name="chevron_right" size={20} color="var(--fg-tertiary)" />

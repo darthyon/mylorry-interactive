@@ -369,10 +369,10 @@ function AgentsListView({ onView, onEdit, onCreate, onTerminate }) {
           <thead>
             <tr>
               <th>No.</th><th>Salesperson</th><th>Role</th>
-              <th>KPI Evaluation Result</th><th>Status</th>
+              <th>KPI Evaluation Result</th>
               <th>Mobile Number</th><th>Email</th><th>IC Number</th>
               <th>Bank Name</th><th>Account Number</th><th>Account Name</th>
-              <th></th>
+              <th>Status</th><th></th>
             </tr>
           </thead>
           <tbody>
@@ -392,13 +392,13 @@ function AgentsListView({ onView, onEdit, onCreate, onTerminate }) {
                       </span>
                     : <span style={{ color:"var(--fg-disabled)", fontSize:12 }}>N/A</span>}
                 </td>
-                <td><AccountStatusBadge status={a.accountStatus} /></td>
                 <td className="ml-mono">{a.mobile}</td>
                 <td style={{ color:"var(--fg-secondary)", fontSize:12 }}>{a.email}</td>
                 <td className="ml-mono" style={{ fontSize:12 }}>{a.ic}</td>
                 <td><BankBadge name={a.bankName} /></td>
                 <td className="ml-mono" style={{ fontSize:12 }}>{a.accNo === "-" ? <span style={{ color:"var(--fg-disabled)" }}>—</span> : a.accNo}</td>
                 <td style={{ fontSize:13 }}>{a.accName === "-" ? <span style={{ color:"var(--fg-disabled)" }}>—</span> : a.accName}</td>
+                <td><AccountStatusBadge status={a.accountStatus} /></td>
                 <td onClick={e => e.stopPropagation()}>
                   <EllipsisMenu agent={a} onView={() => onView(a)} onEdit={() => onEdit(a)} onTerminate={() => onTerminate(a)} />
                 </td>
@@ -820,7 +820,7 @@ function CommissionSection({ kpi, editing, showHistory, setShowHistory }) {
                     </button>
                   </div>
                   {activeZone && (
-                    <div className="hac-kpi-flat-chip">{activeZone.tier} · {activeZone.mult}%</div>
+                    <KpiTierChip mult={activeZone.mult} />
                   )}
                 </div>
 

@@ -466,7 +466,7 @@ const exceptionLabel = (exc) => {
 // Salesperson = the umbrella. One merged section: account-level dates, then per-role groups
 // (Agent / Referrer), each with its own constrained distribution bar + umbrella cards.
 // Shared by the detail (mode="view") and form (mode="edit") views so editing logic isn't forked.
-function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDate, validityMonths, onValidityChange, onOpenEditMode, newOrgException, onExceptionChange }) {
+function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDate, validityMonths, onValidityChange, onOpenEditMode }) {
   const [spModalState, setSpModalState] = useState(null);
   const [kpiModalRole, setKpiModalRole] = useState(null);
   const [tierAddTick, setTierAddTick] = useState({});
@@ -542,28 +542,6 @@ function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDa
   return (
     <Section title="Salesperson Setting">
       <SalespersonTopFields mode={mode} periodVolume={periodVolume} activationDate={activationDate} validityMonths={validityMonths} onValidityChange={onValidityChange} />
-      {isEdit ? (
-        <div className="hac-fg" style={{ marginBottom: 20 }}>
-          <FieldLabelWithInfo label="New Org Exception" info="Overrides the KPI multiplier for this organization's first eligible year." />
-          <RadioRow name="orgException" options={EXCEPTION_OPTIONS}
-            value={exceptionRadioValue(newOrgException)}
-            onChange={v => onExceptionChange(exceptionRadioToData(v, newOrgException))} />
-          {newOrgException?.mode === "custom" && (
-            <div className="spa-validity-input" style={{ marginTop: 8 }}>
-              <input className="hac-input" type="number" min="0" max="100" placeholder="50"
-                value={newOrgException.rate ?? ""}
-                onChange={e => onExceptionChange({ mode: "custom", rate: Number(e.target.value) })} />
-              <span className="spa-validity-suffix">% multiplier</span>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="hac-detail-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 20 }}>
-          <DField label="New Org Exception" info="Overrides the KPI multiplier for this organization's first eligible year.">
-            {exceptionLabel(newOrgException)}
-          </DField>
-        </div>
-      )}
       {roster.length === 0 && !isEdit && (
         <div className="hac-empty-state">No salesperson added yet.</div>
       )}
@@ -792,6 +770,9 @@ function SPDetailView({ account, onBack, onEdit }) {
               <div className="hac-detail-grid">
                 <DField label="Rebate Beneficiary">{a.rebateBeneficiary}</DField>
                 <DField label="Is Master">{a.isMaster ? "Yes" : "No"}</DField>
+                <DField label="New Org Exception" info="Overrides the KPI multiplier for this organization's first eligible year.">
+                  {exceptionLabel(a.newOrgException)}
+                </DField>
               </div>
             </div>
             <div className="spa-rebate-side">
@@ -807,7 +788,6 @@ function SPDetailView({ account, onBack, onEdit }) {
           periodVolume={a.periodVolume}
           activationDate={a.activationDate}
           validityMonths={a.commissionValidityMonths}
-          newOrgException={a.newOrgException}
           onOpenEditMode={onEdit}
         />
 
@@ -1236,6 +1216,20 @@ function SPFormView({ account, onBack, onSave }) {
                 <input type="checkbox" checked={form.isMaster} onChange={e => set("isMaster", e.target.checked)} />
                 <span>Is Master</span>
               </label>
+              <div className="hac-fg" style={{ marginTop: 18 }}>
+                <FieldLabelWithInfo label="New Org Exception" info="Overrides the KPI multiplier for this organization's first eligible year." />
+                <RadioRow name="orgException" options={EXCEPTION_OPTIONS}
+                  value={exceptionRadioValue(form.newOrgException)}
+                  onChange={v => set("newOrgException", exceptionRadioToData(v, form.newOrgException))} />
+                {form.newOrgException?.mode === "custom" && (
+                  <div className="spa-validity-input" style={{ marginTop: 8 }}>
+                    <input className="hac-input" type="number" min="0" max="100" placeholder="50"
+                      value={form.newOrgException.rate ?? ""}
+                      onChange={e => set("newOrgException", { mode: "custom", rate: Number(e.target.value) })} />
+                    <span className="spa-validity-suffix">% multiplier</span>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="spa-rebate-side">
               <EditableTiers kind="rebate" tiers={form.rebateTiers} onChange={setRebateTiers} />
@@ -1252,8 +1246,6 @@ function SPFormView({ account, onBack, onSave }) {
           activationDate={form.activationDate}
           validityMonths={form.commissionValidityMonths}
           onValidityChange={v => set("commissionValidityMonths", v)}
-          newOrgException={form.newOrgException}
-          onExceptionChange={v => set("newOrgException", v)}
         />
 
         {/* Payout Setting */}
