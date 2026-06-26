@@ -361,12 +361,14 @@ function SalespersonUmbrellaCard({ person, firstUsageDate, mode, onTiersChange, 
   const months = Number(effectiveValidityMonths) || DEFAULT_COMMISSION_VALIDITY_MONTHS;
   const activationText = effectiveActivationDate ? fmtDate(effectiveActivationDate) : "Pending first transaction";
   const validityText = effectiveActivationDate ? `${fmtDate(effectiveActivationDate)} - ${fmtDate(addMonths(effectiveActivationDate, months))}` : `${months} months`;
+  const pct = Number(person.kpiSplitPct) || 0;
   return (
     <div className="spa-sp-umbrella-card">
       <div className="spa-sp-edit-head">
         <div className="spa-sp-name">
           <HIcon name={person.role === "referrer" ? "group" : "support_agent"} size={15} color="var(--navy-800)" /> {person.name}
           <span className="spa-role-chip">{roleLabelOf(person.role)}</span>
+          <span className="spa-attr-badge">Volume · {pct}%</span>
         </div>
         <SalespersonCardMenu
           onEdit={onEditDetails}
