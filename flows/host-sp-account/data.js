@@ -16,7 +16,7 @@
     return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
   };
 
-  // Account-level commission validity: activation date + N months.
+  // Account-level first usage date + N months.
   const addMonths = (iso, months) => {
     if (!iso || !months) return "";
     const d = new Date(iso + "T00:00:00");
@@ -78,7 +78,7 @@
     tier(2000, 0.02, true),
   ];
 
-  const makeAgents = (nAgents, nReferrers) => {
+  const makeAgents = (nAgents, nReferrers, firstUsageDate) => {
     const out = [];
     for (let i = 0; i < nAgents; i++)
       out.push({ ...agent(AGENT_POOL[i % AGENT_POOL.length], "agent", defaultTiers) });
@@ -90,6 +90,24 @@
     const referrerSplit = distributeSplit(referrerRows.map(() => 1));
     agentRows.forEach((p, i) => { p.kpiSplitPct = agentSplit[i]; });
     referrerRows.forEach((p, i) => { p.kpiSplitPct = referrerSplit[i]; });
+
+    // Per-agent overrides so the prototype exercises default vs. custom states.
+    out.forEach((p, idx) => {
+      const hash = (idx * 3 + 2) % 7; // deterministic mix per agent
+      // Activation: most follow the account's first usage date; a few override it.
+      if (firstUsageDate && (hash === 0 || hash === 3)) {
+        const offset = hash === 0 ? 1 : -2;
+        p.activationDate = addMonths(firstUsageDate, offset) || firstUsageDate;
+      }
+      // Validity: most use the default 36 months; some are custom.
+      if (hash === 1) p.commissionValidityMonths = 24;
+      if (hash === 5) p.commissionValidityMonths = 48;
+      // New Org Exception: mix of auto/custom/none.
+      if (hash === 2) p.newOrgException = { mode: "custom", rate: 50 };
+      else if (hash === 4) p.newOrgException = { mode: "none" };
+      else p.newOrgException = { mode: "auto", rate: 100 };
+    });
+
     return out;
   };
 
@@ -99,7 +117,7 @@
   const SP_ACCOUNTS = Array.from({ length: 12 }).map((_, i) => {
     const nAgents = (i % 5) + 1;       // 1..5 agents
     const nReferrers = (i % 3);        // 0..2 referrers
-    const activationDate = ["2025-01-27", "2024-11-01", "2025-03-15", "2024-06-30",
+    const firstUsageDate = ["2025-01-27", "2024-11-01", "2025-03-15", "2024-06-30",
       "2025-05-10", "2023-12-01"][i % 6];
     return {
       id: "sp-" + (i + 1),
@@ -121,16 +139,12 @@
       isMaster: i % 3 === 0,
       rebateTiers: [tier(1000, 0.01), tier(2000, 0.015, true)],
 
-      // Commission Setting — ACCOUNT-LEVEL validity (survives agent transfer).
+      // First usage date is account-level; per-agent activation dates can override it.
       // Last account is left pre-activation (no first transaction yet) to exercise the
       // pending callout state.
-      activationDate: i === 11 ? "" : activationDate,
-      commissionValidityMonths: DEFAULT_COMMISSION_VALIDITY_MONTHS,
+      firstUsageDate: i === 11 ? "" : firstUsageDate,
 
-      // New Org Exception — KPI multiplier override for the org's first eligible year.
-      newOrgException: i === 2 ? { mode:"custom", rate:50 } : i === 7 ? { mode:"none" } : { mode:"auto", rate:100 },
-
-      agents: makeAgents(nAgents, nReferrers),
+      agents: makeAgents(nAgents, nReferrers, i === 11 ? "" : firstUsageDate),
 
       // KPI period total volume (litres). Illustrative — the basis for each
       // agent's and referrer's attributed volume = periodVolume × their role-specific split %.

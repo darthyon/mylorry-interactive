@@ -332,57 +332,7 @@ function TierGrid({ tiers, amountLabel = "Comm. Amount", variant = "list" }) {
   );
 }
 
-// Shared account-level context above the salesperson groups. Base usage volume remains at the
-// section level; activation/validity move into each commission tier block in view mode.
-function SalespersonTopFields({ mode, periodVolume, activationDate, validityMonths, onValidityChange }) {
-  const months = Number(validityMonths) || DEFAULT_COMMISSION_VALIDITY_MONTHS;
-  const rangeText = activationDate ? `${fmtDate(activationDate)} - ${fmtDate(addMonths(activationDate, months))}` : "";
-  const volumeText = periodVolume ? fmtLitres(periodVolume) : "—";
-  const activationText = activationDate ? fmtDate(activationDate) : "Pending first transaction";
-  const activationInfo = `Activation date is set automatically on the first fuel transaction. Commission validity runs ${months} months from that date.`;
-
-  if (mode === "view") {
-    return (
-      <div className="hac-detail-grid">
-        <DField label="Base Usage Volume">{volumeText}</DField>
-        <DField label="Activation Date" info={activationInfo}>{activationText}</DField>
-        <DField label="Commission Validity">
-          <div>
-            <span className="hac-view-val spa-dval" style={{ padding: 0, minHeight: "auto" }}>{rangeText || `${months} months`}</span>
-            {rangeText && <span className="hac-field-hint">{months} months</span>}
-          </div>
-        </DField>
-      </div>
-    );
-  }
-
-  return (
-    <div className="hac-form-grid3">
-      <div className="hac-fg">
-        <label className="hac-label">Base Usage Volume</label>
-        <span className="hac-view-val spa-dval">{volumeText}</span>
-      </div>
-      <div className="hac-fg">
-        <FieldLabelWithInfo label="Activation Date" info={activationInfo} />
-        <span className="hac-view-val spa-dval">{activationText}</span>
-      </div>
-      <div className="hac-fg">
-        <FieldLabelWithInfo
-          label="Commission Validity"
-          info="Defaults to 36 months from the activation date. Stays with the SP account if it is transferred between agents."
-        />
-        <div className="spa-validity-input">
-          <input className="hac-input" type="number" min="1" placeholder="36"
-            value={validityMonths} onChange={e => onValidityChange(e.target.value)} />
-          <span className="spa-validity-suffix">months</span>
-        </div>
-        {rangeText && <span className="hac-field-hint">{rangeText}</span>}
-      </div>
-    </div>
-  );
-}
-
-function TierMetaRow({ activationText, validityText }) {
+function TierMetaRow({ activationText, validityText, exceptionLabelText }) {
   return (
     <div className="spa-tier-meta-row">
       <div className="spa-tier-meta-item">
@@ -393,17 +343,21 @@ function TierMetaRow({ activationText, validityText }) {
         <span className="ml-k">Comm. Validity</span>
         <span className="spa-tier-meta-value">{validityText}</span>
       </div>
+      {exceptionLabelText != null && (
+        <div className="spa-tier-meta-item">
+          <span className="ml-k">New Org Exception</span>
+          <span className="spa-tier-meta-value">{exceptionLabelText}</span>
+        </div>
+      )}
     </div>
   );
 }
 
-// One salesperson = one umbrella card: identity + commission tiering + KPI attribution footer.
+// One salesperson = one umbrella card: identity + per-agent settings + commission tiering.
 // View renders read-only TierGrid; edit renders EditableTiers + the card menu.
-function SalespersonUmbrellaCard({ person, periodVolume, activationDate, validityMonths, mode, onTiersChange, onEditDetails, onAddTier, onDelete, tierAddTick }) {
-  const pct = Number(person.kpiSplitPct) || 0;
-  const volume = periodVolume ? attributedVolume(pct, periodVolume) : null;
-  const effectiveActivationDate = person.activationDate ?? activationDate;
-  const effectiveValidityMonths = person.commissionValidityMonths ?? validityMonths;
+function SalespersonUmbrellaCard({ person, firstUsageDate, mode, onTiersChange, onEditDetails, onAddTier, onDelete, tierAddTick }) {
+  const effectiveActivationDate = person.activationDate ?? firstUsageDate;
+  const effectiveValidityMonths = person.commissionValidityMonths ?? DEFAULT_COMMISSION_VALIDITY_MONTHS;
   const months = Number(effectiveValidityMonths) || DEFAULT_COMMISSION_VALIDITY_MONTHS;
   const activationText = effectiveActivationDate ? fmtDate(effectiveActivationDate) : "Pending first transaction";
   const validityText = effectiveActivationDate ? `${fmtDate(effectiveActivationDate)} - ${fmtDate(addMonths(effectiveActivationDate, months))}` : `${months} months`;
@@ -421,21 +375,17 @@ function SalespersonUmbrellaCard({ person, periodVolume, activationDate, validit
         />
       </div>
       <div className="spa-umbrella-tiers">
-        {mode === "view" && <TierMetaRow activationText={activationText} validityText={validityText} />}
+        {mode === "view" && (
+          <TierMetaRow
+            activationText={activationText}
+            validityText={validityText}
+            exceptionLabelText={exceptionLabel(person.newOrgException)}
+          />
+        )}
         {mode === "view" && <div className="spa-umbrella-tiers-label">Commission tiering</div>}
         {mode === "edit"
           ? <EditableTiers kind="commission" tiers={person.tiers} onChange={onTiersChange} externalAddTick={tierAddTick} />
           : <TierGrid tiers={person.tiers} />}
-      </div>
-      <div className="spa-sp-kpi-foot">
-        <div className="spa-attr-inline-metric">
-          <span className="ml-k">KPI Attribution</span>
-          <strong className="spa-attr-list-strong">{pct}%</strong>
-        </div>
-        <div className="spa-attr-inline-metric">
-          <span className="ml-k">KPI Volume Counted</span>
-          <strong className="spa-attr-list-strong">{volume != null ? fmtLitres(volume) : "—"}</strong>
-        </div>
       </div>
     </div>
   );
@@ -463,10 +413,10 @@ const exceptionLabel = (exc) => {
   return "Auto 100%";
 };
 
-// Salesperson = the umbrella. One merged section: account-level dates, then per-role groups
-// (Agent / Referrer), each with its own constrained distribution bar + umbrella cards.
+// Salesperson = the umbrella. One merged section: per-role groups (Agent / Referrer),
+// each with its own distribution bar + umbrella cards.
 // Shared by the detail (mode="view") and form (mode="edit") views so editing logic isn't forked.
-function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDate, validityMonths, onValidityChange, onOpenEditMode }) {
+function SalespersonSetting({ mode, roster, onChange, firstUsageDate, periodVolume, onOpenEditMode }) {
   const [spModalState, setSpModalState] = useState(null);
   const [kpiModalRole, setKpiModalRole] = useState(null);
   const [tierAddTick, setTierAddTick] = useState({});
@@ -479,12 +429,11 @@ function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDa
   const requestTierAdd = i => setTierAddTick(t => ({ ...t, [i]: (t[i] || 0) + 1 }));
 
   const roleGroup = (role) => {
-    // Keep each person's original roster index for correct mutation; sort display by split desc
-    // (matches the bar order).
+    // Keep each person's original roster index for correct mutation; preserve creation order
+    // so card positions don't jump when attribution percentages change.
     const rows = roster
       .map((a, i) => ({ a, i }))
-      .filter(({ a }) => a.role === role)
-      .sort((x, y) => (Number(y.a.kpiSplitPct) || 0) - (Number(x.a.kpiSplitPct) || 0) || x.a.name.localeCompare(y.a.name));
+      .filter(({ a }) => a.role === role);
     if (!isEdit && rows.length === 0) return null;
     const people = rows.map(r => r.a);
     const count = people.length;
@@ -510,7 +459,7 @@ function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDa
         ) : (
           <>
             <div className="spa-attr-overview-row">
-              <AttributionTotalReadout total={total} label="Total KPI Attribution" />
+              <AttributionTotalReadout total={total} label="Total Volume Attribution" />
               <KpiRoleBar roster={people} periodVolume={periodVolume} />
             </div>
             <div className="spa-sp-umbrella-grid">
@@ -518,9 +467,7 @@ function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDa
                 <SalespersonUmbrellaCard
                   key={i}
                   person={a}
-                  periodVolume={periodVolume}
-                  activationDate={activationDate}
-                  validityMonths={validityMonths}
+                  firstUsageDate={firstUsageDate}
                   mode={mode}
                   onTiersChange={t => setAgent(i, { tiers: t })}
                   onEditDetails={() => {
@@ -541,7 +488,6 @@ function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDa
 
   return (
     <Section title="Salesperson Setting">
-      <SalespersonTopFields mode={mode} periodVolume={periodVolume} activationDate={activationDate} validityMonths={validityMonths} onValidityChange={onValidityChange} />
       {roster.length === 0 && !isEdit && (
         <div className="hac-empty-state">No salesperson added yet.</div>
       )}
@@ -551,8 +497,7 @@ function SalespersonSetting({ mode, roster, onChange, periodVolume, activationDa
         <AddSalespersonModal
           initialValue={spModalState.mode === "edit" ? roster[spModalState.index] : null}
           defaultRole={spModalState.role || "agent"}
-          activationDate={activationDate}
-          validityMonths={validityMonths}
+          firstUsageDate={firstUsageDate}
           onClose={() => setSpModalState(null)}
           onSave={({ person }) => {
             if (spModalState.mode === "edit") saveAgentDetails(spModalState.index, person);
@@ -584,11 +529,6 @@ const fmtLitres = (n) => Number(n || 0).toLocaleString("en-MY") + " ltr";
 const roleLabelOf = (role) => (role === "referrer" ? "Referrer" : "Agent");
 const roleTitleOf = (role) => (role === "referrer" ? "Referrer distribution" : "Agent distribution");
 const filterRosterByRole = (roster, role) => roster.filter((person) => person.role === role);
-const sortRosterBySplit = (roster) => [...roster].sort((a, b) => {
-  const diff = (Number(b.kpiSplitPct) || 0) - (Number(a.kpiSplitPct) || 0);
-  if (diff !== 0) return diff;
-  return a.name.localeCompare(b.name);
-});
 const clampPct = (v) => {
   const n = Math.round(Number(v));
   if (isNaN(n)) return 0;
@@ -602,7 +542,7 @@ const kpiBarColor = (role, index) => {
 };
 
 function KpiRoleRows(roster, periodVolume) {
-  return sortRosterBySplit(roster).map((a, i) => ({
+  return roster.map((a, i) => ({
     key: `${a.name}-${a.role}-${i}`,
     rank: i + 1,
     name: a.name,
@@ -615,7 +555,7 @@ function KpiRoleRows(roster, periodVolume) {
 function KpiRoleBar({ roster, periodVolume }) {
   const rows = KpiRoleRows(roster, periodVolume);
   return (
-    <div className="spa-attr-stack" role="img" aria-label="KPI volume distribution split">
+    <div className="spa-attr-stack" role="img" aria-label="Volume attribution split">
       {rows.map((row, index) => (
         <div
           key={row.key}
@@ -648,7 +588,7 @@ function AttributionTotalReadout({ total, label }) {
 }
 
 function KpiRoleEditor({ role, draft, onSetPct, onAutoDistribute }) {
-  const people = sortRosterBySplit(filterRosterByRole(draft, role));
+  const people = filterRosterByRole(draft, role);
   const total = splitTotal(people);
   if (!people.length) return null;
   return (
@@ -702,16 +642,12 @@ function KpiAttributionModal({ roster, role, onClose, onSave }) {
   };
 
   return (
-    <Modal title={`Edit ${roleLabelOf(role)} KPI Attribution`} onClose={onClose} footer={
+    <Modal title={`Edit ${roleLabelOf(role)} Volume Attribution`} onClose={onClose} footer={
       <>
         <button className="hac-modal-cancel" onClick={onClose}>Cancel</button>
         <button className="hac-modal-save" disabled={!valid} onClick={() => onSave(draft.map(({ _idx, ...a }) => a))}>Save Changes</button>
       </>
     }>
-      <div className="hac-field-hint" style={{ marginBottom: 16 }}>
-        {roleLabelOf(role)} attribution must total 100% of the base usage volume. Agent and referrer attribution are
-        configured separately. Does not affect commission payments.
-      </div>
       <KpiRoleEditor role={role} draft={draft} onSetPct={setPct} onAutoDistribute={autoDistribute} />
     </Modal>
   );
@@ -770,9 +706,6 @@ function SPDetailView({ account, onBack, onEdit }) {
               <div className="hac-detail-grid">
                 <DField label="Rebate Beneficiary">{a.rebateBeneficiary}</DField>
                 <DField label="Is Master">{a.isMaster ? "Yes" : "No"}</DField>
-                <DField label="New Org Exception" info="Overrides the KPI multiplier for this organization's first eligible year.">
-                  {exceptionLabel(a.newOrgException)}
-                </DField>
               </div>
             </div>
             <div className="spa-rebate-side">
@@ -785,9 +718,8 @@ function SPDetailView({ account, onBack, onEdit }) {
           mode="view"
           roster={roster}
           onChange={setRoster}
+          firstUsageDate={a.firstUsageDate}
           periodVolume={a.periodVolume}
-          activationDate={a.activationDate}
-          validityMonths={a.commissionValidityMonths}
           onOpenEditMode={onEdit}
         />
 
@@ -1008,21 +940,44 @@ function EditableTiers({ kind, tiers, onChange, externalAddTick = 0 }) {
 }
 
 /* ─── Add salesperson modal ─────────────────────────────────────── */
-function AddSalespersonModal({ initialValue = null, defaultRole = "agent", activationDate = "", validityMonths, onClose, onSave }) {
+function AddSalespersonModal({ initialValue = null, defaultRole = "agent", firstUsageDate = "", onClose, onSave }) {
   const isEdit = !!initialValue;
   const [role, setRole]         = useState(initialValue?.role || defaultRole);
   const [name, setName]         = useState(initialValue?.name || "");
-  const [draftActivationDate, setDraftActivationDate] = useState(initialValue?.activationDate ?? activationDate ?? "");
+  const [useFirstUsageDate, setUseFirstUsageDate] = useState(
+    initialValue ? !initialValue.activationDate : true
+  );
+  const [draftActivationDate, setDraftActivationDate] = useState(
+    initialValue?.activationDate || firstUsageDate || ""
+  );
   const [draftValidityMonths, setDraftValidityMonths] = useState(
-    String(initialValue?.commissionValidityMonths ?? validityMonths ?? DEFAULT_COMMISSION_VALIDITY_MONTHS)
+    String(initialValue?.commissionValidityMonths ?? DEFAULT_COMMISSION_VALIDITY_MONTHS)
+  );
+  const [newOrgException, setNewOrgException] = useState(
+    initialValue?.newOrgException ?? { mode: "auto", rate: 100 }
   );
   const noun = role === "agent" ? "Agent" : "Referrer";
   const pool = role === "agent" ? AGENT_POOL : REFERRER_POOL;
   const canSave = !!name;
   const months = Number(draftValidityMonths) || DEFAULT_COMMISSION_VALIDITY_MONTHS;
-  const validityText = draftActivationDate
-    ? `${fmtDate(draftActivationDate)} - ${fmtDate(addMonths(draftActivationDate, months))}`
+
+  const resolvedActivationDate = useFirstUsageDate ? firstUsageDate : draftActivationDate;
+  const activationReadout = resolvedActivationDate
+    ? fmtDate(resolvedActivationDate)
+    : "Pending first transaction";
+  const validityText = resolvedActivationDate
+    ? `${fmtDate(resolvedActivationDate)} - ${fmtDate(addMonths(resolvedActivationDate, months))}`
     : `${months} months from activation`;
+
+  const toggleFirstUsageDate = (checked) => {
+    setUseFirstUsageDate(checked);
+    if (checked) {
+      setDraftActivationDate("");
+    } else {
+      setDraftActivationDate(firstUsageDate || "");
+    }
+  };
+
   const save = () => {
     if (!canSave) return;
     onSave({
@@ -1030,8 +985,9 @@ function AddSalespersonModal({ initialValue = null, defaultRole = "agent", activ
         name,
         role,
         tiers: initialValue?.tiers || [],
-        activationDate: draftActivationDate,
+        activationDate: useFirstUsageDate ? "" : draftActivationDate,
         commissionValidityMonths: months,
+        newOrgException,
       },
     });
     onClose();
@@ -1061,35 +1017,60 @@ function AddSalespersonModal({ initialValue = null, defaultRole = "agent", activ
           {pool.map(p => <option key={p}>{p}</option>)}
         </select>
       </div>
-      {isEdit && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div className="hac-detail-grid" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "8px 18px", alignItems: "start" }}>
-            <div className="hac-fg">
-              <label className="hac-label">Activation Date</label>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {!useFirstUsageDate ? (
+          <div className="hac-fg">
+            <label className="hac-label">Activation Date</label>
+            <input
+              className="hac-input"
+              type="date"
+              value={draftActivationDate}
+              onChange={e => setDraftActivationDate(e.target.value)}
+            />
+          </div>
+        ) : (
+          <div className="hac-fg">
+            <label className="hac-label">Activation Date</label>
+            <span className="hac-view-val spa-dval">{activationReadout}</span>
+          </div>
+        )}
+        <label className="hac-check-row">
+          <input type="checkbox" checked={useFirstUsageDate} onChange={e => toggleFirstUsageDate(e.target.checked)} />
+          <span>Follow first usage date by default</span>
+        </label>
+        <div className="hac-detail-grid" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "8px 18px", alignItems: "start" }}>
+          <div className="hac-fg">
+            <label className="hac-label">Commission Validity</label>
+            <div className="spa-validity-input">
               <input
                 className="hac-input"
-                type="date"
-                value={draftActivationDate}
-                onChange={e => setDraftActivationDate(e.target.value)}
+                type="number"
+                min="1"
+                value={draftValidityMonths}
+                onChange={e => setDraftValidityMonths(e.target.value)}
               />
+              <span className="spa-validity-suffix">months</span>
             </div>
-            <div className="hac-fg">
-              <label className="hac-label">Commission Validity</label>
-              <div className="spa-validity-input">
-                <input
-                  className="hac-input"
-                  type="number"
-                  min="1"
-                  value={draftValidityMonths}
-                  onChange={e => setDraftValidityMonths(e.target.value)}
-                />
-                <span className="spa-validity-suffix">months</span>
-              </div>
-              <div className="spa-inline-help">{validityText}</div>
-            </div>
+            <div className="spa-inline-help">{validityText}</div>
           </div>
         </div>
-      )}
+        <div className="hac-fg" style={{ marginTop: 4 }}>
+          <FieldLabelWithInfo label="New Org Exception" info="Overrides the KPI multiplier for this organization's first eligible year." />
+          <RadioRow name="orgException"
+            options={EXCEPTION_OPTIONS}
+            value={exceptionRadioValue(newOrgException)}
+            onChange={v => setNewOrgException(exceptionRadioToData(v, newOrgException))} />
+          {newOrgException?.mode === "custom" && (
+            <div className="spa-validity-input" style={{ marginTop: 8 }}>
+              <input className="hac-input" type="number" min="0" max="100" placeholder="50"
+                value={newOrgException.rate ?? ""}
+                onChange={e => setNewOrgException({ mode: "custom", rate: Number(e.target.value) })} />
+              <span className="spa-validity-suffix">% multiplier</span>
+            </div>
+          )}
+        </div>
+      </div>
     </Modal>
   );
 }
@@ -1102,8 +1083,8 @@ function SPFormView({ account, onBack, onSave }) {
     freezingThresholdType: "", freezingThresholdAmount: "", balanceReminder: "",
     rebateBeneficiary: "Individual", isMaster: false,
     rebateTiers: [{ usageMax: 1000, commissionAmount: 0.01, final: true }],
-    activationDate: "", commissionValidityMonths: DEFAULT_COMMISSION_VALIDITY_MONTHS,
-    newOrgException: { mode: "auto", rate: 100 },
+    firstUsageDate: "",
+    periodVolume: 0,
     agents: [],
     payoutType: "Credit Note",
   });
@@ -1116,10 +1097,7 @@ function SPFormView({ account, onBack, onSave }) {
 
   // Rebate tiers
   const setRebateTiers = t => set("rebateTiers", t);
-  // Salesperson commission + KPI editing is handled inline by <SalespersonSetting>.
-
-  // Validity defaults to 36 months on create but is editable (not fixed).
-  const validityMonths = Number(form.commissionValidityMonths) || DEFAULT_COMMISSION_VALIDITY_MONTHS;
+  // Salesperson commission + volume attribution editing is handled inline by <SalespersonSetting>.
 
   return (
     <div style={{ paddingBottom: 90 }}>
@@ -1216,20 +1194,6 @@ function SPFormView({ account, onBack, onSave }) {
                 <input type="checkbox" checked={form.isMaster} onChange={e => set("isMaster", e.target.checked)} />
                 <span>Is Master</span>
               </label>
-              <div className="hac-fg" style={{ marginTop: 18 }}>
-                <FieldLabelWithInfo label="New Org Exception" info="Overrides the KPI multiplier for this organization's first eligible year." />
-                <RadioRow name="orgException" options={EXCEPTION_OPTIONS}
-                  value={exceptionRadioValue(form.newOrgException)}
-                  onChange={v => set("newOrgException", exceptionRadioToData(v, form.newOrgException))} />
-                {form.newOrgException?.mode === "custom" && (
-                  <div className="spa-validity-input" style={{ marginTop: 8 }}>
-                    <input className="hac-input" type="number" min="0" max="100" placeholder="50"
-                      value={form.newOrgException.rate ?? ""}
-                      onChange={e => set("newOrgException", { mode: "custom", rate: Number(e.target.value) })} />
-                    <span className="spa-validity-suffix">% multiplier</span>
-                  </div>
-                )}
-              </div>
             </div>
             <div className="spa-rebate-side">
               <EditableTiers kind="rebate" tiers={form.rebateTiers} onChange={setRebateTiers} />
@@ -1237,15 +1201,13 @@ function SPFormView({ account, onBack, onSave }) {
           </div>
         </Section>
 
-        {/* Salesperson Setting — umbrella: account-level dates + per-role groups (commission + KPI) */}
+        {/* Salesperson Setting — per-role groups (commission + volume attribution) */}
         <SalespersonSetting
           mode="edit"
           roster={form.agents}
           onChange={next => setForm(f => ({ ...f, agents: next }))}
+          firstUsageDate={form.firstUsageDate}
           periodVolume={form.periodVolume}
-          activationDate={form.activationDate}
-          validityMonths={form.commissionValidityMonths}
-          onValidityChange={v => set("commissionValidityMonths", v)}
         />
 
         {/* Payout Setting */}
@@ -1259,7 +1221,7 @@ function SPFormView({ account, onBack, onSave }) {
 
       <div className="hac-edit-bar">
         <button className="hac-cancel-btn" onClick={onBack}>Cancel</button>
-        <button className="hac-save-btn" onClick={() => onSave({ ...form, commissionValidityMonths: validityMonths })}>
+        <button className="hac-save-btn" onClick={() => onSave(form)}>
           <HIcon name="check" size={15} /> {isEdit ? "Save Changes" : "Save"}
         </button>
       </div>

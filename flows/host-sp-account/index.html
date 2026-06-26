@@ -188,22 +188,22 @@ b { font-weight: 600; }
 
 .spa-sp-edit-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 
-/* ── Salesperson Setting (umbrella: account fields + per-role commission/KPI) ─ */
+/* ── Salesperson Setting (per-role commission + volume attribution) ─ */
 /* Per-role group */
-.spa-role-group { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--border-light); }
-.spa-role-group:first-of-type { margin-top: 18px; padding-top: 0; border-top: none; }
+.spa-role-group { margin-top: 22px; }
+.spa-role-group ~ .spa-role-group { padding-top: 20px; border-top: 1px solid var(--border-light); }
 .spa-role-group-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
 .spa-role-group-title { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .spa-role-group-meta { font-size: 12px; color: var(--fg-secondary); }
 .spa-role-group-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-/* Paired row: total readout (stat) beside a width-constrained distribution bar */
+/* Total readout above a full-width distribution bar */
 .spa-attr-overview-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
 .spa-attr-overview-row .spa-attr-total { color: var(--fg-primary); flex-shrink: 0; }
 .spa-attr-overview-row .spa-attr-total.warn { color: var(--red-400); }
-.spa-attr-overview-row .spa-attr-stack { flex: 1 1 320px; width: auto; max-width: 560px; }
+.spa-attr-overview-row .spa-attr-stack { flex: 1 1 100%; width: 100%; max-width: none; min-width: 0; }
 
-/* Umbrella card: identity + tiering + KPI footer */
+/* Umbrella card: identity + per-agent settings + commission tiering */
 .spa-sp-umbrella-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .spa-sp-umbrella-card { border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px 18px; background: #fff; display: flex; flex-direction: column; }
 .spa-umbrella-tiers-label { font-size: 13px; font-weight: 600; color: var(--navy-800); margin-bottom: 10px; }
@@ -211,7 +211,6 @@ b { font-weight: 600; }
 .spa-tier-meta-item { display: flex; flex-direction: column; gap: 2px; min-width: 160px; }
 .spa-tier-meta-item .ml-k { margin-bottom: 0; }
 .spa-tier-meta-value { font-size: 13px; font-weight: 600; color: var(--fg-primary); }
-.spa-sp-kpi-foot { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; margin: 16px -18px -16px; padding: 14px 18px; background: var(--bg-subtle); border-top: 1px solid var(--border-light); border-bottom-left-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md); }
 .spa-attr-role-title { font-size: 15px; font-weight: 700; color: var(--navy-800); }
 .spa-attr-stack { display: flex; gap: 2px; width: 100%; height: 36px; border-radius: var(--radius-sm); overflow: visible; background: var(--bg-muted); }
 .spa-attr-stack-seg { position: relative; flex-grow: 0; flex-basis: 0; min-width: 0; display: flex; align-items: center; justify-content: center; background: var(--green-500); overflow: visible; }
@@ -225,9 +224,6 @@ b { font-weight: 600; }
 .spa-attr-stack-seg:focus-visible .spa-attr-stack-tooltip { opacity: 1; }
 .spa-attr-stack-label { position: relative; z-index: 1; font-size: 11px; font-weight: 700; color: #fff; white-space: nowrap; padding: 0 6px; text-shadow: 0 1px 1px rgba(0,0,0,.18); }
 .spa-attr-stack-tooltip { width: auto; min-width: 180px; max-width: 260px; white-space: normal; z-index: 60; }
-.spa-attr-inline-metric { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 112px; }
-.spa-attr-inline-metric .ml-k { margin-bottom: 0; white-space: nowrap; }
-.spa-sp-kpi-foot .ml-k,
 .spa-tier-meta-item .ml-k,
 .spa-tier-stack-field .ml-k,
 .spa-tier-body .ml-k { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--fg-secondary); }
@@ -267,9 +263,7 @@ b { font-weight: 600; }
   .spa-subsidy-action { min-width: 0; }
   .spa-sp-umbrella-grid { grid-template-columns: 1fr; }
   .spa-attr-overview-row .spa-attr-stack { max-width: none; }
-  .spa-attr-inline-metric { width: 100%; }
   .spa-attr-edit-group-head { align-items: stretch; }
-  .spa-sp-kpi-foot { grid-template-columns: 1fr; }
   .spa-rebate-layout .hac-detail-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
