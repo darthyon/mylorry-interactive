@@ -198,19 +198,34 @@ function Modules({ tier }) {
         <span>{activeCount} active</span>
       </div>
       <div className="od-modules">
-        {modules.map((m) => (
-          <button key={m.key} type="button" className={"od-mod " + m.state} disabled={m.state === "soon"}>
-            <div className="od-mod-ico"><img src={m.iconSrc} alt="" aria-hidden="true" /></div>
-            <div className="od-mod-copy">
-              <div className="od-mod-name">{m.name}</div>
-              <span className={"od-modtag " + m.state}>
-                {m.state === "locked" && <Icon name="lock" size={11} />}
-                {m.tag}
-              </span>
-            </div>
-            {m.state === "active" && <Icon name="arrow_forward" size={15} style={{ marginLeft: "auto" }} />}
-          </button>
-        ))}
+        {modules.map((m) => {
+          const isMyFuelLink = m.key === "myfuel" && m.state === "active";
+          const body = (
+            <>
+              <div className="od-mod-ico"><img src={m.iconSrc} alt="" aria-hidden="true" /></div>
+              <div className="od-mod-copy">
+                <div className="od-mod-name">{m.name}</div>
+                <span className={"od-modtag " + m.state}>
+                  {m.state === "locked" && <Icon name="lock" size={11} />}
+                  {m.tag}
+                </span>
+              </div>
+              {m.state === "active" && <Icon name="arrow_forward" size={15} style={{ marginLeft: "auto" }} />}
+            </>
+          );
+          if (isMyFuelLink) {
+            return (
+              <a key={m.key} href="../org-myfuel-dashboard/index.html" className="od-mod active" style={{ textDecoration: "none" }}>
+                {body}
+              </a>
+            );
+          }
+          return (
+            <button key={m.key} type="button" className={"od-mod " + m.state} disabled={m.state === "soon"}>
+              {body}
+            </button>
+          );
+        })}
       </div>
     </section>
   );
