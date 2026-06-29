@@ -103,40 +103,193 @@ function Rail() {
   );
 }
 
-/* ── Section 1: Top Pulse ──────────────────────────────────────── */
-function TopPulse({ empty }) {
-  const b = D.balance, o = D.operatingCost, v = D.vehicles, dr = D.drivers;
+/* ── Wallet Logo ───────────────────────────────────────────────── */
+function WalletLogo({ wallet, size = 16 }) {
+  if (wallet.logo === "petron") return <PetronLogo size={size} />;
+  const abbr = wallet.logo === "petronas" ? "PN" : wallet.logo === "shell" ? "SH" : wallet.name[0].toUpperCase();
+  return <span className="od-wallet-abbr">{abbr}</span>;
+}
+
+/* ── Wallet Picker (dropdown / mobile bottom-sheet) ─────────────── */
+function WalletPicker({ wallets, selectedId, onSelect, onClose }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    function onDown(e) { if (ref.current && !ref.current.contains(e.target)) onClose(); }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [onClose]);
+
   return (
-    <div className="od-pulse">
-      {/* Balance — wide card; gradient tone reflects runway health */}
-      <div className={"od-kpi od-kpi-balance" + (empty ? "" : balanceTone(b.daysRemaining))}>
-        <div className="od-bal-top">
-          <span className="od-bal-label">Balance</span>
-          <span className="od-bal-meta">
-            <span className="od-bal-updated">Last updated<br />{D.org.lastUpdated}</span>
-            <button className="od-card-arrow invert" aria-label="Open MyFuel">
-              <Icon name="arrow_forward" size={15} />
-            </button>
-          </span>
+    <div className="od-wallet-picker" ref={ref} role="menu">
+      <div className="od-wallet-picker-h">Switch wallet</div>
+      {wallets.map((w, i) => (
+        <button key={w.id} className={"od-wallet-item" + (w.id === selectedId ? " active" : "")}
+          onClick={() => onSelect(i)} role="menuitem">
+          <span className="od-wallet-item-check">{w.id === selectedId && <Icon name="check" size={14} />}</span>
+          <span className="od-wallet-item-logo"><WalletLogo wallet={w} size={14} /></span>
+          <span className="od-wallet-item-name">{w.name}</span>
+          <span className="od-wallet-item-bal">{Wallet(w.amount)}</span>
+          {w.status === "low" && <span className="od-wallet-item-tag low">Low</span>}
+          {w.status === "critical" && <span className="od-wallet-item-tag critical">Critical</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ── Balance Card (wallet-aware) ───────────────────────────────── */
+function BalanceCard({ empty }) {
+  const wallets = D.wallets || [];
+  const multi = wallets.length > 1;
+
+  const [idx, setIdx] = useState(() => {
+    try {
+      const n = parseInt(localStorage.getItem("od_wallet_" + D.org.id), 10);
+      return (!isNaN(n) && n < wallets.length) ? n : 0;
+    } catch { return 0; }
+  });
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const cardRef = useRef(null);
+  const touchX = useRef(null);
+
+  const w = wallets[idx] || null;
+
+  function go(dir) {
+    setIdx(i => {
+      const next = (i + dir + wallets.length) % wallets.length;
+      try { localStorage.setItem("od_wallet_" + D.org.id, next); } catch {}
+      return next;
+    });
+  }
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el || !multi) return;
+    const onStart = (e) => { touchX.current = e.touches[0].clientX; };
+    const onEnd = (e) => {
+      if (touchX.current === null) return;
+      const dx = e.changedTouches[0].clientX - touchX.current;
+      if (Math.abs(dx) > 44) go(dx < 0 ? 1 : -1);
+      touchX.current = null;
+    };
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchend", onEnd, { passive: true });
+    return () => { el.removeEventListener("touchstart", onStart); el.removeEventListener("touchend", onEnd); };
+  }, [multi, wallets.length]);
+
+  if (!w) {
+    return (
+      <div className="od-kpi od-kpi-balance">
+        <div className="od-bal-top"><span className="od-bal-label">Balance</span></div>
+        <div className="od-bal-value od-bal-unavail">No wallet available</div>
+      </div>
+    );
+  }
+
+  const tone = empty ? "" : balanceTone(w.daysRemaining);
+
+  // Shared band renderer
+  function UsageBand({ wallet }) {
+    return (
+      <div className="od-bal-band">
+        <div className="od-bal-cell">
+          <div className="od-bal-cell-l">May usage</div>
+          <div className="od-bal-cell-v">{empty ? "RM 0.00" : RM(wallet.currentUsage)}</div>
+          <div className="od-bal-cell-s">{empty ? "0.00 L" : L(wallet.currentUsageLitres)}</div>
         </div>
-        <div className="od-bal-value">{empty ? "$0.00" : Wallet(b.amount)}</div>
-        <span className="od-bal-pill">
-          <Icon name="schedule" size={13} color="#fff" />
-          {empty ? "No usage yet" : `Est. remaining ${b.daysRemaining} days`}
-        </span>
-        <div className="od-bal-band">
-          <div className="od-bal-cell">
-            <div className="od-bal-cell-l">May usage</div>
-            <div className="od-bal-cell-v">{empty ? "RM 0.00" : RM(b.currentUsage)}</div>
-            <div className="od-bal-cell-s">{empty ? "0.00 L" : L(b.currentUsageLitres)}</div>
-          </div>
-          <div className="od-bal-cell">
-            <div className="od-bal-cell-l">Last month usage</div>
-            <div className="od-bal-cell-v">{empty ? "RM 0.00" : RM(b.lastMonthUsage)}</div>
-            <div className="od-bal-cell-s">{empty ? "0.00 L" : L(b.lastMonthUsageLitres)}</div>
-          </div>
+        <div className="od-bal-cell">
+          <div className="od-bal-cell-l">Last month usage</div>
+          <div className="od-bal-cell-v">{empty ? "RM 0.00" : RM(wallet.lastMonthUsage)}</div>
+          <div className="od-bal-cell-s">{empty ? "0.00 L" : L(wallet.lastMonthUsageLitres)}</div>
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div className={"od-kpi od-kpi-balance" + tone} ref={cardRef}>
+
+      {/* ── Desktop: single card, hover arrows ── */}
+      <div className="od-bal-desktop">
+        {multi && (
+          <button className="od-bal-warrow od-bal-wl" onClick={() => go(-1)} aria-label="Previous wallet">
+            <Icon name="chevron_left" size={16} color="#1a3a25" />
+          </button>
+        )}
+        {multi && (
+          <button className="od-bal-warrow od-bal-wr" onClick={() => go(1)} aria-label="Next wallet">
+            <Icon name="chevron_right" size={16} color="#1a3a25" />
+          </button>
+        )}
+        <div className="od-bal-top">
+          <div className="od-bal-wname-wrap">
+            <button className="od-bal-wname" onClick={() => multi && setPickerOpen(v => !v)}
+              aria-haspopup={multi ? "true" : undefined} style={!multi ? { cursor: "default" } : {}}>
+              <WalletLogo wallet={w} size={14} />
+              <span className="od-bal-wname-label">{w.name}</span>
+              {multi && <Icon name="expand_more" size={13} color="rgba(255,255,255,.65)"
+                style={{ flexShrink: 0, transition: "transform .15s", transform: pickerOpen ? "rotate(180deg)" : "rotate(0deg)" }} />}
+            </button>
+            {pickerOpen && (
+              <WalletPicker wallets={wallets} selectedId={w.id}
+                onSelect={(i) => { setIdx(i); try { localStorage.setItem("od_wallet_" + D.org.id, i); } catch {} setPickerOpen(false); }}
+                onClose={() => setPickerOpen(false)} />
+            )}
+          </div>
+          <span className="od-bal-updated">Last updated<br />{D.org.lastUpdated}</span>
+        </div>
+        <div className="od-bal-sublabel">Balance</div>
+        <div className="od-bal-value">{empty ? "$0.00" : Wallet(w.amount)}</div>
+        <span className="od-bal-pill">
+          <Icon name="schedule" size={13} color="#fff" />
+          {empty ? "No usage yet" : `Est. remaining ${w.daysRemaining} days`}
+        </span>
+        <UsageBand wallet={w} />
+        {multi && (
+          <div className="od-bal-dots" role="tablist" aria-label="Wallet position">
+            {wallets.map((wl, i) => (
+              <button key={wl.id} role="tab" aria-selected={i === idx} aria-label={wl.name}
+                className={"od-bal-dot" + (i === idx ? " active" : "")}
+                onClick={() => { setIdx(i); try { localStorage.setItem("od_wallet_" + D.org.id, i); } catch {} }} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Mobile: horizontal snap scroll, each wallet its own card ── */}
+      <div className="od-bal-mobile">
+        <div className="od-bal-mscroll">
+          {wallets.map((wl) => (
+            <div key={wl.id} className={"od-bal-mcard" + (empty ? "" : balanceTone(wl.daysRemaining))}>
+              <div className="od-bal-top">
+                <span className="od-bal-mcard-name">
+                  <WalletLogo wallet={wl} size={13} />
+                  <span>{wl.name}</span>
+                </span>
+                <span className="od-bal-updated">Last updated<br />{D.org.lastUpdated}</span>
+              </div>
+              <div className="od-bal-sublabel">Balance</div>
+              <div className="od-bal-value">{empty ? "$0.00" : Wallet(wl.amount)}</div>
+              <span className="od-bal-pill">
+                <Icon name="schedule" size={13} color="#fff" />
+                {empty ? "No usage yet" : `Est. remaining ${wl.daysRemaining} days`}
+              </span>
+              <UsageBand wallet={wl} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+/* ── Section 1: Top Pulse ──────────────────────────────────────── */
+function TopPulse({ empty }) {
+  const o = D.operatingCost, v = D.vehicles, dr = D.drivers;
+  return (
+    <div className="od-pulse">
+      <BalanceCard empty={empty} />
 
       {/* Operating Cost — today snapshot */}
       <div className="od-kpi od-kpi-cost">
@@ -467,19 +620,20 @@ function TripsToday({ tier, empty }) {
 }
 
 /* ── Section 5: Action Needed ──────────────────────────────────── */
-function ActionNeeded({ empty }) {
+function ActionNeeded({ empty, onTabSelect }) {
   return (
     <div className="od-overview">
       <div className="od-sec-title">Overview</div>
       <div className="od-actneed">
         {D.actionNeeded.map((a) => (
-          <div key={a.key} className="od-an">
-            <div className="od-an-top">
-              <div className={"od-an-ico " + a.tone}><Icon name={a.icon} size={18} /></div>
-              <div className="od-an-n">{empty ? 0 : a.count}</div>
+          <button key={a.key} className="od-an" onClick={() => onTabSelect(a.tab)}>
+            <div className={"od-an-ico " + a.tone}><Icon name={a.icon} size={18} /></div>
+            <div className="od-an-label">{a.label}</div>
+            <div className="od-an-count">
+              <span className="od-an-n">{empty ? 0 : a.count}</span>
+              <span className="od-an-sup">{a.supporting}</span>
             </div>
-            <div className="od-an-l">{a.label}</div>
-          </div>
+          </button>
         ))}
       </div>
     </div>
@@ -535,7 +689,7 @@ function FuelPreviewCard({ row }) {
 
 function ActionPreviewCard({ row, tab }) {
   const item = splitItem(row.item);
-  const icon = tab === "due" ? "event_busy" : tab === "checklists" ? "fact_check" : "local_shipping";
+  const icon = tab === "due" ? "event_busy" : tab === "documents" ? "badge" : tab === "checklists" ? "fact_check" : "local_shipping";
   return (
     <article className="od-preview-card od-action-card">
       <div className={"od-action-icon " + row.catTone}><Icon name={icon} size={18} /></div>
@@ -553,15 +707,15 @@ function ActionPreviewCard({ row, tab }) {
   );
 }
 
-function ActionPreview({ tier, empty }) {
+function ActionPreview({ tier, empty, tab, setTab }) {
   const tripsActive = rank(tier) >= rank("premium");
   const TABS = [
-    { value: "fuel", label: "Fuel TXNs", rows: D.preview.fuel },
-    { value: "due", label: "Due Statuses", rows: D.preview.due },
-    { value: "checklists", label: "Checklists", rows: D.preview.checklists },
+    { value: "fuel",       label: "Fuel TXNs", rows: D.preview.fuel },
+    { value: "due",        label: "Due Dates",  rows: D.preview.due },
+    { value: "documents",  label: "Documents",  rows: D.preview.documents },
+    { value: "checklists", label: "Checklist",  rows: D.preview.checklists },
     ...(tripsActive ? [{ value: "trips", label: "Trips", rows: D.preview.trips }] : []),
   ];
-  const [tab, setTab] = useState("fuel");
   const active = TABS.find((t) => t.value === tab) || TABS[0];
   const rows = empty ? [] : active.rows;
 
@@ -585,6 +739,17 @@ function ActionPreview({ tier, empty }) {
         </div>
       )}
     </div>
+  );
+}
+
+/* ── Activity Section (lifts tab state so Overview cards can drive tabs) ── */
+function ActivitySection({ tier, empty }) {
+  const [tab, setTab] = useState("fuel");
+  return (
+    <>
+      <ActionNeeded empty={empty} onTabSelect={setTab} />
+      <ActionPreview tier={tier} empty={empty} tab={tab} setTab={setTab} />
+    </>
   );
 }
 
@@ -637,11 +802,8 @@ function App() {
             <TripsToday tier={tier} empty={empty} />
           </div>
 
-          {/* 5 — Action Needed */}
-          <ActionNeeded empty={empty} />
-
-          {/* 6 — Action Preview */}
-          <ActionPreview tier={tier} empty={empty} />
+          {/* 5 + 6 — Overview + Activity Preview */}
+          <ActivitySection tier={tier} empty={empty} />
         </div>
       </div>
 

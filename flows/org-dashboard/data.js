@@ -17,14 +17,46 @@ window.ORG_DASH = {
   ],
 
   /* ── Top Pulse KPIs ─────────────────────────────────────────── */
-  balance: {
-    amount: 12450.80,
-    daysRemaining: 18,
-    currentUsage: 1963.68,   // RM, current month
-    currentUsageLitres: 748.58,
-    lastMonthUsage: 9999.89, // RM
-    lastMonthUsageLitres: 3816.75,
-  },
+  // wallets: each entry is a separate provider account — never summed.
+  // status: "healthy" | "low" | "critical"
+  wallets: [
+    {
+      id: "petron",
+      name: "Petron wallet",
+      logo: "petron",
+      amount: 12450.80,
+      daysRemaining: 18,
+      currentUsage: 1963.68,
+      currentUsageLitres: 748.58,
+      lastMonthUsage: 9999.89,
+      lastMonthUsageLitres: 3816.75,
+      status: "healthy",
+    },
+    {
+      id: "petronas",
+      name: "Petronas wallet",
+      logo: "petronas",
+      amount: 3110.30,
+      daysRemaining: 5,
+      currentUsage: 820.00,
+      currentUsageLitres: 312.40,
+      lastMonthUsage: 4200.00,
+      lastMonthUsageLitres: 1600.00,
+      status: "low",
+    },
+    {
+      id: "shell",
+      name: "Shell wallet",
+      logo: "shell",
+      amount: 1100.00,
+      daysRemaining: 3,
+      currentUsage: 380.00,
+      currentUsageLitres: 144.20,
+      lastMonthUsage: 2100.00,
+      lastMonthUsageLitres: 800.00,
+      status: "low",
+    },
+  ],
   operatingCost: {
     today: 12500,      // RM total today
     trendPct: 8,       // vs yesterday
@@ -77,9 +109,10 @@ window.ORG_DASH = {
 
   /* ── Action Needed (triage strip) ───────────────────────────── */
   actionNeeded: [
-    { key: "overdue",   icon: "event_busy",     label: "Items overdue",   count: 2, tone: "red"   },
-    { key: "expiring",  icon: "schedule",       label: "Docs expiring",   count: 4, tone: "amber" },
-    { key: "checklist", icon: "fact_check",     label: "Checklist issues", count: 0, tone: "green" },
+    { key: "vehicles",   icon: "calendar_today", label: "Vehicle reminders", supporting: "overdue",        count: 2, tone: "red",   tab: "due"       },
+    { key: "documents",  icon: "badge",          label: "Driver documents",  supporting: "expiring soon",  count: 4, tone: "amber", tab: "documents" },
+    { key: "checklists", icon: "fact_check",     label: "Checklist reviews", supporting: "need review",    count: 0, tone: "green", tab: "checklists"},
+    { key: "trips",      icon: "local_shipping", label: "Trip issues",       supporting: "need attention", count: 3, tone: "amber", tab: "trips"     },
   ],
 
   /* ── Action Preview (tabbed) ────────────────────────────────── */
@@ -102,6 +135,12 @@ window.ORG_DASH = {
       { date: "9 Jun 2026, 08:15 AM", item: "VANB791 · NISSAN NV200", cat: "Maintenance Due", catTone: "amber", detail: "Engine Oil Change · Due in 2 days", amount: "—" },
       { date: "8 Jun 2026, 06:30 PM", item: "WXX1234 · HINO 300",     cat: "Inspection Due",  catTone: "amber", detail: "Roadtax Expiry · Due in 5 days",  amount: "—" },
       { date: "8 Jun 2026, 03:22 PM", item: "DRV0045 · Ahmad Razif",  cat: "License Expiry",  catTone: "red",   detail: "GDL Expiry · Due in 7 days",     amount: "—" },
+    ],
+    documents: [
+      { date: "9 Jun 2026, 08:00 AM", item: "DRV0045 · Ahmad Razif",    cat: "GDL Expiry",      catTone: "red",   detail: "GDL · Expires in 7 days",         amount: "—" },
+      { date: "8 Jun 2026, 06:00 PM", item: "DRV0034 · Mohd Fadzli",    cat: "Medical Due",     catTone: "amber", detail: "Medical Report · Due in 12 days",  amount: "—" },
+      { date: "7 Jun 2026, 03:00 PM", item: "DRV0078 · Zulkifli Hamid", cat: "Passport Expiry", catTone: "amber", detail: "Passport · Expires in 21 days",    amount: "—" },
+      { date: "6 Jun 2026, 09:00 AM", item: "DRV0021 · Karim Abdullah", cat: "Port Pass",       catTone: "amber", detail: "Port Pass · Expires in 28 days",   amount: "—" },
     ],
     checklists: [
       { date: "9 Jun 2026, 07:30 AM", item: "STG1161 · Ahmad Razif", cat: "Check-out", catTone: "green", detail: "Pre-trip checklist · Pending endorse", amount: "—" },
