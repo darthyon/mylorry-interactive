@@ -657,6 +657,13 @@ function FuelTxnModal({ row, onClose }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
   function onBackdrop(e) { if (e.target === wrapRef.current) onClose(); }
+  function FmtAmt({ val }) {
+    if (!val) return null;
+    const isNeg = val.startsWith("−") || val.startsWith("-");
+    return isNeg
+      ? <><span style={{color:"var(--red-400)"}}>−</span>{val.replace(/^[−-]/, "")}</>
+      : <>{val}</>;
+  }
   return ReactDOM.createPortal(
     <div className="od-modal-backdrop" ref={wrapRef} onMouseDown={onBackdrop} role="dialog" aria-modal="true" aria-label="Transaction Detail">
       <div className="od-modal">
@@ -665,8 +672,8 @@ function FuelTxnModal({ row, onClose }) {
           <button className="od-modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={18} /></button>
         </div>
         <div className="od-modal-hero">
-          <div className="od-modal-txnid">TXN ID: {row.txnNo}</div>
-          <div className="od-modal-amount">{row.amount}</div>
+          <div className="od-modal-txnid">Txn ID {row.txnNo}</div>
+          <div className="od-modal-amount"><FmtAmt val={row.amount} /></div>
           <div className="od-modal-meta">{row.volume} · {row.date}</div>
         </div>
         <div className="od-modal-body">
@@ -687,7 +694,7 @@ function FuelTxnModal({ row, onClose }) {
             </div>
             <div className="od-modal-row">
               <div className="od-modal-field"><div className="od-modal-lbl">Unit price</div><div className="od-modal-val">RM {row.unitPrice?.toFixed(2)}</div></div>
-              <div className="od-modal-field"><div className="od-modal-lbl">Amount</div><div className="od-modal-val od-modal-amount">{row.amount}</div></div>
+              <div className="od-modal-field"><div className="od-modal-lbl">Amount</div><div className="od-modal-val od-modal-amount"><FmtAmt val={row.amount} /></div></div>
             </div>
             <div className="od-modal-row">
               <div className="od-modal-field"><div className="od-modal-lbl">Subsidy used</div><div className="od-modal-val">{row.subsidy} <span className="od-modal-tag">{row.subsidyType}</span></div></div>
@@ -745,7 +752,7 @@ function FuelPreviewCard({ row }) {
         )}
         {/* Row 5: txn no + chevron */}
         <div className="od-fuel-footer">
-          {row.txnNo && <span className="od-fuel-txnno">Txn {row.txnNo}</span>}
+          {row.txnNo && <span className="od-fuel-txnno">Txn ID {row.txnNo}</span>}
           <span className="od-fuel-chev"><Icon name="chevron_right" size={16} /></span>
         </div>
       </article>
