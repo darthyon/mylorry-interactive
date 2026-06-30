@@ -697,7 +697,7 @@ function FuelTxnModal({ row, onClose }) {
               <div className="od-modal-field"><div className="od-modal-lbl">Amount</div><div className="od-modal-val od-modal-amount"><FmtAmt val={row.amount} /></div></div>
             </div>
             <div className="od-modal-row">
-              <div className="od-modal-field"><div className="od-modal-lbl">Subsidy used</div><div className="od-modal-val">{row.subsidy} <span className="od-modal-tag">{row.subsidyType}</span></div></div>
+              <div className="od-modal-field"><div className="od-modal-lbl">Subsidy used</div><div className="od-modal-val">{row.subsidy}</div></div>
               <div className="od-modal-field"><div className="od-modal-lbl">Card tag</div><div className="od-modal-val">{row.cardTag}</div></div>
             </div>
             <div className="od-modal-row">
