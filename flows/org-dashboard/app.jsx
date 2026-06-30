@@ -85,9 +85,9 @@ function OrgSwitcher() {
 /* ── Rail (Org Portal nav: Home / Organization / Account) ──────── */
 // Desktop: left rail. Mobile: floating bottom nav (CSS handles the swap).
 const RAIL = [
-  { icon: "home", label: "Home", active: true },
-  { icon: "domain", label: "Organization" },
-  { icon: "person", label: "Account" },
+  { iconKey: "home", label: "Home", active: true },
+  { iconKey: "org",  label: "Organization" },
+  { iconKey: "user", label: "Account" },
 ];
 function Rail() {
   return (
@@ -95,7 +95,7 @@ function Rail() {
       <div className="od-rail-logo"><Icon name="local_shipping" size={22} color="#fff" /></div>
       {RAIL.map((r) => (
         <div key={r.label} className={"od-rail-item" + (r.active ? " active" : "")} title={r.label}>
-          <Icon name={r.icon} size={22} fill={r.active ? 1 : 0} />
+          <img src={`../../public/ic-${r.iconKey}-${r.active ? "active" : "inactive"}.svg`} width={22} height={22} alt={r.label} />
           <span>{r.label}</span>
         </div>
       ))}
@@ -347,7 +347,7 @@ function Modules({ tier }) {
   return (
     <section className="od-modrail-card">
       <div className="od-modrail-head">
-        <div className="od-sec-title">Modules</div>
+        <div className="od-sec-title">Services</div>
         <span>{activeCount} active</span>
       </div>
       <div className="od-modules">
@@ -404,10 +404,13 @@ function CostTrend({ tier, empty }) {
   const [vehiclePage, setVehiclePage] = useState(1);
   const perVehLocked = rank(tier) < rank("lite");
   const vehiclePageSize = 5;
+  const moCount = rank(tier) < rank("lite") ? 3 : rank(tier) < rank("premium") ? 6 : 12;
+  const visibleMonths = D.costTrend.months.slice(-moCount);
+  const moLabel = moCount === 3 ? "Last 3 months" : moCount === 6 ? "Last 6 months" : "Last 12 months";
 
   const overallBars = () => {
     if (empty) return <EmptyBlock icon="bar_chart" t="No cost data yet" s="Fuel spend will appear here once transactions come in." />;
-    const top = 16000; // fixed y-scale so gridlines read cleanly (16K → 0)
+    const top = 16000;
     const ticks = [16, 12, 8, 4, 0];
     return (
       <div>
@@ -416,7 +419,7 @@ function CostTrend({ tier, empty }) {
           <div className="od-yaxis">{ticks.map((t) => <span key={t}>{t}K</span>)}</div>
           <div className="od-plot">
             <div className="od-bars">
-              {D.costTrend.months.map((m, index) => (
+              {visibleMonths.map((m, index) => (
                 <div
                   key={m.label}
                   className="od-bar-col"
@@ -438,7 +441,7 @@ function CostTrend({ tier, empty }) {
               ))}
             </div>
             <div className="od-xaxis">
-              {D.costTrend.months.map((m) => <span key={m.label} className="od-xlbl">{m.label}</span>)}
+              {visibleMonths.map((m) => <span key={m.label} className="od-xlbl">{m.label}</span>)}
             </div>
           </div>
         </div>
@@ -523,7 +526,7 @@ function CostTrend({ tier, empty }) {
       <div className="od-trend-controls">
         <div>
           <div className="od-sec-title">Operating Cost Trend</div>
-          <div className="od-sec-sub">Last 6 months</div>
+          <div className="od-sec-sub">{moLabel}</div>
         </div>
         <div className="od-trend-actions">
           <Segmented value={view} onChange={setView}
@@ -564,7 +567,6 @@ function TripsTodayInner({ empty }) {
     { key: "completed", label: "Completed", value: completed, tone: "green" },
     { key: "ongoing", label: "Ongoing", value: t.ongoing, tone: "teal" },
     { key: "pending", label: "Pending", value: t.pending, tone: "amber" },
-    { key: "paused", label: "Paused", value: t.paused, tone: "gray" },
   ];
 
   return (
@@ -646,44 +648,108 @@ function splitItem(item = "") {
   return { primary: primary || item, secondary: secondary || "" };
 }
 
-function FuelPreviewCard({ row }) {
+function FuelTxnModal({ row, onClose }) {
   const item = splitItem(row.item);
-  const subsidyPct = row.subsidyLimit ? Math.min(100, Math.round(row.subsidyUsed / row.subsidyLimit * 100)) : 0;
-  return (
-    <article className="od-preview-card od-fuel-card">
-      <div className="od-fuel-meta">
-        <div className="od-provider-id">
-          <PetronLogo size={18} />
-          <span>{row.spAccount || "STG-PTN-034"}</span>
+  const wrapRef = useRef(null);
+  useEffect(() => {
+    function onKey(e) { if (e.key === "Escape") onClose(); }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  function onBackdrop(e) { if (e.target === wrapRef.current) onClose(); }
+  return ReactDOM.createPortal(
+    <div className="od-modal-backdrop" ref={wrapRef} onMouseDown={onBackdrop} role="dialog" aria-modal="true" aria-label="Transaction Detail">
+      <div className="od-modal">
+        <div className="od-modal-header">
+          <span className="od-modal-title">Transaction Detail</span>
+          <button className="od-modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={18} /></button>
         </div>
-        <span>{row.date}</span>
-      </div>
-      <div className="od-fuel-main">
-        <div className="od-fuel-copy">
-          <div className="od-fuel-vehicle">{item.primary}</div>
-          <div className="od-fuel-location">{row.station || item.secondary}{row.direction ? ` · ${row.direction}` : ""}</div>
-          {row.subsidy && (
-            <div className="od-fuel-subsidy">
-              <div className="od-fuel-subsidy-row">
-                <span>Subsidy</span>
-                <span>{row.subsidy}<em> / {Number(row.subsidyLimit).toLocaleString("en-US")}</em></span>
-              </div>
-              <div className="od-fuel-subsidy-track" data-tip={`Subsidy used: ${row.subsidy} of ${RM(row.subsidyLimit)}`} tabIndex={0}>
-                <div className="od-fuel-subsidy-fill" style={{ width: subsidyPct + "%" }} />
-              </div>
+        <div className="od-modal-hero">
+          <div className="od-modal-txnid">TXN ID: {row.txnNo}</div>
+          <div className="od-modal-amount">{row.amount}</div>
+          <div className="od-modal-meta">{row.volume} · {row.date}</div>
+        </div>
+        <div className="od-modal-body">
+          <div className="od-modal-section">
+            <div className="od-modal-row">
+              <div className="od-modal-field"><div className="od-modal-lbl">Vehicle no</div><div className="od-modal-val">{item.primary}</div></div>
+              <div className="od-modal-field"><div className="od-modal-lbl">Card no</div><div className="od-modal-val od-modal-mono">{row.card}</div></div>
             </div>
-          )}
-        </div>
-        <div className="od-fuel-amounts">
-          <div className="od-fuel-amount">{row.amount}</div>
-          <div className="od-fuel-volume">{row.volume || row.detail}</div>
-          {row.txnNo && <div className="od-fuel-ref">{row.txnNo}</div>}
+            <div className="od-modal-row">
+              <div className="od-modal-field"><div className="od-modal-lbl">Station</div><div className="od-modal-val">{row.station}{row.direction ? ` · ${row.direction}` : ""}</div></div>
+              <div className="od-modal-field"><div className="od-modal-lbl">Receipt no</div><div className="od-modal-val od-modal-mono">{row.txnNo}</div></div>
+            </div>
+          </div>
+          <div className="od-modal-section">
+            <div className="od-modal-row">
+              <div className="od-modal-field"><div className="od-modal-lbl">Product name</div><div className="od-modal-val">{row.product}</div></div>
+              <div className="od-modal-field"><div className="od-modal-lbl">Volume (Litre)</div><div className="od-modal-val">{row.volume}</div></div>
+            </div>
+            <div className="od-modal-row">
+              <div className="od-modal-field"><div className="od-modal-lbl">Unit price</div><div className="od-modal-val">RM {row.unitPrice?.toFixed(2)}</div></div>
+              <div className="od-modal-field"><div className="od-modal-lbl">Amount</div><div className="od-modal-val od-modal-amount">{row.amount}</div></div>
+            </div>
+            <div className="od-modal-row">
+              <div className="od-modal-field"><div className="od-modal-lbl">Subsidy used</div><div className="od-modal-val">{row.subsidy} <span className="od-modal-tag">{row.subsidyType}</span></div></div>
+              <div className="od-modal-field"><div className="od-modal-lbl">Card tag</div><div className="od-modal-val">{row.cardTag}</div></div>
+            </div>
+            <div className="od-modal-row">
+              <div className="od-modal-field"><div className="od-modal-lbl">Odometer</div><div className="od-modal-val">{Number(row.odometer).toLocaleString("en-US")} km</div></div>
+            </div>
+          </div>
         </div>
       </div>
-      <button className="od-card-hit" aria-label={"View details for " + item.primary}>
-        <Icon name="chevron_right" size={18} />
-      </button>
-    </article>
+    </div>,
+    document.body
+  );
+}
+
+function FuelPreviewCard({ row }) {
+  const [open, setOpen] = useState(false);
+  const item = splitItem(row.item);
+  return (
+    <>
+      {open && <FuelTxnModal row={row} onClose={() => setOpen(false)} />}
+      <article className="od-preview-card od-fuel-card od-fuel-card-click" onClick={() => setOpen(true)}>
+        {/* Row 1: provider + card | date */}
+        <div className="od-fuel-meta">
+          <div className="od-provider-id">
+            <PetronLogo size={18} />
+            <div className="od-provider-id-stack">
+              <span>{row.spAccount || "STG-PTN-034"}</span>
+              {row.card && <span className="od-fuel-txnno">{row.card}</span>}
+            </div>
+          </div>
+          <span>{row.date}</span>
+        </div>
+        {/* Row 2: plate | amount */}
+        <div className="od-fuel-primary">
+          <div className="od-fuel-vehicle">{item.primary}</div>
+          <div className="od-fuel-amount">
+            {row.amount?.startsWith("−") || row.amount?.startsWith("-")
+              ? <><span className="od-fuel-sign">−</span>{row.amount.replace(/^[−-]/, "")}</>
+              : row.amount}
+          </div>
+        </div>
+        {/* Row 3: station | volume */}
+        <div className="od-fuel-secondary">
+          <div className="od-fuel-location">{row.station || item.secondary}{row.direction ? ` · ${row.direction}` : ""}</div>
+          <div className="od-fuel-volume">{row.volume || row.detail}</div>
+        </div>
+        {/* Row 4: subsidy */}
+        {row.subsidy && (
+          <div className="od-fuel-subsidy">
+            <span className="od-fuel-subsidy-lbl">Subsidy used</span>
+            <span className="od-fuel-subsidy-val">{row.subsidy}</span>
+          </div>
+        )}
+        {/* Row 5: txn no + chevron */}
+        <div className="od-fuel-footer">
+          {row.txnNo && <span className="od-fuel-txnno">Txn {row.txnNo}</span>}
+          <span className="od-fuel-chev"><Icon name="chevron_right" size={16} /></span>
+        </div>
+      </article>
+    </>
   );
 }
 
@@ -708,35 +774,49 @@ function ActionPreviewCard({ row, tab }) {
 }
 
 function ActionPreview({ tier, empty, tab, setTab }) {
-  const tripsActive = rank(tier) >= rank("premium");
   const TABS = [
-    { value: "fuel",       label: "Fuel TXNs", rows: D.preview.fuel },
-    { value: "due",        label: "Due Dates",  rows: D.preview.due },
-    { value: "documents",  label: "Documents",  rows: D.preview.documents },
-    { value: "checklists", label: "Checklist",  rows: D.preview.checklists },
-    ...(tripsActive ? [{ value: "trips", label: "Trips", rows: D.preview.trips }] : []),
+    { value: "fuel",       label: "Fuel TXNs",       rows: D.preview.fuel,       locked: false,                              requiredTier: null       },
+    { value: "due",        label: "Due Dates",        rows: D.preview.due,        locked: false,                              requiredTier: null       },
+    { value: "documents",  label: "Documents",        rows: D.preview.documents,  locked: false,                              requiredTier: null       },
+    { value: "checklists", label: "Safety Checklist", rows: D.preview.checklists, locked: rank(tier) < rank("lite"),          requiredTier: "Lite"     },
+    { value: "trips",      label: "Trips",            rows: D.preview.trips,      locked: rank(tier) < rank("premium"),       requiredTier: "Premium"  },
   ];
   const active = TABS.find((t) => t.value === tab) || TABS[0];
-  const rows = empty ? [] : active.rows;
+  const rows = empty || active.locked ? [] : active.rows;
 
   return (
     <div className="od-preview">
       <div className="od-preview-nav">
         <div className="od-tabs">
           {TABS.map((t) => (
-            <button key={t.value} className={"od-tab" + (t.value === tab ? " active" : "")} onClick={() => setTab(t.value)}>{t.label}</button>
+            <button key={t.value} className={"od-tab" + (t.value === tab ? " active" : "") + (t.locked ? " locked" : "")} onClick={() => setTab(t.value)}>
+              {t.locked
+                ? <><Icon name="lock" size={11} />{t.label}<span className="od-tab-tier">{t.requiredTier}</span></>
+                : t.label}
+            </button>
           ))}
         </div>
       </div>
-      {rows.length === 0 ? (
+      {active.locked ? (
+        <LockSection locked={true} tier={active.requiredTier?.toLowerCase()} note={`Upgrade to ${active.requiredTier} to access this feature.`}>
+          <div className="od-preview-list">
+            {(active.value === "trips" ? D.preview.trips : D.preview.checklists).map((r, i) => <ActionPreviewCard key={i} row={r} tab={active.value} />)}
+          </div>
+        </LockSection>
+      ) : rows.length === 0 ? (
         <div className="od-emptyrow">{empty ? "No records yet. Data will appear as your fleet operates." : "Nothing here."}</div>
       ) : (
-        <div className={"od-preview-list " + (active.value === "fuel" ? "fuel" : "")}>
-          {rows.map((r, i) => active.value === "fuel"
-            ? <FuelPreviewCard key={i} row={r} />
-            : <ActionPreviewCard key={i} row={r} tab={active.value} />
-          )}
-        </div>
+        <>
+          <div className={"od-preview-list " + (active.value === "fuel" ? "fuel" : "")}>
+            {rows.map((r, i) => active.value === "fuel"
+              ? <FuelPreviewCard key={i} row={r} />
+              : <ActionPreviewCard key={i} row={r} tab={active.value} />
+            )}
+          </div>
+          <div className="od-preview-viewall">
+            <button className="ml-btn-outline">View all</button>
+          </div>
+        </>
       )}
     </div>
   );
@@ -780,7 +860,6 @@ function App() {
         <header className="od-topbar">
           <OrgSwitcher />
           <div className="od-topbar-spacer" />
-          <span className="od-updated">Last updated: {D.org.lastUpdated}</span>
           <button className="od-iconbtn"><Icon name="notifications" size={18} /></button>
         </header>
 

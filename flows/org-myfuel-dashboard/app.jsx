@@ -72,9 +72,9 @@ function OrgSwitcher() {
 /* ── Left rail (Home / Organization / Account) ─────────────────── */
 function Rail() {
   const RAIL = [
-    { icon: "home", label: "Home", active: true },
-    { icon: "domain", label: "Organization" },
-    { icon: "person", label: "Account" },
+    { iconKey: "home", label: "Home", active: true },
+    { iconKey: "org",  label: "Organization" },
+    { iconKey: "user", label: "Account" },
   ];
   return (
     <nav className="mfd-rail">
@@ -82,7 +82,7 @@ function Rail() {
       {RAIL.map((r) => (
         <a key={r.label} href={r.active ? "../org-dashboard/index.html" : undefined}
            className={"mfd-rail-item" + (r.active ? " active" : "")} title={r.label}>
-          <Icon name={r.icon} size={22} fill={r.active ? 1 : 0} />
+          <img src={`../../public/ic-${r.iconKey}-${r.active ? "active" : "inactive"}.svg`} width={22} height={22} alt={r.label} />
           <span>{r.label}</span>
         </a>
       ))}
@@ -158,16 +158,18 @@ function BalanceSummary({ empty }) {
   );
 }
 
-function QuotaStatusPill({ status }) {
-  const meta = {
-    healthy: { label: "Healthy", cls: "healthy", icon: "check_circle" },
-    "at-risk": { label: "At risk", cls: "at-risk", icon: "warning" },
-    over: { label: "Over quota", cls: "over", icon: "error" },
-    none: { label: "No quota", cls: "none", icon: "block" },
-  };
-  const m = meta[status] || meta["at-risk"];
-  return <span className={"mfd-quota-pill " + m.cls}><Icon name={m.icon} size={13} /> {m.label}</span>;
+function vehicleStatus(used, quota) {
+  if (quota === 0) return "none";
+  const pct = (used / quota) * 100;
+  if (used > quota) return "over";
+  if (pct >= 80) return "at-risk";
+  return "within";
 }
+
+const QUOTA_VIEW_TABS = [
+  { value: "overview", label: "Overview" },
+  { value: "by-vehicle", label: "By Vehicle" },
+];
 
 function SubsidyQuota({ empty, quotaState }) {
   const q = D.subsidyQuota;
@@ -178,6 +180,16 @@ function SubsidyQuota({ empty, quotaState }) {
   const pct = quota ? Math.min(100, (used / quota) * 100) : 0;
   const overBy = used > quota ? used - quota : 0;
 
+  const [view, setView] = useState("overview");
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
+  const vehRows = D.quotaByVehicle.filter((r) => !query || r.plate.toLowerCase().includes(query.toLowerCase()));
+  const pageCount = Math.max(1, Math.ceil(vehRows.length / pageSize));
+  const safePage = Math.min(page, pageCount);
+  const start = (safePage - 1) * pageSize;
+  const pageRows = vehRows.slice(start, start + pageSize);
+
   return (
     <div className="mfd-kpi mfd-quota-card">
       <div className="mfd-quota-head">
@@ -186,11 +198,7 @@ function SubsidyQuota({ empty, quotaState }) {
           <div className="mfd-quota-sub">{q.monthLabel} · {q.fuelType}</div>
         </div>
         <div className="mfd-quota-head-right">
-          <div className="mfd-tooltip-wrap">
-            <QuotaStatusPill status={status} />
-            <div className="mfd-tooltip">{q.insight}</div>
-          </div>
-          <button className="mfd-card-arrow" aria-label="View vehicles at risk"><Icon name="arrow_forward" size={15} /></button>
+          <Segmented options={QUOTA_VIEW_TABS} value={view} onChange={(v) => { setView(v); setQuery(""); setPage(1); }} />
         </div>
       </div>
 
@@ -200,7 +208,7 @@ function SubsidyQuota({ empty, quotaState }) {
           <div>No subsidy quota assigned</div>
           <div className="mfd-quota-empty-s">Quota will appear once your organisation is enrolled in a subsidy programme.</div>
         </div>
-      ) : (
+      ) : view === "overview" ? (
         <>
           <div className="mfd-quota-hero">
             <div>
@@ -238,8 +246,58 @@ function SubsidyQuota({ empty, quotaState }) {
               <div className="mfd-quota-meta-l">Estimated runout</div>
             </div>
           </div>
-
         </>
+      ) : (
+        <div className="mfd-quota-veh-body">
+          <div className="mfd-vehicle-tools">
+            <label className="mfd-vehicle-search">
+              <Icon name="search" size={15} />
+              <input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Search vehicle" aria-label="Search vehicle" />
+              {query && <button type="button" onClick={() => { setQuery(""); setPage(1); }} aria-label="Clear"><Icon name="close" size={14} /></button>}
+            </label>
+            <span className="mfd-vehicle-count">{vehRows.length} vehicles</span>
+          </div>
+
+          <div className="mfd-veh-quota-list">
+            {pageRows.map((r) => {
+              const vs = vehicleStatus(r.used, r.quota);
+              const vpct = r.quota ? (r.used / r.quota) * 100 : 0;
+              return (
+                <div key={r.plate} className="mfd-veh-quota-row">
+                  <div className="mfd-veh-quota-lbl">{r.plate}</div>
+                  <div className="mfd-veh-quota-bar">
+                    <div className="mfd-veh-quota-track">
+                      {r.quota > 0 && <div className={"mfd-veh-quota-fill " + vs} style={{ width: Math.min(vpct, 100) + "%" }} />}
+                    </div>
+                  </div>
+                  <div className="mfd-veh-quota-val">
+                    {vs === "none" ? "No quota" : (
+                      <>
+                        <span>{L0(r.used)}</span>
+                        <span className="mfd-veh-quota-of"> / {L0(r.quota)}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mfd-vehicle-pager">
+            <span>{vehRows.length ? `${start + 1}-${Math.min(start + pageRows.length, vehRows.length)} of ${vehRows.length}` : "0 of 0"}</span>
+            <div className="mfd-vehicle-pagebtns">
+              <button type="button" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}><Icon name="chevron_left" size={16} /></button>
+              <button type="button" disabled={safePage >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))}><Icon name="chevron_right" size={16} /></button>
+            </div>
+          </div>
+
+          <div className="mfd-legend">
+            <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--red-400)" }} /> Over quota</span>
+            <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--amber-500)" }} /> At risk (&gt;80%)</span>
+            <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--green-500)" }} /> Within quota</span>
+            <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "#E9E9E9" }} /> Remaining</span>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -281,7 +339,7 @@ function FuelPulse({ empty, quotaState }) {
 
 /* ── Section 2: Fuel Usage Trend ───────────────────────────────── */
 const METRIC_OPTIONS = [
-  { value: "litres", label: "Litres" },
+  { value: "litres", label: "Volume" },
   { value: "amount", label: "Amount (RM)" },
   { value: "subsidyOnly", label: "Subsidy only" },
 ];
@@ -383,101 +441,7 @@ function FuelUsageTrend({ empty, range }) {
   );
 }
 
-/* ── Section 3: Subsidy Quota by Vehicle ───────────────────────── */
-function vehicleStatus(used, quota) {
-  if (quota === 0) return "none";
-  const pct = (used / quota) * 100;
-  if (used > quota) return "over";
-  if (pct >= 80) return "at-risk";
-  return "within";
-}
 
-function SubsidyQuotaByVehicle({ empty }) {
-  const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
-  const pageSize = 5;
-
-  if (empty) {
-    return (
-      <div className="mfd-card mfd-quota-veh-card">
-        <div className="mfd-cardhead">
-          <div>
-            <div className="mfd-cardhead-title">Subsidy Quota by Vehicle</div>
-            <div className="mfd-cardhead-sub">Current month · Jun 2026</div>
-          </div>
-        </div>
-        <EmptyBlock icon="local_shipping" title="No vehicle data yet" subtitle="Quota usage per vehicle will appear once your fleet transacts." />
-      </div>
-    );
-  }
-
-  const rows = D.quotaByVehicle.filter((r) => !query || r.plate.toLowerCase().includes(query.toLowerCase()));
-  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
-  const safePage = Math.min(page, pageCount);
-  const start = (safePage - 1) * pageSize;
-  const pageRows = rows.slice(start, start + pageSize);
-
-  return (
-    <div className="mfd-card mfd-quota-veh-card">
-      <div className="mfd-cardhead">
-        <div>
-          <div className="mfd-cardhead-title">Subsidy Quota by Vehicle</div>
-          <div className="mfd-cardhead-sub">Current month · Jun 2026 · variable quota per vehicle</div>
-        </div>
-        <button className="mfd-link">All vehicles <Icon name="arrow_forward" size={14} /></button>
-      </div>
-
-      <div className="mfd-vehicle-tools">
-        <label className="mfd-vehicle-search">
-          <Icon name="search" size={15} />
-          <input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Search vehicle" aria-label="Search vehicle" />
-          {query && <button type="button" onClick={() => { setQuery(""); setPage(1); }} aria-label="Clear"><Icon name="close" size={14} /></button>}
-        </label>
-        <span className="mfd-vehicle-count">{rows.length} vehicles</span>
-      </div>
-
-      <div className="mfd-veh-quota-list">
-        {pageRows.map((r) => {
-          const status = vehicleStatus(r.used, r.quota);
-          const pct = r.quota ? (r.used / r.quota) * 100 : 0;
-          return (
-            <div key={r.plate} className="mfd-veh-quota-row">
-              <div className="mfd-veh-quota-lbl">{r.plate}</div>
-              <div className="mfd-veh-quota-bar">
-                <div className="mfd-veh-quota-track">
-                  {r.quota > 0 && <div className={"mfd-veh-quota-fill " + status} style={{ width: Math.min(pct, 100) + "%" }} />}
-                </div>
-              </div>
-              <div className="mfd-veh-quota-val">
-                {status === "none" ? "No quota" : (
-                  <>
-                    <span>{L0(r.used)}</span>
-                    <span className="mfd-veh-quota-of"> / {L0(r.quota)}</span>
-                  </>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="mfd-vehicle-pager">
-        <span>{rows.length ? `${start + 1}-${Math.min(start + pageRows.length, rows.length)} of ${rows.length}` : "0 of 0"}</span>
-        <div className="mfd-vehicle-pagebtns">
-          <button type="button" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}><Icon name="chevron_left" size={16} /></button>
-          <button type="button" disabled={safePage >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))}><Icon name="chevron_right" size={16} /></button>
-        </div>
-      </div>
-
-      <div className="mfd-legend">
-        <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--red-400)" }} /> Over quota</span>
-        <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--amber-500)" }} /> At risk (&gt;80%)</span>
-        <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--green-500)" }} /> Within quota</span>
-        <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "#E9E9E9" }} /> Remaining</span>
-      </div>
-    </div>
-  );
-}
 
 /* ── Section 4: Account Activity ───────────────────────────────── */
 const ACTIVITY_TABS = [
@@ -491,31 +455,94 @@ function StatusPill({ status }) {
   return <span className={cls}>{status}</span>;
 }
 
+function TxnModal({ txn, onClose }) {
+  const wrapRef = useRef(null);
+  useEffect(() => {
+    function onKey(e) { if (e.key === "Escape") onClose(); }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  function onBackdrop(e) { if (e.target === wrapRef.current) onClose(); }
+
+  return ReactDOM.createPortal(
+    <div className="mfd-modal-backdrop" ref={wrapRef} onMouseDown={onBackdrop} role="dialog" aria-modal="true" aria-label="Transaction Detail">
+      <div className="mfd-modal">
+        <div className="mfd-modal-header">
+          <span className="mfd-modal-title">Transaction Detail</span>
+          <button className="mfd-modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={18} /></button>
+        </div>
+
+        <div className="mfd-modal-hero">
+          <div className="mfd-modal-txnid">TXN ID: {txn.txnId}</div>
+          <div className="mfd-modal-amount">{RM(txn.amount)}</div>
+          <div className="mfd-modal-meta">{L(txn.volume)} · {txn.date}</div>
+        </div>
+
+        <div className="mfd-modal-body">
+          <div className="mfd-modal-section">
+            <div className="mfd-modal-row">
+              <div className="mfd-modal-field"><div className="mfd-modal-lbl">Vehicle no</div><div className="mfd-modal-val">{txn.vehicle}</div></div>
+              <div className="mfd-modal-field"><div className="mfd-modal-lbl">Card no</div><div className="mfd-modal-val mfd-cell-mono">{txn.card}</div></div>
+            </div>
+            <div className="mfd-modal-row">
+              <div className="mfd-modal-field"><div className="mfd-modal-lbl">Station</div><div className="mfd-modal-val">{txn.station}</div></div>
+              <div className="mfd-modal-field"><div className="mfd-modal-lbl">Receipt no</div><div className="mfd-modal-val mfd-cell-mono">{txn.txnId}</div></div>
+            </div>
+          </div>
+
+          <div className="mfd-modal-section">
+            <div className="mfd-modal-row">
+              <div className="mfd-modal-field"><div className="mfd-modal-lbl">Product name</div><div className="mfd-modal-val">{txn.product}</div></div>
+              <div className="mfd-modal-field"><div className="mfd-modal-lbl">Volume (Litre)</div><div className="mfd-modal-val">{L(txn.volume)}</div></div>
+            </div>
+            <div className="mfd-modal-row">
+              <div className="mfd-modal-field"><div className="mfd-modal-lbl">Unit price</div><div className="mfd-modal-val">{RM(txn.unitPrice)}</div></div>
+              <div className="mfd-modal-field"><div className="mfd-modal-lbl">Amount</div><div className="mfd-modal-val mfd-amount">{RM(txn.amount)}</div></div>
+            </div>
+            <div className="mfd-modal-row">
+              <div className="mfd-modal-field"><div className="mfd-modal-lbl">Subsidy</div><div className="mfd-modal-val">{txn.subsidyAmount > 0 ? RM(txn.subsidyAmount) : "RM 0.00"} <span className="mfd-subsidy-tag">{txn.subsidyType}</span></div></div>
+              <div className="mfd-modal-field"><div className="mfd-modal-lbl">Card tag</div><div className="mfd-modal-val">{txn.cardTag}</div></div>
+            </div>
+            <div className="mfd-modal-row">
+              <div className="mfd-modal-field"><div className="mfd-modal-lbl">Odometer</div><div className="mfd-modal-val">{Number(txn.odometer).toLocaleString("en-US")} km</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 function FuelTable({ rows, empty }) {
+  const [selected, setSelected] = useState(null);
   if (empty || !rows.length) return <div className="mfd-table-empty">No fuel transactions yet.</div>;
   return (
-    <div className="mfd-table-wrap">
-      <table className="ml-table mfd-table">
-        <thead>
-          <tr>
-            <th>Card</th><th>Vehicle</th><th>Station</th><th>Volume</th><th>Subsidy</th><th>Amount</th><th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={i}>
-              <td className="mfd-cell-mono">{r.card}</td>
-              <td><strong>{r.vehicle}</strong></td>
-              <td>{r.station}</td>
-              <td>{L(r.volume)}</td>
-              <td><span className="mfd-subsidy">{r.subsidyType} · {RM(r.subsidyAmount)}</span></td>
-              <td className="mfd-amount">{RM(r.amount)}</td>
-              <td>{r.date}</td>
+    <>
+      {selected && <TxnModal txn={selected} onClose={() => setSelected(null)} />}
+      <div className="mfd-table-wrap">
+        <table className="ml-table mfd-table mfd-table-clickable">
+          <thead>
+            <tr>
+              <th>Card</th><th>Vehicle</th><th>Station</th><th>Volume</th><th>Subsidy used</th><th>Amount</th><th>Date</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i} onClick={() => setSelected(r)} className="mfd-row-click">
+                <td className="mfd-cell-mono">{r.card}</td>
+                <td><strong>{r.vehicle}</strong></td>
+                <td>{r.station}</td>
+                <td>{L(r.volume)}</td>
+                <td>{r.subsidyAmount > 0 ? <span className="mfd-subsidy">{r.subsidyType} · {RM(r.subsidyAmount)}</span> : <span className="mfd-subsidy-none">—</span>}</td>
+                <td className="mfd-amount">{RM(r.amount)}</td>
+                <td>{r.date}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 
@@ -602,7 +629,6 @@ function App() {
         <header className="mfd-topbar">
           <OrgSwitcher />
           <div className="mfd-topbar-spacer" />
-          <span className="mfd-updated">Last updated: {D.org.lastUpdated}</span>
           <button className="mfd-iconbtn"><Icon name="notifications" size={18} /></button>
         </header>
 
@@ -613,9 +639,6 @@ function App() {
 
           <div className="mfd-row">
             <FuelUsageTrend empty={empty} range={range} />
-            <LockSection locked={rank(tier) < rank("lite")} tier="lite" note="Track quota usage per vehicle.">
-              <SubsidyQuotaByVehicle empty={empty} />
-            </LockSection>
           </div>
 
           <AccountActivity empty={empty} tier={tier} />

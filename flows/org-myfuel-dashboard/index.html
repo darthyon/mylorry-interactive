@@ -108,7 +108,8 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-balance-cell-s{font-size:11.5px;color:rgba(255,255,255,.78);margin-top:1px;}
 
 /* Subsidy quota card */
-.mfd-quota-card{padding:16px;}
+.mfd-quota-card{padding:16px;max-height:300px;overflow:hidden;}
+.mfd-quota-veh-body{overflow-y:auto;display:flex;flex-direction:column;gap:0;max-height:220px;}
 .mfd-quota-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;}
 .mfd-quota-head-right{display:flex;align-items:center;gap:8px;}
 .mfd-quota-title{font-size:15px;font-weight:600;color:var(--fg-primary);}
@@ -187,6 +188,31 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-leg{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--fg-secondary);}
 .mfd-leg-dot{width:10px;height:10px;border-radius:3px;}
 
+/* Cardhead right-side slot */
+.mfd-cardhead-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+
+/* Overview panel */
+.mfd-qov-wrap{display:flex;flex-direction:column;gap:16px;flex:1;}
+.mfd-qov-fleet-bar{display:flex;flex-direction:column;gap:6px;}
+.mfd-qov-fleet-track{height:10px;background:#E9E9E9;border-radius:999px;overflow:hidden;}
+.mfd-qov-fleet-fill{height:100%;background:var(--green-500);border-radius:999px;transition:width .4s ease;}
+.mfd-qov-fleet-lbls{display:flex;justify-content:space-between;font-size:11px;color:var(--fg-tertiary);}
+.mfd-qov-groups{display:flex;flex-direction:column;gap:10px;}
+.mfd-qov-group{border-radius:var(--radius-md);border:1px solid var(--border-light);overflow:hidden;}
+.mfd-qov-group-head{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--bg-muted);}
+.mfd-qov-group-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.mfd-qov-group.over .mfd-qov-group-dot{background:var(--red-400);}
+.mfd-qov-group.at-risk .mfd-qov-group-dot{background:var(--amber-500);}
+.mfd-qov-group.within .mfd-qov-group-dot{background:var(--green-500);}
+.mfd-qov-group.none .mfd-qov-group-dot{background:#CCC;}
+.mfd-qov-group-label{font-size:12px;font-weight:600;color:var(--fg-primary);flex:1;}
+.mfd-qov-group-count{font-size:11px;color:var(--fg-tertiary);}
+.mfd-qov-group-rows{display:flex;flex-direction:column;}
+.mfd-qov-row{display:flex;align-items:center;gap:8px;padding:7px 12px;border-top:1px solid var(--border-light);}
+.mfd-qov-plate{font-size:12px;font-weight:600;color:var(--fg-primary);flex:1;}
+.mfd-qov-used{font-size:12px;font-weight:600;color:var(--fg-primary);}
+.mfd-qov-quota{font-size:12px;color:var(--fg-tertiary);}
+
 /* Quota by vehicle horizontal bars */
 .mfd-quota-veh-card{min-height:100%;display:flex;flex-direction:column;}
 .mfd-vehicle-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
@@ -224,14 +250,37 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-table-wrap{border:1px solid var(--border-medium);border-radius:6px;overflow-x:auto;}
 .mfd-table th{white-space:nowrap;}
 .mfd-table td{white-space:nowrap;}
+.mfd-table-clickable tbody tr.mfd-row-click{cursor:pointer;}
+.mfd-table-clickable tbody tr.mfd-row-click:hover td{background:var(--bg-muted);}
 .mfd-cell-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--fg-secondary);}
 .mfd-subsidy{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--green-600);background:var(--green-50);padding:2px 7px;border-radius:var(--radius-pill);}
+.mfd-subsidy-none{color:var(--fg-tertiary);}
+.mfd-subsidy-tag{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:1px 6px;border-radius:var(--radius-pill);background:var(--green-50);color:var(--green-600);margin-left:4px;}
 .mfd-amount{font-weight:600;color:var(--fg-primary);}
 .mfd-status{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:3px 9px;border-radius:var(--radius-pill);text-transform:capitalize;}
 .mfd-status.successful{background:var(--green-50);color:var(--green-600);}
 .mfd-status.pending{background:var(--amber-50);color:var(--amber-600);}
 .mfd-status.processed{background:var(--green-50);color:var(--green-600);}
 .mfd-table-empty{text-align:center;color:var(--fg-tertiary);padding:34px 12px;font-size:13px;}
+
+/* Transaction detail modal */
+.mfd-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;}
+.mfd-modal{background:#fff;border-radius:var(--radius-lg);width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.22);}
+.mfd-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border-light);}
+.mfd-modal-title{font-size:15px;font-weight:600;color:var(--fg-primary);}
+.mfd-modal-close{width:32px;height:32px;border-radius:50%;border:1px solid var(--border-light);background:var(--bg-surface);color:var(--fg-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;padding:0;}
+.mfd-modal-close:hover{border-color:var(--border-medium);background:var(--bg-muted);}
+.mfd-modal-hero{padding:20px 20px 16px;border-bottom:1px solid var(--border-light);}
+.mfd-modal-txnid{font-size:12px;color:var(--fg-tertiary);margin-bottom:4px;}
+.mfd-modal-amount{font-size:28px;font-weight:600;color:var(--fg-primary);letter-spacing:-.02em;line-height:1;}
+.mfd-modal-meta{font-size:12px;color:var(--fg-secondary);margin-top:6px;}
+.mfd-modal-body{padding:4px 0 8px;}
+.mfd-modal-section{padding:16px 20px;border-bottom:1px solid var(--border-light);}
+.mfd-modal-section:last-child{border-bottom:none;}
+.mfd-modal-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;}
+.mfd-modal-row:last-child{margin-bottom:0;}
+.mfd-modal-lbl{font-size:11px;font-weight:500;color:var(--fg-tertiary);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;}
+.mfd-modal-val{font-size:13px;font-weight:500;color:var(--fg-primary);}
 
 /* Empty block */
 .mfd-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:34px 16px;text-align:center;color:var(--fg-tertiary);}
@@ -284,10 +333,10 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 </head>
 <body>
 <div id="root"></div>
-<script src="../../shared/shared-shell.js?v=20260625"></script>
-<script src="../../shared/tweaks-panel.js?v=20260625"></script>
-<script src="data.js?v=20260625"></script>
-<script src="app.js?v=20260625"></script>
+<script src="../../shared/shared-shell.js?v=20260630d"></script>
+<script src="../../shared/tweaks-panel.js?v=20260630d"></script>
+<script src="data.js?v=20260630d"></script>
+<script src="app.js?v=20260630d"></script>
 <script>
   document.addEventListener('keydown', function(e){
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'e') {

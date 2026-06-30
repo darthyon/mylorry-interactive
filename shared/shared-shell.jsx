@@ -354,7 +354,7 @@ function LockSection({ locked = false, tier = "premium", cta = "Upgrade plan", n
       <div className="ml-lock-scrim">
         <div className="ml-lock-card">
           <div className="ml-lock-icon"><Icon name="lock" size={16} color="#fff" /></div>
-          <div className="ml-lock-badge">{tierName} plan required</div>
+          <div className="ml-lock-badge">Plan upgrade required</div>
           {note && <div className="ml-lock-note">{note}</div>}
           <button className="ml-lock-cta">
             {cta} <Icon name="arrow_outward" size={15} />
