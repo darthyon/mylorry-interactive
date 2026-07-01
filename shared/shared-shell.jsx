@@ -304,8 +304,9 @@ const STATUS_BADGE_META = {
   pending_termination:  { label:"Pending Termination", cls:"acct-pending-term" },
   terminated:           { label:"Terminated",          cls:"acct-terminated" },
   // Wallet balance health (inverted chip: white bg, danger-colored icon/text)
-  low_balance:      { label:"Low",      cls:"bal-low"      },
-  critical_balance: { label:"Critical", cls:"bal-critical" },
+  low_balance:      { label:"Low",           cls:"bal-low"      },
+  critical_balance: { label:"Critical",      cls:"bal-critical" },
+  cards_frozen:     { label:"Cards frozen",  cls:"bal-frozen"   },
 };
 function StatusBadge({ status, prefix, fallback = "activated" }) {
   const m = STATUS_BADGE_META[status] || STATUS_BADGE_META[fallback] || { label: status, cls: "" };

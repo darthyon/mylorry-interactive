@@ -20,7 +20,8 @@ const L = (n) => Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, m
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "subscription": "premium",
   "emptyData": false,
-  "balanceScenario": "normal"
+  "balanceScenario": "normal",
+  "cardsFrozen": false
 }/*EDITMODE-END*/;
 
 const PLAN_LABEL = { free: "Free Plan", lite: "Lite Plan", premium: "Premium Plan" };
@@ -137,7 +138,9 @@ function WalletPicker({ wallets, selectedId, onSelect, onClose }) {
 }
 
 /* ── Balance Card (wallet-aware) ───────────────────────────────── */
-function BalanceCard({ empty, scenario = "normal" }) {
+const CARD_FREEZE_THRESHOLD = 500;
+
+function BalanceCard({ empty, scenario = "normal", cardsFrozen = false }) {
   const wallets = D.wallets || [];
   const multi = wallets.length > 1;
 
@@ -186,7 +189,7 @@ function BalanceCard({ empty, scenario = "normal" }) {
   }
 
   const forced = scenario !== "normal" ? scenario : null; // "low" | "critical"
-  const tone = empty ? "" : (forced === "critical" ? " red" : forced === "low" ? " amber" : "");
+  const tone = empty ? "" : (cardsFrozen ? " frozen" : forced === "critical" ? " red" : forced === "low" ? " amber" : "");
 
   // Shared band renderer
   function UsageBand({ wallet }) {
@@ -255,6 +258,13 @@ function BalanceCard({ empty, scenario = "normal" }) {
                   )}
                 </span>
               )}
+              {cardsFrozen && (
+                <span className="ml-tooltip-wrap" tabIndex={0}>
+                  <StatusBadge status="cards_frozen"
+                    prefix={<Icon name="lock" size={11} color="#BE2F2C" />} />
+                  <span className="ml-tooltip">Fleet cards will be frozen once balance drops below RM {CARD_FREEZE_THRESHOLD}.00.</span>
+                </span>
+              )}
             </div>
             <div className="od-bal-value">{empty ? "$0.00" : Wallet(w.amount)}</div>
           </div>
@@ -277,7 +287,8 @@ function BalanceCard({ empty, scenario = "normal" }) {
         <div className="od-bal-mscroll">
           {wallets.map((wl) => {
             const wlForced = wl.id === w.id ? forced : null;
-            const wlTone = empty ? "" : (wlForced === "critical" ? " red" : wlForced === "low" ? " amber" : "");
+            const wlFrozen = wl.id === w.id && cardsFrozen;
+            const wlTone = empty ? "" : (wlFrozen ? " frozen" : wlForced === "critical" ? " red" : wlForced === "low" ? " amber" : "");
             return (
               <div key={wl.id} className={"od-bal-mcard" + wlTone}>
                 <div className="od-bal-top">
@@ -298,6 +309,13 @@ function BalanceCard({ empty, scenario = "normal" }) {
                       )}
                     </span>
                   )}
+                  {wlFrozen && (
+                    <span className="ml-tooltip-wrap" tabIndex={0}>
+                      <StatusBadge status="cards_frozen"
+                        prefix={<Icon name="lock" size={11} color="#BE2F2C" />} />
+                      <span className="ml-tooltip">Fleet cards will be frozen once balance drops below RM {CARD_FREEZE_THRESHOLD}.00.</span>
+                    </span>
+                  )}
                 </div>
                 <div className="od-bal-value">{empty ? "$0.00" : Wallet(wl.amount)}</div>
                 <UsageBand wallet={wl} />
@@ -312,11 +330,11 @@ function BalanceCard({ empty, scenario = "normal" }) {
 }
 
 /* ── Section 1: Top Pulse ──────────────────────────────────────── */
-function TopPulse({ empty, balanceScenario }) {
+function TopPulse({ empty, balanceScenario, cardsFrozen }) {
   const o = D.operatingCost, v = D.vehicles, dr = D.drivers;
   return (
     <div className="od-pulse">
-      <BalanceCard empty={empty} scenario={balanceScenario} />
+      <BalanceCard empty={empty} scenario={balanceScenario} cardsFrozen={cardsFrozen} />
 
       {/* Operating Cost + Vehicles + Drivers — shared CountCard (Figma 8369-14054).
           Wrapped so mobile can turn this trio into one horizontal scroller
@@ -904,7 +922,7 @@ function App() {
           </div>
 
           {/* 1 — Top Pulse */}
-          <TopPulse empty={empty} balanceScenario={t.balanceScenario} />
+          <TopPulse empty={empty} balanceScenario={t.balanceScenario} cardsFrozen={t.cardsFrozen} />
 
           {/* 2 — Modules */}
           <Modules tier={tier} />
@@ -939,6 +957,7 @@ function App() {
             { value: "critical", label: "Critical" },
           ]}
           onChange={(v) => setTweak("balanceScenario", v)} />
+        <TweakToggle label="Cards frozen" value={t.cardsFrozen} onChange={(v) => setTweak("cardsFrozen", v)} />
 
       </TweaksPanel>
     </div>

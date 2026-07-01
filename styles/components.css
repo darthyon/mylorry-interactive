@@ -42,6 +42,7 @@
 /* Wallet balance health (inverted chip — white bg, danger-colored icon/text — sits on gradient balance card) */
 .ml-badge.bal-low      { background: #fff; color: #BE2F2C; }
 .ml-badge.bal-critical { background: #fff; color: #BE2F2C; }
+.ml-badge.bal-frozen   { background: #fff; color: #BE2F2C; }
 
 /* Payout status */
 .ml-badge.payout-pending  { background: #FFF8E1;         color: #F57F17;         }
