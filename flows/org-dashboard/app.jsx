@@ -6,7 +6,7 @@
 // when emptyData is on. Reuses window.SharedShell.LockSection for all gates.
 
 const { useState, useEffect, useRef } = React;
-const { Icon, LockSection, CountCard, PetronLogo } = window.SharedShell;
+const { Icon, LockSection, CountCard, PetronLogo, StatusBadge } = window.SharedShell;
 const D = window.ORG_DASH;
 
 /* ── Helpers ───────────────────────────────────────────────────── */
@@ -16,12 +16,11 @@ const Wallet = (n) => "$" + Number(n).toLocaleString("en-US", { minimumFractionD
 const RM = (n) => "RM " + Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const RM0 = (n) => "RM " + Number(n).toLocaleString("en-US");
 const L = (n) => Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " L";
-// Balance health tone from remaining runway → drives gradient.
-const balanceTone = (days) => (days >= 14 ? "" : days >= 5 ? " amber" : " red");
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "subscription": "premium",
-  "emptyData": false
+  "emptyData": false,
+  "balanceScenario": "normal"
 }/*EDITMODE-END*/;
 
 const PLAN_LABEL = { free: "Free Plan", lite: "Lite Plan", premium: "Premium Plan" };
@@ -138,7 +137,7 @@ function WalletPicker({ wallets, selectedId, onSelect, onClose }) {
 }
 
 /* ── Balance Card (wallet-aware) ───────────────────────────────── */
-function BalanceCard({ empty }) {
+function BalanceCard({ empty, scenario = "normal" }) {
   const wallets = D.wallets || [];
   const multi = wallets.length > 1;
 
@@ -186,7 +185,8 @@ function BalanceCard({ empty }) {
     );
   }
 
-  const tone = empty ? "" : balanceTone(w.daysRemaining);
+  const forced = scenario !== "normal" ? scenario : null; // "low" | "critical"
+  const tone = empty ? "" : (forced === "critical" ? " red" : forced === "low" ? " amber" : "");
 
   // Shared band renderer
   function UsageBand({ wallet }) {
@@ -201,6 +201,10 @@ function BalanceCard({ empty }) {
           <div className="od-bal-cell-l">Last month usage</div>
           <div className="od-bal-cell-v">{empty ? "RM 0.00" : RM(wallet.lastMonthUsage)}</div>
           <div className="od-bal-cell-s">{empty ? "0.00 L" : L(wallet.lastMonthUsageLitres)}</div>
+        </div>
+        <div className="od-bal-cell od-bal-cell-est">
+          <div className="od-bal-cell-l">Est. remaining</div>
+          <div className="od-bal-cell-v">{empty ? "—" : `${wallet.daysRemaining} days`}</div>
         </div>
       </div>
     );
@@ -238,12 +242,24 @@ function BalanceCard({ empty }) {
           </div>
           <span className="od-bal-updated">Last updated<br />{D.org.lastUpdated}</span>
         </div>
-        <div className="od-bal-sublabel">Balance</div>
-        <div className="od-bal-value">{empty ? "$0.00" : Wallet(w.amount)}</div>
-        <span className="od-bal-pill">
-          <Icon name="schedule" size={13} color="#fff" />
-          {empty ? "No usage yet" : `Est. remaining ${w.daysRemaining} days`}
-        </span>
+        <div className="od-bal-row">
+          <div>
+            <div className="od-bal-sublabel-row">
+              <span className="od-bal-sublabel">Balance</span>
+              {forced && (
+                <span className="ml-tooltip-wrap" tabIndex={forced === "critical" ? 0 : undefined}>
+                  <StatusBadge status={forced === "critical" ? "critical_balance" : "low_balance"}
+                    prefix={<Icon name="warning" size={11} color="#BE2F2C" />} />
+                  {forced === "critical" && (
+                    <span className="ml-tooltip">Balance critically low — top up now to avoid service disruption.</span>
+                  )}
+                </span>
+              )}
+            </div>
+            <div className="od-bal-value">{empty ? "$0.00" : Wallet(w.amount)}</div>
+          </div>
+          <button className="od-bal-addcredit">Add credit</button>
+        </div>
         <UsageBand wallet={w} />
         {multi && (
           <div className="od-bal-dots" role="tablist" aria-label="Wallet position">
@@ -259,24 +275,35 @@ function BalanceCard({ empty }) {
       {/* ── Mobile: horizontal snap scroll, each wallet its own card ── */}
       <div className="od-bal-mobile">
         <div className="od-bal-mscroll">
-          {wallets.map((wl) => (
-            <div key={wl.id} className={"od-bal-mcard" + (empty ? "" : balanceTone(wl.daysRemaining))}>
-              <div className="od-bal-top">
-                <span className="od-bal-mcard-name">
-                  <WalletLogo wallet={wl} size={13} />
-                  <span>{wl.name}</span>
-                </span>
-                <span className="od-bal-updated">Last updated<br />{D.org.lastUpdated}</span>
+          {wallets.map((wl) => {
+            const wlForced = wl.id === w.id ? forced : null;
+            const wlTone = empty ? "" : (wlForced === "critical" ? " red" : wlForced === "low" ? " amber" : "");
+            return (
+              <div key={wl.id} className={"od-bal-mcard" + wlTone}>
+                <div className="od-bal-top">
+                  <span className="od-bal-mcard-name">
+                    <WalletLogo wallet={wl} size={13} />
+                    <span>{wl.name}</span>
+                  </span>
+                  <span className="od-bal-updated">Last updated<br />{D.org.lastUpdated}</span>
+                </div>
+                <div className="od-bal-sublabel-row">
+                  <span className="od-bal-sublabel">Balance</span>
+                  {wlForced && (
+                    <span className="ml-tooltip-wrap" tabIndex={wlForced === "critical" ? 0 : undefined}>
+                      <StatusBadge status={wlForced === "critical" ? "critical_balance" : "low_balance"}
+                        prefix={<Icon name="warning" size={11} color="#BE2F2C" />} />
+                      {wlForced === "critical" && (
+                        <span className="ml-tooltip">Balance critically low — top up now to avoid service disruption.</span>
+                      )}
+                    </span>
+                  )}
+                </div>
+                <div className="od-bal-value">{empty ? "$0.00" : Wallet(wl.amount)}</div>
+                <UsageBand wallet={wl} />
               </div>
-              <div className="od-bal-sublabel">Balance</div>
-              <div className="od-bal-value">{empty ? "$0.00" : Wallet(wl.amount)}</div>
-              <span className="od-bal-pill">
-                <Icon name="schedule" size={13} color="#fff" />
-                {empty ? "No usage yet" : `Est. remaining ${wl.daysRemaining} days`}
-              </span>
-              <UsageBand wallet={wl} />
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -285,54 +312,52 @@ function BalanceCard({ empty }) {
 }
 
 /* ── Section 1: Top Pulse ──────────────────────────────────────── */
-function TopPulse({ empty }) {
+function TopPulse({ empty, balanceScenario }) {
   const o = D.operatingCost, v = D.vehicles, dr = D.drivers;
   return (
     <div className="od-pulse">
-      <BalanceCard empty={empty} />
+      <BalanceCard empty={empty} scenario={balanceScenario} />
 
-      {/* Operating Cost — today snapshot */}
-      <div className="od-kpi od-kpi-cost">
-        <div className="od-kpi-head">
-          <div className="od-kpi-id">
-            <div className="od-kpi-ico"><Icon name="attach_money" size={20} /></div>
-            <div>
-              <div className="od-kpi-label">Operating Cost</div>
-              <div className="od-kpi-sub">Today</div>
-            </div>
-          </div>
-          <button className="od-card-arrow" aria-label="Open cost detail">
-            <Icon name="arrow_forward" size={15} />
-          </button>
-        </div>
-        <div className="od-kpi-cost-main">
-          <div className="od-kpi-value">{empty ? "RM 0" : RM0(o.today)}</div>
-          {!empty && (
-            <div className={"od-trend " + o.trendDir}>
-              <Icon name={o.trendDir === "up" ? "trending_up" : "trending_down"} size={14} />
+      {/* Operating Cost + Vehicles + Drivers — shared CountCard (Figma 8369-14054).
+          Wrapped so mobile can turn this trio into one horizontal scroller
+          without touching the desktop grid (od-statscroll is display:contents
+          on desktop, so od-pulse still sees 4 flat grid items). */}
+      <div className="od-statscroll">
+        <CountCard fill icon="attach_money" count={empty ? "RM 0" : RM0(o.today)}
+          label="Operating Cost"
+          sub={empty ? "Today" : (
+            <span className={"od-opcost-trend-sub " + o.trendDir}>
+              <Icon name={o.trendDir === "up" ? "trending_up" : "trending_down"} size={12} />
               {o.trendPct}% vs yesterday
-            </div>
+            </span>
           )}
-        </div>
-        <div className="od-kpi-line">
-          <span className="od-kpi-line-l">Fuel</span>
-          <span className="od-kpi-line-v">{empty ? "RM 0" : RM0(o.fuel)}</span>
-        </div>
+          extra={
+            <div className="od-opcost-cats">
+              <span className="od-opcost-cat">
+                <span className="od-opcost-cat-dot" />
+                Fuel <span className="od-opcost-cat-sep">·</span> {empty ? "RM 0" : RM0(o.fuel)}
+              </span>
+              {o.comingSoonCategories.map((label) => (
+                <span key={label} className="od-opcost-cat soon">
+                  <span className="od-opcost-cat-dot" />
+                  {label} <span className="od-opcost-cat-sep">·</span> Soon
+                </span>
+              ))}
+            </div>
+          } />
+
+        <CountCard fill icon="local_shipping" count={empty ? 0 : v.total} label="Vehicles" sub="Total in fleet" actionLabel="Open vehicles"
+          stats={[
+            { n: empty ? 0 : v.inUse, label: "In use", tone: "green" },
+            { n: empty ? 0 : v.unused, label: "Unused", tone: "gray" },
+          ]} />
+
+        <CountCard fill icon="groups" count={empty ? 0 : dr.total} label="Drivers" sub="Total registered" actionLabel="Open drivers"
+          stats={[
+            { n: empty ? 0 : dr.onDuty, label: "On duty", tone: "green" },
+            { n: empty ? 0 : dr.offDuty, label: "Off duty", tone: "gray" },
+          ]} />
       </div>
-
-      {/* Vehicles + Drivers — shared CountCard (Figma 8369-14054) */}
-      <CountCard fill icon="local_shipping" count={empty ? 0 : v.total} label="Vehicles" sub="Total in fleet" actionLabel="Open vehicles"
-        stats={[
-          { n: empty ? 0 : v.inUse, label: "In use", tone: "green" },
-          { n: empty ? 0 : v.unused, label: "Unused", tone: "gray" },
-          { n: empty ? 0 : v.inactive, label: "Inactive", tone: "red" },
-        ]} />
-
-      <CountCard fill icon="groups" count={empty ? 0 : dr.total} label="Drivers" sub="Total registered" actionLabel="Open drivers"
-        stats={[
-          { n: empty ? 0 : dr.onDuty, label: "On duty", tone: "green" },
-          { n: empty ? 0 : dr.offDuty, label: "Off duty", tone: "gray" },
-        ]} />
     </div>
   );
 }
@@ -546,7 +571,9 @@ function CostTrend({ tier, empty }) {
 
       <div className="od-legend">
         <span className="od-leg"><span className="od-leg-dot" style={{ background: "var(--green-500)" }} /> Fuel (current)</span>
-        <span className="od-leg soon"><span className="od-leg-dot" style={{ background: "#D6DAD8" }} /> Other categories (coming soon)</span>
+        {D.operatingCost.comingSoonCategories.map((label) => (
+          <span key={label} className="od-leg soon"><span className="od-leg-dot" style={{ background: "#D6DAD8" }} /> {label} (coming soon)</span>
+        ))}
       </div>
     </div>
   );
@@ -877,7 +904,7 @@ function App() {
           </div>
 
           {/* 1 — Top Pulse */}
-          <TopPulse empty={empty} />
+          <TopPulse empty={empty} balanceScenario={t.balanceScenario} />
 
           {/* 2 — Modules */}
           <Modules tier={tier} />
@@ -904,6 +931,14 @@ function App() {
           onChange={(v) => setTweak("subscription", v)} />
         <TweakSection label="Data" />
         <TweakToggle label="Empty (new org)" value={t.emptyData} onChange={(v) => setTweak("emptyData", v)} />
+        <TweakSection label="Balance" />
+        <TweakSelect label="Scenario" value={t.balanceScenario}
+          options={[
+            { value: "normal", label: "Normal" },
+            { value: "low", label: "Low balance" },
+            { value: "critical", label: "Critical" },
+          ]}
+          onChange={(v) => setTweak("balanceScenario", v)} />
 
       </TweaksPanel>
     </div>
