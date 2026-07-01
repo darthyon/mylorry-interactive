@@ -61,7 +61,8 @@ window.ORG_DASH = {
     today: 12500,      // RM total today
     trendPct: 8,       // vs yesterday
     trendDir: "up",    // up | down
-    fuel: 5000,        // RM, only category shown in v1
+    fuel: 5000,        // RM, only live category in v1
+    comingSoonCategories: ["Toll", "Repair", "Insurance", "Others"],
   },
   vehicles: { total: 16, inUse: 3, unused: 12, inactive: 1 },
   drivers:  { total: 13, onDuty: 5, offDuty: 8 },

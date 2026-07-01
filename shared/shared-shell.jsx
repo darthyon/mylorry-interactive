@@ -230,8 +230,16 @@ function SummaryCard({ icon, title, sub, value, trend, accent }) {
 // Canonical fleet/count card: icon + big number, label, sub, then a gray
 // footer band of split stats. Used for Vehicles, Drivers, Fleet Cards, etc.
 // (host dashboard + org dashboard). One component — don't re-roll the band.
-// stats: [{ n, label, tone }]  tone: "green" | "gray" | "red" | "amber".
-function CountCard({ icon, count, label, sub, stats = [], fill = false, actionLabel }) {
+// stats: [{ n, label, tone }]  tone: "green" | "gray" | "red" | "amber" | "soon".
+// trend: { dir: "up" | "down", pct, label } — optional, renders between the
+// label row and the stat band (e.g. Operating Cost's "vs yesterday").
+// children — optional, replaces the equal-width stat cells inside the same
+// footer band (bg-subtle strip) when a card's footer needs bespoke content
+// instead of a grid of comparable stats.
+// extra — optional, plain body content rendered after trend/before the band,
+// no bg-subtle wrapper (e.g. Operating Cost's category-breakdown metadata,
+// which doesn't fit the equal-cell band once every category has data).
+function CountCard({ icon, count, label, sub, stats = [], fill = false, actionLabel, trend, children, extra }) {
   return (
     <div className={"ml-statcard" + (fill ? " fill" : "")}>
       <div className="ml-statcard-head">
@@ -249,14 +257,23 @@ function CountCard({ icon, count, label, sub, stats = [], fill = false, actionLa
         <span className="ml-statcard-label">{label}</span>
         {sub && <span className="ml-statcard-sub">{sub}</span>}
       </div>
-      <div className="ml-statcard-band">
-        {stats.map((s, i) => (
-          <div key={i} className="ml-statcard-cell">
-            <div className={"ml-statcard-n " + (s.tone || "gray")}>{s.n}</div>
-            <div className="ml-statcard-l">{s.label}</div>
-          </div>
-        ))}
-      </div>
+      {trend && (
+        <div className={"ml-statcard-trend " + trend.dir}>
+          <Icon name={trend.dir === "up" ? "trending_up" : "trending_down"} size={14} />
+          {trend.pct}% {trend.label}
+        </div>
+      )}
+      {extra}
+      {(stats.length > 0 || children) && (
+        <div className="ml-statcard-band">
+          {children ? children : stats.map((s, i) => (
+            <div key={i} className={"ml-statcard-cell" + (s.tone === "soon" ? " soon" : "")}>
+              <div className={"ml-statcard-n " + (s.tone || "gray")}>{s.n}</div>
+              <div className={"ml-statcard-l" + (s.tone === "soon" ? " soon" : "")}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -286,6 +303,10 @@ const STATUS_BADGE_META = {
   suspended:            { label:"Suspended",           cls:"acct-suspended"  },
   pending_termination:  { label:"Pending Termination", cls:"acct-pending-term" },
   terminated:           { label:"Terminated",          cls:"acct-terminated" },
+  // Wallet balance health (inverted chip: white bg, danger-colored icon/text)
+  low_balance:      { label:"Low",           cls:"bal-low"      },
+  critical_balance: { label:"Critical",      cls:"bal-critical" },
+  cards_frozen:     { label:"Cards frozen",  cls:"bal-frozen"   },
 };
 function StatusBadge({ status, prefix, fallback = "activated" }) {
   const m = STATUS_BADGE_META[status] || STATUS_BADGE_META[fallback] || { label: status, cls: "" };

@@ -88,6 +88,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .od-kpi-balance{background:var(--gradient-balance-green);border:none;color:#fff;padding:14px 16px;position:relative;}
 .od-kpi-balance.amber{background:var(--gradient-balance-amber);}
 .od-kpi-balance.red{background:var(--gradient-balance-red);}
+.od-kpi-balance.frozen{background:linear-gradient(145deg,#9CA3AF 0%,#6B7280 100%);}
 
 /* — Edge nav arrows (hover-reveal, white + dark chevron) — */
 .od-bal-warrow{position:absolute;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;
@@ -112,6 +113,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .od-bal-mcard{flex-shrink:0;width:91%;scroll-snap-align:start;padding:14px 16px;border-radius:14px;color:#fff;background:var(--gradient-balance-green);}
   .od-bal-mcard.amber{background:var(--gradient-balance-amber);}
   .od-bal-mcard.red{background:var(--gradient-balance-red);}
+  .od-bal-mcard.frozen{background:linear-gradient(145deg,#9CA3AF 0%,#6B7280 100%);}
   .od-bal-mcard-name{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:#fff;}
 }
 
@@ -124,7 +126,10 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .od-bal-wname:hover{background:rgba(255,255,255,.1);}
 .od-bal-wname-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .od-bal-updated{font-size:11px;line-height:1.45;color:rgba(255,255,255,.78);text-align:right;flex-shrink:0;}
-.od-bal-sublabel{font-size:11px;font-weight:600;color:rgba(255,255,255,.72);margin-top:14px;letter-spacing:.02em;}
+.od-bal-sublabel{font-size:11px;font-weight:600;color:rgba(255,255,255,.72);letter-spacing:.02em;}
+.od-bal-sublabel-row{display:flex;align-items:center;gap:6px;margin-top:14px;}
+.od-bal-sublabel-row .ml-tooltip-wrap:hover .ml-tooltip,
+.od-bal-sublabel-row .ml-tooltip-wrap:focus-within .ml-tooltip{opacity:1;}
 .od-bal-dots{display:flex;justify-content:center;gap:6px;margin-top:10px;}
 .od-bal-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.32);border:0;padding:0;cursor:pointer;transition:background .15s,width .2s;}
 .od-bal-dot.active{background:#fff;width:16px;border-radius:3px;}
@@ -155,10 +160,15 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 
 .od-bal-unavail{font-size:14px;font-weight:500;opacity:.72;margin-top:12px;}
 .od-bal-value{font-size:31px;font-weight:600;letter-spacing:-.02em;line-height:1.05;margin-top:3px;}
+.od-bal-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;}
+.od-bal-addcredit{background:#000;color:#fff;border:none;border-radius:8px;padding:8px 14px;
+  font:600 13px var(--font-sans);cursor:pointer;flex-shrink:0;transition:background .15s;}
+.od-bal-addcredit:hover{background:#1a1a1a;}
 .od-bal-pill{display:inline-flex;align-self:flex-start;align-items:center;gap:5px;margin-top:8px;font-size:12px;font-weight:600;color:rgba(255,255,255,.92);}
 .od-bal-band{display:flex;margin-top:12px;border-radius:9px;background:rgba(0,0,0,.14);overflow:hidden;}
 .od-bal-cell{flex:1;padding:9px 12px;}
 .od-bal-cell + .od-bal-cell{border-left:1px solid rgba(0,0,0,.16);}
+.od-bal-cell-est{flex:.65;}
 .od-bal-cell-l{display:flex;align-items:center;gap:4px;font-size:11px;color:rgba(255,255,255,.82);}
 .od-bal-cell-v{font-size:15px;font-weight:600;margin-top:3px;}
 .od-bal-cell-s{font-size:11.5px;color:rgba(255,255,255,.78);margin-top:1px;}
@@ -168,30 +178,31 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 }
 
 /* — Standard stat cards (operating cost / vehicles / drivers) — */
-.od-kpi-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;}
-.od-kpi-id{display:flex;align-items:center;gap:11px;min-width:0;}
-.od-kpi-ico{width:42px;height:42px;border-radius:12px;background:var(--green-50);display:flex;align-items:center;justify-content:center;color:var(--green-600);flex-shrink:0;}
-.od-kpi-label{font-size:13px;font-weight:600;color:var(--fg-primary);}
-.od-kpi-sub{font-size:11.5px;color:var(--fg-tertiary);margin-top:1px;}
-.od-kpi-toplink{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:600;color:var(--green-600);cursor:pointer;white-space:nowrap;flex-shrink:0;}
-.od-kpi-value{font-size:25px;font-weight:600;letter-spacing:-.01em;line-height:1;}
-.od-trend{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:600;margin-top:6px;}
-.od-trend.up{color:var(--green-600);}.od-trend.down{color:var(--red-400);}
-.od-kpi-line{display:flex;align-items:baseline;gap:8px;margin-top:11px;padding-top:11px;border-top:1px solid var(--border-light);}
-.od-kpi-line-l{font-size:12px;color:var(--fg-tertiary);}
-.od-kpi-line-v{font-size:13px;font-weight:600;color:var(--fg-primary);}
-.od-kpi-foot{margin-top:auto;padding-top:13px;font-size:12px;font-weight:600;color:var(--green-600);display:inline-flex;align-items:center;gap:4px;cursor:pointer;}
-.od-kpi-cost{min-height:218px;padding:17px;justify-content:space-between;}
-.od-kpi-cost .od-kpi-head{margin-bottom:0;padding-bottom:10px;}
-.od-kpi-cost-main{width:100%;}
-.od-kpi-cost .od-kpi-value{font-size:25px;line-height:1;letter-spacing:-.01em;}
-.od-kpi-cost .od-trend{margin-top:6px;}
-.od-kpi-cost .od-kpi-line{width:100%;margin-top:0;padding-top:12px;}
-
 .od-pulse .ml-statcard{cursor:pointer;}
 
-/* Vehicles / Drivers cards now use the shared CountCard
-   (window.SharedShell.CountCard · .ml-statcard* in components.css). */
+/* Operating Cost / Vehicles / Drivers now all use the shared CountCard
+   (window.SharedShell.CountCard · .ml-statcard* in components.css).
+   Operating Cost has no footer band — a 5-category breakdown won't fit the
+   equal-cell band once every category has real data. Instead it's a plain
+   2-per-row metadata grid (dot + label + value), small/quiet, muted for
+   categories still "coming soon". */
+.od-opcost-cats{display:grid;grid-template-columns:1fr 1fr;gap:6px 6px;margin-top:20px;
+  background:var(--bg-subtle);border-radius:10px;padding:9px 10px;}
+.od-opcost-cat{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:500;
+  color:var(--fg-secondary);min-width:0;white-space:nowrap;}
+.od-opcost-cat-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:var(--green-500);}
+.od-opcost-cat-sep{color:var(--fg-tertiary);}
+.od-opcost-cat.soon{color:var(--fg-disabled);}
+.od-opcost-cat.soon .od-opcost-cat-dot{background:#D6DAD8;}
+/* Trend takes the place of the "Today" sub-label instead of its own line. */
+.od-opcost-trend-sub{display:inline-flex;align-items:center;gap:3px;font-weight:600;}
+.od-opcost-trend-sub.up{color:var(--green-600);}
+.od-opcost-trend-sub.down{color:var(--red-400);}
+
+/* Wrapper around the 3 CountCards: transparent on desktop (grid still sees
+   4 flat items), becomes a horizontal scroller on mobile (see media query
+   below), matching the wallet-card swipe pattern (.od-bal-mscroll). */
+.od-statscroll{display:contents;}
 
 /* ── Section 2: Modules ─────────────────────────────────────── */
 .od-modrail-card{margin-top:16px;}
@@ -221,6 +232,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 
 /* ── Section 3: Trend + MyTrip ───────────────────────────────── */
 .od-row{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-top:16px;align-items:stretch;}
+.od-row>.od-card{min-width:0;}  /* grid items don't shrink below content's intrinsic width by default — this is what breaks responsiveness for the chart/MyTrip cards on narrow viewports */
 .od-trend-controls{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
 .od-trend-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
 .od-chart{margin-top:20px;}
@@ -442,7 +454,9 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .od-pulse{display:contents;}
   .od-kpi-balance{order:1;}
   .od-modrail-card{order:2;}
-  .od-kpi-cost,.od-pulse .ml-statcard{order:3;}
+  .od-statscroll{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:10px;padding:0 16px;order:3;}
+  .od-statscroll::-webkit-scrollbar{display:none;}
+  .od-statscroll>*{flex-shrink:0;width:91%;scroll-snap-align:start;}
   .od-row{order:4;}
   .od-overview{order:5;}
   .od-preview{order:6;}
@@ -458,20 +472,14 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .od-sec-title{font-size:14px;}
   .od-bal-value{font-size:30px;}
   .od-bal-cell-v{font-size:13px;}
-  .od-kpi-value,.od-kpi-cost .od-kpi-value{font-size:20px;}
-  .od-kpi-ico{width:36px;height:36px;border-radius:10px;}
-  /* OpCost card — tighten vertical rhythm on mobile. */
-  .od-kpi-cost{padding:13px;min-height:0;}
-  .od-kpi-cost .od-kpi-head{padding-bottom:8px;}
-  .od-kpi-cost .od-kpi-cost-main{margin-top:0;}
-  .od-kpi-cost .od-kpi-line{padding-top:8px;margin-top:0;}
-  /* CountCards (Vehicles/Drivers) — compact on mobile. */
+  /* CountCards (Operating Cost / Vehicles / Drivers) — compact on mobile. */
   .od-shell .ml-statcard{padding:12px;}
   .od-shell .ml-statcard-ico{width:32px;height:32px;border-radius:9px;}
   .od-shell .ml-statcard-count{font-size:22px;}
   .od-shell .ml-statcard-labelrow{margin-top:8px;gap:1px;}
   .od-shell .ml-statcard-label{font-size:13px;}
   .od-shell .ml-statcard-sub{font-size:10.5px;}
+  .od-shell .ml-statcard-trend{font-size:11px;margin-top:4px;}
   .od-shell .ml-statcard-action{width:24px;height:24px;}
   .od-shell .ml-statcard-band{margin:10px -12px -12px;padding:10px 12px;gap:12px;}
   .od-shell .ml-statcard-n{font-size:15px;}
