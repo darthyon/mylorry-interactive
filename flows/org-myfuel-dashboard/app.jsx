@@ -6,7 +6,7 @@
 {
 
 const { useState, useEffect, useRef } = React;
-const { Icon, LockSection, Segmented, StatusBadge, CountCard, PetronLogo } = window.SharedShell;
+const { Icon, LockSection, Segmented, StatusBadge, CountCard, PetronLogo, HistoryCard } = window.SharedShell;
 const D = window.MYFUEL_DASH;
 const { useTweaks, TweaksPanel, TweakSection, TweakSelect, TweakToggle } = window;
 
@@ -273,8 +273,8 @@ function BalanceSummary({ empty }) {
 function vehicleStatus(used, quota) {
   if (quota === 0) return "none";
   const pct = (used / quota) * 100;
-  if (pct >= 90) return "critical";
-  if (pct >= 70) return "at-risk";
+  if (pct >= 100) return "critical";
+  if (pct >= 90) return "at-risk";
   return "within";
 }
 
@@ -490,7 +490,7 @@ function SubsidyQuotaByVehicle({ empty, quotaState, subsidy }) {
             <div className="mfd-legend mfd-vehicle-legend">
               <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--red-400)" }} /> Critical</span>
               <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--amber-500)" }} /> At risk</span>
-              <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--green-500)" }} /> Safe</span>
+              <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--green-500)" }} /> Available</span>
             </div>
             <div className="mfd-vehicle-footer-bottom">
               <span className="mfd-vehicle-pager-range">{vehRows.length ? `${start + 1}–${Math.min(start + pageRows.length, vehRows.length)} of ${vehRows.length}` : "0 of 0"}</span>
@@ -645,7 +645,15 @@ const ACTIVITY_TABS = [
 
 function StatusPill({ status }) {
   const cls = "mfd-status " + status.toLowerCase().replace(/\s+/g, "-");
-  return <span className={cls}>{status}</span>;
+  const isCompleted = status.toLowerCase() === "completed";
+  const isPending = status.toLowerCase() === "pending";
+  return (
+    <span className={cls}>
+      {isCompleted && <Icon name="check" size={11} style={{ marginRight: 4 }} />}
+      {isPending && <Icon name="pause" size={11} fill={1} style={{ marginRight: 4 }} />}
+      {status}
+    </span>
+  );
 }
 
 function TxnModal({ txn, onClose }) {
@@ -760,75 +768,93 @@ function FuelActivityCards({ rows, empty }) {
 function TopUpTable({ rows, empty }) {
   if (empty || !rows.length) return <div className="mfd-table-empty">No top-up history yet.</div>;
   return (
-    <div className="mfd-topup-preview-list">
+    <div className="mfd-history-list">
       {rows.map((r, i) => (
-        <article key={i} className="mfd-topup-preview-card">
-          <div className="mfd-topup-preview-head">
-            <div className="mfd-topup-preview-headicon">
-              <Icon name="calendar_clock" size={20} />
-            </div>
-            <div className="mfd-topup-preview-headcopy">
-              <div className="mfd-topup-preview-headtitle">Paid at: {r.paidAt}</div>
-              <div className="mfd-topup-preview-headsub">{r.reference}</div>
-            </div>
-            <button type="button" className="mfd-topup-preview-action" aria-label="Download receipt">
+        <HistoryCard
+          key={i}
+          icon="calendar_clock"
+          title={`Paid at: ${r.paidAt}`}
+          subtitle={r.reference}
+          action={
+            <button type="button" className="mfd-history-action" aria-label="Download receipt">
               <Icon name="download" size={18} />
             </button>
+          }
+        >
+          <div className="ml-history-card-row">
+            <div className="ml-history-card-cell"><span className="mfd-history-account"><PetronLogo size={18} /> {r.accountCode}</span></div>
+            <div className="ml-history-card-cell" style={{ textAlign: "right" }}><span className="mfd-history-amountpill">{RM(r.amount)}<span className="mfd-history-plus">+</span></span></div>
           </div>
-
-          <div className="mfd-topup-preview-body">
-            <div className="mfd-topup-preview-row mfd-topup-preview-row-main">
-              <div className="mfd-topup-preview-account">
-                <PetronLogo size={18} />
-                <span>{r.accountCode}</span>
-              </div>
-              <div className="mfd-topup-preview-amountpill">
-                <span className="mfd-topup-preview-amount">{RM(r.amount)}</span>
-                <span className="mfd-topup-preview-plus">+</span>
-              </div>
-            </div>
-
-            <div className="mfd-topup-preview-row mfd-topup-preview-row-meta">
-              <span>{r.method}</span>
-              <span>{r.description}</span>
-            </div>
-
-            <div className="mfd-topup-preview-created">
-              Created at <strong>{r.createdAt}</strong>
-            </div>
+          <div className="ml-history-card-row">
+            <div className="ml-history-card-cell">{r.method}</div>
+            <div className="ml-history-card-cell" style={{ textAlign: "right" }}>{r.description}</div>
           </div>
-        </article>
+          <div className="ml-history-card-row full">
+            <div className="ml-history-card-cell">Created at <strong>{r.createdAt}</strong></div>
+          </div>
+        </HistoryCard>
       ))}
     </div>
   );
 }
 
-function RebateTable({ rows, empty }) {
+const REBATE_LIMITS = { free: 3, lite: 6, premium: 12 };
+
+function RebateCards({ rows, empty, tier }) {
+  const [page, setPage] = useState(1);
   if (empty || !rows.length) return <div className="mfd-table-empty">No rebate history yet.</div>;
+  const limit = REBATE_LIMITS[tier] ?? REBATE_LIMITS.free;
+  const eligible = rows.slice(0, limit);
+  const pageSize = 6;
+  const pageCount = Math.max(1, Math.ceil(eligible.length / pageSize));
+  const safePage = Math.min(page, pageCount);
+  const start = (safePage - 1) * pageSize;
+  const visible = eligible.slice(start, start + pageSize);
   return (
-    <div className="mfd-table-wrap">
-      <table className="ml-table mfd-table">
-        <thead><tr><th>Month</th><th>Total fuel</th><th>Total subsidy</th><th>Total rebate</th><th>Status</th></tr></thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={i}>
-              <td>{r.month}</td>
-              <td>{L0(r.totalFuel)}</td>
-              <td>{RM(r.totalSubsidy)}</td>
-              <td className="mfd-amount">{RM(r.totalRebate)}</td>
-              <td><StatusPill status={r.status} /></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <>
+      <div className="mfd-history-list">
+        {visible.map((r, i) => (
+          <HistoryCard
+            key={i}
+            icon="calendar_clock"
+            title={r.paidOn}
+            subtitle={r.period}
+          >
+            <div className="ml-history-card-row">
+              <div className="ml-history-card-cell"><span className="mfd-history-account"><PetronLogo size={18} /> {r.accountNo}</span></div>
+              <div className="ml-history-card-cell" style={{ textAlign: "right" }}><span className="mfd-history-amount">{RM(r.amount)}</span></div>
+            </div>
+            <div className="ml-history-card-row">
+              <div className="ml-history-card-cell">{r.orgName}</div>
+              <div className="ml-history-card-cell" style={{ textAlign: "right" }}>{r.type}</div>
+            </div>
+            <div className="ml-history-card-row">
+              <div className="ml-history-card-cell">Usage: {L0(r.usage)}</div>
+              <div className="ml-history-card-cell" style={{ textAlign: "right" }}>Group Usage: {L0(r.groupUsage)}</div>
+            </div>
+            <div className="ml-history-card-row">
+              <div className="ml-history-card-cell">{r.provider}</div>
+              <div className="ml-history-card-cell" style={{ textAlign: "right" }}><StatusPill status={r.status} /></div>
+            </div>
+          </HistoryCard>
+        ))}
+      </div>
+      {eligible.length > pageSize && (
+        <div className="mfd-rebate-footer">
+          <span className="mfd-rebate-pager-range">{eligible.length ? `${start + 1}–${Math.min(start + visible.length, eligible.length)} of ${eligible.length}` : "0 of 0"}</span>
+          <div className="mfd-rebate-pagebtns">
+            <button type="button" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}><Icon name="chevron_left" size={16} /></button>
+            <button type="button" disabled={safePage >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))}><Icon name="chevron_right" size={16} /></button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
 function AccountActivity({ empty, tier }) {
   const [tab, setTab] = useState("fuel");
-  const showRebate = rank(tier) >= rank("lite");
-  const tabs = showRebate ? ACTIVITY_TABS : ACTIVITY_TABS.filter((t) => t.value !== "rebate");
+  const tabs = ACTIVITY_TABS;
   const activeTab = tabs.find((t) => t.value === tab) || tabs[0];
   const hasRows = activeTab.value === "fuel"
     ? !empty && D.transactions.length > 0
@@ -851,8 +877,8 @@ function AccountActivity({ empty, tier }) {
       <div className="mfd-activity-body">
         {activeTab.value === "fuel" && <FuelActivityCards rows={D.transactions} empty={empty} />}
         {activeTab.value === "topup" && <TopUpTable rows={D.topUps} empty={empty} />}
-        {activeTab.value === "rebate" && <RebateTable rows={D.rebates} empty={empty} />}
-        {hasRows && (
+        {activeTab.value === "rebate" && <RebateCards rows={D.rebates} empty={empty} tier={tier} />}
+        {hasRows && activeTab.value !== "rebate" && (
           <div className="mfd-activity-viewall">
             <button className="ml-btn-outline">View all</button>
           </div>

@@ -301,26 +301,21 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-fuel-preview-subsidy-value{font-size:11.5px;font-weight:700;color:var(--green-600);}
 .mfd-fuel-preview-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;margin:8px -14px -12px;padding:7px 14px;background:var(--bg-muted);border-top:1px solid var(--border-light);border-radius:0 0 var(--radius-md) var(--radius-md);margin-top:auto;}
 .mfd-fuel-preview-chevron{color:var(--fg-tertiary);display:flex;align-items:center;}
-.mfd-topup-preview-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
-.mfd-topup-preview-card{border:1px solid var(--border-light);border-radius:var(--radius-md);background:#fff;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
-.mfd-topup-preview-head{display:flex;align-items:center;gap:10px;padding:14px;background:#f9fafb;border-bottom:1px solid var(--border-light);}
-.mfd-topup-preview-headicon{width:24px;height:24px;display:flex;align-items:center;justify-content:center;color:var(--fg-primary);flex-shrink:0;}
-.mfd-topup-preview-headcopy{flex:1;min-width:0;}
-.mfd-topup-preview-headtitle{font-size:15px;font-weight:600;color:var(--fg-primary);line-height:1.15;letter-spacing:-.01em;}
-.mfd-topup-preview-headsub{font-size:10px;color:var(--fg-tertiary);margin-top:3px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
-.mfd-topup-preview-action{width:24px;height:24px;border:0;background:transparent;color:var(--fg-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;padding:0;}
-.mfd-topup-preview-body{display:flex;flex-direction:column;gap:10px;padding:14px 14px 12px;}
-.mfd-topup-preview-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
-.mfd-topup-preview-account{display:inline-flex;align-items:center;gap:8px;min-width:0;font-size:11px;font-weight:500;color:var(--fg-tertiary);}
-.mfd-topup-preview-account .ml-petron-logo{border-radius:4px;flex-shrink:0;}
-.mfd-topup-preview-account span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.mfd-topup-preview-amountpill{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:999px;background:rgba(0,170,79,.05);white-space:nowrap;flex-shrink:0;}
-.mfd-topup-preview-amount{font-size:15px;font-weight:700;color:var(--navy-800);line-height:1.1;}
-.mfd-topup-preview-plus{font-size:16px;font-weight:600;color:#00aa4f;line-height:1;}
-.mfd-topup-preview-row-meta{font-size:12px;color:var(--fg-secondary);}
-.mfd-topup-preview-row-meta span:last-child{text-align:right;}
-.mfd-topup-preview-created{font-size:12px;color:var(--fg-secondary);}
-.mfd-topup-preview-created strong{font-weight:500;color:var(--fg-primary);}
+.mfd-history-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+.mfd-history-action{width:28px;height:28px;border:0;background:transparent;color:var(--fg-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;padding:0;border-radius:6px;}
+.mfd-history-action:hover{background:var(--bg-muted);color:var(--fg-primary);}
+.mfd-history-account{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:500;color:var(--fg-secondary);}
+.mfd-history-account .ml-petron-logo{border-radius:4px;flex-shrink:0;}
+.mfd-history-amount{font-weight:700;color:var(--navy-800);}
+.mfd-history-amountpill{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:999px;background:rgba(0,170,79,.05);white-space:nowrap;flex-shrink:0;font-weight:700;color:var(--navy-800);}
+.mfd-history-plus{font-size:16px;font-weight:600;color:#00aa4f;line-height:1;}
+.mfd-rebate-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;}
+.mfd-rebate-pager-range{font-size:12px;color:var(--fg-secondary);}
+.mfd-rebate-pagebtns{display:flex;align-items:center;gap:4px;}
+.mfd-rebate-pagebtns button{width:28px;height:28px;border:1px solid var(--border-light);background:var(--bg-card);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--fg-secondary);cursor:pointer;}
+.mfd-rebate-pagebtns button:not(:disabled):hover{background:var(--bg-muted);color:var(--fg-primary);}
+.mfd-rebate-pagebtns button:disabled{opacity:.35;cursor:not-allowed;}
+
 .mfd-cell-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--fg-secondary);}
 .mfd-subsidy{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--green-600);background:var(--green-50);padding:2px 7px;border-radius:var(--radius-pill);}
 .mfd-subsidy-none{color:var(--fg-tertiary);}
@@ -328,6 +323,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-status{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:3px 9px;border-radius:var(--radius-pill);text-transform:capitalize;}
 .mfd-status.successful{background:var(--green-50);color:var(--green-600);}
 .mfd-status.pending{background:var(--amber-50);color:var(--amber-600);}
+.mfd-status.completed{background:var(--green-50);color:var(--green-600);}
 .mfd-status.processed{background:var(--green-50);color:var(--green-600);}
 .mfd-table-empty{text-align:center;color:var(--fg-tertiary);padding:34px 12px;font-size:13px;}
 
@@ -401,12 +397,8 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .mfd-activity-viewall .ml-btn-outline{width:100%;justify-content:center;}
   .mfd-fuel-preview-list{grid-template-columns:1fr;}
   .mfd-fuel-preview-vehicle{font-size:14px;}
-  .mfd-topup-preview-list{grid-template-columns:1fr;}
-  .mfd-topup-preview-head{padding:14px;}
-  .mfd-topup-preview-headtitle{font-size:15px;}
-  .mfd-topup-preview-body{padding:16px;}
-  .mfd-topup-preview-row{align-items:flex-start;}
-  .mfd-topup-preview-row-meta{font-size:13px;}
+  .mfd-history-list{grid-template-columns:1fr;}
+  .ml-history-card-body{grid-template-columns:1fr;gap:8px;}
   .mfd-quota-veh-card .mfd-quota-head{flex-direction:column;gap:10px;}
   .mfd-quota-veh-card .mfd-quota-head-right{width:100%;}
   .mfd-vehicle-search{width:100%;}

@@ -94,6 +94,21 @@
 /* Card — roomy (host) */
 .ml-card { border: 1px solid var(--border-light); border-radius: var(--radius-lg); background: #fff; padding: 18px 22px 20px; }
 
+/* History Card — shared list item for top-up / rebate / activity history */
+.ml-history-card { border: 1px solid var(--border-light); border-radius: var(--radius-md); background: #fff; overflow: hidden; display: flex; flex-direction: column; }
+.ml-history-card-head { display: flex; align-items: center; gap: 10px; padding: 14px; background: #f9fafb; border-bottom: 1px solid var(--border-light); }
+.ml-history-card-head-main { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.ml-history-card-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; color: var(--fg-primary); flex-shrink: 0; }
+.ml-history-card-head-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ml-history-card-title { font-size: 14px; font-weight: 600; color: var(--fg-primary); line-height: 1.2; }
+.ml-history-card-subtitle { font-size: 11px; color: var(--fg-tertiary); }
+.ml-history-card-head-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.ml-history-card-body { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
+.ml-history-card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: center; }
+.ml-history-card-row.full { grid-template-columns: 1fr; }
+.ml-history-card-cell { font-size: 13px; color: var(--fg-secondary); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ml-history-card-cell strong { font-weight: 600; color: var(--fg-primary); }
+
 /* Tabs — roomy (host) */
 .ml-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border-light); margin-bottom: 20px; }
 .ml-tab  { display: inline-flex; align-items: center; gap: 7px; padding: 10px 16px; border: none; background: none; cursor: pointer; font-family: var(--font); font-size: 14px; font-weight: 600; color: var(--fg-secondary); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .12s; }
