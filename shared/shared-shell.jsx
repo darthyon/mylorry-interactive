@@ -6,7 +6,7 @@
 // Portal-specific shell files (agent-shell.jsx, host-shell.jsx) import from here
 // and re-export with their own names and nav configs.
 
-const { useState } = React;
+{
 
 /* ─── Icon ─────────────────────────────────────────────────── */
 function Icon({ name, size = 20, fill = 0, color, style }) {
@@ -144,8 +144,8 @@ function CardHead({ icon, title, sub, right }) {
 
 /* ─── ExportMenu ────────────────────────────────────────────── */
 function ExportMenu({ comingSoon = false }) {
-  const [open, setOpen] = useState(false);
-  const [toast, setToast] = useState(null);
+  const [open, setOpen] = React.useState(false);
+  const [toast, setToast] = React.useState(null);
   const pick = (label) => { setOpen(false); setToast(label); setTimeout(() => setToast(null), 2200); };
 
   if (comingSoon) {
@@ -308,9 +308,10 @@ const STATUS_BADGE_META = {
   critical_balance: { label:"Critical",      cls:"bal-critical" },
   cards_frozen:     { label:"Cards frozen",  cls:"bal-frozen"   },
   // Subsidy quota health
-  at_risk_quota: { label:"At risk",    cls:"quota-at-risk" },
-  over_quota:    { label:"Over quota", cls:"quota-over"    },
-  quota_safe:    { label:"Safe",       cls:"quota-safe"    },
+  at_risk_quota:  { label:"At risk",  cls:"quota-at-risk"  },
+  critical_quota: { label:"Critical", cls:"quota-critical" },
+  over_quota:     { label:"Critical", cls:"quota-critical" },
+  quota_safe:     { label:"Safe",     cls:"quota-safe"     },
 };
 function StatusBadge({ status, prefix, fallback = "activated" }) {
   const m = STATUS_BADGE_META[status] || STATUS_BADGE_META[fallback] || { label: status, cls: "" };
@@ -335,8 +336,8 @@ function KPIProgressMeta(pct = 0) {
 
 /* ─── KPI Progress: bar + percentage + hover tooltip ────────── */
 function KPIProgress({ pct, actual, target, period, commissionLabel, phase }) {
-  const [hover, setHover] = useState(false);
-  const [pos, setPos]     = useState({ top:0, left:0 });
+  const [hover, setHover] = React.useState(false);
+  const [pos, setPos]     = React.useState({ top:0, left:0 });
   const ref = React.useRef(null);
   const isFuture = phase === "future";
   const meta = KPIProgressMeta(pct);
@@ -415,3 +416,4 @@ window.SharedShell = {
   LockSection, PetronLogo,
 };
 window.KPIProgressMeta = KPIProgressMeta;
+}

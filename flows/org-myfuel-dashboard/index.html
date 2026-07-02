@@ -95,7 +95,11 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-balance.amber{background:var(--gradient-balance-amber);}
 .mfd-balance.red{background:var(--gradient-balance-red);}
 .mfd-balance-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
-.mfd-balance-label{font-size:13px;font-weight:600;color:rgba(255,255,255,.9);}
+.mfd-balance-wname-wrap{position:relative;}
+.mfd-balance-wname{display:inline-flex;align-items:center;gap:5px;min-width:0;background:transparent;border:none;border-radius:5px;
+  padding:2px 4px 2px 0;cursor:pointer;color:#fff;font:600 13px/1 var(--font-sans);transition:background .15s;}
+.mfd-balance-wname:hover{background:rgba(255,255,255,.1);}
+.mfd-balance-wname-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .mfd-balance-updated{font-size:11px;line-height:1.4;color:rgba(255,255,255,.78);text-align:right;flex-shrink:0;}
 .mfd-balance-sublabel-row{display:flex;align-items:center;gap:6px;margin-top:14px;}
 .mfd-balance-sublabel{font-size:11px;font-weight:600;color:rgba(255,255,255,.72);letter-spacing:.02em;}
@@ -111,16 +115,47 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-balance-cell-l{font-size:11px;color:rgba(255,255,255,.82);}
 .mfd-balance-cell-v{font-size:15px;font-weight:600;margin-top:3px;}
 .mfd-balance-cell-s{font-size:11.5px;color:rgba(255,255,255,.78);margin-top:1px;}
+.mfd-balance-dots{display:flex;justify-content:center;gap:6px;margin-top:10px;}
+.mfd-balance-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.32);border:0;padding:0;cursor:pointer;transition:background .15s,width .2s;}
+.mfd-balance-dot.active{background:#fff;width:16px;border-radius:3px;}
+.mfd-wallet-abbr{font-size:9.5px;font-weight:700;color:#fff;background:rgba(255,255,255,.28);border-radius:3px;padding:1px 4px;flex-shrink:0;letter-spacing:.02em;}
+.mfd-wallet-picker{position:absolute;top:calc(100% + 6px);left:0;width:260px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;
+  box-shadow:0 4px 6px rgba(0,0,0,.08),0 12px 28px rgba(0,0,0,.16);z-index:30;overflow:hidden;}
+.mfd-wallet-picker-h{font-size:11.5px;font-weight:600;color:var(--fg-tertiary);padding:11px 14px 9px;border-bottom:1px solid var(--border-light);}
+.mfd-wallet-item{display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:0;background:transparent;cursor:pointer;text-align:left;font-family:var(--font-sans);transition:background .12s;}
+.mfd-wallet-item:hover,.mfd-wallet-item.active{background:var(--green-50);}
+.mfd-wallet-item-check{width:16px;color:var(--green-600);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.mfd-wallet-item-logo{display:flex;align-items:center;flex-shrink:0;}
+.mfd-wallet-item-logo .mfd-wallet-abbr{background:var(--green-100);color:var(--green-700);}
+.mfd-wallet-item-name{font-size:13px;font-weight:500;color:var(--fg-primary);flex:1;text-align:left;}
+.mfd-wallet-item.active .mfd-wallet-item-name{font-weight:600;color:var(--green-700);}
+.mfd-wallet-item-bal{font-size:13px;font-weight:600;color:var(--fg-primary);white-space:nowrap;}
 
 /* Subsidy quota card */
 .mfd-quota-card{padding:16px;}
 .mfd-quota-veh-body{display:flex;flex-direction:column;gap:0;}
 .mfd-quota-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;}
 .mfd-quota-head-main{display:flex;align-items:center;gap:10px;}
+.mfd-quota-head-copy{min-width:0;}
 .mfd-quota-ico{width:36px;height:36px;border-radius:10px;background:var(--green-50);color:var(--green-600);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .mfd-quota-head-right{display:flex;align-items:center;gap:8px;}
 .mfd-quota-title{font-size:15px;font-weight:600;color:var(--fg-primary);}
 .mfd-quota-sub{font-size:12px;color:var(--fg-tertiary);margin-top:1px;}
+.mfd-quota-subrow{display:flex;align-items:center;gap:6px;min-width:0;margin-top:1px;flex-wrap:wrap;}
+.mfd-quota-subsep{font-size:12px;color:var(--fg-disabled);}
+.mfd-quota-switch-wrap{position:relative;min-width:0;}
+.mfd-quota-switch{display:inline-flex;align-items:center;gap:4px;min-width:0;background:transparent;border:none;border-radius:5px;padding:0;cursor:pointer;color:var(--green-700);font:600 12px/1.2 var(--font-sans);}
+.mfd-quota-switch-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mfd-subsidy-picker{position:absolute;top:calc(100% + 6px);left:0;width:280px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;
+  box-shadow:0 4px 6px rgba(0,0,0,.08),0 12px 28px rgba(0,0,0,.16);z-index:30;overflow:hidden;}
+.mfd-subsidy-picker-h{font-size:11.5px;font-weight:600;color:var(--fg-tertiary);padding:11px 14px 9px;border-bottom:1px solid var(--border-light);}
+.mfd-subsidy-item{display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:0;background:transparent;cursor:pointer;text-align:left;font-family:var(--font-sans);transition:background .12s;}
+.mfd-subsidy-item:hover,.mfd-subsidy-item.active{background:var(--green-50);}
+.mfd-subsidy-item-check{width:16px;color:var(--green-600);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.mfd-subsidy-item-main{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1;}
+.mfd-subsidy-item-name{font-size:13px;font-weight:600;color:var(--fg-primary);}
+.mfd-subsidy-item-sub{font-size:11px;color:var(--fg-tertiary);}
+.mfd-subsidy-item-val{font-size:12px;font-weight:600;color:var(--fg-secondary);white-space:nowrap;}
 
 .mfd-quota-summary{margin-top:10px;}
 .mfd-quota-summary-main{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;color:var(--fg-primary);}
@@ -129,7 +164,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-quota-summary-unit{font-size:14px;font-weight:500;line-height:1.2;color:var(--fg-secondary);}
 .mfd-quota-summary-sub{margin-top:6px;font-size:12px;line-height:1.35;color:var(--fg-secondary);}
 
-.mfd-quota-bar-wrap{min-width:0;padding-top:0;margin-top:18px;}
+.mfd-quota-bar-wrap{min-width:0;padding-top:0;margin-top:14px;}
 .mfd-quota-tick-lbls{position:relative;height:12px;margin-bottom:6px;}
 .mfd-quota-tick-lbls span{position:absolute;transform:translateX(-50%);font-size:11px;font-weight:600;color:var(--amber-500);}
 .mfd-quota-tick-lbls span.danger{color:var(--red-400);}
@@ -143,7 +178,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-quota-bar-lbls{display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--fg-disabled);margin-top:6px;}
 
 .mfd-quota-body-top{flex:1;display:flex;flex-direction:column;}
-.mfd-quota-stats{display:flex;justify-content:space-between;align-items:stretch;margin-top:18px;border-top:none;padding-top:0;}
+.mfd-quota-stats{display:flex;justify-content:space-between;align-items:stretch;margin-top:14px;margin-bottom:18px;border-top:none;padding-top:0;}
 .mfd-quota-stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;}
 .mfd-quota-stat-divided{border-left:1px solid var(--border-light);}
 .mfd-quota-stat-v{font-size:16px;font-weight:600;color:var(--fg-primary);}
@@ -151,7 +186,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-quota-stat-v.red{color:var(--red-400);}
 .mfd-quota-stat-l{font-size:12px;color:var(--fg-secondary);}
 
-.mfd-quota-disclaimer{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-secondary);margin-top:18px;background:var(--bg-muted);border-radius:8px;padding:10px 12px;}
+.mfd-quota-disclaimer{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-secondary);margin-top:12px;background:var(--bg-muted);border-radius:8px;padding:10px 12px;}
 
 /* Tooltip on status badge */
 .mfd-tooltip-wrap{position:relative;display:inline-flex;align-items:center;gap:6px;}
@@ -218,7 +253,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-veh-quota-fill{height:100%;border-radius:3px;transition:width .3s ease;}
 .mfd-veh-quota-fill.within{background:var(--green-500);}
 .mfd-veh-quota-fill.at-risk{background:var(--amber-500);}
-.mfd-veh-quota-fill.over{background:var(--red-400);}
+.mfd-veh-quota-fill.critical{background:var(--red-400);}
 .mfd-veh-quota-val{font-size:12px;font-weight:600;color:var(--fg-primary);text-align:right;white-space:nowrap;}
 .mfd-veh-quota-of{font-weight:400;color:var(--fg-tertiary);}
 

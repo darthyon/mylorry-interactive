@@ -3,6 +3,8 @@
 // Premium/Lite full view; Tweaks (⌘⇧E) switch subscription tier, empty state,
 // and org-level quota health.
 
+{
+
 const { useState, useEffect, useRef } = React;
 const { Icon, LockSection, Segmented, StatusBadge, CountCard, PetronLogo } = window.SharedShell;
 const D = window.MYFUEL_DASH;
@@ -115,15 +117,112 @@ function EmptyBlock({ icon, title, subtitle }) {
 }
 
 /* ── Section 1: Fuel Pulse ─────────────────────────────────────── */
+function WalletLogo({ wallet, size = 16 }) {
+  if (wallet.logo === "petron") return <PetronLogo size={size} />;
+  const abbr = wallet.logo === "petronas" ? "PN" : wallet.logo === "shell" ? "SH" : wallet.name[0].toUpperCase();
+  return <span className="mfd-wallet-abbr">{abbr}</span>;
+}
+
+function WalletPicker({ wallets, selectedId, onSelect, onClose }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function onDown(e) {
+      if (ref.current && !ref.current.contains(e.target)) onClose();
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [onClose]);
+
+  return (
+    <div className="mfd-wallet-picker" ref={ref} role="menu">
+      <div className="mfd-wallet-picker-h">Switch wallet</div>
+      {wallets.map((w, i) => (
+        <button key={w.id} className={"mfd-wallet-item" + (w.id === selectedId ? " active" : "")}
+          onClick={() => onSelect(i)} role="menuitem">
+          <span className="mfd-wallet-item-check">{w.id === selectedId && <Icon name="check" size={14} />}</span>
+          <span className="mfd-wallet-item-logo"><WalletLogo wallet={w} size={14} /></span>
+          <span className="mfd-wallet-item-name">{w.name}</span>
+          <span className="mfd-wallet-item-bal">{RM(w.amount)}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function SubsidyPicker({ subsidies, selectedId, onSelect, onClose }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function onDown(e) {
+      if (ref.current && !ref.current.contains(e.target)) onClose();
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [onClose]);
+
+  return (
+    <div className="mfd-subsidy-picker" ref={ref} role="menu">
+      <div className="mfd-subsidy-picker-h">Switch subsidy number</div>
+      {subsidies.map((s, i) => (
+        <button key={s.id} className={"mfd-subsidy-item" + (s.id === selectedId ? " active" : "")}
+          onClick={() => onSelect(i)} role="menuitem">
+          <span className="mfd-subsidy-item-check">{s.id === selectedId && <Icon name="check" size={14} />}</span>
+          <span className="mfd-subsidy-item-main">
+            <span className="mfd-subsidy-item-name">{s.subsidyNo}</span>
+            <span className="mfd-subsidy-item-sub">{s.monthLabel}</span>
+          </span>
+          <span className="mfd-subsidy-item-val">{L0(s.used)} / {L0(s.quota)}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function BalanceSummary({ empty }) {
-  const b = D.balance;
+  const wallets = D.wallets?.length ? D.wallets : [{
+    id: "default",
+    name: "Balance",
+    logo: "petron",
+    amount: D.balance.amount,
+    daysRemaining: D.balance.daysRemaining,
+    currentUsage: D.balance.currentUsage,
+    currentUsageLitres: D.balance.currentUsageLitres,
+    lastMonthUsage: D.balance.lastMonthUsage,
+    lastMonthUsageLitres: D.balance.lastMonthUsageLitres,
+    status: "healthy",
+  }];
+  const multi = wallets.length > 1;
+  const [idx, setIdx] = useState(() => {
+    try {
+      const n = parseInt(localStorage.getItem("mfd_wallet_" + D.org.id), 10);
+      return !isNaN(n) && n < wallets.length ? n : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const b = wallets[idx] || wallets[0];
   const tone = empty ? "" : balanceTone(b.daysRemaining); // "" | " amber" | " red"
   const forced = tone === " red" ? "critical" : tone === " amber" ? "low" : null;
 
   return (
     <div className={"mfd-kpi mfd-balance" + tone}>
       <div className="mfd-balance-top">
-        <span className="mfd-balance-label">Balance</span>
+        <div className="mfd-balance-wname-wrap">
+          <button className="mfd-balance-wname" onClick={() => multi && setPickerOpen((v) => !v)}
+            aria-haspopup={multi ? "true" : undefined} style={!multi ? { cursor: "default" } : {}}>
+            <WalletLogo wallet={b} size={14} />
+            <span className="mfd-balance-wname-label">{b.name}</span>
+            {multi && <Icon name="expand_more" size={13} color="rgba(255,255,255,.65)"
+              style={{ flexShrink: 0, transition: "transform .15s", transform: pickerOpen ? "rotate(180deg)" : "rotate(0deg)" }} />}
+          </button>
+          {pickerOpen && (
+            <WalletPicker wallets={wallets} selectedId={b.id}
+              onSelect={(i) => { setIdx(i); try { localStorage.setItem("mfd_wallet_" + D.org.id, i); } catch {} setPickerOpen(false); }}
+              onClose={() => setPickerOpen(false)} />
+          )}
+        </div>
         <span className="mfd-balance-updated">Last updated<br />{D.org.lastUpdated}</span>
       </div>
       <div className="mfd-balance-sublabel-row">
@@ -158,6 +257,15 @@ function BalanceSummary({ empty }) {
           <div className="mfd-balance-cell-v">{empty ? "—" : `${b.daysRemaining} days`}</div>
         </div>
       </div>
+      {multi && (
+        <div className="mfd-balance-dots" role="tablist" aria-label="Wallet position">
+          {wallets.map((wallet, i) => (
+            <button key={wallet.id} role="tab" aria-selected={i === idx} aria-label={wallet.name}
+              className={"mfd-balance-dot" + (i === idx ? " active" : "")}
+              onClick={() => { setIdx(i); try { localStorage.setItem("mfd_wallet_" + D.org.id, i); } catch {} }} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -165,19 +273,18 @@ function BalanceSummary({ empty }) {
 function vehicleStatus(used, quota) {
   if (quota === 0) return "none";
   const pct = (used / quota) * 100;
-  if (used > quota) return "over";
-  if (pct >= 90) return "over";
+  if (pct >= 90) return "critical";
   if (pct >= 70) return "at-risk";
   return "within";
 }
 
-function deriveQuota(quotaState, empty) {
-  const q = D.subsidyQuota;
+function deriveQuota(subsidy, quotaState, empty) {
+  const q = subsidy;
   const scenario = empty ? "none" : quotaState;
   const warningPct = q.thresholds.warning / 100;
   const dangerPct = q.thresholds.danger / 100;
   const used = scenario === "over"
-    ? q.quota + 400
+    ? q.quota
     : scenario === "healthy"
       ? Math.round(q.quota * 0.45)
       : scenario === "at-risk"
@@ -188,18 +295,17 @@ function deriveQuota(quotaState, empty) {
   const quota = scenario === "none" ? 0 : q.quota;
   const remaining = Math.max(0, quota - used);
   const pct = quota ? Math.min(100, (used / quota) * 100) : 0;
-  const overBy = used > quota ? used - quota : 0;
-  return { q, scenario, used, quota, remaining, pct, overBy };
+  return { q, scenario, used, quota, remaining, pct };
 }
 
-function SubsidyQuotaOverview({ empty, quotaState }) {
-  const { q, scenario, used, quota, remaining, pct } = deriveQuota(quotaState, empty);
-  const isOver = used > quota && quota > 0;
+function SubsidyQuotaOverview({ empty, quotaState, subsidy, subsidies, subsidyIdx, onSelectSubsidy }) {
+  const { q, scenario, used, quota, remaining, pct } = deriveQuota(subsidy, quotaState, empty);
   const isCritical = pct >= q.thresholds.danger;
   const isWarning = pct >= q.thresholds.warning;
   const fillTone = isCritical ? "red" : isWarning ? "amber" : "green";
   const alertTone = isCritical ? "red" : isWarning ? "amber" : "";
   const pctLabel = `${pct.toFixed(1)}%`;
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const disclaimer = "Quota is renewed every 1st week of the month";
 
@@ -208,21 +314,35 @@ function SubsidyQuotaOverview({ empty, quotaState }) {
       <div className="mfd-quota-head">
         <div className="mfd-quota-head-main">
           <div className="mfd-quota-ico"><Icon name="local_gas_station" size={18} /></div>
-          <div>
+          <div className="mfd-quota-head-copy">
             <div className="mfd-quota-title">Subsidy Quota</div>
-            <div className="mfd-quota-sub">{q.monthLabel}</div>
+            <div className="mfd-quota-subrow">
+              <div className="mfd-quota-switch-wrap">
+                <button className="mfd-quota-switch" onClick={() => subsidies.length > 1 && setPickerOpen((v) => !v)}
+                  aria-haspopup={subsidies.length > 1 ? "true" : undefined} style={subsidies.length < 2 ? { cursor: "default" } : {}}>
+                  <span className="mfd-quota-switch-label">{q.subsidyNo}</span>
+                  {subsidies.length > 1 && <Icon name="expand_more" size={13} color="var(--fg-tertiary)"
+                    style={{ flexShrink: 0, transition: "transform .15s", transform: pickerOpen ? "rotate(180deg)" : "rotate(0deg)" }} />}
+                </button>
+                {pickerOpen && (
+                  <SubsidyPicker subsidies={subsidies} selectedId={q.id}
+                    onSelect={(i) => { onSelectSubsidy(i); setPickerOpen(false); }}
+                    onClose={() => setPickerOpen(false)} />
+                )}
+              </div>
+              <span className="mfd-quota-subsep">·</span>
+              <span className="mfd-quota-sub">{q.monthLabel}</span>
+            </div>
           </div>
         </div>
         <div className="mfd-quota-head-right">
-          {isWarning || isOver ? (
+          {isWarning ? (
             <span className="mfd-tooltip-wrap" tabIndex={0}>
-              <StatusBadge status={isOver ? "over_quota" : "at_risk_quota"}
+              <StatusBadge status={isCritical ? "critical_quota" : "at_risk_quota"}
                 prefix={<Icon name="warning" size={11} color={isCritical ? "var(--red-400)" : "var(--amber-500)"} />} />
               <span className="mfd-tooltip">
-                {isOver
-                  ? "Quota exceeded — additional usage is no longer subsidised this month."
-                  : isCritical
-                    ? "Quota usage is very high — nearing the monthly limit."
+                {isCritical
+                    ? "Quota usage is critical, monthly limit reached or nearly reached."
                   : "Quota usage is high — may run out before month-end."}
               </span>
             </span>
@@ -284,21 +404,26 @@ function SubsidyQuotaOverview({ empty, quotaState }) {
       )}
 
       {scenario !== "none" && !empty && (
-        <div className="mfd-quota-disclaimer">
-          <Icon name="info" size={12} /> {disclaimer}
-        </div>
+        <>
+          <div className="mfd-quota-disclaimer">
+            <Icon name="info" size={12} /> {disclaimer}
+          </div>
+        </>
       )}
     </div>
   );
 }
 
-function SubsidyQuotaByVehicle({ empty, quotaState }) {
-  const { q, status } = deriveQuota(quotaState, empty);
+function SubsidyQuotaByVehicle({ empty, quotaState, subsidy }) {
+  const { q, scenario } = deriveQuota(subsidy, quotaState, empty);
 
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 5;
-  const vehRows = D.quotaByVehicle.filter((r) => !query || r.plate.toLowerCase().includes(query.toLowerCase()));
+  const sourceRows = q.quotaByVehicle || D.quotaByVehicle;
+  const vehRows = sourceRows
+    .filter((r) => !query || r.plate.toLowerCase().includes(query.toLowerCase()))
+    .sort((a, b) => b.used - a.used);
   const pageCount = Math.max(1, Math.ceil(vehRows.length / pageSize));
   const safePage = Math.min(page, pageCount);
   const start = (safePage - 1) * pageSize;
@@ -312,11 +437,11 @@ function SubsidyQuotaByVehicle({ empty, quotaState }) {
           <div>
             <div className="mfd-quota-title">Subsidy Quota by Vehicle</div>
             <div className="mfd-quota-sub">
-              {q.monthLabel}{!(status === "none" || empty) && <> · {vehRows.length} vehicles</>}
+              {q.subsidyNo} · {q.monthLabel}{!(scenario === "none" || empty) && <> · {vehRows.length} vehicles</>}
             </div>
           </div>
         </div>
-        {!(status === "none" || empty) && (
+        {!(scenario === "none" || empty) && (
           <div className="mfd-quota-head-right">
             <label className="mfd-vehicle-search">
               <Icon name="search" size={15} />
@@ -327,7 +452,7 @@ function SubsidyQuotaByVehicle({ empty, quotaState }) {
         )}
       </div>
 
-      {status === "none" || empty ? (
+      {scenario === "none" || empty ? (
         <div className="mfd-quota-empty">
           <Icon name="block" size={32} />
           <div>No subsidy quota assigned</div>
@@ -339,6 +464,7 @@ function SubsidyQuotaByVehicle({ empty, quotaState }) {
             {pageRows.map((r) => {
               const vs = vehicleStatus(r.used, r.quota);
               const vpct = r.quota ? (r.used / r.quota) * 100 : 0;
+              const displayUsed = r.quota > 0 ? Math.min(r.used, r.quota) : r.used;
               return (
                 <div key={r.plate} className="mfd-veh-quota-row">
                   <div className="mfd-veh-quota-lbl">{r.plate}</div>
@@ -350,7 +476,7 @@ function SubsidyQuotaByVehicle({ empty, quotaState }) {
                   <div className="mfd-veh-quota-val">
                     {vs === "none" ? "No quota" : (
                       <>
-                        <span>{L0(r.used)}</span>
+                        <span>{L0(displayUsed)}</span>
                         <span className="mfd-veh-quota-of"> / {L0(r.quota)}</span>
                       </>
                     )}
@@ -362,7 +488,7 @@ function SubsidyQuotaByVehicle({ empty, quotaState }) {
 
           <div className="mfd-vehicle-footer">
             <div className="mfd-legend mfd-vehicle-legend">
-              <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--red-400)" }} /> Over quota</span>
+              <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--red-400)" }} /> Critical</span>
               <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--amber-500)" }} /> At risk</span>
               <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--green-500)" }} /> Safe</span>
             </div>
@@ -744,6 +870,21 @@ function App() {
   const range = "mtd";
   const tier = t.subscription;
   const empty = !!t.emptyData;
+  const subsidies = D.subsidyAccounts?.length ? D.subsidyAccounts : [{
+    ...D.subsidyQuota,
+    id: "subsidy-default",
+    subsidyNo: "BUDI-458200",
+    quotaByVehicle: D.quotaByVehicle,
+  }];
+  const [subsidyIdx, setSubsidyIdx] = useState(() => {
+    try {
+      const n = parseInt(localStorage.getItem("mfd_subsidy_" + D.org.id), 10);
+      return !isNaN(n) && n < subsidies.length ? n : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const subsidy = subsidies[subsidyIdx] || subsidies[0];
 
   return (
     <div className="mfd-shell">
@@ -764,8 +905,15 @@ function App() {
             <LockSection locked={rank(tier) < rank("lite")} tier="lite"
               note="Subsidy quota tracking is available on Lite and Premium plans.">
               <div className="mfd-quota-row">
-                <SubsidyQuotaOverview empty={empty} quotaState={t.quotaState} />
-                <SubsidyQuotaByVehicle empty={empty} quotaState={t.quotaState} />
+                <SubsidyQuotaOverview
+                  empty={empty}
+                  quotaState={t.quotaState}
+                  subsidy={subsidy}
+                  subsidies={subsidies}
+                  subsidyIdx={subsidyIdx}
+                  onSelectSubsidy={(i) => { setSubsidyIdx(i); try { localStorage.setItem("mfd_subsidy_" + D.org.id, i); } catch {} }}
+                />
+                <SubsidyQuotaByVehicle empty={empty} quotaState={t.quotaState} subsidy={subsidy} />
               </div>
             </LockSection>
           </div>
@@ -794,7 +942,7 @@ function App() {
           options={[
             { value: "healthy", label: "Healthy" },
             { value: "at-risk", label: "At risk" },
-            { value: "over", label: "Over quota" },
+            { value: "over", label: "Critical" },
             { value: "none", label: "No quota" },
           ]}
           onChange={(v) => setTweak("quotaState", v)} />
@@ -804,3 +952,4 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+}
