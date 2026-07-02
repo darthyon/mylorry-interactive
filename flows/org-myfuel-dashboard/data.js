@@ -68,6 +68,7 @@ window.MYFUEL_DASH = {
     {
       id: "subsidy-001",
       subsidyNo: "BUDI-458201",
+      type: "SKPS",
       monthLabel: "June 2026",
       used: 2250,
       quota: 5000,
@@ -98,6 +99,7 @@ window.MYFUEL_DASH = {
     {
       id: "subsidy-002",
       subsidyNo: "BUDI-458202",
+      type: "SKDS",
       monthLabel: "June 2026",
       used: 3240,
       quota: 5000,
@@ -125,6 +127,7 @@ window.MYFUEL_DASH = {
     {
       id: "subsidy-003",
       subsidyNo: "BUDI-458203",
+      type: "SKPS",
       monthLabel: "June 2026",
       used: 4680,
       quota: 5000,

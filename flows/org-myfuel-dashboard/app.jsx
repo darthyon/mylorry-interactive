@@ -170,7 +170,7 @@ function SubsidyPicker({ subsidies, selectedId, onSelect, onClose }) {
           <span className="mfd-subsidy-item-check">{s.id === selectedId && <Icon name="check" size={14} />}</span>
           <span className="mfd-subsidy-item-main">
             <span className="mfd-subsidy-item-name">{s.subsidyNo}</span>
-            <span className="mfd-subsidy-item-sub">{s.monthLabel}</span>
+            <span className="mfd-subsidy-item-sub">{s.type}</span>
           </span>
           <span className="mfd-subsidy-item-val">{L0(s.used)} / {L0(s.quota)}</span>
         </button>
@@ -355,8 +355,8 @@ function SubsidyQuotaOverview({ empty, quotaState, subsidy, subsidies, subsidyId
       {scenario === "none" || empty ? (
         <div className="mfd-quota-empty">
           <Icon name="block" size={32} />
-          <div>No subsidy quota assigned</div>
-          <div className="mfd-quota-empty-s">Quota will appear once your organisation is enrolled in a subsidy programme.</div>
+          <div>No subsidy quota data yet</div>
+          <div className="mfd-quota-empty-s">Data will appear once fuel usage starts.</div>
         </div>
       ) : (
         <div className="mfd-quota-body-top">
@@ -455,8 +455,8 @@ function SubsidyQuotaByVehicle({ empty, quotaState, subsidy }) {
       {scenario === "none" || empty ? (
         <div className="mfd-quota-empty">
           <Icon name="block" size={32} />
-          <div>No subsidy quota assigned</div>
-          <div className="mfd-quota-empty-s">Quota will appear once your organisation is enrolled in a subsidy programme.</div>
+          <div>No subsidy quota data yet</div>
+          <div className="mfd-quota-empty-s">Data will appear once fuel usage starts.</div>
         </div>
       ) : (
         <div className="mfd-quota-veh-body">
@@ -558,7 +558,7 @@ function FuelUsageTrend({ empty, range }) {
             <div className="mfd-cardhead-title">Fuel Usage Trend</div>
             <div className="mfd-cardhead-sub">Subsidy vs non-subsidy consumption</div>
           </div>
-          <button className="ml-btn-soft" disabled><Icon name="download" size={15} /> Export</button>
+
         </div>
         <EmptyBlock icon="bar_chart" title="No usage data yet" subtitle="Fuel usage will appear once transactions come in." />
       </div>
@@ -585,7 +585,6 @@ function FuelUsageTrend({ empty, range }) {
         </div>
         <div className="mfd-cardhead-actions">
           <Segmented value={metric} onChange={setMetric} options={METRIC_OPTIONS} />
-          <button className="ml-btn-soft"><Icon name="download" size={15} /> Export</button>
         </div>
       </div>
 
@@ -598,7 +597,6 @@ function FuelUsageTrend({ empty, range }) {
               <div key={label} className="mfd-bar-col"
                 onMouseEnter={() => setHover(i)}
                 onMouseLeave={() => setHover(null)}>
-                <div className="mfd-bar-val">{metric === "amount" ? RM0(totals[i]) : L0(totals[i])}</div>
                 <div className="mfd-bar-group">
                   {hover === i && (
                     <div className="mfd-bar-tip">
@@ -867,13 +865,14 @@ function AccountActivity({ empty, tier }) {
 /* ── App ───────────────────────────────────────────────────────── */
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
-  const range = "mtd";
+  const range = "sixMonth";
   const tier = t.subscription;
   const empty = !!t.emptyData;
   const subsidies = D.subsidyAccounts?.length ? D.subsidyAccounts : [{
     ...D.subsidyQuota,
     id: "subsidy-default",
     subsidyNo: "BUDI-458200",
+    type: "SKPS",
     quotaByVehicle: D.quotaByVehicle,
   }];
   const [subsidyIdx, setSubsidyIdx] = useState(() => {
@@ -901,22 +900,24 @@ function App() {
 
           <FuelPulse empty={empty} />
 
-          <div className="mfd-quota-section">
-            <LockSection locked={rank(tier) < rank("lite")} tier="lite"
-              note="Subsidy quota tracking is available on Lite and Premium plans.">
-              <div className="mfd-quota-row">
-                <SubsidyQuotaOverview
-                  empty={empty}
-                  quotaState={t.quotaState}
-                  subsidy={subsidy}
-                  subsidies={subsidies}
-                  subsidyIdx={subsidyIdx}
-                  onSelectSubsidy={(i) => { setSubsidyIdx(i); try { localStorage.setItem("mfd_subsidy_" + D.org.id, i); } catch {} }}
-                />
-                <SubsidyQuotaByVehicle empty={empty} quotaState={t.quotaState} subsidy={subsidy} />
-              </div>
-            </LockSection>
-          </div>
+          {t.quotaState !== "none" && (
+            <div className="mfd-quota-section">
+              <LockSection locked={rank(tier) < rank("lite")} tier="lite"
+                note="Subsidy quota tracking is available on Lite and Premium plans.">
+                <div className="mfd-quota-row">
+                  <SubsidyQuotaOverview
+                    empty={empty}
+                    quotaState={t.quotaState}
+                    subsidy={subsidy}
+                    subsidies={subsidies}
+                    subsidyIdx={subsidyIdx}
+                    onSelectSubsidy={(i) => { setSubsidyIdx(i); try { localStorage.setItem("mfd_subsidy_" + D.org.id, i); } catch {} }}
+                  />
+                  <SubsidyQuotaByVehicle empty={empty} quotaState={t.quotaState} subsidy={subsidy} />
+                </div>
+              </LockSection>
+            </div>
+          )}
 
           <div className="mfd-trend-row">
             <FuelUsageTrend empty={empty} range={range} />
