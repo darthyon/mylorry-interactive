@@ -356,7 +356,7 @@ function SubsidyQuotaOverview({ empty, quotaState, subsidy, subsidies, subsidyId
         <div className="mfd-quota-empty">
           <Icon name="block" size={32} />
           <div>No subsidy quota data yet</div>
-          <div className="mfd-quota-empty-s">Data will appear once fuel usage starts.</div>
+          <div className="mfd-quota-empty-s">Data will appear once fuel usage starts or a subsidy quota file is uploaded.</div>
         </div>
       ) : (
         <div className="mfd-quota-body-top">
@@ -456,7 +456,7 @@ function SubsidyQuotaByVehicle({ empty, quotaState, subsidy }) {
         <div className="mfd-quota-empty">
           <Icon name="block" size={32} />
           <div>No subsidy quota data yet</div>
-          <div className="mfd-quota-empty-s">Data will appear once fuel usage starts.</div>
+          <div className="mfd-quota-empty-s">Data will appear once fuel usage starts or a subsidy quota file is uploaded.</div>
         </div>
       ) : (
         <div className="mfd-quota-veh-body">
@@ -556,7 +556,7 @@ function FuelUsageTrend({ empty, range }) {
         <div className="mfd-cardhead">
           <div>
             <div className="mfd-cardhead-title">Fuel Usage Trend</div>
-            <div className="mfd-cardhead-sub">Subsidy vs non-subsidy consumption</div>
+            <div className="mfd-cardhead-sub">Last 6 months</div>
           </div>
 
         </div>
@@ -581,7 +581,7 @@ function FuelUsageTrend({ empty, range }) {
       <div className="mfd-cardhead">
         <div>
           <div className="mfd-cardhead-title">Fuel Usage Trend</div>
-          <div className="mfd-cardhead-sub">Subsidy vs non-subsidy consumption</div>
+          <div className="mfd-cardhead-sub">Last 6 months</div>
         </div>
         <div className="mfd-cardhead-actions">
           <Segmented value={metric} onChange={setMetric} options={METRIC_OPTIONS} />
