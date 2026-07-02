@@ -4,7 +4,7 @@
 // and org-level quota health.
 
 const { useState, useEffect, useRef } = React;
-const { Icon, LockSection, Segmented, StatusBadge, CountCard } = window.SharedShell;
+const { Icon, LockSection, Segmented, StatusBadge, CountCard, PetronLogo } = window.SharedShell;
 const D = window.MYFUEL_DASH;
 const { useTweaks, TweaksPanel, TweakSection, TweakSelect, TweakToggle } = window;
 
@@ -21,6 +21,7 @@ const RM = (n) => "RM " + Number(n).toLocaleString("en-US", { minimumFractionDig
 const RM0 = (n) => "RM " + Number(n).toLocaleString("en-US");
 const L = (n) => Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " L";
 const L0 = (n) => Number(n).toLocaleString("en-US") + " L";
+const fuelAccountCode = (i) => `STG-PTN-${String(i + 1).padStart(3, "0")}`;
 
 const balanceTone = (days) => (days >= 14 ? "" : days >= 5 ? " amber" : " red");
 
@@ -225,8 +226,9 @@ function SubsidyQuotaOverview({ empty, quotaState }) {
           <div className="mfd-quota-toprow">
             <div className="mfd-quota-metric">
               <div className="mfd-quota-caption">Total Used</div>
-              <div className="mfd-quota-hero-used">{L0(used)}</div>
-              <div className="mfd-quota-hero-of">/ {L0(quota)}</div>
+              <div className="mfd-quota-hero-row">
+                <div className="mfd-quota-hero-used">{L0(used)}</div>
+              </div>
             </div>
 
             <div className="mfd-quota-bar-wrap">
@@ -341,13 +343,13 @@ function SubsidyQuotaByVehicle({ empty, quotaState }) {
           </div>
 
           <div className="mfd-vehicle-footer">
-            <span className="mfd-vehicle-pager-range">{vehRows.length ? `${start + 1}–${Math.min(start + pageRows.length, vehRows.length)} of ${vehRows.length}` : "0 of 0"}</span>
-            <div className="mfd-vehicle-footer-right">
-              <div className="mfd-legend">
-                <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--red-400)" }} /> Over quota</span>
-                <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--amber-500)" }} /> At risk</span>
-                <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--green-500)" }} /> Safe</span>
-              </div>
+            <div className="mfd-legend mfd-vehicle-legend">
+              <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--red-400)" }} /> Over quota</span>
+              <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--amber-500)" }} /> At risk</span>
+              <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--green-500)" }} /> Safe</span>
+            </div>
+            <div className="mfd-vehicle-footer-bottom">
+              <span className="mfd-vehicle-pager-range">{vehRows.length ? `${start + 1}–${Math.min(start + pageRows.length, vehRows.length)} of ${vehRows.length}` : "0 of 0"}</span>
               <div className="mfd-vehicle-pagebtns">
                 <button type="button" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}><Icon name="chevron_left" size={16} /></button>
                 <button type="button" disabled={safePage >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))}><Icon name="chevron_right" size={16} /></button>
@@ -494,7 +496,7 @@ function FuelUsageTrend({ empty, range }) {
 
 /* ── Section 4: Account Activity ───────────────────────────────── */
 const ACTIVITY_TABS = [
-  { value: "fuel", label: "Fuel Transactions" },
+  { value: "fuel", label: "Fuel TXNs" },
   { value: "topup", label: "Top-Up History" },
   { value: "rebate", label: "Rebate History" },
 ];
@@ -563,33 +565,51 @@ function TxnModal({ txn, onClose }) {
   );
 }
 
-function FuelTable({ rows, empty }) {
+function FuelActivityCards({ rows, empty }) {
   const [selected, setSelected] = useState(null);
   if (empty || !rows.length) return <div className="mfd-table-empty">No fuel transactions yet.</div>;
   return (
     <>
       {selected && <TxnModal txn={selected} onClose={() => setSelected(null)} />}
-      <div className="mfd-table-wrap">
-        <table className="ml-table mfd-table mfd-table-clickable">
-          <thead>
-            <tr>
-              <th>Card</th><th>Vehicle</th><th>Station</th><th>Volume</th><th>Subsidy used</th><th>Amount</th><th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={i} onClick={() => setSelected(r)} className="mfd-row-click">
-                <td className="mfd-cell-mono">{r.card}</td>
-                <td><strong>{r.vehicle}</strong></td>
-                <td>{r.station}</td>
-                <td>{L(r.volume)}</td>
-                <td>{r.subsidyAmount > 0 ? <span className="mfd-subsidy">{RM(r.subsidyAmount)}</span> : <span className="mfd-subsidy-none">—</span>}</td>
-                <td className="mfd-amount">{RM(r.amount)}</td>
-                <td>{r.date}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mfd-fuel-preview-list">
+        {rows.map((r, i) => (
+          <article key={i} className="mfd-fuel-preview-card" onClick={() => setSelected(r)}>
+            <div className="mfd-fuel-preview-meta">
+              <div className="mfd-fuel-preview-provider">
+                <PetronLogo size={18} />
+                <div className="mfd-fuel-preview-provider-stack">
+                  <span>{fuelAccountCode(i)}</span>
+                  <span className="mfd-fuel-preview-mono">{r.card}</span>
+                </div>
+              </div>
+              <span>{r.date}</span>
+            </div>
+
+            <div className="mfd-fuel-preview-primary">
+              <div className="mfd-fuel-preview-vehicle">{r.vehicle}</div>
+              <div className="mfd-fuel-preview-amount">
+                <span className="mfd-fuel-preview-sign">-</span>{RM(Math.abs(r.amount)).replace(/^RM\s/, "RM ")}
+              </div>
+            </div>
+
+            <div className="mfd-fuel-preview-secondary">
+              <div className="mfd-fuel-preview-location">{r.station}</div>
+              <div className="mfd-fuel-preview-volume">{L(r.volume)}</div>
+            </div>
+
+            {r.subsidyAmount > 0 && (
+              <div className="mfd-fuel-preview-subsidy">
+                <span className="mfd-fuel-preview-subsidy-label">Subsidy used</span>
+                <span className="mfd-fuel-preview-subsidy-value">{RM(r.subsidyAmount)}</span>
+              </div>
+            )}
+
+            <div className="mfd-fuel-preview-footer">
+              <span className="mfd-fuel-preview-mono">Txn ID {r.txnId}</span>
+              <span className="mfd-fuel-preview-chevron"><Icon name="chevron_right" size={16} /></span>
+            </div>
+          </article>
+        ))}
       </div>
     </>
   );
@@ -598,20 +618,45 @@ function FuelTable({ rows, empty }) {
 function TopUpTable({ rows, empty }) {
   if (empty || !rows.length) return <div className="mfd-table-empty">No top-up history yet.</div>;
   return (
-    <div className="mfd-table-wrap">
-      <table className="ml-table mfd-table">
-        <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={i}>
-              <td>{r.date}</td>
-              <td className="mfd-amount">{RM(r.amount)}</td>
-              <td>{r.method}</td>
-              <td><StatusPill status={r.status} /></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="mfd-topup-preview-list">
+      {rows.map((r, i) => (
+        <article key={i} className="mfd-topup-preview-card">
+          <div className="mfd-topup-preview-head">
+            <div className="mfd-topup-preview-headicon">
+              <Icon name="calendar_clock" size={20} />
+            </div>
+            <div className="mfd-topup-preview-headcopy">
+              <div className="mfd-topup-preview-headtitle">Paid at: {r.paidAt}</div>
+              <div className="mfd-topup-preview-headsub">{r.reference}</div>
+            </div>
+            <button type="button" className="mfd-topup-preview-action" aria-label="Download receipt">
+              <Icon name="download" size={18} />
+            </button>
+          </div>
+
+          <div className="mfd-topup-preview-body">
+            <div className="mfd-topup-preview-row mfd-topup-preview-row-main">
+              <div className="mfd-topup-preview-account">
+                <PetronLogo size={18} />
+                <span>{r.accountCode}</span>
+              </div>
+              <div className="mfd-topup-preview-amountpill">
+                <span className="mfd-topup-preview-amount">{RM(r.amount)}</span>
+                <span className="mfd-topup-preview-plus">+</span>
+              </div>
+            </div>
+
+            <div className="mfd-topup-preview-row mfd-topup-preview-row-meta">
+              <span>{r.method}</span>
+              <span>{r.description}</span>
+            </div>
+
+            <div className="mfd-topup-preview-created">
+              Created at <strong>{r.createdAt}</strong>
+            </div>
+          </div>
+        </article>
+      ))}
     </div>
   );
 }
@@ -643,23 +688,34 @@ function AccountActivity({ empty, tier }) {
   const showRebate = rank(tier) >= rank("lite");
   const tabs = showRebate ? ACTIVITY_TABS : ACTIVITY_TABS.filter((t) => t.value !== "rebate");
   const activeTab = tabs.find((t) => t.value === tab) || tabs[0];
+  const hasRows = activeTab.value === "fuel"
+    ? !empty && D.transactions.length > 0
+    : activeTab.value === "topup"
+      ? !empty && D.topUps.length > 0
+      : !empty && D.rebates.length > 0;
 
   return (
-    <section className="mfd-card mfd-activity">
+    <section className="mfd-activity">
       <div className="mfd-cardhead">
         <div>
           <div className="mfd-cardhead-title">Account Activity</div>
         </div>
-        <button className="mfd-link">View all transactions <Icon name="arrow_forward" size={14} /></button>
       </div>
-      <div className="mfd-tabs">
+      <div className="mfd-activity-nav">
         {tabs.map((t) => (
           <button key={t.value} className={"ml-tab mfd-tab" + (activeTab.value === t.value ? " active" : "")} onClick={() => setTab(t.value)}>{t.label}</button>
         ))}
       </div>
-      {activeTab.value === "fuel" && <FuelTable rows={D.transactions} empty={empty} />}
-      {activeTab.value === "topup" && <TopUpTable rows={D.topUps} empty={empty} />}
-      {activeTab.value === "rebate" && <RebateTable rows={D.rebates} empty={empty} />}
+      <div className="mfd-activity-body">
+        {activeTab.value === "fuel" && <FuelActivityCards rows={D.transactions} empty={empty} />}
+        {activeTab.value === "topup" && <TopUpTable rows={D.topUps} empty={empty} />}
+        {activeTab.value === "rebate" && <RebateTable rows={D.rebates} empty={empty} />}
+        {hasRows && (
+          <div className="mfd-activity-viewall">
+            <button className="ml-btn-outline">View all</button>
+          </div>
+        )}
+      </div>
     </section>
   );
 }

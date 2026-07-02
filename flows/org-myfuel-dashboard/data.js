@@ -147,10 +147,10 @@ window.MYFUEL_DASH = {
 
   /* ── Account Activity: Top-Up History ─────────────────────────── */
   topUps: [
-    { date: "10 Jun 2026, 9:14 AM", amount: 5000.00, method: "Online Banking", status: "successful" },
-    { date: "28 May 2026, 2:30 PM", amount: 3000.00, method: "Credit Card", status: "successful" },
-    { date: "15 May 2026, 10:05 AM", amount: 2000.00, method: "Online Banking", status: "pending" },
-    { date: "2 Apr 2026, 11:20 AM", amount: 4500.00, method: "Credit Card", status: "successful" },
+    { date: "10 Jun 2026, 9:14 AM", paidAt: "10 Jun 2026", createdAt: "10-Jun-26, 9:14 AM", reference: "84371", accountCode: "XX-PTN-01", description: "Wallet top-up", amount: 5000.00, method: "Online banking", status: "successful" },
+    { date: "28 May 2026, 2:30 PM", paidAt: "28 May 2026", createdAt: "28-May-26, 2:30 PM", reference: "84352", accountCode: "XX-PTN-01", description: "Corporate card", amount: 3000.00, method: "Credit card", status: "successful" },
+    { date: "15 May 2026, 10:05 AM", paidAt: "15 May 2026", createdAt: "15-May-26, 10:05 AM", reference: "84298", accountCode: "XX-PTN-01", description: "Scheduled reload", amount: 2000.00, method: "Online banking", status: "pending" },
+    { date: "2 Apr 2026, 11:20 AM", paidAt: "2 Apr 2026", createdAt: "2-Apr-26, 11:20 AM", reference: "84114", accountCode: "XX-PTN-01", description: "Manual top-up", amount: 4500.00, method: "Credit card", status: "successful" },
   ],
 
   /* ── Account Activity: Rebate History ─────────────────────────── */
