@@ -9,6 +9,7 @@
 node_modules/
 .DS_Store
 .roo/
+.codebase-memory/
 
 # Build output — compiled from .jsx by `npm run build`. Source of truth is .jsx.
 # (data.js is hand-written mock data, not generated — keep it tracked.)

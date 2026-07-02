@@ -4,7 +4,7 @@
 // and org-level quota health.
 
 const { useState, useEffect, useRef } = React;
-const { Icon, LockSection, Segmented } = window.SharedShell;
+const { Icon, LockSection, Segmented, StatusBadge, CountCard } = window.SharedShell;
 const D = window.MYFUEL_DASH;
 const { useTweaks, TweaksPanel, TweakSection, TweakSelect, TweakToggle } = window;
 
@@ -91,24 +91,12 @@ function Rail() {
 }
 
 /* ── Page header with global time filter ───────────────────────── */
-function PageHeader({ range, setRange }) {
-  const options = [
-    { value: "today", label: "Today" },
-    { value: "mtd", label: "Month to date" },
-    { value: "sixMonth", label: "Last 6 months" },
-  ];
+function PageHeader() {
   return (
     <div className="mfd-pagehead">
       <div>
         <h1 className="mfd-title">MyFuel Dashboard</h1>
         <div className="mfd-breadcrumb">Home / MyFuel / Dashboard</div>
-      </div>
-      <div className="mfd-timefilter">
-        {options.map((o) => (
-          <button key={o.value} type="button"
-            className={"mfd-timebtn" + (range === o.value ? " active" : "")}
-            onClick={() => setRange(o.value)}>{o.label}</button>
-        ))}
       </div>
     </div>
   );
@@ -128,19 +116,30 @@ function EmptyBlock({ icon, title, subtitle }) {
 /* ── Section 1: Fuel Pulse ─────────────────────────────────────── */
 function BalanceSummary({ empty }) {
   const b = D.balance;
+  const tone = empty ? "" : balanceTone(b.daysRemaining); // "" | " amber" | " red"
+  const forced = tone === " red" ? "critical" : tone === " amber" ? "low" : null;
+
   return (
-    <div className={"mfd-kpi mfd-balance" + (empty ? "" : balanceTone(b.daysRemaining))}>
+    <div className={"mfd-kpi mfd-balance" + tone}>
       <div className="mfd-balance-top">
         <span className="mfd-balance-label">Balance</span>
-        <span className="mfd-balance-meta">
-          <span className="mfd-balance-updated">Last updated<br />{D.org.lastUpdated}</span>
-          <button className="mfd-card-arrow invert" aria-label="Open balance"><Icon name="arrow_forward" size={15} /></button>
-        </span>
+        <span className="mfd-balance-updated">Last updated<br />{D.org.lastUpdated}</span>
       </div>
-      <div className="mfd-balance-value">{empty ? "RM 0.00" : RM(b.amount)}</div>
-      <div className="mfd-balance-pill">
-        <Icon name="schedule" size={13} color="#fff" />
-        {empty ? "No usage yet" : `Est. remaining ${b.daysRemaining} days`}
+      <div className="mfd-balance-sublabel-row">
+        <span className="mfd-balance-sublabel">Balance</span>
+        {forced && (
+          <span className="mfd-tooltip-wrap" tabIndex={forced === "critical" ? 0 : undefined}>
+            <StatusBadge status={forced === "critical" ? "critical_balance" : "low_balance"}
+              prefix={<Icon name="warning" size={11} color="#BE2F2C" />} />
+            {forced === "critical" && (
+              <span className="mfd-tooltip">Balance critically low — top up now to avoid service disruption.</span>
+            )}
+          </span>
+        )}
+      </div>
+      <div className="mfd-balance-row">
+        <div className="mfd-balance-value">{empty ? "RM 0.00" : RM(b.amount)}</div>
+        <button className="mfd-balance-addcredit">Add credit</button>
       </div>
       <div className="mfd-balance-band">
         <div className="mfd-balance-cell">
@@ -152,6 +151,10 @@ function BalanceSummary({ empty }) {
           <div className="mfd-balance-cell-l">Previous month usage</div>
           <div className="mfd-balance-cell-v">{empty ? "RM 0.00" : RM(b.lastMonthUsage)}</div>
           <div className="mfd-balance-cell-s">{empty ? "0.00 L" : L(b.lastMonthUsageLitres)}</div>
+        </div>
+        <div className="mfd-balance-cell mfd-balance-cell-est">
+          <div className="mfd-balance-cell-l">Est. remaining</div>
+          <div className="mfd-balance-cell-v">{empty ? "—" : `${b.daysRemaining} days`}</div>
         </div>
       </div>
     </div>
@@ -166,12 +169,7 @@ function vehicleStatus(used, quota) {
   return "within";
 }
 
-const QUOTA_VIEW_TABS = [
-  { value: "overview", label: "Overview" },
-  { value: "by-vehicle", label: "By Vehicle" },
-];
-
-function SubsidyQuota({ empty, quotaState }) {
+function deriveQuota(quotaState, empty) {
   const q = D.subsidyQuota;
   const status = empty ? "none" : quotaState;
   const used = status === "over" ? q.quota + 400 : status === "healthy" ? Math.round(q.quota * 0.45) : status === "none" ? 0 : q.used;
@@ -179,8 +177,104 @@ function SubsidyQuota({ empty, quotaState }) {
   const remaining = Math.max(0, quota - used);
   const pct = quota ? Math.min(100, (used / quota) * 100) : 0;
   const overBy = used > quota ? used - quota : 0;
+  return { q, status, used, quota, remaining, pct, overBy };
+}
 
-  const [view, setView] = useState("overview");
+function SubsidyQuotaOverview({ empty, quotaState }) {
+  const { q, status, used, quota, remaining, pct } = deriveQuota(quotaState, empty);
+  const fillTone = status === "over" ? "red" : status === "at-risk" ? "amber" : "green";
+  const alertTone = status === "over" ? "red" : status === "at-risk" ? "amber" : "";
+
+  const disclaimer = "Quota is renewed every 1st week of the month.";
+
+  return (
+    <div className="mfd-kpi mfd-quota-card">
+      <div className="mfd-quota-head">
+        <div className="mfd-quota-head-main">
+          <div className="mfd-quota-ico"><Icon name="local_gas_station" size={18} /></div>
+          <div>
+            <div className="mfd-quota-title">Subsidy Quota</div>
+            <div className="mfd-quota-sub">{q.monthLabel}</div>
+          </div>
+        </div>
+        <div className="mfd-quota-head-right">
+          {status === "at-risk" || status === "over" ? (
+            <span className="mfd-tooltip-wrap" tabIndex={0}>
+              <StatusBadge status={status === "over" ? "over_quota" : "at_risk_quota"}
+                prefix={<Icon name="warning" size={11} color={status === "over" ? "var(--red-400)" : "var(--amber-500)"} />} />
+              <span className="mfd-tooltip">
+                {status === "over"
+                  ? "Quota exceeded — additional usage is no longer subsidised this month."
+                  : "Quota usage is high — may run out before month-end."}
+              </span>
+            </span>
+          ) : status !== "none" && !empty ? (
+            <StatusBadge status="quota_safe" prefix={<Icon name="check_circle" size={11} color="var(--green-600)" />} />
+          ) : null}
+        </div>
+      </div>
+
+      {status === "none" || empty ? (
+        <div className="mfd-quota-empty">
+          <Icon name="block" size={32} />
+          <div>No subsidy quota assigned</div>
+          <div className="mfd-quota-empty-s">Quota will appear once your organisation is enrolled in a subsidy programme.</div>
+        </div>
+      ) : (
+        <div className="mfd-quota-body-top">
+          <div className="mfd-quota-toprow">
+            <div className="mfd-quota-metric">
+              <div className="mfd-quota-caption">Total Used</div>
+              <div className="mfd-quota-hero-used">{L0(used)}</div>
+              <div className="mfd-quota-hero-of">/ {L0(quota)}</div>
+            </div>
+
+            <div className="mfd-quota-bar-wrap">
+              <div className="mfd-quota-tick-lbls">
+                <span style={{ left: q.thresholds.warning + "%" }}>{q.thresholds.warning}%</span>
+                <span className="danger" style={{ left: q.thresholds.danger + "%" }}>{q.thresholds.danger}%</span>
+              </div>
+              <div className="mfd-quota-track">
+                <div className={"mfd-quota-fill " + fillTone} style={{ width: Math.min(pct, 100) + "%" }} />
+                <div className="mfd-quota-marker" style={{ left: q.thresholds.warning + "%" }} />
+                <div className="mfd-quota-marker danger" style={{ left: q.thresholds.danger + "%" }} />
+              </div>
+              <div className="mfd-quota-bar-lbls">
+                <span>0 L</span>
+                <span>{L0(quota)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mfd-quota-stats">
+            <div className="mfd-quota-stat">
+              <div className="mfd-quota-stat-v">{L0(remaining)}</div>
+              <div className="mfd-quota-stat-l">Remaining quota</div>
+            </div>
+            <div className="mfd-quota-stat">
+              <div className="mfd-quota-stat-v">~{q.avgDailyUsage} L/day</div>
+              <div className="mfd-quota-stat-l">Avg. daily usage</div>
+            </div>
+            <div className="mfd-quota-stat">
+              <div className={"mfd-quota-stat-v " + alertTone}>~{q.estimatedRunoutDays} days</div>
+              <div className="mfd-quota-stat-l">Est. runout</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {status !== "none" && !empty && (
+        <div className="mfd-quota-disclaimer">
+          <Icon name="info" size={12} /> {disclaimer}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SubsidyQuotaByVehicle({ empty, quotaState }) {
+  const { q, status } = deriveQuota(quotaState, empty);
+
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 5;
@@ -191,15 +285,26 @@ function SubsidyQuota({ empty, quotaState }) {
   const pageRows = vehRows.slice(start, start + pageSize);
 
   return (
-    <div className="mfd-kpi mfd-quota-card">
+    <div className="mfd-kpi mfd-quota-card mfd-quota-veh-card">
       <div className="mfd-quota-head">
-        <div>
-          <div className="mfd-quota-title">Subsidy Quota</div>
-          <div className="mfd-quota-sub">{q.monthLabel} · {q.fuelType}</div>
+        <div className="mfd-quota-head-main">
+          <div className="mfd-quota-ico"><Icon name="local_shipping" size={18} /></div>
+          <div>
+            <div className="mfd-quota-title">Subsidy Quota by Vehicle</div>
+            <div className="mfd-quota-sub">
+              {q.monthLabel}{!(status === "none" || empty) && <> · {vehRows.length} vehicles</>}
+            </div>
+          </div>
         </div>
-        <div className="mfd-quota-head-right">
-          <Segmented options={QUOTA_VIEW_TABS} value={view} onChange={(v) => { setView(v); setQuery(""); setPage(1); }} />
-        </div>
+        {!(status === "none" || empty) && (
+          <div className="mfd-quota-head-right">
+            <label className="mfd-vehicle-search">
+              <Icon name="search" size={15} />
+              <input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Search vehicle" aria-label="Search vehicle" />
+              {query && <button type="button" onClick={() => { setQuery(""); setPage(1); }} aria-label="Clear"><Icon name="close" size={14} /></button>}
+            </label>
+          </div>
+        )}
       </div>
 
       {status === "none" || empty ? (
@@ -208,56 +313,8 @@ function SubsidyQuota({ empty, quotaState }) {
           <div>No subsidy quota assigned</div>
           <div className="mfd-quota-empty-s">Quota will appear once your organisation is enrolled in a subsidy programme.</div>
         </div>
-      ) : view === "overview" ? (
-        <>
-          <div className="mfd-quota-hero">
-            <div>
-              <div className="mfd-quota-used">{L0(used)} <span>used</span></div>
-              <div className="mfd-quota-pct">{pct.toFixed(1)}% used</div>
-            </div>
-          </div>
-
-          <div className="mfd-quota-bar-wrap">
-            <div className="mfd-quota-track">
-              <div className="mfd-quota-fill" style={{ width: Math.min(pct, 100) + "%", background: status === "over" ? "var(--red-400)" : status === "at-risk" ? "var(--amber-500)" : "var(--green-500)" }} />
-              {overBy > 0 && (
-                <div className="mfd-quota-over" style={{ width: ((overBy / quota) * 100) + "%" }} />
-              )}
-              <div className="mfd-quota-marker" style={{ left: q.thresholds.warning + "%" }} data-label="70%" />
-              <div className="mfd-quota-marker danger" style={{ left: q.thresholds.danger + "%" }} data-label="90%" />
-            </div>
-            <div className="mfd-quota-bar-lbls">
-              <span>0 L</span>
-              <span>{L0(quota)}</span>
-            </div>
-          </div>
-
-          <div className="mfd-quota-meta">
-            <div>
-              <div className="mfd-quota-meta-v">{L0(remaining)}</div>
-              <div className="mfd-quota-meta-l">Remaining quota</div>
-            </div>
-            <div>
-              <div className="mfd-quota-meta-v">{L0(quota)}</div>
-              <div className="mfd-quota-meta-l">Monthly quota</div>
-            </div>
-            <div>
-              <div className="mfd-quota-meta-v">~{q.estimatedRunoutDays} days</div>
-              <div className="mfd-quota-meta-l">Estimated runout</div>
-            </div>
-          </div>
-        </>
       ) : (
         <div className="mfd-quota-veh-body">
-          <div className="mfd-vehicle-tools">
-            <label className="mfd-vehicle-search">
-              <Icon name="search" size={15} />
-              <input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Search vehicle" aria-label="Search vehicle" />
-              {query && <button type="button" onClick={() => { setQuery(""); setPage(1); }} aria-label="Clear"><Icon name="close" size={14} /></button>}
-            </label>
-            <span className="mfd-vehicle-count">{vehRows.length} vehicles</span>
-          </div>
-
           <div className="mfd-veh-quota-list">
             {pageRows.map((r) => {
               const vs = vehicleStatus(r.used, r.quota);
@@ -283,19 +340,19 @@ function SubsidyQuota({ empty, quotaState }) {
             })}
           </div>
 
-          <div className="mfd-vehicle-pager">
-            <span>{vehRows.length ? `${start + 1}-${Math.min(start + pageRows.length, vehRows.length)} of ${vehRows.length}` : "0 of 0"}</span>
-            <div className="mfd-vehicle-pagebtns">
-              <button type="button" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}><Icon name="chevron_left" size={16} /></button>
-              <button type="button" disabled={safePage >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))}><Icon name="chevron_right" size={16} /></button>
+          <div className="mfd-vehicle-footer">
+            <span className="mfd-vehicle-pager-range">{vehRows.length ? `${start + 1}–${Math.min(start + pageRows.length, vehRows.length)} of ${vehRows.length}` : "0 of 0"}</span>
+            <div className="mfd-vehicle-footer-right">
+              <div className="mfd-legend">
+                <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--red-400)" }} /> Over quota</span>
+                <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--amber-500)" }} /> At risk</span>
+                <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--green-500)" }} /> Safe</span>
+              </div>
+              <div className="mfd-vehicle-pagebtns">
+                <button type="button" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}><Icon name="chevron_left" size={16} /></button>
+                <button type="button" disabled={safePage >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))}><Icon name="chevron_right" size={16} /></button>
+              </div>
             </div>
-          </div>
-
-          <div className="mfd-legend">
-            <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--red-400)" }} /> Over quota</span>
-            <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--amber-500)" }} /> At risk (&gt;80%)</span>
-            <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--green-500)" }} /> Within quota</span>
-            <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "#E9E9E9" }} /> Remaining</span>
           </div>
         </div>
       )}
@@ -305,33 +362,33 @@ function SubsidyQuota({ empty, quotaState }) {
 
 function MiniStats({ empty }) {
   const s = D.miniStats;
-  const cards = [
-    { icon: "water_drop", title: "MTD Fuel Used", primary: empty ? "0 L" : L0(s.mtdFuel.litres), secondary: empty ? "RM 0.00" : RM(s.mtdFuel.amount) },
-    { icon: "savings", title: "Rebate Earned", primary: empty ? "RM 0.00" : RM(s.rebate.amount), secondary: empty ? "No change" : `+RM ${s.rebate.vsLastMonth} vs last month` },
-    { icon: "credit_card", title: "Fleet Cards", primary: empty ? "0 / 0" : `${s.fleetCards.active} / ${s.fleetCards.total}`, secondary: empty ? "0 frozen" : <span className="mfd-frozen">{s.fleetCards.frozen} frozen</span> },
-  ];
   return (
-    <div className="mfd-ministats">
-      {cards.map((c) => (
-        <div key={c.title} className="mfd-minicard">
-          <div className="mfd-minicard-head">
-            <div className="mfd-minicard-ico"><Icon name={c.icon} size={20} /></div>
-            <button className="mfd-card-arrow" aria-label="Open"><Icon name="arrow_forward" size={15} /></button>
-          </div>
-          <div className="mfd-minicard-title">{c.title}</div>
-          <div className="mfd-minicard-primary">{c.primary}</div>
-          <div className="mfd-minicard-secondary">{c.secondary}</div>
-        </div>
-      ))}
+    <div className="mfd-statscroll">
+      <CountCard fill icon="water_drop" count={empty ? "0 L" : L0(s.mtdFuel.litres)} label="MTD Fuel Used" sub="This month" actionLabel="Open fuel usage"
+        stats={[
+          { n: empty ? 0 : L0(s.mtdFuel.subsidisedLitres), label: "Subsidised", tone: "green" },
+          { n: empty ? 0 : L0(s.mtdFuel.nonSubsidisedLitres), label: "Non-subsidy", tone: "gray" },
+        ]} />
+
+      <CountCard fill icon="humidity_percentage" count={empty ? "RM 0.00" : RM(s.rebate.amount)} label="Rebate Earned" sub="This month" actionLabel="Open rebate history"
+        stats={[
+          { n: empty ? "RM 0" : `+RM ${s.rebate.vsLastMonth}`, label: "vs last month", tone: "green" },
+          { n: empty ? "RM 0.00/L" : `RM ${(s.rebate.amount / s.mtdFuel.litres).toFixed(2)}/L`, label: "Rebate rate", tone: "gray" },
+        ]} />
+
+      <CountCard fill icon="credit_card" count={empty ? 0 : s.fleetCards.total} label="Fleet Cards" sub="Total issued" actionLabel="Open fleet cards"
+        stats={[
+          { n: empty ? 0 : s.fleetCards.active, label: "Active", tone: "green" },
+          { n: empty ? 0 : s.fleetCards.frozen, label: "Frozen", tone: "red" },
+        ]} />
     </div>
   );
 }
 
-function FuelPulse({ empty, quotaState }) {
+function FuelPulse({ empty }) {
   return (
     <section className="mfd-pulse">
       <BalanceSummary empty={empty} />
-      <SubsidyQuota empty={empty} quotaState={quotaState} />
       <MiniStats empty={empty} />
     </section>
   );
@@ -341,7 +398,6 @@ function FuelPulse({ empty, quotaState }) {
 const METRIC_OPTIONS = [
   { value: "litres", label: "Volume" },
   { value: "amount", label: "Amount (RM)" },
-  { value: "subsidyOnly", label: "Subsidy only" },
 ];
 
 function FuelUsageTrend({ empty, range }) {
@@ -365,16 +421,12 @@ function FuelUsageTrend({ empty, range }) {
 
   const data = D.usageTrend[range][metric];
   const labels = D.usageTrend[range].labels;
-  const isSubsidyOnly = metric === "subsidyOnly";
-  const series = isSubsidyOnly
-    ? [{ key: "sub", label: "Subsidised", color: "var(--green-500)", values: data.subsidised }]
-    : [
-        { key: "sub", label: "Subsidised", color: "var(--green-500)", values: data.subsidised },
-        { key: "non", label: "Non-subsidised", color: "#D6DAD8", values: data.nonSubsidised },
-      ];
-
-  const allValues = series.flatMap((s) => s.values);
-  const max = Math.max(...allValues, 1);
+  const series = [
+    { key: "sub", label: "Subsidised", color: "var(--green-500)", values: data.subsidised },
+    { key: "non", label: "Non-subsidised", color: "#D6DAD8", values: data.nonSubsidised },
+  ];
+  const totals = labels.map((_, i) => data.subsidised[i] + data.nonSubsidised[i]);
+  const max = Math.max(...totals, 1);
   const ticks = 5;
   const tickVals = Array.from({ length: ticks + 1 }, (_, i) => Math.round(max - (max / ticks) * i));
 
@@ -395,16 +447,12 @@ function FuelUsageTrend({ empty, range }) {
       <div className="mfd-plotwrap">
         <div className="mfd-yaxis">{tickVals.map((v) => <span key={v}>{v >= 1000 ? (v / 1000).toFixed(1) + "K" : v}</span>)}</div>
         <div className="mfd-plot">
-          <div className="mfd-bars" style={{ "--mfd-bar-series": series.length }}>
+          <div className="mfd-bars">
             {labels.map((label, i) => (
               <div key={label} className="mfd-bar-col"
                 onMouseEnter={() => setHover(i)}
                 onMouseLeave={() => setHover(null)}>
-                <div className="mfd-bar-val">
-                  {isSubsidyOnly
-                    ? L0(data.subsidised[i])
-                    : L0(data.subsidised[i] + data.nonSubsidised[i])}
-                </div>
+                <div className="mfd-bar-val">{metric === "amount" ? RM0(totals[i]) : L0(totals[i])}</div>
                 <div className="mfd-bar-group">
                   {hover === i && (
                     <div className="mfd-bar-tip">
@@ -417,11 +465,12 @@ function FuelUsageTrend({ empty, range }) {
                       ))}
                     </div>
                   )}
-                  {series.map((s) => (
-                    <div key={s.key} className={"mfd-bar-track" + (hover === i ? " active" : "")}>
-                      <div className="mfd-bar" style={{ height: (s.values[i] / max * 100) + "%", background: s.color }} />
+                  <div className={"mfd-bar-track" + (hover === i ? " active" : "")}>
+                    <div className="mfd-bar-stack" style={{ height: (totals[i] / max * 100) + "%" }}>
+                      <div className="mfd-bar-seg" style={{ height: totals[i] ? (data.subsidised[i] / totals[i] * 100) + "%" : "0%", background: "var(--green-500)" }} />
+                      <div className="mfd-bar-seg" style={{ height: totals[i] ? (data.nonSubsidised[i] / totals[i] * 100) + "%" : "0%", background: "#D6DAD8" }} />
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
             ))}
@@ -500,7 +549,7 @@ function TxnModal({ txn, onClose }) {
               <div className="mfd-modal-field"><div className="mfd-modal-lbl">Amount</div><div className="mfd-modal-val mfd-amount">{RM(txn.amount)}</div></div>
             </div>
             <div className="mfd-modal-row">
-              <div className="mfd-modal-field"><div className="mfd-modal-lbl">Subsidy</div><div className="mfd-modal-val">{txn.subsidyAmount > 0 ? RM(txn.subsidyAmount) : "RM 0.00"} <span className="mfd-subsidy-tag">{txn.subsidyType}</span></div></div>
+              <div className="mfd-modal-field"><div className="mfd-modal-lbl">Subsidy</div><div className="mfd-modal-val">{txn.subsidyAmount > 0 ? RM(txn.subsidyAmount) : "RM 0.00"}</div></div>
               <div className="mfd-modal-field"><div className="mfd-modal-lbl">Card tag</div><div className="mfd-modal-val">{txn.cardTag}</div></div>
             </div>
             <div className="mfd-modal-row">
@@ -534,7 +583,7 @@ function FuelTable({ rows, empty }) {
                 <td><strong>{r.vehicle}</strong></td>
                 <td>{r.station}</td>
                 <td>{L(r.volume)}</td>
-                <td>{r.subsidyAmount > 0 ? <span className="mfd-subsidy">{r.subsidyType} · {RM(r.subsidyAmount)}</span> : <span className="mfd-subsidy-none">—</span>}</td>
+                <td>{r.subsidyAmount > 0 ? <span className="mfd-subsidy">{RM(r.subsidyAmount)}</span> : <span className="mfd-subsidy-none">—</span>}</td>
                 <td className="mfd-amount">{RM(r.amount)}</td>
                 <td>{r.date}</td>
               </tr>
@@ -618,7 +667,7 @@ function AccountActivity({ empty, tier }) {
 /* ── App ───────────────────────────────────────────────────────── */
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
-  const [range, setRange] = useState("mtd");
+  const range = "mtd";
   const tier = t.subscription;
   const empty = !!t.emptyData;
 
@@ -633,11 +682,21 @@ function App() {
         </header>
 
         <div className="mfd-content">
-          <PageHeader range={range} setRange={setRange} />
+          <PageHeader />
 
-          <FuelPulse empty={empty} quotaState={t.quotaState} />
+          <FuelPulse empty={empty} />
 
-          <div className="mfd-row">
+          <div className="mfd-quota-section">
+            <LockSection locked={rank(tier) < rank("lite")} tier="lite"
+              note="Subsidy quota tracking is available on Lite and Premium plans.">
+              <div className="mfd-quota-row">
+                <SubsidyQuotaOverview empty={empty} quotaState={t.quotaState} />
+                <SubsidyQuotaByVehicle empty={empty} quotaState={t.quotaState} />
+              </div>
+            </LockSection>
+          </div>
+
+          <div className="mfd-trend-row">
             <FuelUsageTrend empty={empty} range={range} />
           </div>
 

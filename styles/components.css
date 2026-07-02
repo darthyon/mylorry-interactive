@@ -44,6 +44,12 @@
 .ml-badge.bal-critical { background: #fff; color: #BE2F2C; }
 .ml-badge.bal-frozen   { background: #fff; color: #BE2F2C; }
 
+/* Subsidy quota health (outline pill — border carries the tone, not a filled bg) */
+.ml-badge.quota-at-risk, .ml-badge.quota-over, .ml-badge.quota-safe { border-radius: var(--radius-pill); }
+.ml-badge.quota-at-risk { background: var(--amber-50); border: 1px solid var(--amber-500); color: var(--amber-500); }
+.ml-badge.quota-over    { background: #FFF0F0;         border: 1px solid var(--red-400);   color: var(--red-400);   }
+.ml-badge.quota-safe    { background: var(--green-50); border: 1px solid var(--green-500); color: var(--green-600); }
+
 /* Payout status */
 .ml-badge.payout-pending  { background: #FFF8E1;         color: #F57F17;         }
 .ml-badge.payout-approved { background: #EAF6FB;         color: var(--teal-600); }
@@ -318,7 +324,7 @@
 .ml-statcard-main { display:flex; align-items:center; gap:11px; min-width:0; }
 .ml-statcard-ico { width:42px; height:42px; border-radius:12px; background:var(--green-50);
   display:flex; align-items:center; justify-content:center; color:var(--green-600); flex-shrink:0; }
-.ml-statcard-count { font-size:31px; font-weight:600; color:var(--fg-primary); letter-spacing:-.01em; line-height:1; }
+.ml-statcard-count { font-size:24px; font-weight:600; color:var(--fg-primary); letter-spacing:-.01em; line-height:1; }
 .ml-statcard-action {
   width:28px; height:28px; border-radius:50%; border:1px solid var(--border-light);
   background:var(--bg-surface); color:var(--green-600); display:flex; align-items:center; justify-content:center;

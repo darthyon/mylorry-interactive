@@ -307,6 +307,10 @@ const STATUS_BADGE_META = {
   low_balance:      { label:"Low",           cls:"bal-low"      },
   critical_balance: { label:"Critical",      cls:"bal-critical" },
   cards_frozen:     { label:"Cards frozen",  cls:"bal-frozen"   },
+  // Subsidy quota health
+  at_risk_quota: { label:"At risk",    cls:"quota-at-risk" },
+  over_quota:    { label:"Over quota", cls:"quota-over"    },
+  quota_safe:    { label:"Safe",       cls:"quota-safe"    },
 };
 function StatusBadge({ status, prefix, fallback = "activated" }) {
   const m = STATUS_BADGE_META[status] || STATUS_BADGE_META[fallback] || { label: status, cls: "" };
