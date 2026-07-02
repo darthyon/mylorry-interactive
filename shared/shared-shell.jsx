@@ -313,9 +313,9 @@ const STATUS_BADGE_META = {
   over_quota:     { label:"Critical", cls:"quota-critical" },
   quota_safe:     { label:"Available", cls:"quota-safe"     },
 };
-function StatusBadge({ status, prefix, fallback = "activated" }) {
+function StatusBadge({ status, prefix, label, fallback = "activated" }) {
   const m = STATUS_BADGE_META[status] || STATUS_BADGE_META[fallback] || { label: status, cls: "" };
-  return <span className={"ml-badge " + m.cls}>{prefix || ""}{m.label}</span>;
+  return <span className={"ml-badge " + m.cls}>{prefix || ""}{label || m.label}</span>;
 }
 // Back-compat alias — account-status callers default to the "active" vocabulary.
 function AccountStatusBadge({ status = "active", prefix }) {

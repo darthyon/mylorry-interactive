@@ -445,9 +445,9 @@ function CostTrend({ tier, empty }) {
   const [hbarHover, setHbarHover] = useState(null);
   const [vehicleQuery, setVehicleQuery] = useState("");
   const [vehiclePage, setVehiclePage] = useState(1);
-  const perVehLocked = rank(tier) < rank("lite");
+  const perVehLocked = false;
   const vehiclePageSize = 5;
-  const moCount = rank(tier) < rank("lite") ? 3 : rank(tier) < rank("premium") ? 6 : 12;
+  const moCount = 12;
   const visibleMonths = D.costTrend.months.slice(-moCount);
   const moLabel = moCount === 3 ? "Last 3 months" : moCount === 6 ? "Last 6 months" : "Last 12 months";
 
@@ -579,12 +579,7 @@ function CostTrend({ tier, empty }) {
       </div>
 
       <div className="od-chart">
-        {view === "overall"
-          ? overallBars()
-          : <LockSection locked={perVehLocked} tier="lite"
-              note="View fuel spend by vehicle.">
-              {perVehicleBars()}
-            </LockSection>}
+        {view === "overall" ? overallBars() : perVehicleBars()}
       </div>
 
       <div className="od-legend">
@@ -651,17 +646,13 @@ function TripsTodayInner({ empty }) {
   );
 }
 function TripsToday({ tier, empty }) {
-  const locked = rank(tier) < rank("premium");
   return (
     <div className="od-card od-mytrip-card">
       <button type="button" className="od-mytrip-head" aria-label="Open MyTrip">
         <div className="od-sec-title">MyTrip</div>
         <span className="od-card-arrow"><Icon name="arrow_forward" size={15} /></span>
       </button>
-      <LockSection locked={locked} tier="premium"
-        note="Track live trip progress and driver locations.">
-        <TripsTodayInner empty={empty && !locked} />
-      </LockSection>
+      <TripsTodayInner empty={empty} />
     </div>
   );
 }
@@ -827,11 +818,11 @@ function ActionPreviewCard({ row, tab }) {
 
 function ActionPreview({ tier, empty, tab, setTab }) {
   const TABS = [
-    { value: "fuel",       label: "Fuel TXNs",       rows: D.preview.fuel,       locked: false,                              requiredTier: null       },
-    { value: "due",        label: "Due Dates",        rows: D.preview.due,        locked: false,                              requiredTier: null       },
-    { value: "documents",  label: "Documents",        rows: D.preview.documents,  locked: false,                              requiredTier: null       },
-    { value: "checklists", label: "Safety Checklist", rows: D.preview.checklists, locked: rank(tier) < rank("lite"),          requiredTier: "Lite"     },
-    { value: "trips",      label: "Trips",            rows: D.preview.trips,      locked: rank(tier) < rank("premium"),       requiredTier: "Premium"  },
+    { value: "fuel",       label: "Fuel TXNs",       viewAll: "See all fuel transactions", rows: D.preview.fuel,       locked: false, requiredTier: null       },
+    { value: "due",        label: "Due Dates",       viewAll: "See all due dates",         rows: D.preview.due,        locked: false, requiredTier: null       },
+    { value: "documents",  label: "Documents",       viewAll: "See all documents",         rows: D.preview.documents,  locked: false, requiredTier: null       },
+    { value: "checklists", label: "Safety Checklist", viewAll: "See all safety checklists", rows: D.preview.checklists, locked: false, requiredTier: null       },
+    { value: "trips",      label: "Trips",           viewAll: "See all trips",             rows: D.preview.trips,      locked: false, requiredTier: null       },
   ];
   const active = TABS.find((t) => t.value === tab) || TABS[0];
   const rows = empty || active.locked ? [] : active.rows;
@@ -866,7 +857,7 @@ function ActionPreview({ tier, empty, tab, setTab }) {
             )}
           </div>
           <div className="od-preview-viewall">
-            <button className="ml-btn-outline">View all</button>
+            <button className="ml-btn-text-blue">{active.viewAll}<Icon name="chevron_right" size={16} /></button>
           </div>
         </>
       )}
