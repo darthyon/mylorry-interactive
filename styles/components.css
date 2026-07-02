@@ -99,6 +99,7 @@
 .ml-history-card-head { display: flex; align-items: center; gap: 10px; padding: 14px; background: #f9fafb; border-bottom: 1px solid var(--border-light); }
 .ml-history-card-head-main { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
 .ml-history-card-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; color: var(--fg-primary); flex-shrink: 0; }
+.ml-history-card-prefix { flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .ml-history-card-head-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ml-history-card-title { font-size: 14px; font-weight: 600; color: var(--fg-primary); line-height: 1.2; }
 .ml-history-card-subtitle { font-size: 11px; color: var(--fg-tertiary); }

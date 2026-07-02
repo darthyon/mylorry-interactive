@@ -284,4 +284,18 @@ window.MYFUEL_DASH = {
     { paidOn: "Paid on:", period: "01 Aug 2025 - 31 Aug 2025", accountNo: "000000", orgName: "Org 2104", provider: "Petron(referrer)", amount: 365.00, usage: 4000.00, groupUsage: 11200.00, type: "Credit note", status: "completed" },
     { paidOn: "Paid on:", period: "01 Jul 2025 - 31 Jul 2025", accountNo: "000000", orgName: "Org 2101", provider: "Petron(referrer)", amount: 330.00, usage: 3600.00, groupUsage: 9800.00, type: "Credit note", status: "pending" },
   ],
+
+  /* ── Top 10 Petrol Stations ───────────────────────────────────── */
+  topPetrolStations: [
+    { rank: 1, name: "P-Northport SLG", pumps: 34, totalLitres: 3797.23, totalAmount: 22372.09 },
+    { rank: 2, name: "P-Mambau Northbound NSM", pumps: 20, totalLitres: 1330.17, totalAmount: 8362.00 },
+    { rank: 3, name: "P-Pedas NSM", pumps: 12, totalLitres: 838.00, totalAmount: 5426.00 },
+    { rank: 4, name: "P-Batu 8 Jln Bukit Kemuning SLG", pumps: 11, totalLitres: 882.02, totalAmount: 5171.00 },
+    { rank: 5, name: "P-S2 Heights NSM", pumps: 8, totalLitres: 554.12, totalAmount: 3614.00 },
+    { rank: 6, name: "P-Kesas Eastbound SLG", pumps: 7, totalLitres: 553.69, totalAmount: 3292.85 },
+    { rank: 7, name: "P-Gunung Semanggol North PRK", pumps: 7, totalLitres: 299.81, totalAmount: 1400.00 },
+    { rank: 8, name: "P-B20 Sepang SLG", pumps: 6, totalLitres: 461.75, totalAmount: 2736.00 },
+    { rank: 9, name: "P-Mambau NSM", pumps: 6, totalLitres: 335.30, totalAmount: 1565.70 },
+    { rank: 10, name: "P-R&R Rawang Northbound SLG", pumps: 5, totalLitres: 351.00, totalAmount: 2313.00 },
+  ],
 };

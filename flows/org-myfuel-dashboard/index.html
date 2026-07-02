@@ -203,8 +203,24 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-quota-section{margin-top:16px;}
 .mfd-quota-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch;}
 
-/* ── Section 3: Fuel Usage Trend (standalone) ─────────────────── */
-.mfd-trend-row{margin-top:16px;}
+/* ── Section 3: Fuel Usage Trend + Top Stations bottom layout ─── */
+.mfd-bottom-layout{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:stretch;margin-top:16px;}
+.mfd-bottom-left{display:flex;flex-direction:column;gap:16px;}
+.mfd-bottom-right{min-width:0;}
+.mfd-trend-row{margin-top:0;}
+.mfd-stations-card{height:100%;display:flex;flex-direction:column;min-height:0;}
+.mfd-stations-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:0;padding-top:2px;}
+.mfd-stations-card .ml-history-card{box-shadow:0 1px 2px rgba(0,0,0,.04);}
+.mfd-stations-rank{width:24px;height:24px;border-radius:50%;background:var(--bg-muted);color:var(--fg-secondary);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.mfd-stations-medal{position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
+.mfd-stations-medal-rank{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25);}
+.mfd-stations-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;}
+.mfd-stations-pager-range{font-size:12px;color:var(--fg-secondary);}
+.mfd-stations-pagebtns{display:flex;align-items:center;gap:4px;}
+.mfd-stations-pagebtns button{width:28px;height:28px;border:1px solid var(--border-light);background:var(--bg-card);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--fg-secondary);cursor:pointer;}
+.mfd-stations-pagebtns button:not(:disabled):hover{background:var(--bg-muted);color:var(--fg-primary);}
+.mfd-stations-pagebtns button:disabled{opacity:.35;cursor:not-allowed;}
+.mfd-stations-empty{text-align:center;color:var(--fg-tertiary);padding:34px 12px;font-size:13px;flex:1;display:flex;align-items:center;justify-content:center;}
 
 /* Vertical bar chart */
 .mfd-trend-card{min-height:100%;}
@@ -296,10 +312,10 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-fuel-preview-secondary{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px;min-width:0;}
 .mfd-fuel-preview-location{font-size:12px;font-weight:400;color:var(--fg-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .mfd-fuel-preview-volume{font-size:12px;font-weight:500;color:var(--fg-secondary);white-space:nowrap;flex-shrink:0;}
-.mfd-fuel-preview-subsidy{display:flex;align-items:center;gap:5px;margin-top:8px;}
-.mfd-fuel-preview-subsidy-label{font-size:11px;font-weight:500;color:var(--fg-tertiary);}
-.mfd-fuel-preview-subsidy-value{font-size:11.5px;font-weight:700;color:var(--green-600);}
-.mfd-fuel-preview-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;margin:8px -14px -12px;padding:7px 14px;background:var(--bg-muted);border-top:1px solid var(--border-light);border-radius:0 0 var(--radius-md) var(--radius-md);margin-top:auto;}
+.mfd-fuel-preview-subsidy{display:flex;align-items:center;gap:6px;margin-top:10px;}
+.mfd-fuel-preview-subsidy-label{font-size:12px;font-weight:500;color:var(--fg-tertiary);}
+.mfd-fuel-preview-subsidy-value{font-size:14px;font-weight:700;color:var(--green-600);}
+.mfd-fuel-preview-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;margin-top:auto;margin-right:-14px;margin-bottom:-12px;margin-left:-14px;padding:14px 14px 7px;background:var(--bg-muted);border-top:1px solid var(--border-light);border-radius:0 0 var(--radius-md) var(--radius-md);}
 .mfd-fuel-preview-chevron{color:var(--fg-tertiary);display:flex;align-items:center;}
 .mfd-history-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
 .mfd-history-action{width:28px;height:28px;border:0;background:transparent;color:var(--fg-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;padding:0;border-radius:6px;}
@@ -378,8 +394,12 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .mfd-statscroll>*{flex-shrink:0;width:86%;scroll-snap-align:start;}
   .mfd-quota-section{order:3;margin-top:0;}
   .mfd-quota-row{grid-template-columns:1fr;}
+  .mfd-bottom-layout{display:contents;}
+  .mfd-bottom-left{display:contents;}
+  .mfd-bottom-right{display:contents;}
   .mfd-trend-row{order:4;margin-top:0;}
-  .mfd-activity{order:5;margin-top:0;}
+  .mfd-stations-card{order:5;height:auto;}
+  .mfd-activity{order:6;margin-top:0;}
   .mfd-shell .ml-statcard{padding:12px;}
   .mfd-shell .ml-statcard-ico{width:32px;height:32px;border-radius:9px;}
   .mfd-shell .ml-statcard-count{font-size:22px;}

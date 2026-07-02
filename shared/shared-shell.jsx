@@ -409,12 +409,14 @@ function PetronLogo({ size = 16 }) {
 }
 
 /* ─── History Card ────────────────────────────────────────────── */
-function HistoryCard({ icon, title, subtitle, status, action, children }) {
+function HistoryCard({ icon, prefix, title, subtitle, status, action, children }) {
   return (
     <article className="ml-history-card">
       <div className="ml-history-card-head">
         <div className="ml-history-card-head-main">
-          {icon && (
+          {prefix ? (
+            <div className="ml-history-card-prefix">{prefix}</div>
+          ) : icon && (
             <div className="ml-history-card-icon">
               <Icon name={icon} size={20} />
             </div>

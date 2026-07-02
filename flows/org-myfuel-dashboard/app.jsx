@@ -6,7 +6,7 @@
 {
 
 const { useState, useEffect, useRef } = React;
-const { Icon, LockSection, Segmented, StatusBadge, CountCard, PetronLogo, HistoryCard } = window.SharedShell;
+const { Icon, LockSection, Segmented, StatusBadge, CountCard, PetronLogo, HistoryCard, CardHead } = window.SharedShell;
 const D = window.MYFUEL_DASH;
 const { useTweaks, TweaksPanel, TweakSection, TweakSelect, TweakToggle } = window;
 
@@ -888,6 +888,58 @@ function AccountActivity({ empty, tier }) {
   );
 }
 
+function TopPetrolStations({ empty }) {
+  const [page, setPage] = useState(1);
+  const stations = D.topPetrolStations || [];
+  const pageSize = 6;
+  const pageCount = Math.max(1, Math.ceil(stations.length / pageSize));
+  const safePage = Math.min(page, pageCount);
+  const start = (safePage - 1) * pageSize;
+  const visible = stations.slice(start, start + pageSize);
+  return (
+    <div className="mfd-card mfd-stations-card">
+      <CardHead icon="emoji_events" title="Top 10 Petrol Stations" sub="All time" />
+      {empty || !stations.length ? (
+        <div className="mfd-stations-empty">No data available</div>
+      ) : (
+        <>
+          <div className="mfd-stations-list">
+            {visible.map((s) => (
+              <HistoryCard
+                key={s.rank}
+                prefix={s.rank <= 3 ? (
+                  <span className="mfd-stations-medal">
+                    <Icon name="military_tech" size={22} fill={1} color={s.rank === 1 ? "#C19A00" : s.rank === 2 ? "#7D8794" : "#B87333"} />
+                    <span className="mfd-stations-medal-rank">{s.rank}</span>
+                  </span>
+                ) : null}
+                title={s.name}
+              >
+                <div className="ml-history-card-row">
+                  <div className="ml-history-card-cell"><strong>{L0(s.totalLitres)}</strong></div>
+                  <div className="ml-history-card-cell" style={{ textAlign: "right" }}><strong>{RM(s.totalAmount)}</strong></div>
+                </div>
+                <div className="ml-history-card-row full">
+                  <div className="ml-history-card-cell">{s.pumps} pumps</div>
+                </div>
+              </HistoryCard>
+            ))}
+          </div>
+          {stations.length > pageSize && (
+            <div className="mfd-stations-footer">
+              <span className="mfd-stations-pager-range">{stations.length ? `${start + 1}–${Math.min(start + visible.length, stations.length)} of ${stations.length}` : "0 of 0"}</span>
+              <div className="mfd-stations-pagebtns">
+                <button type="button" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}><Icon name="chevron_left" size={16} /></button>
+                <button type="button" disabled={safePage >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))}><Icon name="chevron_right" size={16} /></button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ── App ───────────────────────────────────────────────────────── */
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
@@ -945,11 +997,17 @@ function App() {
             </div>
           )}
 
-          <div className="mfd-trend-row">
-            <FuelUsageTrend empty={empty} range={range} />
+          <div className="mfd-bottom-layout">
+            <div className="mfd-bottom-left">
+              <div className="mfd-trend-row">
+                <FuelUsageTrend empty={empty} range={range} />
+              </div>
+              <AccountActivity empty={empty} tier={tier} />
+            </div>
+            <div className="mfd-bottom-right">
+              <TopPetrolStations empty={empty} />
+            </div>
           </div>
-
-          <AccountActivity empty={empty} tier={tier} />
         </div>
       </div>
 
