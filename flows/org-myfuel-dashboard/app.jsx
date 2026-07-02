@@ -392,10 +392,6 @@ function SubsidyQuotaOverview({ empty, quotaState, subsidy, subsidies, subsidyId
               <div className="mfd-quota-stat-l">Remaining quota</div>
             </div>
             <div className="mfd-quota-stat mfd-quota-stat-divided">
-              <div className="mfd-quota-stat-v">~{q.avgDailyUsage} L/day</div>
-              <div className="mfd-quota-stat-l">Avg. daily usage</div>
-            </div>
-            <div className="mfd-quota-stat mfd-quota-stat-divided">
               <div className={"mfd-quota-stat-v " + alertTone}>~{q.estimatedRunoutDays} days</div>
               <div className="mfd-quota-stat-l">Est. runout</div>
             </div>
