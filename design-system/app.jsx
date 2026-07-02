@@ -1,4 +1,4 @@
-const { Badge, StatusBadge, AccountStatusBadge, LockSection, CountCard } = window.SharedShell;
+const { Badge, StatusBadge, AccountStatusBadge, LockSection, CountCard, HistoryCard } = window.SharedShell;
 
 /* ── Token swatches (read straight from tokens.css via getComputedStyle) ── */
 const COLOR_TOKENS = [
@@ -89,6 +89,50 @@ const lockDemo = (
   </div>
 );
 mount("lockOpen", <LockSection locked={false}>{lockDemo}</LockSection>);
+
+/* ── HistoryCard ── */
+mount("historyCards", <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 280px))", gap: 14 }}>
+  <HistoryCard
+    icon="calendar_clock"
+    title="Paid at: 16 Jun 2026"
+    subtitle="84371"
+    action={<button type="button" style={{ width: 28, height: 28, border: 0, background: "transparent", color: "var(--fg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><span className="msr">download</span></button>}
+  >
+    <div className="ml-history-card-row">
+      <div className="ml-history-card-cell"><strong>XX-PTN-01</strong></div>
+      <div className="ml-history-card-cell" style={{ textAlign: "right" }}><span className="mfd-history-amountpill">RM 888.00<span className="mfd-history-plus">+</span></span></div>
+    </div>
+    <div className="ml-history-card-row">
+      <div className="ml-history-card-cell">Bank transfer</div>
+      <div className="ml-history-card-cell" style={{ textAlign: "right" }}>Description here hahaha</div>
+    </div>
+    <div className="ml-history-card-row full">
+      <div className="ml-history-card-cell">Created at <strong>16-Jun-26, 11:11 AM</strong></div>
+    </div>
+  </HistoryCard>
+  <HistoryCard
+    icon="calendar_clock"
+    title="Paid on:"
+    subtitle="01 May 2026 - 31 May 2026"
+  >
+    <div className="ml-history-card-row">
+      <div className="ml-history-card-cell"><strong>000000</strong></div>
+      <div className="ml-history-card-cell" style={{ textAlign: "right" }}><span className="mfd-history-amount">RM 0.00</span></div>
+    </div>
+    <div className="ml-history-card-row">
+      <div className="ml-history-card-cell">Org 2134</div>
+      <div className="ml-history-card-cell" style={{ textAlign: "right" }}>Credit note</div>
+    </div>
+    <div className="ml-history-card-row">
+      <div className="ml-history-card-cell">Usage: 0.00</div>
+      <div className="ml-history-card-cell" style={{ textAlign: "right" }}>Group Usage: 0.00</div>
+    </div>
+    <div className="ml-history-card-row full">
+      <div className="ml-history-card-cell">Petron(referrer)</div>
+      <div className="ml-history-card-cell" style={{ textAlign: "right" }}><StatusBadge status="completed" /></div>
+    </div>
+  </HistoryCard>
+</div>);
 mount("lockPremium", <LockSection locked tier="premium" cta="Unlock MyTrip"
   note="Track trip progress and driver locations in real time.">{lockDemo}</LockSection>);
 mount("lockLite", <LockSection locked tier="lite"

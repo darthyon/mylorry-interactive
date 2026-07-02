@@ -311,7 +311,7 @@ const STATUS_BADGE_META = {
   at_risk_quota:  { label:"At risk",  cls:"quota-at-risk"  },
   critical_quota: { label:"Critical", cls:"quota-critical" },
   over_quota:     { label:"Critical", cls:"quota-critical" },
-  quota_safe:     { label:"Safe",     cls:"quota-safe"     },
+  quota_safe:     { label:"Available", cls:"quota-safe"     },
 };
 function StatusBadge({ status, prefix, fallback = "activated" }) {
   const m = STATUS_BADGE_META[status] || STATUS_BADGE_META[fallback] || { label: status, cls: "" };
@@ -408,12 +408,42 @@ function PetronLogo({ size = 16 }) {
   );
 }
 
+/* ─── History Card ────────────────────────────────────────────── */
+function HistoryCard({ icon, prefix, title, subtitle, status, action, children }) {
+  return (
+    <article className="ml-history-card">
+      <div className="ml-history-card-head">
+        <div className="ml-history-card-head-main">
+          {prefix ? (
+            <div className="ml-history-card-prefix">{prefix}</div>
+          ) : icon && (
+            <div className="ml-history-card-icon">
+              <Icon name={icon} size={20} />
+            </div>
+          )}
+          <div className="ml-history-card-head-copy">
+            <div className="ml-history-card-title">{title}</div>
+            {subtitle && <div className="ml-history-card-subtitle">{subtitle}</div>}
+          </div>
+        </div>
+        <div className="ml-history-card-head-right">
+          {status && <StatusBadge status={status} />}
+          {action}
+        </div>
+      </div>
+      <div className="ml-history-card-body">
+        {children}
+      </div>
+    </article>
+  );
+}
+
 /* ─── Export to window ─────────────────────────────────────── */
 window.SharedShell = {
   Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu, Segmented,
   Pill, CurrencyPill, SummaryCard, CountCard, KpiTierChip,
   StatusBadge, AccountStatusBadge, KPIProgress, KPIProgressMeta,
-  LockSection, PetronLogo,
+  LockSection, PetronLogo, HistoryCard,
 };
 window.KPIProgressMeta = KPIProgressMeta;
 }

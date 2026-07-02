@@ -68,6 +68,7 @@ window.MYFUEL_DASH = {
     {
       id: "subsidy-001",
       subsidyNo: "BUDI-458201",
+      type: "SKPS",
       monthLabel: "June 2026",
       used: 2250,
       quota: 5000,
@@ -78,7 +79,7 @@ window.MYFUEL_DASH = {
       status: "healthy",
       insight: "Usage is within quota.",
       cta: "View vehicles",
-      thresholds: { warning: 70, danger: 90 },
+      thresholds: { warning: 90, danger: 100 },
       quotaByVehicle: [
         { plate: "STG0234", quota: 800, used: 780 },
         { plate: "STG1161", quota: 700, used: 720 },
@@ -98,6 +99,7 @@ window.MYFUEL_DASH = {
     {
       id: "subsidy-002",
       subsidyNo: "BUDI-458202",
+      type: "SKDS",
       monthLabel: "June 2026",
       used: 3240,
       quota: 5000,
@@ -108,7 +110,7 @@ window.MYFUEL_DASH = {
       status: "healthy",
       insight: "Usage is trending upward.",
       cta: "View vehicles",
-      thresholds: { warning: 70, danger: 90 },
+      thresholds: { warning: 90, danger: 100 },
       quotaByVehicle: [
         { plate: "STG0234", quota: 800, used: 420 },
         { plate: "STG1161", quota: 700, used: 350 },
@@ -125,6 +127,7 @@ window.MYFUEL_DASH = {
     {
       id: "subsidy-003",
       subsidyNo: "BUDI-458203",
+      type: "SKPS",
       monthLabel: "June 2026",
       used: 4680,
       quota: 5000,
@@ -135,7 +138,7 @@ window.MYFUEL_DASH = {
       status: "at-risk",
       insight: "This subsidy number is close to exhaustion.",
       cta: "View vehicles at risk",
-      thresholds: { warning: 70, danger: 90 },
+      thresholds: { warning: 90, danger: 100 },
       quotaByVehicle: [
         { plate: "STG0234", quota: 800, used: 790 },
         { plate: "STG1161", quota: 700, used: 670 },
@@ -160,7 +163,7 @@ window.MYFUEL_DASH = {
     status: "at-risk", // healthy | at-risk | over | none
     insight: "At current rate, quota may run out before month-end.",
     cta: "View vehicles at risk",
-    thresholds: { warning: 70, danger: 90 },
+    thresholds: { warning: 90, danger: 100 },
   },
 
   /* ── Mini stat cards ──────────────────────────────────────────── */
@@ -268,9 +271,31 @@ window.MYFUEL_DASH = {
 
   /* ── Account Activity: Rebate History ─────────────────────────── */
   rebates: [
-    { month: "Jun 2026", totalFuel: 3240, totalSubsidy: 1200.00, totalRebate: 486.20, status: "processed" },
-    { month: "May 2026", totalFuel: 5100, totalSubsidy: 1950.00, totalRebate: 454.20, status: "processed" },
-    { month: "Apr 2026", totalFuel: 4800, totalSubsidy: 1820.00, totalRebate: 420.00, status: "processed" },
-    { month: "Mar 2026", totalFuel: 4200, totalSubsidy: 1600.00, totalRebate: 380.50, status: "processed" },
+    { paidOn: "Paid on:", period: "01 Jun 2026 - 30 Jun 2026", accountNo: "000000", orgName: "Org 2134", provider: "Petron(referrer)", amount: 486.20, usage: 3240.00, groupUsage: 12800.00, type: "Credit note", status: "completed" },
+    { paidOn: "Paid on:", period: "01 May 2026 - 31 May 2026", accountNo: "000000", orgName: "Org 2130", provider: "Petron(referrer)", amount: 454.20, usage: 5100.00, groupUsage: 14200.00, type: "Bank in personal", status: "pending" },
+    { paidOn: "Paid on:", period: "01 Apr 2026 - 30 Apr 2026", accountNo: "000000", orgName: "Org 2128", provider: "Petron(referrer)", amount: 420.00, usage: 4800.00, groupUsage: 13100.00, type: "Credit note", status: "completed" },
+    { paidOn: "Paid on:", period: "01 Mar 2026 - 31 Mar 2026", accountNo: "000000", orgName: "Org 2125", provider: "Petron(referrer)", amount: 380.50, usage: 4200.00, groupUsage: 11500.00, type: "Credit note", status: "completed" },
+    { paidOn: "Paid on:", period: "01 Feb 2026 - 28 Feb 2026", accountNo: "000000", orgName: "Org 2122", provider: "Petron(referrer)", amount: 355.00, usage: 3900.00, groupUsage: 10800.00, type: "Credit note", status: "pending" },
+    { paidOn: "Paid on:", period: "01 Jan 2026 - 31 Jan 2026", accountNo: "000000", orgName: "Org 2119", provider: "Petron(referrer)", amount: 372.50, usage: 4100.00, groupUsage: 12100.00, type: "Credit note", status: "completed" },
+    { paidOn: "Paid on:", period: "01 Dec 2025 - 31 Dec 2025", accountNo: "000000", orgName: "Org 2116", provider: "Petron(referrer)", amount: 340.00, usage: 3800.00, groupUsage: 9900.00, type: "Credit note", status: "completed" },
+    { paidOn: "Paid on:", period: "01 Nov 2025 - 30 Nov 2025", accountNo: "000000", orgName: "Org 2113", provider: "Petron(referrer)", amount: 405.00, usage: 4500.00, groupUsage: 13800.00, type: "Credit note", status: "pending" },
+    { paidOn: "Paid on:", period: "01 Oct 2025 - 31 Oct 2025", accountNo: "000000", orgName: "Org 2110", provider: "Petron(referrer)", amount: 425.00, usage: 4700.00, groupUsage: 14500.00, type: "Credit note", status: "completed" },
+    { paidOn: "Paid on:", period: "01 Sep 2025 - 30 Sep 2025", accountNo: "000000", orgName: "Org 2107", provider: "Petron(referrer)", amount: 390.00, usage: 4300.00, groupUsage: 11900.00, type: "Credit note", status: "completed" },
+    { paidOn: "Paid on:", period: "01 Aug 2025 - 31 Aug 2025", accountNo: "000000", orgName: "Org 2104", provider: "Petron(referrer)", amount: 365.00, usage: 4000.00, groupUsage: 11200.00, type: "Credit note", status: "completed" },
+    { paidOn: "Paid on:", period: "01 Jul 2025 - 31 Jul 2025", accountNo: "000000", orgName: "Org 2101", provider: "Petron(referrer)", amount: 330.00, usage: 3600.00, groupUsage: 9800.00, type: "Credit note", status: "pending" },
+  ],
+
+  /* ── Top 10 Petrol Stations ───────────────────────────────────── */
+  topPetrolStations: [
+    { rank: 1, name: "P-Northport SLG", pumps: 34, totalLitres: 3797.23, totalAmount: 22372.09 },
+    { rank: 2, name: "P-Mambau Northbound NSM", pumps: 20, totalLitres: 1330.17, totalAmount: 8362.00 },
+    { rank: 3, name: "P-Pedas NSM", pumps: 12, totalLitres: 838.00, totalAmount: 5426.00 },
+    { rank: 4, name: "P-Batu 8 Jln Bukit Kemuning SLG", pumps: 11, totalLitres: 882.02, totalAmount: 5171.00 },
+    { rank: 5, name: "P-S2 Heights NSM", pumps: 8, totalLitres: 554.12, totalAmount: 3614.00 },
+    { rank: 6, name: "P-Kesas Eastbound SLG", pumps: 7, totalLitres: 553.69, totalAmount: 3292.85 },
+    { rank: 7, name: "P-Gunung Semanggol North PRK", pumps: 7, totalLitres: 299.81, totalAmount: 1400.00 },
+    { rank: 8, name: "P-B20 Sepang SLG", pumps: 6, totalLitres: 461.75, totalAmount: 2736.00 },
+    { rank: 9, name: "P-Mambau NSM", pumps: 6, totalLitres: 335.30, totalAmount: 1565.70 },
+    { rank: 10, name: "P-R&R Rawang Northbound SLG", pumps: 5, totalLitres: 351.00, totalAmount: 2313.00 },
   ],
 };
