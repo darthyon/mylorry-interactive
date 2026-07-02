@@ -166,27 +166,42 @@ function vehicleStatus(used, quota) {
   if (quota === 0) return "none";
   const pct = (used / quota) * 100;
   if (used > quota) return "over";
-  if (pct >= 80) return "at-risk";
+  if (pct >= 90) return "over";
+  if (pct >= 70) return "at-risk";
   return "within";
 }
 
 function deriveQuota(quotaState, empty) {
   const q = D.subsidyQuota;
-  const status = empty ? "none" : quotaState;
-  const used = status === "over" ? q.quota + 400 : status === "healthy" ? Math.round(q.quota * 0.45) : status === "none" ? 0 : q.used;
-  const quota = status === "none" ? 0 : q.quota;
+  const scenario = empty ? "none" : quotaState;
+  const warningPct = q.thresholds.warning / 100;
+  const dangerPct = q.thresholds.danger / 100;
+  const used = scenario === "over"
+    ? q.quota + 400
+    : scenario === "healthy"
+      ? Math.round(q.quota * 0.45)
+      : scenario === "at-risk"
+        ? Math.round(q.quota * ((warningPct + dangerPct) / 2))
+        : scenario === "none"
+          ? 0
+          : q.used;
+  const quota = scenario === "none" ? 0 : q.quota;
   const remaining = Math.max(0, quota - used);
   const pct = quota ? Math.min(100, (used / quota) * 100) : 0;
   const overBy = used > quota ? used - quota : 0;
-  return { q, status, used, quota, remaining, pct, overBy };
+  return { q, scenario, used, quota, remaining, pct, overBy };
 }
 
 function SubsidyQuotaOverview({ empty, quotaState }) {
-  const { q, status, used, quota, remaining, pct } = deriveQuota(quotaState, empty);
-  const fillTone = status === "over" ? "red" : status === "at-risk" ? "amber" : "green";
-  const alertTone = status === "over" ? "red" : status === "at-risk" ? "amber" : "";
+  const { q, scenario, used, quota, remaining, pct } = deriveQuota(quotaState, empty);
+  const isOver = used > quota && quota > 0;
+  const isCritical = pct >= q.thresholds.danger;
+  const isWarning = pct >= q.thresholds.warning;
+  const fillTone = isCritical ? "red" : isWarning ? "amber" : "green";
+  const alertTone = isCritical ? "red" : isWarning ? "amber" : "";
+  const pctLabel = `${pct.toFixed(1)}%`;
 
-  const disclaimer = "Quota is renewed every 1st week of the month.";
+  const disclaimer = "Quota is renewed every 1st week of the month";
 
   return (
     <div className="mfd-kpi mfd-quota-card">
@@ -199,23 +214,25 @@ function SubsidyQuotaOverview({ empty, quotaState }) {
           </div>
         </div>
         <div className="mfd-quota-head-right">
-          {status === "at-risk" || status === "over" ? (
+          {isWarning || isOver ? (
             <span className="mfd-tooltip-wrap" tabIndex={0}>
-              <StatusBadge status={status === "over" ? "over_quota" : "at_risk_quota"}
-                prefix={<Icon name="warning" size={11} color={status === "over" ? "var(--red-400)" : "var(--amber-500)"} />} />
+              <StatusBadge status={isOver ? "over_quota" : "at_risk_quota"}
+                prefix={<Icon name="warning" size={11} color={isCritical ? "var(--red-400)" : "var(--amber-500)"} />} />
               <span className="mfd-tooltip">
-                {status === "over"
+                {isOver
                   ? "Quota exceeded — additional usage is no longer subsidised this month."
+                  : isCritical
+                    ? "Quota usage is very high — nearing the monthly limit."
                   : "Quota usage is high — may run out before month-end."}
               </span>
             </span>
-          ) : status !== "none" && !empty ? (
+          ) : scenario !== "none" && !empty ? (
             <StatusBadge status="quota_safe" prefix={<Icon name="check_circle" size={11} color="var(--green-600)" />} />
           ) : null}
         </div>
       </div>
 
-      {status === "none" || empty ? (
+      {scenario === "none" || empty ? (
         <div className="mfd-quota-empty">
           <Icon name="block" size={32} />
           <div>No subsidy quota assigned</div>
@@ -223,28 +240,29 @@ function SubsidyQuotaOverview({ empty, quotaState }) {
         </div>
       ) : (
         <div className="mfd-quota-body-top">
-          <div className="mfd-quota-toprow">
-            <div className="mfd-quota-metric">
-              <div className="mfd-quota-caption">Total Used</div>
-              <div className="mfd-quota-hero-row">
-                <div className="mfd-quota-hero-used">{L0(used)}</div>
-              </div>
+          <div className="mfd-quota-summary">
+            <div className="mfd-quota-summary-main">
+              <span className="mfd-quota-summary-strong">{L0(used)}</span>
+              <span className="mfd-quota-summary-mid">/</span>
+              <span className="mfd-quota-summary-strong">{L0(quota)}</span>
+              <span className="mfd-quota-summary-unit">monthly quota</span>
             </div>
+            <div className="mfd-quota-summary-sub">{pctLabel} used this month</div>
+          </div>
 
-            <div className="mfd-quota-bar-wrap">
-              <div className="mfd-quota-tick-lbls">
-                <span style={{ left: q.thresholds.warning + "%" }}>{q.thresholds.warning}%</span>
-                <span className="danger" style={{ left: q.thresholds.danger + "%" }}>{q.thresholds.danger}%</span>
-              </div>
-              <div className="mfd-quota-track">
-                <div className={"mfd-quota-fill " + fillTone} style={{ width: Math.min(pct, 100) + "%" }} />
-                <div className="mfd-quota-marker" style={{ left: q.thresholds.warning + "%" }} />
-                <div className="mfd-quota-marker danger" style={{ left: q.thresholds.danger + "%" }} />
-              </div>
-              <div className="mfd-quota-bar-lbls">
-                <span>0 L</span>
-                <span>{L0(quota)}</span>
-              </div>
+          <div className="mfd-quota-bar-wrap">
+            <div className="mfd-quota-tick-lbls">
+              <span style={{ left: q.thresholds.warning + "%" }}>{q.thresholds.warning}%</span>
+              <span className="danger" style={{ left: q.thresholds.danger + "%" }}>{q.thresholds.danger}%</span>
+            </div>
+            <div className="mfd-quota-track">
+              <div className={"mfd-quota-fill " + fillTone} style={{ width: Math.min(pct, 100) + "%" }} />
+              <div className="mfd-quota-marker" style={{ left: q.thresholds.warning + "%" }} />
+              <div className="mfd-quota-marker danger" style={{ left: q.thresholds.danger + "%" }} />
+            </div>
+            <div className="mfd-quota-bar-lbls">
+              <span>0 L</span>
+              <span>{L0(quota)}</span>
             </div>
           </div>
 
@@ -253,11 +271,11 @@ function SubsidyQuotaOverview({ empty, quotaState }) {
               <div className="mfd-quota-stat-v">{L0(remaining)}</div>
               <div className="mfd-quota-stat-l">Remaining quota</div>
             </div>
-            <div className="mfd-quota-stat">
+            <div className="mfd-quota-stat mfd-quota-stat-divided">
               <div className="mfd-quota-stat-v">~{q.avgDailyUsage} L/day</div>
               <div className="mfd-quota-stat-l">Avg. daily usage</div>
             </div>
-            <div className="mfd-quota-stat">
+            <div className="mfd-quota-stat mfd-quota-stat-divided">
               <div className={"mfd-quota-stat-v " + alertTone}>~{q.estimatedRunoutDays} days</div>
               <div className="mfd-quota-stat-l">Est. runout</div>
             </div>
@@ -265,7 +283,7 @@ function SubsidyQuotaOverview({ empty, quotaState }) {
         </div>
       )}
 
-      {status !== "none" && !empty && (
+      {scenario !== "none" && !empty && (
         <div className="mfd-quota-disclaimer">
           <Icon name="info" size={12} /> {disclaimer}
         </div>
