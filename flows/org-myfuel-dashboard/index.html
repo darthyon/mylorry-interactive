@@ -65,11 +65,6 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-pagehead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap;}
 .mfd-title{font-size:20px;font-weight:600;color:var(--fg-primary);margin:0 0 2px;}
 .mfd-breadcrumb{font-size:12px;color:var(--fg-secondary);}
-.mfd-timefilter{display:inline-flex;gap:6px;background:var(--bg-muted);padding:3px;border-radius:var(--radius-pill);}
-.mfd-timebtn{appearance:none;border:none;background:transparent;font-family:var(--font-sans);font-size:12px;font-weight:600;
-  color:var(--fg-secondary);padding:6px 14px;border-radius:var(--radius-pill);cursor:pointer;transition:background .12s,color .12s;}
-.mfd-timebtn:hover{color:var(--fg-primary);}
-.mfd-timebtn.active{background:#fff;color:var(--green-600);box-shadow:0 1px 3px rgba(0,0,0,.1);}
 
 /* ── Shared card primitives ──────────────────────────────────── */
 .mfd-card{background:#fff;border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:18px;}
@@ -86,9 +81,14 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-link:hover{text-decoration:underline;}
 
 /* ── Section 1: Fuel Pulse ───────────────────────────────────── */
-.mfd-pulse{display:grid;grid-template-columns:1.4fr 1.4fr;gap:14px;margin-bottom:16px;align-items:stretch;}
+/* Balance is intentionally wider than the three stat cards (mirrors org-dashboard od-pulse). */
+.mfd-pulse{display:grid;grid-template-columns:1.55fr 1fr 1fr 1fr;gap:14px;margin-bottom:16px;align-items:stretch;}
 .mfd-kpi{background:#fff;border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;display:flex;flex-direction:column;cursor:pointer;transition:border-color .16s ease,box-shadow .16s ease;}
 .mfd-kpi:hover{border-color:var(--border-medium);box-shadow:var(--shadow-card);}
+/* Wraps the 3 CountCards so mobile can turn them into one horizontal
+   scroller without touching the desktop grid (display:contents on desktop
+   keeps mfd-pulse seeing 4 flat grid items). */
+.mfd-statscroll{display:contents;}
 
 /* Balance card */
 .mfd-balance{background:var(--gradient-balance-green);border:none;color:#fff;}
@@ -96,47 +96,59 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-balance.red{background:var(--gradient-balance-red);}
 .mfd-balance-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
 .mfd-balance-label{font-size:13px;font-weight:600;color:rgba(255,255,255,.9);}
-.mfd-balance-meta{display:flex;align-items:flex-start;gap:10px;}
-.mfd-balance-updated{font-size:11px;line-height:1.4;color:rgba(255,255,255,.78);text-align:right;}
-.mfd-balance-value{font-size:31px;font-weight:600;letter-spacing:-.02em;line-height:1.05;margin-top:6px;}
-.mfd-balance-pill{display:inline-flex;align-self:flex-start;align-items:center;gap:5px;margin-top:8px;font-size:12px;font-weight:600;color:rgba(255,255,255,.92);}
+.mfd-balance-updated{font-size:11px;line-height:1.4;color:rgba(255,255,255,.78);text-align:right;flex-shrink:0;}
+.mfd-balance-sublabel-row{display:flex;align-items:center;gap:6px;margin-top:14px;}
+.mfd-balance-sublabel{font-size:11px;font-weight:600;color:rgba(255,255,255,.72);letter-spacing:.02em;}
+.mfd-balance-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;}
+.mfd-balance-value{font-size:31px;font-weight:600;letter-spacing:-.02em;line-height:1.05;margin-top:3px;}
+.mfd-balance-addcredit{background:#000;color:#fff;border:none;border-radius:8px;padding:8px 14px;
+  font-size:12.5px;font-weight:600;font-family:var(--font-sans);cursor:pointer;flex-shrink:0;}
+.mfd-balance-addcredit:hover{background:#1a1a1a;}
 .mfd-balance-band{display:flex;margin-top:12px;border-radius:9px;background:rgba(0,0,0,.14);overflow:hidden;}
 .mfd-balance-cell{flex:1;padding:9px 12px;}
 .mfd-balance-cell + .mfd-balance-cell{border-left:1px solid rgba(0,0,0,.16);}
+.mfd-balance-cell-est{flex:.65;}
 .mfd-balance-cell-l{font-size:11px;color:rgba(255,255,255,.82);}
 .mfd-balance-cell-v{font-size:15px;font-weight:600;margin-top:3px;}
 .mfd-balance-cell-s{font-size:11.5px;color:rgba(255,255,255,.78);margin-top:1px;}
 
 /* Subsidy quota card */
-.mfd-quota-card{padding:16px;max-height:300px;overflow:hidden;}
-.mfd-quota-veh-body{overflow-y:auto;display:flex;flex-direction:column;gap:0;max-height:220px;}
+.mfd-quota-card{padding:16px;}
+.mfd-quota-veh-body{display:flex;flex-direction:column;gap:0;}
 .mfd-quota-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;}
+.mfd-quota-head-main{display:flex;align-items:center;gap:10px;}
+.mfd-quota-ico{width:36px;height:36px;border-radius:10px;background:var(--green-50);color:var(--green-600);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .mfd-quota-head-right{display:flex;align-items:center;gap:8px;}
 .mfd-quota-title{font-size:15px;font-weight:600;color:var(--fg-primary);}
 .mfd-quota-sub{font-size:12px;color:var(--fg-tertiary);margin-top:1px;}
-.mfd-quota-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:var(--radius-pill);}
-.mfd-quota-pill.healthy{background:var(--green-50);color:var(--green-600);}
-.mfd-quota-pill.at-risk{background:var(--amber-50);color:var(--amber-600);}
-.mfd-quota-pill.over{background:#FCEBEC;color:var(--red-400);}
-.mfd-quota-pill.none{background:var(--bg-muted);color:var(--fg-secondary);}
 
-.mfd-quota-hero{margin-top:4px;}
-.mfd-quota-used{font-size:26px;font-weight:600;color:var(--fg-primary);line-height:1;letter-spacing:-.01em;}
-.mfd-quota-used span{font-size:13px;font-weight:500;color:var(--fg-secondary);}
-.mfd-quota-pct{font-size:12px;font-weight:600;color:var(--fg-secondary);margin-top:4px;}
+.mfd-quota-hero{margin-top:6px;}
+.mfd-quota-caption{font-size:12px;font-weight:600;color:var(--fg-secondary);text-transform:capitalize;}
+.mfd-quota-hero-row{display:flex;align-items:baseline;gap:8px;margin-top:4px;}
+.mfd-quota-hero-used{font-size:32px;font-weight:700;color:var(--fg-primary);line-height:1.2;letter-spacing:-.01em;}
+.mfd-quota-hero-of{font-size:14px;font-weight:400;color:var(--fg-secondary);}
 
-.mfd-quota-bar-wrap{margin-top:14px;}
-.mfd-quota-track{position:relative;height:14px;background:#E9E9E9;border-radius:999px;overflow:visible;}
-.mfd-quota-fill{height:100%;border-radius:999px;transition:width .4s ease;}
-.mfd-quota-over{position:absolute;top:0;left:100%;height:100%;background:var(--red-400);border-radius:0 999px 999px 0;}
-.mfd-quota-marker{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--amber-500);border-radius:1px;}
+.mfd-quota-bar-wrap{margin-top:16px;}
+.mfd-quota-tick-lbls{position:relative;height:12px;margin-bottom:4px;}
+.mfd-quota-tick-lbls span{position:absolute;transform:translateX(-50%);font-size:11px;font-weight:600;color:var(--amber-500);}
+.mfd-quota-tick-lbls span.danger{color:var(--red-400);}
+.mfd-quota-track{position:relative;height:12px;background:var(--bg-muted);border-radius:4px;overflow:visible;}
+.mfd-quota-fill{height:100%;border-radius:4px;transition:width .4s ease;}
+.mfd-quota-fill.green{background:var(--green-500);}
+.mfd-quota-fill.amber{background:var(--amber-500);}
+.mfd-quota-fill.red{background:var(--red-400);}
+.mfd-quota-marker{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--amber-500);border-radius:1px;}
 .mfd-quota-marker.danger{background:var(--red-400);}
-.mfd-quota-marker::after{content:attr(data-label);position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;color:inherit;}
-.mfd-quota-bar-lbls{display:flex;justify-content:space-between;font-size:10px;color:var(--fg-tertiary);margin-top:6px;}
+.mfd-quota-bar-lbls{display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--fg-disabled);margin-top:6px;}
 
-.mfd-quota-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border-light);}
-.mfd-quota-meta-v{font-size:15px;font-weight:600;color:var(--fg-primary);}
-.mfd-quota-meta-l{font-size:11px;color:var(--fg-tertiary);margin-top:2px;}
+.mfd-quota-stats{display:flex;justify-content:space-between;margin-top:16px;padding-top:14px;border-top:1px solid var(--border-light);}
+.mfd-quota-stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.mfd-quota-stat-v{font-size:16px;font-weight:600;color:var(--fg-primary);}
+.mfd-quota-stat-v.amber{color:var(--amber-600);}
+.mfd-quota-stat-v.red{color:var(--red-400);}
+.mfd-quota-stat-l{font-size:12px;color:var(--fg-secondary);}
+
+.mfd-quota-disclaimer{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-secondary);margin-top:10px;background:var(--bg-muted);border-radius:8px;padding:10px 12px;}
 
 /* Tooltip on status badge */
 .mfd-tooltip-wrap{position:relative;display:inline-flex;align-items:center;gap:6px;}
@@ -148,19 +160,13 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-quota-empty .msr{color:var(--fg-disabled);}
 .mfd-quota-empty-s{font-size:12px;max-width:220px;}
 
-/* Mini stat cards */
-.mfd-ministats{grid-column:1 / -1;display:flex;flex-direction:row;gap:14px;}
-.mfd-minicard{flex:1;background:#fff;border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:14px;transition:border-color .16s,box-shadow .16s;}
-.mfd-minicard:hover{border-color:var(--border-medium);box-shadow:var(--shadow-card);}
-.mfd-minicard-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
-.mfd-minicard-ico{width:36px;height:36px;border-radius:10px;background:var(--green-50);color:var(--green-600);display:flex;align-items:center;justify-content:center;}
-.mfd-minicard-title{font-size:12px;font-weight:600;color:var(--fg-secondary);margin-top:10px;}
-.mfd-minicard-primary{font-size:22px;font-weight:600;color:var(--fg-primary);line-height:1;margin-top:4px;}
-.mfd-minicard-secondary{font-size:12px;color:var(--fg-tertiary);margin-top:2px;}
-.mfd-frozen{color:var(--red-400);font-weight:600;}
 
-/* ── Section 2: Analytics row ────────────────────────────────── */
-.mfd-row{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-top:16px;align-items:stretch;}
+/* ── Section 2: Subsidy Quota row ─────────────────────────────── */
+.mfd-quota-section{margin-top:16px;}
+.mfd-quota-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch;}
+
+/* ── Section 3: Fuel Usage Trend (standalone) ─────────────────── */
+.mfd-trend-row{margin-top:16px;}
 
 /* Vertical bar chart */
 .mfd-trend-card{min-height:100%;}
@@ -172,11 +178,12 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   background-image:repeating-linear-gradient(to top,transparent,transparent 39.8px,var(--border-light) 39.8px,var(--border-light) 40px);}
 .mfd-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:flex-end;height:100%;cursor:pointer;}
 .mfd-bar-val{font-size:10px;font-weight:600;color:var(--fg-secondary);}
-.mfd-bar-group{position:relative;width:100%;height:100%;display:flex;align-items:flex-end;justify-content:center;gap:2px;}
-.mfd-bar-track{position:relative;flex:1;max-width:22px;height:100%;display:flex;align-items:flex-end;justify-content:center;border-radius:5px 5px 0 0;transition:background .15s;}
+.mfd-bar-group{position:relative;width:100%;height:100%;display:flex;align-items:flex-end;justify-content:center;}
+.mfd-bar-track{position:relative;width:100%;max-width:28px;height:100%;display:flex;align-items:flex-end;justify-content:center;border-radius:5px 5px 0 0;transition:background .15s;}
 .mfd-bar-track.active,.mfd-bar-col:hover .mfd-bar-track{background:rgba(0,0,0,.045);}
-.mfd-bar{width:100%;border-radius:4px 4px 0 0;transition:height .3s,filter .15s;}
-.mfd-bar-col:hover .mfd-bar{filter:brightness(.97);}
+.mfd-bar-stack{width:100%;display:flex;flex-direction:column-reverse;border-radius:4px 4px 0 0;overflow:hidden;transition:height .3s,filter .15s;}
+.mfd-bar-col:hover .mfd-bar-stack{filter:brightness(.97);}
+.mfd-bar-seg{width:100%;}
 .mfd-bar-tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) translateY(-8px);background:#fff;padding:9px 13px;border:1px solid var(--border-light);border-radius:8px;z-index:5;pointer-events:none;box-shadow:0 6px 16px rgba(0,0,0,.12);text-align:left;min-width:150px;}
 .mfd-bar-tip-period{font-size:11px;font-weight:500;color:var(--fg-tertiary);margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--border-light);}
 .mfd-bar-tip-row{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--fg-primary);padding:2px 0;white-space:nowrap;}
@@ -191,54 +198,33 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 /* Cardhead right-side slot */
 .mfd-cardhead-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 
-/* Overview panel */
-.mfd-qov-wrap{display:flex;flex-direction:column;gap:16px;flex:1;}
-.mfd-qov-fleet-bar{display:flex;flex-direction:column;gap:6px;}
-.mfd-qov-fleet-track{height:10px;background:#E9E9E9;border-radius:999px;overflow:hidden;}
-.mfd-qov-fleet-fill{height:100%;background:var(--green-500);border-radius:999px;transition:width .4s ease;}
-.mfd-qov-fleet-lbls{display:flex;justify-content:space-between;font-size:11px;color:var(--fg-tertiary);}
-.mfd-qov-groups{display:flex;flex-direction:column;gap:10px;}
-.mfd-qov-group{border-radius:var(--radius-md);border:1px solid var(--border-light);overflow:hidden;}
-.mfd-qov-group-head{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--bg-muted);}
-.mfd-qov-group-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.mfd-qov-group.over .mfd-qov-group-dot{background:var(--red-400);}
-.mfd-qov-group.at-risk .mfd-qov-group-dot{background:var(--amber-500);}
-.mfd-qov-group.within .mfd-qov-group-dot{background:var(--green-500);}
-.mfd-qov-group.none .mfd-qov-group-dot{background:#CCC;}
-.mfd-qov-group-label{font-size:12px;font-weight:600;color:var(--fg-primary);flex:1;}
-.mfd-qov-group-count{font-size:11px;color:var(--fg-tertiary);}
-.mfd-qov-group-rows{display:flex;flex-direction:column;}
-.mfd-qov-row{display:flex;align-items:center;gap:8px;padding:7px 12px;border-top:1px solid var(--border-light);}
-.mfd-qov-plate{font-size:12px;font-weight:600;color:var(--fg-primary);flex:1;}
-.mfd-qov-used{font-size:12px;font-weight:600;color:var(--fg-primary);}
-.mfd-qov-quota{font-size:12px;color:var(--fg-tertiary);}
-
 /* Quota by vehicle horizontal bars */
 .mfd-quota-veh-card{min-height:100%;display:flex;flex-direction:column;}
-.mfd-vehicle-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
-.mfd-vehicle-search{height:34px;min-width:0;width:100%;max-width:240px;display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid var(--border-light);border-radius:7px;color:var(--fg-tertiary);background:var(--bg-card);transition:border-color .15s,box-shadow .15s;}
+.mfd-vehicle-search{height:34px;min-width:0;width:220px;display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid var(--border-light);border-radius:7px;color:var(--fg-tertiary);background:var(--bg-card);transition:border-color .15s,box-shadow .15s;}
 .mfd-vehicle-search:focus-within{border-color:var(--green-500);box-shadow:0 0 0 3px var(--green-50);}
 .mfd-vehicle-search input{min-width:0;flex:1;border:0;outline:0;background:transparent;font:inherit;font-size:12.5px;color:var(--fg-primary);}
 .mfd-vehicle-search input::placeholder{color:var(--fg-disabled);}
 .mfd-vehicle-search button{border:0;background:transparent;color:var(--fg-tertiary);display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:6px;width:22px;height:22px;margin-right:-5px;}
 .mfd-vehicle-search button:hover{background:var(--bg-muted);color:var(--fg-primary);}
-.mfd-vehicle-count{font-size:11.5px;font-weight:500;color:var(--fg-tertiary);white-space:nowrap;}
 
-.mfd-veh-quota-list{display:flex;flex-direction:column;gap:10px;flex:1;}
-.mfd-veh-quota-row{display:grid;grid-template-columns:74px 1fr 100px;align-items:center;gap:10px;min-height:28px;}
+.mfd-veh-quota-list{display:flex;flex-direction:column;gap:2px;flex:1;margin-top:12px;}
+.mfd-veh-quota-row{display:grid;grid-template-columns:74px 1fr 100px;align-items:center;gap:12px;min-height:36px;}
 .mfd-veh-quota-lbl{font-size:12px;font-weight:600;color:var(--fg-primary);}
 .mfd-veh-quota-bar{position:relative;min-width:0;}
-.mfd-veh-quota-track{position:relative;height:14px;background:#E9E9E9;border-radius:999px;overflow:visible;}
-.mfd-veh-quota-fill{height:100%;border-radius:999px;transition:width .3s ease;}
+.mfd-veh-quota-track{position:relative;height:5px;background:var(--bg-muted);border-radius:3px;overflow:hidden;}
+.mfd-veh-quota-fill{height:100%;border-radius:3px;transition:width .3s ease;}
 .mfd-veh-quota-fill.within{background:var(--green-500);}
 .mfd-veh-quota-fill.at-risk{background:var(--amber-500);}
 .mfd-veh-quota-fill.over{background:var(--red-400);}
 .mfd-veh-quota-val{font-size:12px;font-weight:600;color:var(--fg-primary);text-align:right;white-space:nowrap;}
 .mfd-veh-quota-of{font-weight:400;color:var(--fg-tertiary);}
 
-.mfd-vehicle-pager{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;font-size:11.5px;color:var(--fg-tertiary);}
+.mfd-vehicle-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;}
+.mfd-vehicle-pager-range{font-size:12px;color:var(--fg-secondary);}
+.mfd-vehicle-footer-right{display:flex;align-items:center;gap:16px;}
+.mfd-vehicle-footer-right .mfd-legend{margin-top:0;gap:12px;}
 .mfd-vehicle-pagebtns{display:flex;align-items:center;gap:4px;}
-.mfd-vehicle-pagebtns button{width:26px;height:26px;border:1px solid var(--border-light);background:var(--bg-card);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--fg-secondary);cursor:pointer;}
+.mfd-vehicle-pagebtns button{width:28px;height:28px;border:1px solid var(--border-light);background:var(--bg-card);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--fg-secondary);cursor:pointer;}
 .mfd-vehicle-pagebtns button:not(:disabled):hover{background:var(--bg-muted);color:var(--fg-primary);}
 .mfd-vehicle-pagebtns button:disabled{opacity:.35;cursor:not-allowed;}
 
@@ -255,7 +241,6 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-cell-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--fg-secondary);}
 .mfd-subsidy{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--green-600);background:var(--green-50);padding:2px 7px;border-radius:var(--radius-pill);}
 .mfd-subsidy-none{color:var(--fg-tertiary);}
-.mfd-subsidy-tag{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:1px 6px;border-radius:var(--radius-pill);background:var(--green-50);color:var(--green-600);margin-left:4px;}
 .mfd-amount{font-weight:600;color:var(--fg-primary);}
 .mfd-status{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:3px 9px;border-radius:var(--radius-pill);text-transform:capitalize;}
 .mfd-status.successful{background:var(--green-50);color:var(--green-600);}
@@ -288,13 +273,11 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-empty-t{font-size:13px;font-weight:600;color:var(--fg-secondary);}
 .mfd-empty-s{font-size:12px;color:var(--fg-tertiary);max-width:240px;}
 
-/* LockSection override to sit flush inside cards */
-.mfd-quota-veh-card .ml-lock{flex:1;display:flex;border-radius:var(--radius-lg);}
-.mfd-quota-veh-card .ml-lock-content{width:100%;display:flex;flex-direction:column;}
-
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width:1080px){
-  .mfd-row{grid-template-columns:1fr;}
+  .mfd-pulse{grid-template-columns:1fr 1fr;}
+  .mfd-balance{grid-column:1 / -1;}
+  .mfd-quota-row{grid-template-columns:1fr;}
 }
 @media (max-width:680px){
   .mfd-shell{grid-template-columns:1fr;}
@@ -309,19 +292,33 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .mfd-rail-item.active{background:#fff;color:var(--green-600);}
   .mfd-content{display:flex;flex-direction:column;gap:16px;padding:16px 14px 96px;}
   .mfd-pagehead{flex-direction:column;gap:12px;margin-bottom:0;}
-  .mfd-timefilter{align-self:flex-start;}
-  .mfd-pulse,.mfd-ministats{display:contents;}
+  .mfd-pulse{display:contents;}
   .mfd-balance{order:1;}
-  .mfd-quota-card{order:2;}
-  .mfd-ministats{order:3;}
-  .mfd-row{order:4;margin-top:0;}
+  .mfd-statscroll{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:10px;order:2;margin:0 -14px;padding:0 14px;}
+  .mfd-statscroll::-webkit-scrollbar{display:none;}
+  .mfd-statscroll>*{flex-shrink:0;width:80%;scroll-snap-align:start;}
+  .mfd-quota-section{order:3;margin-top:0;}
+  .mfd-quota-row{grid-template-columns:1fr;}
+  .mfd-trend-row{order:4;margin-top:0;}
   .mfd-activity{order:5;margin-top:0;}
-  .mfd-minicard{padding:12px;}
-  .mfd-minicard-ico{width:32px;height:32px;border-radius:9px;}
-  .mfd-minicard-primary{font-size:18px;}
+  .mfd-shell .ml-statcard{padding:12px;}
+  .mfd-shell .ml-statcard-ico{width:32px;height:32px;border-radius:9px;}
+  .mfd-shell .ml-statcard-count{font-size:22px;}
+  .mfd-shell .ml-statcard-labelrow{margin-top:8px;gap:1px;}
+  .mfd-shell .ml-statcard-label{font-size:13px;}
+  .mfd-shell .ml-statcard-sub{font-size:10.5px;}
+  .mfd-shell .ml-statcard-action{width:24px;height:24px;}
+  .mfd-shell .ml-statcard-band{margin:10px -12px -12px;padding:10px 12px;gap:12px;}
+  .mfd-shell .ml-statcard-n{font-size:15px;}
+  .mfd-shell .ml-statcard-l{font-size:10px;margin-top:2px;}
   .mfd-title{font-size:18px;}
   .mfd-cardhead{flex-direction:column;gap:10px;}
   .mfd-cardhead-actions{width:100%;}
+  .mfd-quota-head{flex-direction:column;gap:10px;}
+  .mfd-quota-head-right{width:100%;}
+  .mfd-vehicle-search{width:100%;}
+  .mfd-vehicle-footer{flex-direction:column;align-items:flex-start;gap:10px;}
+  .mfd-vehicle-footer-right{width:100%;justify-content:space-between;}
   .mfd-yaxis{width:26px;height:160px;font-size:9px;}
   .mfd-bars{height:160px;gap:8px;background-image:repeating-linear-gradient(to top,transparent,transparent 31.8px,var(--border-light) 31.8px,var(--border-light) 32px);}
   .mfd-bar-track{max-width:18px;}

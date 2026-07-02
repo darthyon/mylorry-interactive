@@ -28,11 +28,11 @@ window.MYFUEL_DASH = {
   /* ── Subsidy Quota hero ───────────────────────────────────────── */
   subsidyQuota: {
     monthLabel: "June 2026",
-    fuelType: "B40 Diesel",
     used: 3240,
     quota: 5000,
     remaining: 1760,
     usedPct: 64.8,
+    avgDailyUsage: 230,
     estimatedRunoutDays: 5,
     status: "at-risk", // healthy | at-risk | over | none
     insight: "At current rate, quota may run out before month-end.",
@@ -42,16 +42,15 @@ window.MYFUEL_DASH = {
 
   /* ── Mini stat cards ──────────────────────────────────────────── */
   miniStats: {
-    mtdFuel: { litres: 3240, amount: 16488.00 },
+    mtdFuel: { litres: 3240, amount: 16488.00, subsidisedLitres: 2600, nonSubsidisedLitres: 640 },
     rebate: { amount: 486.20, vsLastMonth: 32 },
     fleetCards: { active: 14, total: 16, frozen: 2 },
   },
 
   /* ── Fuel Usage Trend ───────────────────────────────────────────
-     For each time range and metric we keep subsidised + non-subsidised.
-     When the user selects "Subsidy only" we render just the subsidised
-     series. Values are seeded to be plausible and reconcile with the
-     hero quota / mini stats where possible. */
+     For each time range and metric we keep subsidised + non-subsidised;
+     the chart stacks them. Values are seeded to be plausible and
+     reconcile with the hero quota / mini stats where possible. */
   usageTrend: {
     today: {
       labels: ["00-04", "04-08", "08-12", "12-16", "16-20", "20-24"],
@@ -62,10 +61,6 @@ window.MYFUEL_DASH = {
       amount: {
         subsidised: [230, 612, 2958, 2499, 1581, 918],
         nonSubsidised: [78, 228, 913, 620, 456, 261],
-      },
-      subsidyOnly: {
-        subsidised: [45, 120, 580, 490, 310, 180],
-        nonSubsidised: [0, 0, 0, 0, 0, 0],
       },
     },
     mtd: {
@@ -78,10 +73,6 @@ window.MYFUEL_DASH = {
         subsidised: [1932, 2136, 1780, 2592, 2440, 1983, 2084, 2288, 1780],
         nonSubsidised: [520, 618, 455, 715, 650, 553, 585, 683, 488],
       },
-      subsidyOnly: {
-        subsidised: [380, 420, 350, 510, 480, 390, 410, 450, 350],
-        nonSubsidised: [0, 0, 0, 0, 0, 0, 0, 0, 0],
-      },
     },
     sixMonth: {
       labels: ["Jan 2026", "Feb 2026", "Mar 2026", "Apr 2026", "May 2026", "Jun 2026"],
@@ -92,10 +83,6 @@ window.MYFUEL_DASH = {
       amount: {
         subsidised: [26452, 24418, 31047, 30023, 36642, 16488],
         nonSubsidised: [7150, 6175, 8450, 7800, 9750, 5525],
-      },
-      subsidyOnly: {
-        subsidised: [5200, 4800, 6100, 5900, 7200, 3240],
-        nonSubsidised: [0, 0, 0, 0, 0, 0],
       },
     },
   },
@@ -125,35 +112,35 @@ window.MYFUEL_DASH = {
       txnId: "#90423543", card: "7825057307456000003", vehicle: "STG0234",
       station: "P-R&R Tawar Westbound KDH", volume: 96.45,
       product: "Diesel Max", unitPrice: 4.87, odometer: 346196,
-      subsidyType: "B40", subsidyAmount: 262.34, amount: -469.69,
+      subsidyAmount: 262.34, amount: -469.69,
       cardTag: "Logistics A", date: "15 May 2026, 4:32 PM",
     },
     {
       txnId: "#90423512", card: "7825057307456000011", vehicle: "STG1161",
       station: "P-Jerangau TRG Eastbound TRG", volume: 180.01,
       product: "Diesel Max", unitPrice: 4.87, odometer: 128440,
-      subsidyType: "B40", subsidyAmount: 401.18, amount: -876.63,
+      subsidyAmount: 401.18, amount: -876.63,
       cardTag: "N/A", date: "15 May 2026, 4:18 PM",
     },
     {
       txnId: "#90421887", card: "7825057307456000003", vehicle: "BPT8600",
       station: "P-Sungai Besi West FKL", volume: 38.26,
       product: "Diesel", unitPrice: 3.92, odometer: 78210,
-      subsidyType: "B40", subsidyAmount: 67.72, amount: -150.00,
+      subsidyAmount: 67.72, amount: -150.00,
       cardTag: "Logistics A", date: "18 Mar 2026, 12:27 PM",
     },
     {
       txnId: "#90421865", card: "7825057307456000011", vehicle: "VGE8660",
       station: "P-SG Besi Highway East FKL", volume: 57.97,
       product: "Diesel", unitPrice: 4.12, odometer: 55340,
-      subsidyType: "B40", subsidyAmount: 0.00, amount: -238.84,
+      subsidyAmount: 0.00, amount: -238.84,
       cardTag: "N/A", date: "18 Mar 2026, 12:13 PM",
     },
     {
       txnId: "#90421801", card: "7825057307456000003", vehicle: "BCA8831",
       station: "P-Sg Petani Northbound KDH", volume: 74.22,
       product: "Diesel Max", unitPrice: 4.21, odometer: 203780,
-      subsidyType: "B40", subsidyAmount: 181.32, amount: -312.45,
+      subsidyAmount: 181.32, amount: -312.45,
       cardTag: "Logistics A", date: "18 Mar 2026, 11:52 AM",
     },
   ],
