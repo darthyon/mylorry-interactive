@@ -185,9 +185,7 @@ function SubsidyQuotaOverview({ empty, quotaState }) {
   const fillTone = status === "over" ? "red" : status === "at-risk" ? "amber" : "green";
   const alertTone = status === "over" ? "red" : status === "at-risk" ? "amber" : "";
 
-  const disclaimer = (status === "at-risk" || status === "over") && !empty
-    ? `At current rate, quota may run out in ~${q.estimatedRunoutDays} days — before month-end.`
-    : "Quota is renewed every 1st week of the month.";
+  const disclaimer = "Quota is renewed every 1st week of the month.";
 
   return (
     <div className="mfd-kpi mfd-quota-card">
@@ -200,7 +198,7 @@ function SubsidyQuotaOverview({ empty, quotaState }) {
           </div>
         </div>
         <div className="mfd-quota-head-right">
-          {(status === "at-risk" || status === "over") && (
+          {status === "at-risk" || status === "over" ? (
             <span className="mfd-tooltip-wrap" tabIndex={0}>
               <StatusBadge status={status === "over" ? "over_quota" : "at_risk_quota"}
                 prefix={<Icon name="warning" size={11} color={status === "over" ? "var(--red-400)" : "var(--amber-500)"} />} />
@@ -210,7 +208,9 @@ function SubsidyQuotaOverview({ empty, quotaState }) {
                   : "Quota usage is high — may run out before month-end."}
               </span>
             </span>
-          )}
+          ) : status !== "none" && !empty ? (
+            <StatusBadge status="quota_safe" prefix={<Icon name="check_circle" size={11} color="var(--green-600)" />} />
+          ) : null}
         </div>
       </div>
 
@@ -221,28 +221,28 @@ function SubsidyQuotaOverview({ empty, quotaState }) {
           <div className="mfd-quota-empty-s">Quota will appear once your organisation is enrolled in a subsidy programme.</div>
         </div>
       ) : (
-        <>
-          <div className="mfd-quota-hero">
-            <div className="mfd-quota-caption">Total Used</div>
-            <div className="mfd-quota-hero-row">
-              <span className="mfd-quota-hero-used">{L0(used)}</span>
-              <span className="mfd-quota-hero-of">/ {L0(quota)}</span>
+        <div className="mfd-quota-body-top">
+          <div className="mfd-quota-toprow">
+            <div className="mfd-quota-metric">
+              <div className="mfd-quota-caption">Total Used</div>
+              <div className="mfd-quota-hero-used">{L0(used)}</div>
+              <div className="mfd-quota-hero-of">/ {L0(quota)}</div>
             </div>
-          </div>
 
-          <div className="mfd-quota-bar-wrap">
-            <div className="mfd-quota-tick-lbls">
-              <span style={{ left: q.thresholds.warning + "%" }}>{q.thresholds.warning}%</span>
-              <span className="danger" style={{ left: q.thresholds.danger + "%" }}>{q.thresholds.danger}%</span>
-            </div>
-            <div className="mfd-quota-track">
-              <div className={"mfd-quota-fill " + fillTone} style={{ width: Math.min(pct, 100) + "%" }} />
-              <div className="mfd-quota-marker" style={{ left: q.thresholds.warning + "%" }} />
-              <div className="mfd-quota-marker danger" style={{ left: q.thresholds.danger + "%" }} />
-            </div>
-            <div className="mfd-quota-bar-lbls">
-              <span>0 L</span>
-              <span>{L0(quota)}</span>
+            <div className="mfd-quota-bar-wrap">
+              <div className="mfd-quota-tick-lbls">
+                <span style={{ left: q.thresholds.warning + "%" }}>{q.thresholds.warning}%</span>
+                <span className="danger" style={{ left: q.thresholds.danger + "%" }}>{q.thresholds.danger}%</span>
+              </div>
+              <div className="mfd-quota-track">
+                <div className={"mfd-quota-fill " + fillTone} style={{ width: Math.min(pct, 100) + "%" }} />
+                <div className="mfd-quota-marker" style={{ left: q.thresholds.warning + "%" }} />
+                <div className="mfd-quota-marker danger" style={{ left: q.thresholds.danger + "%" }} />
+              </div>
+              <div className="mfd-quota-bar-lbls">
+                <span>0 L</span>
+                <span>{L0(quota)}</span>
+              </div>
             </div>
           </div>
 
@@ -260,11 +260,13 @@ function SubsidyQuotaOverview({ empty, quotaState }) {
               <div className="mfd-quota-stat-l">Est. runout</div>
             </div>
           </div>
+        </div>
+      )}
 
-          <div className="mfd-quota-disclaimer">
-            <Icon name="info" size={12} /> {disclaimer}
-          </div>
-        </>
+      {status !== "none" && !empty && (
+        <div className="mfd-quota-disclaimer">
+          <Icon name="info" size={12} /> {disclaimer}
+        </div>
       )}
     </div>
   );

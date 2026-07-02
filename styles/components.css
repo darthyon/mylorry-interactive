@@ -45,9 +45,10 @@
 .ml-badge.bal-frozen   { background: #fff; color: #BE2F2C; }
 
 /* Subsidy quota health (outline pill — border carries the tone, not a filled bg) */
-.ml-badge.quota-at-risk, .ml-badge.quota-over { border-radius: var(--radius-pill); }
+.ml-badge.quota-at-risk, .ml-badge.quota-over, .ml-badge.quota-safe { border-radius: var(--radius-pill); }
 .ml-badge.quota-at-risk { background: var(--amber-50); border: 1px solid var(--amber-500); color: var(--amber-500); }
 .ml-badge.quota-over    { background: #FFF0F0;         border: 1px solid var(--red-400);   color: var(--red-400);   }
+.ml-badge.quota-safe    { background: var(--green-50); border: 1px solid var(--green-500); color: var(--green-600); }
 
 /* Payout status */
 .ml-badge.payout-pending  { background: #FFF8E1;         color: #F57F17;         }

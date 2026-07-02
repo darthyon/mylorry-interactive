@@ -122,33 +122,34 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-quota-title{font-size:15px;font-weight:600;color:var(--fg-primary);}
 .mfd-quota-sub{font-size:12px;color:var(--fg-tertiary);margin-top:1px;}
 
-.mfd-quota-hero{margin-top:6px;}
+.mfd-quota-toprow{display:flex;align-items:flex-start;gap:20px;margin-top:12px;}
+.mfd-quota-metric{flex-shrink:0;width:170px;}
 .mfd-quota-caption{font-size:12px;font-weight:600;color:var(--fg-secondary);text-transform:capitalize;}
-.mfd-quota-hero-row{display:flex;align-items:baseline;gap:8px;margin-top:4px;}
-.mfd-quota-hero-used{font-size:32px;font-weight:700;color:var(--fg-primary);line-height:1.2;letter-spacing:-.01em;}
-.mfd-quota-hero-of{font-size:14px;font-weight:400;color:var(--fg-secondary);}
+.mfd-quota-hero-used{font-size:28px;font-weight:700;color:var(--fg-primary);line-height:1.2;letter-spacing:-.01em;margin-top:4px;}
+.mfd-quota-hero-of{font-size:12px;font-weight:400;color:var(--fg-secondary);}
 
-.mfd-quota-bar-wrap{margin-top:16px;}
+.mfd-quota-bar-wrap{flex:1;min-width:0;padding-top:2px;}
 .mfd-quota-tick-lbls{position:relative;height:12px;margin-bottom:4px;}
 .mfd-quota-tick-lbls span{position:absolute;transform:translateX(-50%);font-size:11px;font-weight:600;color:var(--amber-500);}
 .mfd-quota-tick-lbls span.danger{color:var(--red-400);}
-.mfd-quota-track{position:relative;height:12px;background:var(--bg-muted);border-radius:4px;overflow:visible;}
+.mfd-quota-track{position:relative;height:8px;background:var(--bg-muted);border-radius:4px;overflow:visible;}
 .mfd-quota-fill{height:100%;border-radius:4px;transition:width .4s ease;}
 .mfd-quota-fill.green{background:var(--green-500);}
 .mfd-quota-fill.amber{background:var(--amber-500);}
 .mfd-quota-fill.red{background:var(--red-400);}
-.mfd-quota-marker{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--amber-500);border-radius:1px;}
+.mfd-quota-marker{position:absolute;top:0;bottom:0;width:2px;background:var(--amber-500);border-radius:1px;}
 .mfd-quota-marker.danger{background:var(--red-400);}
 .mfd-quota-bar-lbls{display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--fg-disabled);margin-top:6px;}
 
-.mfd-quota-stats{display:flex;justify-content:space-between;margin-top:16px;padding-top:14px;border-top:1px solid var(--border-light);}
+.mfd-quota-body-top{flex:1;display:flex;flex-direction:column;}
+.mfd-quota-stats{display:flex;justify-content:space-between;margin-top:32px;}
 .mfd-quota-stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;}
 .mfd-quota-stat-v{font-size:16px;font-weight:600;color:var(--fg-primary);}
 .mfd-quota-stat-v.amber{color:var(--amber-600);}
 .mfd-quota-stat-v.red{color:var(--red-400);}
 .mfd-quota-stat-l{font-size:12px;color:var(--fg-secondary);}
 
-.mfd-quota-disclaimer{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-secondary);margin-top:10px;background:var(--bg-muted);border-radius:8px;padding:10px 12px;}
+.mfd-quota-disclaimer{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-secondary);margin-top:18px;background:var(--bg-muted);border-radius:8px;padding:10px 12px;}
 
 /* Tooltip on status badge */
 .mfd-tooltip-wrap{position:relative;display:inline-flex;align-items:center;gap:6px;}
@@ -314,9 +315,11 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .mfd-title{font-size:18px;}
   .mfd-cardhead{flex-direction:column;gap:10px;}
   .mfd-cardhead-actions{width:100%;}
-  .mfd-quota-head{flex-direction:column;gap:10px;}
-  .mfd-quota-head-right{width:100%;}
+  .mfd-quota-veh-card .mfd-quota-head{flex-direction:column;gap:10px;}
+  .mfd-quota-veh-card .mfd-quota-head-right{width:100%;}
   .mfd-vehicle-search{width:100%;}
+  .mfd-quota-hero-used{font-size:22px;}
+  .mfd-quota-metric{width:110px;}
   .mfd-vehicle-footer{flex-direction:column;align-items:flex-start;gap:10px;}
   .mfd-vehicle-footer-right{width:100%;justify-content:space-between;}
   .mfd-yaxis{width:26px;height:160px;font-size:9px;}

@@ -310,6 +310,7 @@ const STATUS_BADGE_META = {
   // Subsidy quota health
   at_risk_quota: { label:"At risk",    cls:"quota-at-risk" },
   over_quota:    { label:"Over quota", cls:"quota-over"    },
+  quota_safe:    { label:"Safe",       cls:"quota-safe"    },
 };
 function StatusBadge({ status, prefix, fallback = "activated" }) {
   const m = STATUS_BADGE_META[status] || STATUS_BADGE_META[fallback] || { label: status, cls: "" };
