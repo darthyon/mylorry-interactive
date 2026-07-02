@@ -68,7 +68,6 @@ window.MYFUEL_DASH = {
     {
       id: "subsidy-001",
       subsidyNo: "BUDI-458201",
-      type: "SKPS",
       monthLabel: "June 2026",
       used: 2250,
       quota: 5000,
@@ -99,7 +98,6 @@ window.MYFUEL_DASH = {
     {
       id: "subsidy-002",
       subsidyNo: "BUDI-458202",
-      type: "SKDS",
       monthLabel: "June 2026",
       used: 3240,
       quota: 5000,
@@ -127,7 +125,6 @@ window.MYFUEL_DASH = {
     {
       id: "subsidy-003",
       subsidyNo: "BUDI-458203",
-      type: "SKPS",
       monthLabel: "June 2026",
       used: 4680,
       quota: 5000,
@@ -168,7 +165,7 @@ window.MYFUEL_DASH = {
 
   /* ── Mini stat cards ──────────────────────────────────────────── */
   miniStats: {
-    mtdFuel: { litres: 3240, amount: 16488.00, subsidisedLitres: 2600, nonSubsidisedLitres: 640 },
+    mtdFuel: { litres: 6800, amount: 34600.00, subsidisedLitres: 2200, nonSubsidisedLitres: 4600 },
     rebate: { amount: 486.20, vsLastMonth: 32 },
     fleetCards: { active: 14, total: 16, frozen: 2 },
   },
@@ -181,34 +178,34 @@ window.MYFUEL_DASH = {
     today: {
       labels: ["00-04", "04-08", "08-12", "12-16", "16-20", "20-24"],
       litres: {
-        subsidised: [45, 120, 580, 490, 310, 180],
-        nonSubsidised: [12, 35, 140, 95, 70, 40],
+        subsidised: [12, 35, 140, 95, 70, 40],
+        nonSubsidised: [45, 120, 580, 490, 310, 180],
       },
       amount: {
-        subsidised: [230, 612, 2958, 2499, 1581, 918],
-        nonSubsidised: [78, 228, 913, 620, 456, 261],
+        subsidised: [78, 228, 913, 620, 456, 261],
+        nonSubsidised: [230, 612, 2958, 2499, 1581, 918],
       },
     },
     mtd: {
       labels: ["1 Jun", "2 Jun", "3 Jun", "4 Jun", "5 Jun", "6 Jun", "7 Jun", "8 Jun", "9 Jun"],
       litres: {
-        subsidised: [380, 420, 350, 510, 480, 390, 410, 450, 350],
-        nonSubsidised: [80, 95, 70, 110, 100, 85, 90, 105, 75],
+        subsidised: [80, 95, 70, 110, 100, 85, 90, 105, 75],
+        nonSubsidised: [380, 420, 350, 510, 480, 390, 410, 450, 350],
       },
       amount: {
-        subsidised: [1932, 2136, 1780, 2592, 2440, 1983, 2084, 2288, 1780],
-        nonSubsidised: [520, 618, 455, 715, 650, 553, 585, 683, 488],
+        subsidised: [520, 618, 455, 715, 650, 553, 585, 683, 488],
+        nonSubsidised: [1932, 2136, 1780, 2592, 2440, 1983, 2084, 2288, 1780],
       },
     },
     sixMonth: {
       labels: ["Jan 2026", "Feb 2026", "Mar 2026", "Apr 2026", "May 2026", "Jun 2026"],
       litres: {
-        subsidised: [5200, 4800, 6100, 5900, 7200, 3240],
-        nonSubsidised: [1100, 950, 1300, 1200, 1500, 850],
+        subsidised: [1100, 950, 1300, 1200, 1500, 850],
+        nonSubsidised: [5200, 4800, 6100, 5900, 7200, 5000],
       },
       amount: {
-        subsidised: [26452, 24418, 31047, 30023, 36642, 16488],
-        nonSubsidised: [7150, 6175, 8450, 7800, 9750, 5525],
+        subsidised: [7150, 6175, 8450, 7800, 9750, 5525],
+        nonSubsidised: [26452, 24418, 31047, 30023, 36642, 24600],
       },
     },
   },

@@ -170,7 +170,6 @@ function SubsidyPicker({ subsidies, selectedId, onSelect, onClose }) {
           <span className="mfd-subsidy-item-check">{s.id === selectedId && <Icon name="check" size={14} />}</span>
           <span className="mfd-subsidy-item-main">
             <span className="mfd-subsidy-item-name">{s.subsidyNo}</span>
-            <span className="mfd-subsidy-item-sub">{s.type}</span>
           </span>
           <span className="mfd-subsidy-item-val">{L0(s.used)} / {L0(s.quota)}</span>
         </button>
@@ -338,16 +337,21 @@ function SubsidyQuotaOverview({ empty, quotaState, subsidy, subsidies, subsidyId
         <div className="mfd-quota-head-right">
           {isWarning ? (
             <span className="mfd-tooltip-wrap" tabIndex={0}>
-              <StatusBadge status={isCritical ? "critical_quota" : "at_risk_quota"}
+              <StatusBadge
+                status={isCritical ? "critical_quota" : "at_risk_quota"}
+                label={(isCritical ? "Critical" : "At risk") + ` (${pct.toFixed(0)}%)`}
                 prefix={<Icon name="warning" size={11} color={isCritical ? "var(--red-400)" : "var(--amber-500)"} />} />
               <span className="mfd-tooltip">
                 {isCritical
-                    ? "Quota usage is critical, monthly limit reached or nearly reached."
-                  : "Quota usage is high — may run out before month-end."}
+                    ? `${pct.toFixed(0)}% of quota used — monthly limit reached or nearly reached.`
+                  : `${pct.toFixed(0)}% of quota used — may run out before month-end.`}
               </span>
             </span>
           ) : scenario !== "none" && !empty ? (
-            <StatusBadge status="quota_safe" prefix={<Icon name="check_circle" size={11} color="var(--green-600)" />} />
+            <StatusBadge
+              status="quota_safe"
+              label={`Available (${pct.toFixed(0)}%)`}
+              prefix={<Icon name="check_circle" size={11} color="var(--green-600)" />} />
           ) : null}
         </div>
       </div>
@@ -456,38 +460,40 @@ function SubsidyQuotaByVehicle({ empty, quotaState, subsidy }) {
         </div>
       ) : (
         <div className="mfd-quota-veh-body">
-          <div className="mfd-veh-quota-list">
-            {pageRows.map((r) => {
-              const vs = vehicleStatus(r.used, r.quota);
-              const vpct = r.quota ? (r.used / r.quota) * 100 : 0;
-              const displayUsed = r.quota > 0 ? Math.min(r.used, r.quota) : r.used;
-              return (
-                <div key={r.plate} className="mfd-veh-quota-row">
-                  <div className="mfd-veh-quota-lbl">{r.plate}</div>
-                  <div className="mfd-veh-quota-bar">
-                    <div className="mfd-veh-quota-track">
-                      {r.quota > 0 && <div className={"mfd-veh-quota-fill " + vs} style={{ width: Math.min(vpct, 100) + "%" }} />}
+          <div className="mfd-veh-quota-scroll">
+            <div className="mfd-veh-quota-list">
+              {pageRows.map((r) => {
+                const vs = vehicleStatus(r.used, r.quota);
+                const vpct = r.quota ? (r.used / r.quota) * 100 : 0;
+                const displayUsed = r.quota > 0 ? Math.min(r.used, r.quota) : r.used;
+                return (
+                  <div key={r.plate} className="mfd-veh-quota-row">
+                    <div className="mfd-veh-quota-lbl">{r.plate}</div>
+                    <div className="mfd-veh-quota-bar">
+                      <div className="mfd-veh-quota-track">
+                        {r.quota > 0 && <div className={"mfd-veh-quota-fill " + vs} style={{ width: Math.min(vpct, 100) + "%" }} />}
+                      </div>
+                    </div>
+                    <div className="mfd-veh-quota-val">
+                      {vs === "none" ? "No quota" : (
+                        <>
+                          <span>{L0(displayUsed)}</span>
+                          <span className="mfd-veh-quota-of"> / {L0(r.quota)}</span>
+                        </>
+                      )}
                     </div>
                   </div>
-                  <div className="mfd-veh-quota-val">
-                    {vs === "none" ? "No quota" : (
-                      <>
-                        <span>{L0(displayUsed)}</span>
-                        <span className="mfd-veh-quota-of"> / {L0(r.quota)}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mfd-vehicle-footer">
+                );
+              })}
+            </div>
             <div className="mfd-legend mfd-vehicle-legend">
               <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--red-400)" }} /> Critical</span>
               <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--amber-500)" }} /> At risk</span>
               <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--green-500)" }} /> Available</span>
             </div>
+          </div>
+
+          <div className="mfd-vehicle-footer">
             <div className="mfd-vehicle-footer-bottom">
               <span className="mfd-vehicle-pager-range">{vehRows.length ? `${start + 1}–${Math.min(start + pageRows.length, vehRows.length)} of ${vehRows.length}` : "0 of 0"}</span>
               <div className="mfd-vehicle-pagebtns">
@@ -564,8 +570,8 @@ function FuelUsageTrend({ empty, range }) {
   const data = D.usageTrend[range][metric];
   const labels = D.usageTrend[range].labels;
   const series = [
-    { key: "sub", label: "Subsidised", color: "var(--green-500)", values: data.subsidised },
-    { key: "non", label: "Non-subsidised", color: "#D6DAD8", values: data.nonSubsidised },
+    { key: "sub", label: "Subsidised", color: "var(--navy-800)", values: data.subsidised },
+    { key: "non", label: "Non-subsidised", color: "var(--green-500)", values: data.nonSubsidised },
   ];
   const totals = labels.map((_, i) => data.subsidised[i] + data.nonSubsidised[i]);
   const max = Math.max(...totals, 1);
@@ -607,8 +613,8 @@ function FuelUsageTrend({ empty, range }) {
                   )}
                   <div className={"mfd-bar-track" + (hover === i ? " active" : "")}>
                     <div className="mfd-bar-stack" style={{ height: (totals[i] / max * 100) + "%" }}>
-                      <div className="mfd-bar-seg" style={{ height: totals[i] ? (data.subsidised[i] / totals[i] * 100) + "%" : "0%", background: "var(--green-500)" }} />
-                      <div className="mfd-bar-seg" style={{ height: totals[i] ? (data.nonSubsidised[i] / totals[i] * 100) + "%" : "0%", background: "#D6DAD8" }} />
+                      <div className="mfd-bar-seg" style={{ height: totals[i] ? (data.subsidised[i] / totals[i] * 100) + "%" : "0%", background: series[0].color }} />
+                      <div className="mfd-bar-seg" style={{ height: totals[i] ? (data.nonSubsidised[i] / totals[i] * 100) + "%" : "0%", background: series[1].color }} />
                     </div>
                   </div>
                 </div>
@@ -876,7 +882,14 @@ function AccountActivity({ empty, tier }) {
         {activeTab.value === "rebate" && <RebateCards rows={D.rebates} empty={empty} tier={tier} />}
         {hasRows && activeTab.value !== "rebate" && (
           <div className="mfd-activity-viewall">
-            <button className="ml-btn-outline">View all</button>
+            <button className="ml-btn-text-blue">
+              {activeTab.value === "fuel"
+                ? "See all fuel transactions"
+                : activeTab.value === "topup"
+                  ? "See all top-up history"
+                  : "See all"}
+              <Icon name="chevron_right" size={16} />
+            </button>
           </div>
         )}
       </div>
@@ -887,7 +900,7 @@ function AccountActivity({ empty, tier }) {
 function TopPetrolStations({ empty }) {
   const [page, setPage] = useState(1);
   const stations = D.topPetrolStations || [];
-  const pageSize = 6;
+  const pageSize = 5;
   const pageCount = Math.max(1, Math.ceil(stations.length / pageSize));
   const safePage = Math.min(page, pageCount);
   const start = (safePage - 1) * pageSize;
@@ -946,7 +959,6 @@ function App() {
     ...D.subsidyQuota,
     id: "subsidy-default",
     subsidyNo: "BUDI-458200",
-    type: "SKPS",
     quotaByVehicle: D.quotaByVehicle,
   }];
   const [subsidyIdx, setSubsidyIdx] = useState(() => {

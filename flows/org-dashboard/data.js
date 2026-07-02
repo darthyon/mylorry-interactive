@@ -71,8 +71,8 @@ window.ORG_DASH = {
   // baseState: "active" (gated on tier) | "soon" (coming soon, never unlocks in v1)
   modules: [
     { key: "myfuel",      name: "MyFuel",      iconSrc: "icons/myfuel.svg",      minTier: "free"    },
-    { key: "myadmin",     name: "MyAdmin",     iconSrc: "icons/myadmin.svg",     minTier: "lite"    },
-    { key: "mytrip",      name: "MyTrip",      iconSrc: "icons/mytrip.svg",      minTier: "premium" },
+    { key: "myadmin",     name: "MyAdmin",     iconSrc: "icons/myadmin.svg",     minTier: "free"    },
+    { key: "mytrip",      name: "MyTrip",      iconSrc: "icons/mytrip.svg",      minTier: "free" },
     { key: "myinsurance", name: "MyInsurance", iconSrc: "icons/myinsurance.svg"                     },
     { key: "mytraining",  name: "MyTraining",  iconSrc: "icons/mytraining.svg",  soon: true         },
   ],
