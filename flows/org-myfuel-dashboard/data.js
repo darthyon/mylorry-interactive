@@ -197,6 +197,17 @@ window.MYFUEL_DASH = {
         nonSubsidised: [1932, 2136, 1780, 2592, 2440, 1983, 2084, 2288, 1780],
       },
     },
+    threeMonth: {
+      labels: ["Apr 2026", "May 2026", "Jun 2026"],
+      litres: {
+        subsidised: [1200, 1500, 850],
+        nonSubsidised: [5900, 7200, 5000],
+      },
+      amount: {
+        subsidised: [7800, 9750, 5525],
+        nonSubsidised: [30023, 36642, 24600],
+      },
+    },
     sixMonth: {
       labels: ["Jan 2026", "Feb 2026", "Mar 2026", "Apr 2026", "May 2026", "Jun 2026"],
       litres: {
@@ -206,6 +217,17 @@ window.MYFUEL_DASH = {
       amount: {
         subsidised: [7150, 6175, 8450, 7800, 9750, 5525],
         nonSubsidised: [26452, 24418, 31047, 30023, 36642, 24600],
+      },
+    },
+    twelveMonth: {
+      labels: ["Jul 2025", "Aug 2025", "Sep 2025", "Oct 2025", "Nov 2025", "Dec 2025", "Jan 2026", "Feb 2026", "Mar 2026", "Apr 2026", "May 2026", "Jun 2026"],
+      litres: {
+        subsidised: [900, 850, 920, 980, 1050, 1000, 1100, 950, 1300, 1200, 1500, 850],
+        nonSubsidised: [4200, 4100, 4500, 4800, 5100, 4900, 5200, 4800, 6100, 5900, 7200, 5000],
+      },
+      amount: {
+        subsidised: [5850, 5525, 5980, 6370, 6825, 6500, 7150, 6175, 8450, 7800, 9750, 5525],
+        nonSubsidised: [21366, 20870, 22910, 24418, 25992, 24973, 26452, 24418, 31047, 30023, 36642, 24600],
       },
     },
   },
@@ -282,17 +304,45 @@ window.MYFUEL_DASH = {
     { paidOn: "Paid on:", period: "01 Jul 2025 - 31 Jul 2025", accountNo: "000000", orgName: "Org 2101", provider: "Petron(referrer)", amount: 330.00, usage: 3600.00, groupUsage: 9800.00, type: "Credit note", status: "pending" },
   ],
 
-  /* ── Top 10 Petrol Stations ───────────────────────────────────── */
-  topPetrolStations: [
-    { rank: 1, name: "P-Northport SLG", pumps: 34, totalLitres: 3797.23, totalAmount: 22372.09 },
-    { rank: 2, name: "P-Mambau Northbound NSM", pumps: 20, totalLitres: 1330.17, totalAmount: 8362.00 },
-    { rank: 3, name: "P-Pedas NSM", pumps: 12, totalLitres: 838.00, totalAmount: 5426.00 },
-    { rank: 4, name: "P-Batu 8 Jln Bukit Kemuning SLG", pumps: 11, totalLitres: 882.02, totalAmount: 5171.00 },
-    { rank: 5, name: "P-S2 Heights NSM", pumps: 8, totalLitres: 554.12, totalAmount: 3614.00 },
-    { rank: 6, name: "P-Kesas Eastbound SLG", pumps: 7, totalLitres: 553.69, totalAmount: 3292.85 },
-    { rank: 7, name: "P-Gunung Semanggol North PRK", pumps: 7, totalLitres: 299.81, totalAmount: 1400.00 },
-    { rank: 8, name: "P-B20 Sepang SLG", pumps: 6, totalLitres: 461.75, totalAmount: 2736.00 },
-    { rank: 9, name: "P-Mambau NSM", pumps: 6, totalLitres: 335.30, totalAmount: 1565.70 },
-    { rank: 10, name: "P-R&R Rawang Northbound SLG", pumps: 5, totalLitres: 351.00, totalAmount: 2313.00 },
-  ],
+  /* ── Top 10 Petrol Stations ─────────────────────────────────────
+     Range-keyed rankings so the card follows the same plan-driven
+     period as Fuel Usage Trend (Free=3mo, Lite=6mo, Premium=12mo). */
+  topPetrolStations: {
+    threeMonth: [
+      { rank: 1, name: "P-Northport SLG", pumps: 34, totalLitres: 1898.62, totalAmount: 11186.05 },
+      { rank: 2, name: "P-Mambau Northbound NSM", pumps: 20, totalLitres: 798.10, totalAmount: 5017.20 },
+      { rank: 3, name: "P-Pedas NSM", pumps: 12, totalLitres: 502.80, totalAmount: 3255.60 },
+      { rank: 4, name: "P-Batu 8 Jln Bukit Kemuning SLG", pumps: 11, totalLitres: 529.21, totalAmount: 3102.60 },
+      { rank: 5, name: "P-S2 Heights NSM", pumps: 8, totalLitres: 332.47, totalAmount: 2168.40 },
+      { rank: 6, name: "P-Kesas Eastbound SLG", pumps: 7, totalLitres: 332.21, totalAmount: 1975.71 },
+      { rank: 7, name: "P-Gunung Semanggol North PRK", pumps: 7, totalLitres: 179.89, totalAmount: 840.00 },
+      { rank: 8, name: "P-B20 Sepang SLG", pumps: 6, totalLitres: 277.05, totalAmount: 1641.60 },
+      { rank: 9, name: "P-Mambau NSM", pumps: 6, totalLitres: 201.18, totalAmount: 939.42 },
+      { rank: 10, name: "P-R&R Rawang Northbound SLG", pumps: 5, totalLitres: 210.60, totalAmount: 1387.80 },
+    ],
+    sixMonth: [
+      { rank: 1, name: "P-Northport SLG", pumps: 34, totalLitres: 2847.92, totalAmount: 16779.07 },
+      { rank: 2, name: "P-Mambau Northbound NSM", pumps: 20, totalLitres: 1197.15, totalAmount: 7525.80 },
+      { rank: 3, name: "P-Pedas NSM", pumps: 12, totalLitres: 754.20, totalAmount: 4883.40 },
+      { rank: 4, name: "P-Batu 8 Jln Bukit Kemuning SLG", pumps: 11, totalLitres: 793.82, totalAmount: 4653.90 },
+      { rank: 5, name: "P-S2 Heights NSM", pumps: 8, totalLitres: 498.71, totalAmount: 3252.60 },
+      { rank: 6, name: "P-Kesas Eastbound SLG", pumps: 7, totalLitres: 498.32, totalAmount: 2963.57 },
+      { rank: 7, name: "P-Gunung Semanggol North PRK", pumps: 7, totalLitres: 269.83, totalAmount: 1260.00 },
+      { rank: 9, name: "P-B20 Sepang SLG", pumps: 6, totalLitres: 415.58, totalAmount: 2462.40 },
+      { rank: 8, name: "P-Mambau NSM", pumps: 6, totalLitres: 301.77, totalAmount: 1409.13 },
+      { rank: 10, name: "P-R&R Rawang Northbound SLG", pumps: 5, totalLitres: 315.90, totalAmount: 2081.70 },
+    ],
+    twelveMonth: [
+      { rank: 1, name: "P-Northport SLG", pumps: 34, totalLitres: 3797.23, totalAmount: 22372.09 },
+      { rank: 2, name: "P-Mambau Northbound NSM", pumps: 20, totalLitres: 1330.17, totalAmount: 8362.00 },
+      { rank: 3, name: "P-Pedas NSM", pumps: 12, totalLitres: 838.00, totalAmount: 5426.00 },
+      { rank: 4, name: "P-Batu 8 Jln Bukit Kemuning SLG", pumps: 11, totalLitres: 882.02, totalAmount: 5171.00 },
+      { rank: 5, name: "P-S2 Heights NSM", pumps: 8, totalLitres: 554.12, totalAmount: 3614.00 },
+      { rank: 6, name: "P-Kesas Eastbound SLG", pumps: 7, totalLitres: 553.69, totalAmount: 3292.85 },
+      { rank: 7, name: "P-Gunung Semanggol North PRK", pumps: 7, totalLitres: 299.81, totalAmount: 1400.00 },
+      { rank: 8, name: "P-B20 Sepang SLG", pumps: 6, totalLitres: 461.75, totalAmount: 2736.00 },
+      { rank: 9, name: "P-Mambau NSM", pumps: 6, totalLitres: 335.30, totalAmount: 1565.70 },
+      { rank: 10, name: "P-R&R Rawang Northbound SLG", pumps: 5, totalLitres: 351.00, totalAmount: 2313.00 },
+    ],
+  },
 };

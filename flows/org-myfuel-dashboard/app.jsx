@@ -632,9 +632,12 @@ const METRIC_OPTIONS = [
   { value: "amount", label: "Amount (RM)" },
 ];
 
+const RANGE_LABEL = { threeMonth: "Last 3 months", sixMonth: "Last 6 months", twelveMonth: "Last 12 months" };
+
 function FuelUsageTrend({ empty, range }) {
   const [metric, setMetric] = useState("litres");
   const [hover, setHover] = useState(null);
+  const rangeLabel = RANGE_LABEL[range] || "Last 6 months";
 
   if (empty) {
     return (
@@ -642,7 +645,7 @@ function FuelUsageTrend({ empty, range }) {
         <div className="mfd-cardhead">
           <div>
             <div className="mfd-cardhead-title">Fuel Usage Trend</div>
-            <div className="mfd-cardhead-sub">Last 6 months</div>
+            <div className="mfd-cardhead-sub">{rangeLabel}</div>
           </div>
 
         </div>
@@ -667,7 +670,7 @@ function FuelUsageTrend({ empty, range }) {
       <div className="mfd-cardhead">
         <div>
           <div className="mfd-cardhead-title">Fuel Usage Trend</div>
-          <div className="mfd-cardhead-sub">Last 6 months</div>
+          <div className="mfd-cardhead-sub">{rangeLabel}</div>
         </div>
         <div className="mfd-cardhead-actions">
           <Segmented value={metric} onChange={setMetric} options={METRIC_OPTIONS} />
@@ -981,11 +984,12 @@ function AccountActivity({ empty, tier }) {
   );
 }
 
-function TopPetrolStations({ empty }) {
-  const stations = D.topPetrolStations || [];
+function TopPetrolStations({ empty, range }) {
+  const stations = D.topPetrolStations?.[range] || [];
+  const rangeLabel = RANGE_LABEL[range] || "All time";
   return (
     <div className="mfd-card mfd-stations-card">
-      <CardHead icon="emoji_events" title="Top 10 Petrol Stations" sub="All time" />
+      <CardHead icon="emoji_events" title="Top 10 Petrol Stations" sub={rangeLabel} />
       {empty || !stations.length ? (
         <div className="mfd-stations-empty">No data available</div>
       ) : (
@@ -1099,8 +1103,8 @@ function QuotaSkeleton() {
 /* ── App ───────────────────────────────────────────────────────── */
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
-  const range = "sixMonth";
   const tier = t.subscription;
+  const range = { free: "threeMonth", lite: "sixMonth", premium: "twelveMonth" }[tier] || "sixMonth";
   const empty = !!t.emptyData;
   const subsidies = D.subsidyAccounts?.length ? D.subsidyAccounts : [{
     ...D.subsidyQuota,
@@ -1170,7 +1174,7 @@ function App() {
             </div>
             {t.showTopStations && (
               <div className="mfd-bottom-right">
-                <TopPetrolStations empty={empty} />
+                <TopPetrolStations empty={empty} range={range} />
               </div>
             )}
           </div>
