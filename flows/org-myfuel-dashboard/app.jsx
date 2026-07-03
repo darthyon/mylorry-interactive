@@ -26,21 +26,6 @@ const L = (n) => Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, m
 const L0 = (n) => Number(n).toLocaleString("en-US") + " L";
 const fuelAccountCode = (i) => `STG-PTN-${String(i + 1).padStart(3, "0")}`;
 
-/* Close this web view and return to the Flutter host app. */
-function closeToFlutter() {
-  try {
-    if (window.flutter_inappwebview?.callHandler) {
-      window.flutter_inappwebview.callHandler("closeWebView");
-      return;
-    }
-    if (window.webkit?.messageHandlers?.closeWebView) {
-      window.webkit.messageHandlers.closeWebView.postMessage("");
-      return;
-    }
-  } catch {}
-  window.history.back();
-}
-
 function LeaveConfirmModal({ onStay, onLeave }) {
   const wrapRef = useRef(null);
   useEffect(() => {
@@ -1134,7 +1119,7 @@ function App() {
           <button className="mfd-iconbtn mfd-close-btn" onClick={() => setShowLeaveModal(true)} aria-label="Close"><Icon name="close" size={18} /></button>
         </header>
         {showLeaveModal && (
-          <LeaveConfirmModal onStay={() => setShowLeaveModal(false)} onLeave={() => { setShowLeaveModal(false); closeToFlutter(); }} />
+          <LeaveConfirmModal onStay={() => setShowLeaveModal(false)} onLeave={() => { setShowLeaveModal(false); window.location.href = "../org-dashboard/index.html"; }} />
         )}
 
         <div className="mfd-content">
