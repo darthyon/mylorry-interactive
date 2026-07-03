@@ -91,9 +91,20 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-statscroll{display:contents;}
 
 /* Balance card */
-.mfd-balance{background:var(--gradient-balance-green);border:none;color:#fff;}
+.mfd-balance{background:var(--gradient-balance-green);border:none;color:#fff;position:relative;}
 .mfd-balance.amber{background:var(--gradient-balance-amber);}
 .mfd-balance.red{background:var(--gradient-balance-red);}
+
+/* — Edge nav arrows (hover-reveal, white + dark chevron) — */
+.mfd-bal-warrow{position:absolute;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;
+  background:rgba(255,255,255,.45);border:none;color:#1a3a25;
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;
+  opacity:0;transition:opacity .18s,background .15s;backdrop-filter:blur(4px);}
+.mfd-bal-warrow:hover{background:rgba(255,255,255,.72);}
+.mfd-balance:hover .mfd-bal-warrow{opacity:1;}
+.mfd-bal-wl{left:8px;}
+.mfd-bal-wr{right:8px;}
+
 .mfd-balance-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
 .mfd-balance-wname-wrap{position:relative;}
 .mfd-balance-wname{display:inline-flex;align-items:center;gap:5px;min-width:0;background:transparent;border:none;border-radius:5px;
@@ -189,6 +200,23 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 
 .mfd-quota-disclaimer{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-secondary);margin-top:12px;background:var(--bg-muted);border-radius:8px;padding:10px 12px;}
 
+/* Skeleton placeholders */
+@keyframes mfd-skel-shimmer{
+  0%{background-position:200% 0;}
+  100%{background-position:-200% 0;}
+}
+.mfd-skel-line,.mfd-skel-ico,.mfd-skel-track{
+  background:linear-gradient(90deg,var(--bg-muted) 25%,var(--bg-hover) 50%,var(--bg-muted) 75%);
+  background-size:200% 100%;
+  animation:mfd-skel-shimmer 1.6s infinite linear;
+  border-radius:4px;
+}
+.mfd-skel-line{margin-top:6px;}
+.mfd-skel-line:first-child{margin-top:0;}
+.mfd-skel-short{margin-top:8px;}
+.mfd-skel-ico{width:36px;height:36px;border-radius:10px;flex-shrink:0;}
+.mfd-skel-track{height:8px;border-radius:4px;width:100%;}
+
 /* Tooltip on status badge */
 .mfd-tooltip-wrap{position:relative;display:inline-flex;align-items:center;gap:6px;}
 .mfd-tooltip{position:absolute;top:calc(100% + 8px);right:0;background:#322F35;color:#fff;font-size:12px;line-height:1.5;padding:8px 11px;border-radius:6px;width:220px;pointer-events:none;opacity:0;transition:opacity .15s;z-index:10;text-align:left;}
@@ -206,10 +234,11 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 
 /* ── Section 3: Fuel Usage Trend + Top Stations bottom layout ─── */
 .mfd-bottom-layout{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:stretch;margin-top:16px;}
+.mfd-bottom-layout--single{grid-template-columns:1fr;}
 .mfd-bottom-left{display:flex;flex-direction:column;gap:16px;}
-.mfd-bottom-right{min-width:0;}
+.mfd-bottom-right{min-width:0;display:flex;flex-direction:column;min-height:0;}
 .mfd-trend-row{margin-top:0;}
-.mfd-stations-card{height:100%;display:flex;flex-direction:column;min-height:0;}
+.mfd-stations-card{flex:1;display:flex;flex-direction:column;min-height:0;max-height:100%;}
 .mfd-stations-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:0;padding-top:2px;}
 .mfd-stations-card .ml-history-card{box-shadow:0 1px 2px rgba(0,0,0,.04);}
 .mfd-stations-rank{width:24px;height:24px;border-radius:50%;background:var(--bg-muted);color:var(--fg-secondary);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
@@ -344,6 +373,18 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-status.processed{background:var(--green-50);color:var(--green-600);}
 .mfd-table-empty{text-align:center;color:var(--fg-tertiary);padding:34px 12px;font-size:13px;}
 
+/* Leave confirmation modal */
+.mfd-leave-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.mfd-leave-modal{background:#fff;border-radius:var(--radius-lg);width:100%;max-width:380px;padding:22px 24px 24px;box-shadow:0 8px 40px rgba(0,0,0,.18);text-align:center;}
+.mfd-leave-title{font-size:17px;font-weight:600;color:var(--fg-primary);margin-bottom:8px;}
+.mfd-leave-msg{font-size:13px;line-height:1.5;color:var(--fg-secondary);margin-bottom:22px;}
+.mfd-leave-actions{display:flex;gap:10px;justify-content:center;}
+.mfd-leave-actions button{height:38px;padding:0 16px;border-radius:8px;font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:background .15s;}
+.mfd-leave-stay{background:var(--bg-muted);color:var(--fg-primary);}
+.mfd-leave-stay:hover{background:var(--bg-hover);}
+.mfd-leave-exit{background:var(--green-600);color:#fff;}
+.mfd-leave-exit:hover{background:#009945;}
+
 /* Transaction detail modal */
 .mfd-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;}
 .mfd-modal{background:#fff;border-radius:var(--radius-lg);width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.22);}
@@ -435,6 +476,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .mfd-xlbl{font-size:9px;}
   .mfd-updated{display:none;}
   .mfd-org-name{max-width:160px;}
+  .mfd-bal-warrow{display:none;}
 }
 </style>
 </head>

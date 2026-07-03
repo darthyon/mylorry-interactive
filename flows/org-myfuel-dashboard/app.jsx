@@ -13,7 +13,8 @@ const { useTweaks, TweaksPanel, TweakSection, TweakSelect, TweakToggle } = windo
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "subscription": "premium",
   "emptyData": false,
-  "quotaState": "at-risk"
+  "quotaState": "at-risk",
+  "showTopStations": false
 }/*EDITMODE-END*/;
 
 const TIER_RANK = { free: 0, lite: 1, premium: 2 };
@@ -24,6 +25,44 @@ const RM0 = (n) => "RM " + Number(n).toLocaleString("en-US");
 const L = (n) => Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " L";
 const L0 = (n) => Number(n).toLocaleString("en-US") + " L";
 const fuelAccountCode = (i) => `STG-PTN-${String(i + 1).padStart(3, "0")}`;
+
+/* Close this web view and return to the Flutter host app. */
+function closeToFlutter() {
+  try {
+    if (window.flutter_inappwebview?.callHandler) {
+      window.flutter_inappwebview.callHandler("closeWebView");
+      return;
+    }
+    if (window.webkit?.messageHandlers?.closeWebView) {
+      window.webkit.messageHandlers.closeWebView.postMessage("");
+      return;
+    }
+  } catch {}
+  window.history.back();
+}
+
+function LeaveConfirmModal({ onStay, onLeave }) {
+  const wrapRef = useRef(null);
+  useEffect(() => {
+    function onKey(e) { if (e.key === "Escape") onStay(); }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onStay]);
+  function onBackdrop(e) { if (e.target === wrapRef.current) onStay(); }
+  return ReactDOM.createPortal(
+    <div className="mfd-leave-backdrop" ref={wrapRef} onMouseDown={onBackdrop} role="dialog" aria-modal="true" aria-label="Leave page confirmation">
+      <div className="mfd-leave-modal">
+        <div className="mfd-leave-title">Leave this page?</div>
+        <div className="mfd-leave-msg">Are you sure you want to leave this page? Your progress may not be saved.</div>
+        <div className="mfd-leave-actions">
+          <button type="button" className="mfd-leave-stay" onClick={onStay}>Stay</button>
+          <button type="button" className="mfd-leave-exit" onClick={onLeave}>Exit to Dashboard</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
 
 const balanceTone = (days) => (days >= 14 ? "" : days >= 5 ? " amber" : " red");
 
@@ -201,12 +240,47 @@ function BalanceSummary({ empty }) {
     }
   });
   const [pickerOpen, setPickerOpen] = useState(false);
+  const cardRef = useRef(null);
+  const touchX = useRef(null);
   const b = wallets[idx] || wallets[0];
   const tone = empty ? "" : balanceTone(b.daysRemaining); // "" | " amber" | " red"
   const forced = tone === " red" ? "critical" : tone === " amber" ? "low" : null;
 
+  function go(dir) {
+    setIdx(i => {
+      const next = (i + dir + wallets.length) % wallets.length;
+      try { localStorage.setItem("mfd_wallet_" + D.org.id, next); } catch {}
+      return next;
+    });
+  }
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el || !multi) return;
+    const onStart = (e) => { touchX.current = e.touches[0].clientX; };
+    const onEnd = (e) => {
+      if (touchX.current === null) return;
+      const dx = e.changedTouches[0].clientX - touchX.current;
+      if (Math.abs(dx) > 44) go(dx < 0 ? 1 : -1);
+      touchX.current = null;
+    };
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchend", onEnd, { passive: true });
+    return () => { el.removeEventListener("touchstart", onStart); el.removeEventListener("touchend", onEnd); };
+  }, [multi, wallets.length]);
+
   return (
-    <div className={"mfd-kpi mfd-balance" + tone}>
+    <div className={"mfd-kpi mfd-balance" + tone} ref={cardRef}>
+      {multi && (
+        <button className="mfd-bal-warrow mfd-bal-wl" onClick={() => go(-1)} aria-label="Previous wallet">
+          <Icon name="chevron_left" size={16} color="#1a3a25" />
+        </button>
+      )}
+      {multi && (
+        <button className="mfd-bal-warrow mfd-bal-wr" onClick={() => go(1)} aria-label="Next wallet">
+          <Icon name="chevron_right" size={16} color="#1a3a25" />
+        </button>
+      )}
       <div className="mfd-balance-top">
         <div className="mfd-balance-wname-wrap">
           <button className="mfd-balance-wname" onClick={() => multi && setPickerOpen((v) => !v)}
@@ -267,6 +341,19 @@ function BalanceSummary({ empty }) {
       )}
     </div>
   );
+}
+
+function aggregateQuotaByVehicle() {
+  const map = new Map();
+  (D.subsidyAccounts || []).forEach((s) => {
+    (s.quotaByVehicle || []).forEach((r) => {
+      const existing = map.get(r.plate) || { plate: r.plate, quota: 0, used: 0 };
+      existing.quota += r.quota || 0;
+      existing.used += r.used || 0;
+      map.set(r.plate, existing);
+    });
+  });
+  return Array.from(map.values()).sort((a, b) => b.used - a.used);
 }
 
 function vehicleStatus(used, quota) {
@@ -339,7 +426,7 @@ function SubsidyQuotaOverview({ empty, quotaState, subsidy, subsidies, subsidyId
             <span className="mfd-tooltip-wrap" tabIndex={0}>
               <StatusBadge
                 status={isCritical ? "critical_quota" : "at_risk_quota"}
-                label={(isCritical ? "Critical" : "At risk") + ` (${pct.toFixed(0)}%)`}
+                label={isCritical ? "Critical" : "At risk"}
                 prefix={<Icon name="warning" size={11} color={isCritical ? "var(--red-400)" : "var(--amber-500)"} />} />
               <span className="mfd-tooltip">
                 {isCritical
@@ -350,7 +437,7 @@ function SubsidyQuotaOverview({ empty, quotaState, subsidy, subsidies, subsidyId
           ) : scenario !== "none" && !empty ? (
             <StatusBadge
               status="quota_safe"
-              label={`Available (${pct.toFixed(0)}%)`}
+              label="Available"
               prefix={<Icon name="check_circle" size={11} color="var(--green-600)" />} />
           ) : null}
         </div>
@@ -414,16 +501,14 @@ function SubsidyQuotaOverview({ empty, quotaState, subsidy, subsidies, subsidyId
   );
 }
 
-function SubsidyQuotaByVehicle({ empty, quotaState, subsidy }) {
-  const { q, scenario } = deriveQuota(subsidy, quotaState, empty);
+function SubsidyQuotaByVehicle({ empty, quotaState }) {
+  const noData = empty || quotaState === "none";
 
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 5;
-  const sourceRows = q.quotaByVehicle || D.quotaByVehicle;
-  const vehRows = sourceRows
-    .filter((r) => !query || r.plate.toLowerCase().includes(query.toLowerCase()))
-    .sort((a, b) => b.used - a.used);
+  const vehRows = aggregateQuotaByVehicle()
+    .filter((r) => !query || r.plate.toLowerCase().includes(query.toLowerCase()));
   const pageCount = Math.max(1, Math.ceil(vehRows.length / pageSize));
   const safePage = Math.min(page, pageCount);
   const start = (safePage - 1) * pageSize;
@@ -437,11 +522,11 @@ function SubsidyQuotaByVehicle({ empty, quotaState, subsidy }) {
           <div>
             <div className="mfd-quota-title">Subsidy Quota by Vehicle</div>
             <div className="mfd-quota-sub">
-              {q.subsidyNo} · {q.monthLabel}{!(scenario === "none" || empty) && <> · {vehRows.length} vehicles</>}
+              All subsidies · June 2026{!noData && <> · {vehRows.length} vehicles</>}
             </div>
           </div>
         </div>
-        {!(scenario === "none" || empty) && (
+        {!noData && (
           <div className="mfd-quota-head-right">
             <label className="mfd-vehicle-search">
               <Icon name="search" size={15} />
@@ -452,7 +537,7 @@ function SubsidyQuotaByVehicle({ empty, quotaState, subsidy }) {
         )}
       </div>
 
-      {scenario === "none" || empty ? (
+      {noData ? (
         <div className="mfd-quota-empty">
           <Icon name="block" size={32} />
           <div>No subsidy quota data yet</div>
@@ -518,16 +603,15 @@ function MiniStats({ empty }) {
           { n: empty ? 0 : L0(s.mtdFuel.nonSubsidisedLitres), label: "Non-subsidy", tone: "gray" },
         ]} />
 
-      <CountCard fill icon="humidity_percentage" count={empty ? "RM 0.00" : RM(s.rebate.amount)} label="Rebate Earned" sub="This month" actionLabel="Open rebate history"
+      <CountCard fill icon="humidity_percentage" count={empty ? "RM 0.00" : RM(s.rebate.amount)} label="Rebate Earned" sub="Last month" actionLabel="Open rebate history"
         stats={[
-          { n: empty ? "RM 0" : `+RM ${s.rebate.vsLastMonth}`, label: "vs last month", tone: "green" },
-          { n: empty ? "RM 0.00/L" : `RM ${(s.rebate.amount / s.mtdFuel.litres).toFixed(2)}/L`, label: "Rebate rate", tone: "gray" },
+          { n: empty ? "RM 0" : `+RM ${s.rebate.vsLastMonth}`, label: "vs last 2 months", tone: "green" },
         ]} />
 
       <CountCard fill icon="credit_card" count={empty ? 0 : s.fleetCards.total} label="Fleet Cards" sub="Total issued" actionLabel="Open fleet cards"
         stats={[
           { n: empty ? 0 : s.fleetCards.active, label: "Active", tone: "green" },
-          { n: empty ? 0 : s.fleetCards.frozen, label: "Frozen", tone: "red" },
+          { n: empty ? 0 : s.fleetCards.frozen, label: "Suspended", tone: "red" },
         ]} />
     </div>
   );
@@ -548,9 +632,12 @@ const METRIC_OPTIONS = [
   { value: "amount", label: "Amount (RM)" },
 ];
 
+const RANGE_LABEL = { threeMonth: "Last 3 months", sixMonth: "Last 6 months", twelveMonth: "Last 12 months" };
+
 function FuelUsageTrend({ empty, range }) {
   const [metric, setMetric] = useState("litres");
   const [hover, setHover] = useState(null);
+  const rangeLabel = RANGE_LABEL[range] || "Last 6 months";
 
   if (empty) {
     return (
@@ -558,7 +645,7 @@ function FuelUsageTrend({ empty, range }) {
         <div className="mfd-cardhead">
           <div>
             <div className="mfd-cardhead-title">Fuel Usage Trend</div>
-            <div className="mfd-cardhead-sub">Last 6 months</div>
+            <div className="mfd-cardhead-sub">{rangeLabel}</div>
           </div>
 
         </div>
@@ -570,8 +657,8 @@ function FuelUsageTrend({ empty, range }) {
   const data = D.usageTrend[range][metric];
   const labels = D.usageTrend[range].labels;
   const series = [
-    { key: "sub", label: "Subsidised", color: "var(--navy-800)", values: data.subsidised },
     { key: "non", label: "Non-subsidised", color: "var(--green-500)", values: data.nonSubsidised },
+    { key: "sub", label: "Subsidised", color: "var(--navy-800)", values: data.subsidised },
   ];
   const totals = labels.map((_, i) => data.subsidised[i] + data.nonSubsidised[i]);
   const max = Math.max(...totals, 1);
@@ -583,7 +670,7 @@ function FuelUsageTrend({ empty, range }) {
       <div className="mfd-cardhead">
         <div>
           <div className="mfd-cardhead-title">Fuel Usage Trend</div>
-          <div className="mfd-cardhead-sub">Last 6 months</div>
+          <div className="mfd-cardhead-sub">{rangeLabel}</div>
         </div>
         <div className="mfd-cardhead-actions">
           <Segmented value={metric} onChange={setMetric} options={METRIC_OPTIONS} />
@@ -613,8 +700,8 @@ function FuelUsageTrend({ empty, range }) {
                   )}
                   <div className={"mfd-bar-track" + (hover === i ? " active" : "")}>
                     <div className="mfd-bar-stack" style={{ height: (totals[i] / max * 100) + "%" }}>
-                      <div className="mfd-bar-seg" style={{ height: totals[i] ? (data.subsidised[i] / totals[i] * 100) + "%" : "0%", background: series[0].color }} />
-                      <div className="mfd-bar-seg" style={{ height: totals[i] ? (data.nonSubsidised[i] / totals[i] * 100) + "%" : "0%", background: series[1].color }} />
+                      <div className="mfd-bar-seg" style={{ height: totals[i] ? (series[0].values[i] / totals[i] * 100) + "%" : "0%", background: series[0].color }} />
+                      <div className="mfd-bar-seg" style={{ height: totals[i] ? (series[1].values[i] / totals[i] * 100) + "%" : "0%", background: series[1].color }} />
                     </div>
                   </div>
                 </div>
@@ -897,54 +984,118 @@ function AccountActivity({ empty, tier }) {
   );
 }
 
-function TopPetrolStations({ empty }) {
-  const [page, setPage] = useState(1);
-  const stations = D.topPetrolStations || [];
-  const pageSize = 5;
-  const pageCount = Math.max(1, Math.ceil(stations.length / pageSize));
-  const safePage = Math.min(page, pageCount);
-  const start = (safePage - 1) * pageSize;
-  const visible = stations.slice(start, start + pageSize);
+function TopPetrolStations({ empty, range }) {
+  const stations = D.topPetrolStations?.[range] || [];
+  const rangeLabel = RANGE_LABEL[range] || "All time";
   return (
     <div className="mfd-card mfd-stations-card">
-      <CardHead icon="emoji_events" title="Top 10 Petrol Stations" sub="All time" />
+      <CardHead icon="emoji_events" title="Top 10 Petrol Stations" sub={rangeLabel} />
       {empty || !stations.length ? (
         <div className="mfd-stations-empty">No data available</div>
       ) : (
-        <>
-          <div className="mfd-stations-list">
-            {visible.map((s) => (
-              <HistoryCard
-                key={s.rank}
-                prefix={s.rank <= 3 ? (
-                  <span className="mfd-stations-medal">
-                    <Icon name="military_tech" size={22} fill={1} color={s.rank === 1 ? "#C19A00" : s.rank === 2 ? "#7D8794" : "#B87333"} />
-                    <span className="mfd-stations-medal-rank">{s.rank}</span>
-                  </span>
-                ) : null}
-                title={s.name}
-              >
-                <div className="ml-history-card-row">
-                  <div className="ml-history-card-cell"><strong>{L0(s.totalLitres)}</strong></div>
-                  <div className="ml-history-card-cell" style={{ textAlign: "right" }}><strong>{RM(s.totalAmount)}</strong></div>
+        <div className="mfd-stations-list">
+          {stations.map((s) => (
+            <HistoryCard
+              key={s.rank}
+              prefix={s.rank <= 3 ? (
+                <span className="mfd-stations-medal">
+                  <Icon name="military_tech" size={22} fill={1} color={s.rank === 1 ? "#C19A00" : s.rank === 2 ? "#7D8794" : "#B87333"} />
+                  <span className="mfd-stations-medal-rank">{s.rank}</span>
+                </span>
+              ) : null}
+              title={s.name}
+            >
+              <div className="ml-history-card-row">
+                <div className="ml-history-card-cell"><strong>{L0(s.totalLitres)}</strong></div>
+                <div className="ml-history-card-cell" style={{ textAlign: "right" }}><strong>{RM(s.totalAmount)}</strong></div>
+              </div>
+              <div className="ml-history-card-row full">
+                <div className="ml-history-card-cell">{s.pumps} pumps</div>
+              </div>
+            </HistoryCard>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Quota skeleton (shown under the lock scrim on Free plan) ──── */
+function SkeletonLine({ width, height = 12, className = "" }) {
+  return (
+    <div className={"mfd-skel-line " + className} style={{ width, height }} />
+  );
+}
+
+function QuotaSkeleton() {
+  return (
+    <div className="mfd-quota-row">
+      {/* Overview skeleton */}
+      <div className="mfd-kpi mfd-quota-card">
+        <div className="mfd-quota-head">
+          <div className="mfd-quota-head-main">
+            <div className="mfd-skel-ico" />
+            <div>
+              <SkeletonLine width={120} />
+              <SkeletonLine width={90} height={10} className="mfd-skel-short" />
+            </div>
+          </div>
+          <SkeletonLine width={72} height={22} />
+        </div>
+        <div className="mfd-quota-body-top">
+          <div className="mfd-quota-summary">
+            <div className="mfd-quota-summary-main">
+              <SkeletonLine width={140} height={28} />
+            </div>
+            <SkeletonLine width={100} height={10} />
+          </div>
+          <div className="mfd-quota-bar-wrap">
+            <div className="mfd-skel-track" />
+          </div>
+          <div className="mfd-quota-stats">
+            <div className="mfd-quota-stat">
+              <SkeletonLine width={70} height={18} />
+              <SkeletonLine width={80} height={10} />
+            </div>
+            <div className="mfd-quota-stat mfd-quota-stat-divided">
+              <SkeletonLine width={70} height={18} />
+              <SkeletonLine width={80} height={10} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* By-vehicle skeleton */}
+      <div className="mfd-kpi mfd-quota-card mfd-quota-veh-card">
+        <div className="mfd-quota-head">
+          <div className="mfd-quota-head-main">
+            <div className="mfd-skel-ico" />
+            <div>
+              <SkeletonLine width={160} />
+              <SkeletonLine width={110} height={10} className="mfd-skel-short" />
+            </div>
+          </div>
+          <SkeletonLine width={140} height={30} />
+        </div>
+        <div className="mfd-quota-veh-body">
+          <div className="mfd-veh-quota-list">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="mfd-veh-quota-row">
+                <SkeletonLine width={56} height={10} />
+                <div className="mfd-veh-quota-bar">
+                  <div className="mfd-skel-track" />
                 </div>
-                <div className="ml-history-card-row full">
-                  <div className="ml-history-card-cell">{s.pumps} pumps</div>
-                </div>
-              </HistoryCard>
+                <SkeletonLine width={70} height={10} />
+              </div>
             ))}
           </div>
-          {stations.length > pageSize && (
-            <div className="mfd-stations-footer">
-              <span className="mfd-stations-pager-range">{stations.length ? `${start + 1}–${Math.min(start + visible.length, stations.length)} of ${stations.length}` : "0 of 0"}</span>
-              <div className="mfd-stations-pagebtns">
-                <button type="button" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}><Icon name="chevron_left" size={16} /></button>
-                <button type="button" disabled={safePage >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))}><Icon name="chevron_right" size={16} /></button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+          <div className="mfd-legend mfd-vehicle-legend">
+            <SkeletonLine width={64} height={10} />
+            <SkeletonLine width={64} height={10} />
+            <SkeletonLine width={64} height={10} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -952,8 +1103,8 @@ function TopPetrolStations({ empty }) {
 /* ── App ───────────────────────────────────────────────────────── */
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
-  const range = "sixMonth";
   const tier = t.subscription;
+  const range = { free: "threeMonth", lite: "sixMonth", premium: "twelveMonth" }[tier] || "sixMonth";
   const empty = !!t.emptyData;
   const subsidies = D.subsidyAccounts?.length ? D.subsidyAccounts : [{
     ...D.subsidyQuota,
@@ -970,6 +1121,7 @@ function App() {
     }
   });
   const subsidy = subsidies[subsidyIdx] || subsidies[0];
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
 
   return (
     <div className="mfd-shell">
@@ -978,8 +1130,12 @@ function App() {
         <header className="mfd-topbar">
           <OrgSwitcher />
           <div className="mfd-topbar-spacer" />
-          <button className="mfd-iconbtn"><Icon name="notifications" size={18} /></button>
+          <button className="mfd-iconbtn" aria-label="Notifications"><Icon name="notifications" size={18} /></button>
+          <button className="mfd-iconbtn mfd-close-btn" onClick={() => setShowLeaveModal(true)} aria-label="Close"><Icon name="close" size={18} /></button>
         </header>
+        {showLeaveModal && (
+          <LeaveConfirmModal onStay={() => setShowLeaveModal(false)} onLeave={() => { setShowLeaveModal(false); closeToFlutter(); }} />
+        )}
 
         <div className="mfd-content">
           <PageHeader />
@@ -990,31 +1146,37 @@ function App() {
             <div className="mfd-quota-section">
               <LockSection locked={rank(tier) < rank("lite")} tier="lite"
                 note="Subsidy quota tracking is available on Lite and Premium plans.">
-                <div className="mfd-quota-row">
-                  <SubsidyQuotaOverview
-                    empty={empty}
-                    quotaState={t.quotaState}
-                    subsidy={subsidy}
-                    subsidies={subsidies}
-                    subsidyIdx={subsidyIdx}
-                    onSelectSubsidy={(i) => { setSubsidyIdx(i); try { localStorage.setItem("mfd_subsidy_" + D.org.id, i); } catch {} }}
-                  />
-                  <SubsidyQuotaByVehicle empty={empty} quotaState={t.quotaState} subsidy={subsidy} />
-                </div>
+                {rank(tier) < rank("lite") ? (
+                  <QuotaSkeleton />
+                ) : (
+                  <div className="mfd-quota-row">
+                    <SubsidyQuotaOverview
+                      empty={empty}
+                      quotaState={t.quotaState}
+                      subsidy={subsidy}
+                      subsidies={subsidies}
+                      subsidyIdx={subsidyIdx}
+                      onSelectSubsidy={(i) => { setSubsidyIdx(i); try { localStorage.setItem("mfd_subsidy_" + D.org.id, i); } catch {} }}
+                    />
+                    <SubsidyQuotaByVehicle empty={empty} quotaState={t.quotaState} />
+                  </div>
+                )}
               </LockSection>
             </div>
           )}
 
-          <div className="mfd-bottom-layout">
+          <div className={"mfd-bottom-layout" + (t.showTopStations ? "" : " mfd-bottom-layout--single")}>
             <div className="mfd-bottom-left">
               <div className="mfd-trend-row">
                 <FuelUsageTrend empty={empty} range={range} />
               </div>
               <AccountActivity empty={empty} tier={tier} />
             </div>
-            <div className="mfd-bottom-right">
-              <TopPetrolStations empty={empty} />
-            </div>
+            {t.showTopStations && (
+              <div className="mfd-bottom-right">
+                <TopPetrolStations empty={empty} range={range} />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1039,6 +1201,8 @@ function App() {
             { value: "none", label: "No quota" },
           ]}
           onChange={(v) => setTweak("quotaState", v)} />
+        <TweakSection label="Layout" />
+        <TweakToggle label="Show Top 10 Petrol Stations" value={t.showTopStations} onChange={(v) => setTweak("showTopStations", v)} />
       </TweaksPanel>
     </div>
   );
