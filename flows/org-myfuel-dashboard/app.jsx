@@ -96,20 +96,29 @@ function OrgSwitcher() {
   );
 }
 
-/* ── Left rail (Home / Organization / Account) ─────────────────── */
+/* ── Left rail (MyFuel org nav) ────────────────────────────────── */
 function Rail() {
   const RAIL = [
-    { iconKey: "home", label: "Home", active: true },
-    { iconKey: "org",  label: "Organization" },
-    { iconKey: "user", label: "Account" },
+    { icon: "space_dashboard", label: "Dashboard", active: true },
+    { icon: "group", label: "User" },
+    { icon: "credit_card", label: "Fleet Card" },
+    { icon: "receipt_long", label: "Balance History" },
+    { icon: "payments", label: "Top-Up" },
+    { icon: "sync", label: "Subsidy" },
+    { icon: "currency_exchange", label: "Transaction" },
+    { icon: "history", label: "Payments History" },
+    { icon: "description", label: "Report" },
   ];
   return (
     <nav className="mfd-rail">
-      <div className="mfd-rail-logo"><Icon name="local_shipping" size={22} color="#fff" /></div>
+      <div className="mfd-rail-profile">
+        <span className="mfd-rail-profile-avatar">{initials(D.org.name)}</span>
+        <Icon name="expand_more" size={14} color="var(--fg-secondary)" />
+      </div>
       {RAIL.map((r) => (
         <a key={r.label} href={r.active ? "../org-dashboard/index.html" : undefined}
            className={"mfd-rail-item" + (r.active ? " active" : "")} title={r.label}>
-          <img src={`../../public/ic-${r.iconKey}-${r.active ? "active" : "inactive"}.svg`} width={22} height={22} alt={r.label} />
+          <Icon name={r.icon} size={20} />
           <span>{r.label}</span>
         </a>
       ))}
