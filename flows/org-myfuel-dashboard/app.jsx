@@ -1134,7 +1134,7 @@ function App() {
           <button className="mfd-iconbtn mfd-close-btn" onClick={() => setShowLeaveModal(true)} aria-label="Close"><Icon name="close" size={18} /></button>
         </header>
         {showLeaveModal && (
-          <LeaveConfirmModal onStay={() => setShowLeaveModal(false)} onLeave={() => { setShowLeaveModal(false); closeToFlutter(); }} />
+          <LeaveConfirmModal onStay={() => setShowLeaveModal(false)} onLeave={() => { setShowLeaveModal(false); window.location.href = "../org-dashboard/index.html"; }} />
         )}
 
         <div className="mfd-content">
