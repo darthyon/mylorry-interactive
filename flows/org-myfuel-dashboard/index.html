@@ -239,20 +239,19 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 
 /* ── Section 2: Subsidy Quota row ─────────────────────────────── */
 .mfd-quota-section{margin-top:16px;}
-.mfd-quota-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch;}
+.mfd-quota-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch;border:1px solid var(--border-light);border-radius:var(--radius-lg);background:#fff;padding:16px;}
 
 /* ── Section 3: Fuel Usage Trend + Top Stations bottom layout ─── */
-.mfd-bottom-layout{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:stretch;margin-top:16px;}
+.mfd-bottom-layout{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start;margin-top:16px;}
 .mfd-bottom-layout--single{grid-template-columns:1fr;}
 .mfd-bottom-left{display:flex;flex-direction:column;gap:16px;}
-.mfd-bottom-right{min-width:0;display:flex;flex-direction:column;min-height:0;}
+.mfd-bottom-right{min-width:0;}
 .mfd-trend-row{margin-top:0;}
-.mfd-stations-card{flex:1;display:flex;flex-direction:column;min-height:0;max-height:100%;}
+.mfd-stations-card{display:flex;flex-direction:column;overflow:hidden;}
 .mfd-stations-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:0;padding-top:2px;}
-.mfd-stations-card .ml-history-card{box-shadow:0 1px 2px rgba(0,0,0,.04);}
+.mfd-stations-card .ml-history-card{box-shadow:0 1px 2px rgba(0,0,0,.04);flex-shrink:0;}
 .mfd-stations-rank{width:24px;height:24px;border-radius:50%;background:var(--bg-muted);color:var(--fg-secondary);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
-.mfd-stations-medal{position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
-.mfd-stations-medal-rank{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25);}
+.mfd-stations-medal{width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
 .mfd-stations-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;}
 .mfd-stations-pager-range{font-size:12px;color:var(--fg-secondary);}
 .mfd-stations-pagebtns{display:flex;align-items:center;gap:4px;}
@@ -504,7 +503,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .mfd-trend-card{overflow:hidden;}
   .mfd-cardhead-actions .ml-seg{width:100%;max-width:220px;}
   .mfd-cardhead-actions .ml-seg-btn{flex:1;min-width:0;font-size:12px;padding:8px 10px;white-space:nowrap;}
-  .mfd-stations-card{order:5;height:auto;}
+  .mfd-stations-card{order:5;height:auto!important;overflow:visible;}
   .mfd-activity{order:6;margin-top:0;}
   .mfd-shell .ml-statcard{padding:12px;}
   .mfd-shell .ml-statcard-ico{width:32px;height:32px;border-radius:9px;}
