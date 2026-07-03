@@ -169,29 +169,34 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-subsidy-item-sub{font-size:11px;color:var(--fg-tertiary);}
 .mfd-subsidy-item-val{font-size:12px;font-weight:600;color:var(--fg-secondary);white-space:nowrap;}
 
-.mfd-quota-body-top{flex:1;display:grid;grid-template-columns:1fr 3fr;gap:32px;align-items:center;min-height:0;}
-.mfd-quota-hero{display:flex;flex-direction:column;gap:4px;min-width:0;padding-left:8px;}
-.mfd-quota-hero-main{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;color:var(--fg-primary);}
-.mfd-quota-hero-used{font-size:34px;font-weight:700;line-height:1;letter-spacing:-.02em;white-space:nowrap;}
-.mfd-quota-hero-of{font-size:18px;font-weight:500;line-height:1;color:var(--fg-secondary);white-space:nowrap;}
-.mfd-quota-hero-unit{font-size:13px;font-weight:500;color:var(--fg-secondary);}
+.mfd-quota-summary{margin-top:10px;}
+.mfd-quota-summary-main{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;color:var(--fg-primary);}
+.mfd-quota-summary-strong{font-size:30px;font-weight:700;line-height:1.05;letter-spacing:-.02em;white-space:nowrap;}
+.mfd-quota-summary-mid{font-size:22px;font-weight:500;line-height:1;color:var(--fg-secondary);}
+.mfd-quota-summary-unit{font-size:14px;font-weight:500;line-height:1.2;color:var(--fg-secondary);}
+.mfd-quota-summary-sub{margin-top:6px;font-size:12px;line-height:1.35;color:var(--fg-secondary);}
 
-/* Gauge */
-.mfd-gauge{position:relative;display:flex;align-items:center;justify-content:flex-end;min-width:0;}
-.mfd-gauge-svg{width:100%;max-width:360px;height:auto;overflow:visible;}
-.mfd-gauge-tick{stroke:var(--border-light);stroke-width:1;stroke-linecap:round;opacity:.6;}
-.mfd-gauge-marker{stroke-width:1.5;stroke-linecap:round;}
-.mfd-gauge-marker-lbl{font-size:9px;font-weight:700;text-anchor:middle;}
-.mfd-gauge-marker-lbl.danger{font-size:9px;text-anchor:start;}
-.mfd-gauge-minmax{font-size:10px;font-weight:500;fill:var(--fg-tertiary);}
-.mfd-gauge-center{position:absolute;bottom:30%;left:50%;transform:translateX(-50%);text-align:center;}
-.mfd-gauge-pct{font-size:44px;font-weight:700;line-height:1;letter-spacing:-.03em;color:var(--fg-primary);}
-.mfd-gauge-label{font-size:11px;font-weight:500;color:var(--fg-secondary);margin-top:4px;}
+.mfd-quota-bar-wrap{min-width:0;padding-top:0;margin-top:14px;}
+.mfd-quota-tick-lbls{position:relative;height:12px;margin-bottom:6px;}
+.mfd-quota-tick-lbls span{position:absolute;transform:translateX(-50%);font-size:11px;font-weight:600;color:var(--amber-500);}
+.mfd-quota-tick-lbls span.danger{color:var(--red-400);}
+.mfd-quota-track{position:relative;height:8px;background:var(--bg-muted);border-radius:4px;overflow:visible;}
+.mfd-quota-fill{height:100%;border-radius:4px;transition:width .4s ease;}
+.mfd-quota-fill.green{background:var(--green-500);}
+.mfd-quota-fill.amber{background:var(--amber-500);}
+.mfd-quota-fill.red{background:var(--red-400);}
+.mfd-quota-marker{position:absolute;top:0;bottom:0;width:2px;background:var(--amber-500);border-radius:1px;}
+.mfd-quota-marker.danger{background:var(--red-400);}
+.mfd-quota-bar-lbls{display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--fg-disabled);margin-top:6px;}
 
-/* Gauge skeleton */
-.mfd-gauge-skel{position:relative;width:100%;max-width:360px;aspect-ratio:2/1.2;border-radius:140px 140px 0 0;
-  background:linear-gradient(90deg,var(--bg-muted) 25%,var(--bg-hover) 50%,var(--bg-muted) 75%);
-  background-size:200% 100%;animation:mfd-skel-shimmer 1.6s infinite linear;}
+.mfd-quota-body-top{flex:1;display:flex;flex-direction:column;}
+.mfd-quota-stats{display:flex;justify-content:space-between;align-items:stretch;margin-top:14px;margin-bottom:18px;border-top:none;padding-top:0;}
+.mfd-quota-stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.mfd-quota-stat-divided{border-left:1px solid var(--border-light);}
+.mfd-quota-stat-v{font-size:16px;font-weight:600;color:var(--fg-primary);}
+.mfd-quota-stat-v.amber{color:var(--amber-600);}
+.mfd-quota-stat-v.red{color:var(--red-400);}
+.mfd-quota-stat-l{font-size:12px;color:var(--fg-secondary);}
 
 .mfd-quota-disclaimer{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-secondary);margin-top:12px;background:var(--bg-muted);border-radius:8px;padding:10px 12px;}
 
@@ -459,13 +464,10 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .mfd-quota-veh-card .mfd-quota-head{flex-direction:column;gap:10px;}
   .mfd-quota-veh-card .mfd-quota-head-right{width:100%;}
   .mfd-vehicle-search{width:100%;}
-  .mfd-quota-body-top{grid-template-columns:1fr;gap:14px;}
-  .mfd-quota-hero-used{font-size:26px;}
-  .mfd-quota-hero-main{gap:5px;}
-  .mfd-quota-hero-of{font-size:14px;}
-  .mfd-gauge{justify-content:center;}
-  .mfd-gauge-svg{max-width:280px;}
-  .mfd-gauge-pct{font-size:32px;}
+  .mfd-quota-hero-used{font-size:22px;}
+  .mfd-quota-hero-row{gap:5px;}
+  .mfd-quota-hero-of{font-size:12px;}
+  .mfd-quota-metric{width:136px;padding-left:2px;}
   .mfd-vehicle-footer{gap:12px;}
   .mfd-vehicle-footer-bottom{width:100%;}
   .mfd-yaxis{width:26px;height:160px;font-size:9px;}

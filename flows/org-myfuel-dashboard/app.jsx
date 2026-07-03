@@ -343,73 +343,6 @@ function BalanceSummary({ empty }) {
   );
 }
 
-/* ── SVG gauge for Subsidy Quota ──────────────────────────────── */
-function polarToCartesian(cx, cy, r, angleDeg) {
-  const angleRad = (angleDeg * Math.PI) / 180;
-  return { x: cx + r * Math.cos(angleRad), y: cy - r * Math.sin(angleRad) };
-}
-
-function describeArc(cx, cy, r, startDeg, endDeg) {
-  const start = polarToCartesian(cx, cy, r, startDeg);
-  const end = polarToCartesian(cx, cy, r, endDeg);
-  const largeArc = endDeg <= startDeg ? 0 : 1;
-  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`;
-}
-
-function QuotaGauge({ pct, quota, fillTone, warning, danger }) {
-  const cx = 100, cy = 100, r = 80, stroke = 7;
-  const endDeg = Math.max(0, 180 - (pct / 100) * 180);
-  const warningDeg = Math.max(0, 180 - (warning / 100) * 180);
-  const dangerDeg = Math.max(0, 180 - (danger / 100) * 180);
-
-  const color = fillTone === "red" ? "var(--red-400)" : fillTone === "amber" ? "var(--amber-500)" : "var(--green-500)";
-  const trackColor = "var(--bg-muted)";
-
-  function markerPos(deg, offset = 0) {
-    return polarToCartesian(cx, cy, r + offset, deg);
-  }
-
-  const warnPos = markerPos(warningDeg, 2);
-  const warnOuter = markerPos(warningDeg, 18);
-  const dangerPos = markerPos(dangerDeg, 2);
-  const dangerOuter = { x: cx + r + 24, y: cy - 2 };
-
-  // Tick marks around outer edge
-  const ticks = [];
-  for (let i = 0; i <= 16; i++) {
-    const deg = 180 - i * 11.25;
-    const inner = polarToCartesian(cx, cy, r + 7, deg);
-    const outer = polarToCartesian(cx, cy, r + 11, deg);
-    ticks.push(<line key={i} x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y} className="mfd-gauge-tick" />);
-  }
-
-  return (
-    <div className="mfd-gauge">
-      <svg viewBox="0 0 200 128" className="mfd-gauge-svg">
-        {/* Track arc */}
-        <path d={describeArc(cx, cy, r, 180, 0)} fill="none" stroke={trackColor} strokeWidth={stroke} strokeLinecap="round" />
-        {/* Tick marks */}
-        {ticks}
-        {/* Fill arc */}
-        <path d={describeArc(cx, cy, r, 180, endDeg)} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" />
-        {/* Warning marker */}
-        <line x1={warnPos.x} y1={warnPos.y} x2={warnOuter.x} y2={warnOuter.y} className="mfd-gauge-marker" stroke="var(--amber-500)" />
-        <text x={warnOuter.x} y={warnOuter.y - 6} className="mfd-gauge-marker-lbl" fill="var(--amber-500)">{warning}%</text>
-        {/* Danger marker */}
-        <line x1={dangerPos.x} y1={dangerPos.y} x2={dangerOuter.x} y2={dangerOuter.y} className="mfd-gauge-marker" stroke="var(--red-400)" />
-        <text x={dangerOuter.x + 4} y={dangerOuter.y + 2} className="mfd-gauge-marker-lbl danger" fill="var(--red-400)">{danger}%</text>
-        {/* Min / Max labels (only volume, no percentage) */}
-        <text x="20" y="120" className="mfd-gauge-minmax">0 L</text>
-        <text x="180" y="120" textAnchor="end" className="mfd-gauge-minmax">{L0(quota)}</text>
-      </svg>
-      <div className="mfd-gauge-center">
-        <div className="mfd-gauge-pct">{pct.toFixed(1)}%</div>
-        <div className="mfd-gauge-label">used this month</div>
-      </div>
-    </div>
-  );
-}
-
 function aggregateQuotaByVehicle() {
   const map = new Map();
   (D.subsidyAccounts || []).forEach((s) => {
@@ -452,10 +385,12 @@ function deriveQuota(subsidy, quotaState, empty) {
 }
 
 function SubsidyQuotaOverview({ empty, quotaState, subsidy, subsidies, subsidyIdx, onSelectSubsidy }) {
-  const { q, scenario, used, quota, pct } = deriveQuota(subsidy, quotaState, empty);
+  const { q, scenario, used, quota, remaining, pct } = deriveQuota(subsidy, quotaState, empty);
   const isCritical = pct >= q.thresholds.danger;
   const isWarning = pct >= q.thresholds.warning;
   const fillTone = isCritical ? "red" : isWarning ? "amber" : "green";
+  const alertTone = isCritical ? "red" : isWarning ? "amber" : "";
+  const pctLabel = `${pct.toFixed(1)}%`;
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const disclaimer = "Quota is renewed every 1st week of the month";
@@ -516,21 +451,51 @@ function SubsidyQuotaOverview({ empty, quotaState, subsidy, subsidies, subsidyId
         </div>
       ) : (
         <div className="mfd-quota-body-top">
-          <div className="mfd-quota-hero">
-            <div className="mfd-quota-hero-main">
-              <span className="mfd-quota-hero-used">{L0(used)}</span>
-              <span className="mfd-quota-hero-of">/ {L0(quota)}</span>
+          <div className="mfd-quota-summary">
+            <div className="mfd-quota-summary-main">
+              <span className="mfd-quota-summary-strong">{L0(used)}</span>
+              <span className="mfd-quota-summary-mid">/</span>
+              <span className="mfd-quota-summary-strong">{L0(quota)}</span>
+              <span className="mfd-quota-summary-unit">monthly quota</span>
             </div>
-            <div className="mfd-quota-hero-unit">monthly quota</div>
+            <div className="mfd-quota-summary-sub">{pctLabel} used this month</div>
           </div>
-          <QuotaGauge pct={pct} used={used} quota={quota} fillTone={fillTone} warning={q.thresholds.warning} danger={q.thresholds.danger} />
+
+          <div className="mfd-quota-bar-wrap">
+            <div className="mfd-quota-tick-lbls">
+              <span style={{ left: q.thresholds.warning + "%" }}>{q.thresholds.warning}%</span>
+              <span className="danger" style={{ left: q.thresholds.danger + "%" }}>{q.thresholds.danger}%</span>
+            </div>
+            <div className="mfd-quota-track">
+              <div className={"mfd-quota-fill " + fillTone} style={{ width: Math.min(pct, 100) + "%" }} />
+              <div className="mfd-quota-marker" style={{ left: q.thresholds.warning + "%" }} />
+              <div className="mfd-quota-marker danger" style={{ left: q.thresholds.danger + "%" }} />
+            </div>
+            <div className="mfd-quota-bar-lbls">
+              <span>0 L</span>
+              <span>{L0(quota)}</span>
+            </div>
+          </div>
+
+          <div className="mfd-quota-stats">
+            <div className="mfd-quota-stat">
+              <div className="mfd-quota-stat-v">{L0(remaining)}</div>
+              <div className="mfd-quota-stat-l">Remaining quota</div>
+            </div>
+            <div className="mfd-quota-stat mfd-quota-stat-divided">
+              <div className={"mfd-quota-stat-v " + alertTone}>~{q.estimatedRunoutDays} days</div>
+              <div className="mfd-quota-stat-l">Est. runout</div>
+            </div>
+          </div>
         </div>
       )}
 
       {scenario !== "none" && !empty && (
-        <div className="mfd-quota-disclaimer">
-          <Icon name="info" size={12} /> {disclaimer}
-        </div>
+        <>
+          <div className="mfd-quota-disclaimer">
+            <Icon name="info" size={12} /> {disclaimer}
+          </div>
+        </>
       )}
     </div>
   );
@@ -1078,11 +1043,25 @@ function QuotaSkeleton() {
           <SkeletonLine width={72} height={22} />
         </div>
         <div className="mfd-quota-body-top">
-          <div className="mfd-quota-hero">
-            <SkeletonLine width={160} height={32} />
-            <SkeletonLine width={90} height={12} className="mfd-skel-short" />
+          <div className="mfd-quota-summary">
+            <div className="mfd-quota-summary-main">
+              <SkeletonLine width={140} height={28} />
+            </div>
+            <SkeletonLine width={100} height={10} />
           </div>
-          <div className="mfd-gauge-skel" />
+          <div className="mfd-quota-bar-wrap">
+            <div className="mfd-skel-track" />
+          </div>
+          <div className="mfd-quota-stats">
+            <div className="mfd-quota-stat">
+              <SkeletonLine width={70} height={18} />
+              <SkeletonLine width={80} height={10} />
+            </div>
+            <div className="mfd-quota-stat mfd-quota-stat-divided">
+              <SkeletonLine width={70} height={18} />
+              <SkeletonLine width={80} height={10} />
+            </div>
+          </div>
         </div>
       </div>
 
