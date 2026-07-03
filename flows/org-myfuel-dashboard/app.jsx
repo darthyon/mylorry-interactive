@@ -96,33 +96,72 @@ function OrgSwitcher() {
   );
 }
 
-/* ── Left rail (MyFuel org nav) ────────────────────────────────── */
-function Rail() {
-  const RAIL = [
-    { icon: "space_dashboard", label: "Dashboard", active: true },
-    { icon: "group", label: "User" },
-    { icon: "credit_card", label: "Fleet Card" },
-    { icon: "receipt_long", label: "Balance History" },
-    { icon: "payments", label: "Top-Up" },
-    { icon: "sync", label: "Subsidy" },
-    { icon: "currency_exchange", label: "Transaction" },
-    { icon: "history", label: "Payments History" },
-    { icon: "description", label: "Report" },
-  ];
+
+
+const RAIL_ITEMS = [
+  { icon: "space_dashboard", label: "Dashboard", active: true },
+  { icon: "group", label: "User" },
+  { icon: "credit_card", label: "Fleet Card" },
+  { icon: "receipt_long", label: "Balance History" },
+  { icon: "payments", label: "Top-Up" },
+  { icon: "sync", label: "Subsidy" },
+  { icon: "currency_exchange", label: "Transaction" },
+  { icon: "history", label: "Payments History" },
+  { icon: "description", label: "Report" },
+];
+
+function RailMenu({ className = "", itemClass = "", onItemClick }) {
   return (
-    <nav className="mfd-rail">
-      <div className="mfd-rail-profile">
-        <span className="mfd-rail-profile-avatar">{initials(D.org.name)}</span>
-        <Icon name="expand_more" size={14} color="var(--fg-secondary)" />
-      </div>
-      {RAIL.map((r) => (
+    <>
+      {RAIL_ITEMS.map((r) => (
         <a key={r.label} href={r.active ? "../org-dashboard/index.html" : undefined}
-           className={"mfd-rail-item" + (r.active ? " active" : "")} title={r.label}>
+           className={itemClass + (r.active ? " active" : "")} title={r.label} onClick={onItemClick}>
           <Icon name={r.icon} size={20} />
           <span>{r.label}</span>
         </a>
       ))}
-    </nav>
+    </>
+  );
+}
+
+/* ── Left rail (desktop) + mobile drawer ───────────────────────── */
+function Rail({ mobileOpen, onClose }) {
+  const drawerRef = useRef(null);
+  useEffect(() => {
+    function onKey(e) { if (e.key === "Escape" && mobileOpen) onClose(); }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [mobileOpen, onClose]);
+
+  return (
+    <>
+      <nav className="mfd-rail" aria-label="Main navigation">
+        <div className="mfd-rail-profile">
+          <span className="mfd-rail-profile-avatar">{initials(D.org.name)}</span>
+          <Icon name="expand_more" size={14} color="var(--fg-secondary)" />
+        </div>
+        <RailMenu itemClass="mfd-rail-item" />
+      </nav>
+
+      {mobileOpen && (
+        <div className="mfd-drawer-backdrop" onClick={onClose} role="presentation">
+          <div className="mfd-drawer" ref={drawerRef} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Navigation menu">
+            <div className="mfd-drawer-header">
+              <div className="mfd-drawer-profile">
+                <span className="mfd-rail-profile-avatar">{initials(D.org.name)}</span>
+                <span className="mfd-drawer-org">{D.org.name}</span>
+              </div>
+              <button type="button" className="mfd-iconbtn mfd-drawer-close" onClick={onClose} aria-label="Close menu">
+                <Icon name="close" size={18} />
+              </button>
+            </div>
+            <nav className="mfd-drawer-menu" aria-label="Mobile navigation">
+              <RailMenu itemClass="mfd-drawer-item" onItemClick={onClose} />
+            </nav>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -1315,15 +1354,19 @@ function App() {
   });
   const subsidy = subsidies[subsidyIdx] || subsidies[0];
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
     <div className="mfd-shell">
-      <Rail />
+      <Rail mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
       <div className="mfd-main">
         <header className="mfd-topbar">
+          <button type="button" className="mfd-hamburger" onClick={() => setMobileNavOpen(true)} aria-label="Open menu">
+            <Icon name="menu" size={20} />
+          </button>
           <OrgSwitcher />
           <div className="mfd-topbar-spacer" />
-          <button className="mfd-iconbtn" aria-label="Notifications"><Icon name="notifications" size={18} /></button>
+          <button className="mfd-iconbtn mfd-notifications-btn" aria-label="Notifications"><Icon name="notifications" size={18} /></button>
           <button className="mfd-iconbtn mfd-close-btn" onClick={() => setShowLeaveModal(true)} aria-label="Close"><Icon name="close" size={18} /></button>
         </header>
         {showLeaveModal && (
