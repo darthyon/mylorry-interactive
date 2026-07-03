@@ -369,19 +369,202 @@ function deriveQuota(subsidy, quotaState, empty) {
   return { q, scenario, used, quota, remaining, pct };
 }
 
-function SubsidyQuotaOverview({ empty, quotaState, subsidy, subsidies, subsidyIdx, onSelectSubsidy }) {
+function QuotaGauge({ pct, quota, warning, danger, tone }) {
+  const hostRef = useRef(null);
+
+  useEffect(() => {
+    const node = hostRef.current;
+    const echarts = window.echarts;
+    if (!node || !echarts) return undefined;
+
+    const chart = echarts.getInstanceByDom(node) || echarts.init(node, null, { renderer: "canvas" });
+    const clampedPct = Math.max(0, Math.min(100, Number(pct) || 0));
+    const toneColor = tone === "red"
+      ? "#FF7476"
+      : tone === "amber"
+        ? "#F5A623"
+        : "#00AA4F";
+    const subtleTick = "#D7DDE3";
+    const quietText = "#757575";
+    const strongText = "#141D2C";
+
+    function pointFor(percent, radiusX, radiusY, width, height, centerX, centerY) {
+      const angle = Math.PI - (Math.PI * percent / 100);
+      return {
+        x: centerX + Math.cos(angle) * radiusX,
+        y: centerY - Math.sin(angle) * radiusY,
+      };
+    }
+
+    function render() {
+      const width = node.clientWidth || 560;
+      const height = node.clientHeight || 320;
+      const centerX = width * 0.5;
+      const centerY = height * 0.64;
+      const radiusX = Math.min(width * 0.41, 235);
+      const radiusY = Math.min(height * 0.57, 180);
+
+      chart.setOption({
+        animationDuration: 450,
+        animationDurationUpdate: 450,
+        series: [
+          {
+            type: "gauge",
+            min: 0,
+            max: 100,
+            startAngle: 180,
+            endAngle: 0,
+            center: ["50%", "64%"],
+            radius: "88%",
+            splitNumber: 10,
+            progress: {
+              show: true,
+              width: 18,
+              roundCap: true,
+              itemStyle: { color: toneColor },
+            },
+            pointer: { show: false },
+            anchor: { show: false },
+            axisLine: {
+              roundCap: true,
+              lineStyle: {
+                width: 18,
+                color: [[1, "#E8EAEE"]],
+              },
+            },
+            axisTick: {
+              show: true,
+              splitNumber: 4,
+              distance: -26,
+              lineStyle: {
+                color: subtleTick,
+                width: 2,
+              },
+              length: 6,
+            },
+            splitLine: {
+              show: true,
+              distance: -28,
+              length: 12,
+              lineStyle: {
+                color: subtleTick,
+                width: 2,
+              },
+            },
+            axisLabel: { show: false },
+            title: {
+              show: true,
+              offsetCenter: [0, "14%"],
+              color: quietText,
+              fontSize: 12,
+              fontWeight: 500,
+            },
+            detail: {
+              valueAnimation: true,
+              offsetCenter: [0, "-13%"],
+              formatter: (value) => `${value.toFixed(1)}%`,
+              color: strongText,
+              fontSize: 44,
+              fontWeight: 700,
+            },
+            data: [{ value: clampedPct, name: "used this month" }],
+          },
+        ],
+        graphic: [
+          {
+            type: "text",
+            left: Math.max(0, centerX - radiusX),
+            top: centerY + 18,
+            style: {
+              text: "0 L",
+              fill: quietText,
+              fontSize: 11,
+              fontWeight: 500,
+              textAlign: "left",
+            },
+          },
+          {
+            type: "text",
+            left: centerX + radiusX - 54,
+            top: centerY + 18,
+            style: {
+              text: L0(quota),
+              fill: quietText,
+              fontSize: 11,
+              fontWeight: 500,
+              textAlign: "right",
+            },
+          },
+        ],
+      }, true);
+    }
+
+    render();
+    const resize = () => render();
+    window.addEventListener("resize", resize);
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      chart.dispose();
+    };
+  }, [danger, pct, quota, tone, warning]);
+
+  return <div ref={hostRef} className="mfd-quota-gauge" aria-label={`Subsidy quota usage ${pct.toFixed(1)} percent`} />;
+}
+
+function SubsidyQuotaCombinedCard({ empty, quotaState, subsidy, subsidies, subsidyIdx, onSelectSubsidy }) {
   const { q, scenario, used, quota, remaining, pct } = deriveQuota(subsidy, quotaState, empty);
   const isCritical = pct >= q.thresholds.danger;
   const isWarning = pct >= q.thresholds.warning;
   const fillTone = isCritical ? "red" : isWarning ? "amber" : "green";
-  const alertTone = isCritical ? "red" : isWarning ? "amber" : "";
-  const pctLabel = `${pct.toFixed(1)}%`;
   const [pickerOpen, setPickerOpen] = useState(false);
+  const availableMax = q.thresholds.warning - 1;
+  const riskMin = q.thresholds.warning;
+  const riskMax = q.thresholds.danger - 1;
+  const noData = scenario === "none" || empty;
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [isMobileViewport, setIsMobileViewport] = useState(() => {
+    try {
+      return window.innerWidth <= 680;
+    } catch {
+      return false;
+    }
+  });
+  const [vehicleOpen, setVehicleOpen] = useState(() => {
+    try {
+      return window.innerWidth > 680;
+    } catch {
+      return true;
+    }
+  });
+  const [expandedVehicle, setExpandedVehicle] = useState(null);
+  const pageSize = 5;
+  const vehRows = aggregateQuotaByVehicle()
+    .filter((r) => !query || r.plate.toLowerCase().includes(query.toLowerCase()));
+  const pageCount = Math.max(1, Math.ceil(vehRows.length / pageSize));
+  const safePage = Math.min(page, pageCount);
+  const start = (safePage - 1) * pageSize;
+  const pageRows = vehRows.slice(start, start + pageSize);
+
+  useEffect(() => {
+    function onResize() {
+      const mobile = window.innerWidth <= 680;
+      setIsMobileViewport(mobile);
+      if (!mobile) {
+        setVehicleOpen(true);
+        setExpandedVehicle(null);
+      }
+    }
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const disclaimer = "Quota is renewed every 1st week of the month";
 
   return (
-    <div className="mfd-kpi mfd-quota-card">
+    <div className="mfd-kpi mfd-quota-card mfd-quota-card-combined">
       <div className="mfd-quota-head">
         <div className="mfd-quota-head-main">
           <div className="mfd-quota-ico"><Icon name="local_gas_station" size={18} /></div>
@@ -428,100 +611,6 @@ function SubsidyQuotaOverview({ empty, quotaState, subsidy, subsidies, subsidyId
         </div>
       </div>
 
-      {scenario === "none" || empty ? (
-        <div className="mfd-quota-empty">
-          <Icon name="block" size={32} />
-          <div>No subsidy quota data yet</div>
-          <div className="mfd-quota-empty-s">Data will appear once fuel usage starts or a subsidy quota file is uploaded.</div>
-        </div>
-      ) : (
-        <div className="mfd-quota-body-top">
-          <div className="mfd-quota-summary">
-            <div className="mfd-quota-summary-main">
-              <span className="mfd-quota-summary-strong">{L0(used)}</span>
-              <span className="mfd-quota-summary-mid">/</span>
-              <span className="mfd-quota-summary-strong">{L0(quota)}</span>
-              <span className="mfd-quota-summary-unit">monthly quota</span>
-            </div>
-            <div className="mfd-quota-summary-sub">{pctLabel} used this month</div>
-          </div>
-
-          <div className="mfd-quota-bar-wrap">
-            <div className="mfd-quota-tick-lbls">
-              <span style={{ left: q.thresholds.warning + "%" }}>{q.thresholds.warning}%</span>
-              <span className="danger" style={{ left: q.thresholds.danger + "%" }}>{q.thresholds.danger}%</span>
-            </div>
-            <div className="mfd-quota-track">
-              <div className={"mfd-quota-fill " + fillTone} style={{ width: Math.min(pct, 100) + "%" }} />
-              <div className="mfd-quota-marker" style={{ left: q.thresholds.warning + "%" }} />
-              <div className="mfd-quota-marker danger" style={{ left: q.thresholds.danger + "%" }} />
-            </div>
-            <div className="mfd-quota-bar-lbls">
-              <span>0 L</span>
-              <span>{L0(quota)}</span>
-            </div>
-          </div>
-
-          <div className="mfd-quota-stats">
-            <div className="mfd-quota-stat">
-              <div className="mfd-quota-stat-v">{L0(remaining)}</div>
-              <div className="mfd-quota-stat-l">Remaining quota</div>
-            </div>
-            <div className="mfd-quota-stat mfd-quota-stat-divided">
-              <div className={"mfd-quota-stat-v " + alertTone}>~{q.estimatedRunoutDays} days</div>
-              <div className="mfd-quota-stat-l">Est. runout</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {scenario !== "none" && !empty && (
-        <>
-          <div className="mfd-quota-disclaimer">
-            <Icon name="info" size={12} /> {disclaimer}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function SubsidyQuotaByVehicle({ empty, quotaState }) {
-  const noData = empty || quotaState === "none";
-
-  const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
-  const pageSize = 5;
-  const vehRows = aggregateQuotaByVehicle()
-    .filter((r) => !query || r.plate.toLowerCase().includes(query.toLowerCase()));
-  const pageCount = Math.max(1, Math.ceil(vehRows.length / pageSize));
-  const safePage = Math.min(page, pageCount);
-  const start = (safePage - 1) * pageSize;
-  const pageRows = vehRows.slice(start, start + pageSize);
-
-  return (
-    <div className="mfd-kpi mfd-quota-card mfd-quota-veh-card">
-      <div className="mfd-quota-head">
-        <div className="mfd-quota-head-main">
-          <div className="mfd-quota-ico"><Icon name="local_shipping" size={18} /></div>
-          <div>
-            <div className="mfd-quota-title">Subsidy Quota by Vehicle</div>
-            <div className="mfd-quota-sub">
-              All subsidies · June 2026{!noData && <> · {vehRows.length} vehicles</>}
-            </div>
-          </div>
-        </div>
-        {!noData && (
-          <div className="mfd-quota-head-right">
-            <label className="mfd-vehicle-search">
-              <Icon name="search" size={15} />
-              <input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Search vehicle" aria-label="Search vehicle" />
-              {query && <button type="button" onClick={() => { setQuery(""); setPage(1); }} aria-label="Clear"><Icon name="close" size={14} /></button>}
-            </label>
-          </div>
-        )}
-      </div>
-
       {noData ? (
         <div className="mfd-quota-empty">
           <Icon name="block" size={32} />
@@ -529,50 +618,160 @@ function SubsidyQuotaByVehicle({ empty, quotaState }) {
           <div className="mfd-quota-empty-s">Data will appear once fuel usage starts or a subsidy quota file is uploaded.</div>
         </div>
       ) : (
-        <div className="mfd-quota-veh-body">
-          <div className="mfd-veh-quota-scroll">
-            <div className="mfd-veh-quota-list">
-              {pageRows.map((r) => {
-                const vs = vehicleStatus(r.used, r.quota);
-                const vpct = r.quota ? (r.used / r.quota) * 100 : 0;
-                const displayUsed = r.quota > 0 ? Math.min(r.used, r.quota) : r.used;
-                return (
-                  <div key={r.plate} className="mfd-veh-quota-row">
-                    <div className="mfd-veh-quota-lbl">{r.plate}</div>
-                    <div className="mfd-veh-quota-bar">
-                      <div className="mfd-veh-quota-track">
-                        {r.quota > 0 && <div className={"mfd-veh-quota-fill " + vs} style={{ width: Math.min(vpct, 100) + "%" }} />}
+        <>
+          <div className="mfd-quota-body-top mfd-quota-body-top-combined">
+            <div className="mfd-quota-layout mfd-quota-layout-combined">
+              <div className="mfd-quota-copy mfd-quota-copy-centered">
+                <div className="mfd-quota-summary mfd-quota-summary-centered">
+                  <div className="mfd-quota-summary-main mfd-quota-summary-main-centered">
+                    <span className="mfd-quota-summary-strong">{L0(used)}</span>
+                    <span className="mfd-quota-summary-mid">/</span>
+                    <span className="mfd-quota-summary-strong">{L0(quota)}</span>
+                  </div>
+                  <div className="mfd-quota-summary-unit mfd-quota-summary-unit-block">monthly quota</div>
+                </div>
+
+                <div className="mfd-quota-gauge-side">
+                  <div className="mfd-quota-gauge-wrap">
+                    <QuotaGauge
+                      pct={pct}
+                      quota={quota}
+                      warning={q.thresholds.warning}
+                      danger={q.thresholds.danger}
+                      tone={fillTone}
+                    />
+                  </div>
+                  <div className="mfd-legend mfd-quota-legend">
+                    <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--red-400)" }} /> Critical: {q.thresholds.danger}%</span>
+                    <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--amber-500)" }} /> At risk: {riskMin}-{riskMax}%</span>
+                    <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--green-500)" }} /> Available: 0-{availableMax}%</span>
+                  </div>
+                </div>
+
+                <div className="mfd-quota-disclaimer mfd-quota-disclaimer-left">
+                  <Icon name="info" size={12} /> {disclaimer}
+                </div>
+              </div>
+
+              <div className="mfd-quota-vehicle-side">
+                <div className="mfd-quota-vehicle-head">
+                  {isMobileViewport ? (
+                    <button
+                      type="button"
+                      className="mfd-quota-vehicle-toggle"
+                      onClick={() => setVehicleOpen((v) => !v)}
+                      aria-expanded={vehicleOpen}
+                    >
+                      <div className="mfd-quota-vehicle-head-copy">
+                        <div className="mfd-quota-title mfd-quota-vehicle-title">Subsidy usage by vehicle</div>
+                        <div className="mfd-quota-sub">
+                          June 2026 · {vehRows.length} vehicles
+                        </div>
+                      </div>
+                      <Icon name={vehicleOpen ? "expand_less" : "expand_more"} size={18} color="var(--fg-secondary)" />
+                    </button>
+                  ) : (
+                    <>
+                      <div className="mfd-quota-vehicle-head-copy">
+                        <div className="mfd-quota-title mfd-quota-vehicle-title">Subsidy usage by vehicle</div>
+                        <div className="mfd-quota-sub">
+                          June 2026 · {vehRows.length} vehicles
+                        </div>
+                      </div>
+                      <label className="mfd-vehicle-search">
+                        <Icon name="search" size={15} />
+                        <input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Search vehicle" aria-label="Search vehicle" />
+                        {query && <button type="button" onClick={() => { setQuery(""); setPage(1); }} aria-label="Clear"><Icon name="close" size={14} /></button>}
+                      </label>
+                    </>
+                  )}
+                </div>
+
+                <div className={"mfd-quota-veh-body mfd-quota-veh-body-combined" + (isMobileViewport && !vehicleOpen ? " is-collapsed" : "")}>
+                  <div className="mfd-veh-quota-scroll">
+                    {isMobileViewport && (
+                      <label className="mfd-vehicle-search mfd-vehicle-search-mobile">
+                        <Icon name="search" size={15} />
+                        <input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Search vehicle" aria-label="Search vehicle" />
+                        {query && <button type="button" onClick={() => { setQuery(""); setPage(1); }} aria-label="Clear"><Icon name="close" size={14} /></button>}
+                      </label>
+                    )}
+                    <div className="mfd-veh-quota-list">
+                      {pageRows.map((r) => {
+                        const vs = vehicleStatus(r.used, r.quota);
+                        const vpct = r.quota ? (r.used / r.quota) * 100 : 0;
+                        const displayUsed = r.quota > 0 ? Math.min(r.used, r.quota) : r.used;
+                        const remaining = Math.max(0, (r.quota || 0) - displayUsed);
+                        const isExpanded = expandedVehicle === r.plate;
+                        return (
+                          <div key={r.plate} className={"mfd-veh-quota-item" + (isExpanded ? " is-expanded" : "")}>
+                            <button
+                              type="button"
+                              className={"mfd-veh-quota-row" + (isMobileViewport ? " is-mobile" : "")}
+                              onClick={isMobileViewport ? () => setExpandedVehicle((v) => v === r.plate ? null : r.plate) : undefined}
+                              aria-expanded={isMobileViewport ? isExpanded : undefined}
+                            >
+                              <div className="mfd-veh-quota-lbl">{r.plate}</div>
+                              <div className="mfd-veh-quota-bar">
+                                <div className="mfd-veh-quota-track">
+                                  {r.quota > 0 && <div className={"mfd-veh-quota-fill " + vs} style={{ width: Math.min(vpct, 100) + "%" }} />}
+                                </div>
+                              </div>
+                              {isMobileViewport ? (
+                                <div className="mfd-veh-quota-more">
+                                  <Icon name={isExpanded ? "expand_less" : "expand_more"} size={16} color="var(--fg-tertiary)" />
+                                </div>
+                              ) : (
+                                <div className="mfd-veh-quota-val">
+                                  {vs === "none" ? "No quota" : (
+                                    <>
+                                      <span>{L0(displayUsed)}</span>
+                                      <span className="mfd-veh-quota-of"> / {L0(r.quota)}</span>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </button>
+                            {isMobileViewport && isExpanded && (
+                              <div className="mfd-veh-quota-popover">
+                                <div className="mfd-veh-quota-detail-row">
+                                  <span>Used</span>
+                                  <strong>{L0(displayUsed)}</strong>
+                                </div>
+                                <div className="mfd-veh-quota-detail-row">
+                                  <span>Quota</span>
+                                  <strong>{L0(r.quota)}</strong>
+                                </div>
+                                <div className="mfd-veh-quota-detail-row">
+                                  <span>Remaining</span>
+                                  <strong>{L0(remaining)}</strong>
+                                </div>
+                                <div className="mfd-veh-quota-detail-row">
+                                  <span>Status</span>
+                                  <strong>{vs === "critical" ? "Critical" : vs === "at-risk" ? "At risk" : vs === "none" ? "No quota" : "Available"}</strong>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="mfd-vehicle-footer">
+                      <div className="mfd-vehicle-footer-bottom">
+                        <span className="mfd-vehicle-pager-range">{vehRows.length ? `${start + 1}–${Math.min(start + pageRows.length, vehRows.length)} of ${vehRows.length}` : "0 of 0"}</span>
+                        <div className="mfd-vehicle-pagebtns">
+                          <button type="button" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}><Icon name="chevron_left" size={16} /></button>
+                          <button type="button" disabled={safePage >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))}><Icon name="chevron_right" size={16} /></button>
+                        </div>
                       </div>
                     </div>
-                    <div className="mfd-veh-quota-val">
-                      {vs === "none" ? "No quota" : (
-                        <>
-                          <span>{L0(displayUsed)}</span>
-                          <span className="mfd-veh-quota-of"> / {L0(r.quota)}</span>
-                        </>
-                      )}
-                    </div>
                   </div>
-                );
-              })}
-            </div>
-            <div className="mfd-legend mfd-vehicle-legend">
-              <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--red-400)" }} /> Critical</span>
-              <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--amber-500)" }} /> At risk</span>
-              <span className="mfd-leg"><span className="mfd-leg-dot" style={{ background: "var(--green-500)" }} /> Available</span>
-            </div>
-          </div>
-
-          <div className="mfd-vehicle-footer">
-            <div className="mfd-vehicle-footer-bottom">
-              <span className="mfd-vehicle-pager-range">{vehRows.length ? `${start + 1}–${Math.min(start + pageRows.length, vehRows.length)} of ${vehRows.length}` : "0 of 0"}</span>
-              <div className="mfd-vehicle-pagebtns">
-                <button type="button" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}><Icon name="chevron_left" size={16} /></button>
-                <button type="button" disabled={safePage >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))}><Icon name="chevron_right" size={16} /></button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
@@ -1134,17 +1333,14 @@ function App() {
                 {rank(tier) < rank("lite") ? (
                   <QuotaSkeleton />
                 ) : (
-                  <div className="mfd-quota-row">
-                    <SubsidyQuotaOverview
-                      empty={empty}
-                      quotaState={t.quotaState}
-                      subsidy={subsidy}
-                      subsidies={subsidies}
-                      subsidyIdx={subsidyIdx}
-                      onSelectSubsidy={(i) => { setSubsidyIdx(i); try { localStorage.setItem("mfd_subsidy_" + D.org.id, i); } catch {} }}
-                    />
-                    <SubsidyQuotaByVehicle empty={empty} quotaState={t.quotaState} />
-                  </div>
+                  <SubsidyQuotaCombinedCard
+                    empty={empty}
+                    quotaState={t.quotaState}
+                    subsidy={subsidy}
+                    subsidies={subsidies}
+                    subsidyIdx={subsidyIdx}
+                    onSelectSubsidy={(i) => { setSubsidyIdx(i); try { localStorage.setItem("mfd_subsidy_" + D.org.id, i); } catch {} }}
+                  />
                 )}
               </LockSection>
             </div>
