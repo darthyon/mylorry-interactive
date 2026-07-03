@@ -605,7 +605,7 @@ function MiniStats({ empty }) {
 
       <CountCard fill icon="humidity_percentage" count={empty ? "RM 0.00" : RM(s.rebate.amount)} label="Rebate Earned" sub="Last month" actionLabel="Open rebate history"
         stats={[
-          { n: empty ? "RM 0" : `+RM ${s.rebate.vsLastMonth}`, label: "vs previous month", tone: "green" },
+          { n: empty ? "RM 0" : `+RM ${s.rebate.vsLastMonth}`, label: "vs last 2 months", tone: "green" },
         ]} />
 
       <CountCard fill icon="credit_card" count={empty ? 0 : s.fleetCards.total} label="Fleet Cards" sub="Total issued" actionLabel="Open fleet cards"
