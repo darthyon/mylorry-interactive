@@ -1216,11 +1216,49 @@ function AccountActivity({ empty, tier }) {
   );
 }
 
+const MEDAL_PATHS = {
+  1: "M12.5 18V12.948C12.5 12.374 12.5 12.086 12.27 12.015C11.763 11.858 11 12.999 11 12.999M14 17.999L12.5 18L11 17.999M13.56 2L11 7.898M18 2L15.179 8.5M10.44 2L12 5.594M6 2L8.821 8.5",
+  2: "M10.5 13.118C10.58 12.333 11.108 12 11.658 12H12.324C12.874 12 13.401 12.333 13.481 13.118C13.5054 13.3721 13.5054 13.6279 13.481 13.882C13.432 14.36 12.854 14.909 12.854 14.909L12 15.5C12 15.5 10.5 16.5 10.5 17.5C10.5 18.04 10.937 18 11.477 18H13.481M13.56 2L11 7.898M18 2L15.179 8.5M10.44 2L12 5.594M6 2L8.821 8.5",
+  3: "M10.5 13.118C10.58 12.333 11.107 12 11.658 12H12.324C12.874 12 13.401 12.333 13.481 13.118C13.5054 13.3721 13.5054 13.6279 13.481 13.882C13.415 14.53 12.971 15 12.491 15M12.491 15C12.971 15 13.415 15.47 13.481 16.118C13.5054 16.3721 13.5054 16.6279 13.481 16.882C13.401 17.667 12.874 18 12.324 18H11.658C11.107 18 10.58 17.667 10.5 16.882M12.491 15H12.431M13.56 2L11 7.898M18 2L15.179 8.5M10.44 2L12 5.594M6 2L8.821 8.5",
+};
+
+function MedalIcon({ rank, color }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M5 15C5 11.134 8.022 8 11.75 8H12.25C15.978 8 19 11.134 19 15C19 18.866 15.978 22 12.25 22H11.75C8.022 22 5 18.866 5 15Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={MEDAL_PATHS[rank]} stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function TopPetrolStations({ empty, range }) {
   const stations = D.topPetrolStations?.[range] || [];
   const rangeLabel = RANGE_LABEL[range] || "All time";
+  const cardRef = useRef(null);
+
+  useEffect(() => {
+    const card = cardRef.current;
+    const layout = card && card.closest(".mfd-bottom-layout");
+    const leftCol = layout && layout.querySelector(".mfd-bottom-left");
+    if (!card || !leftCol) return;
+
+    const mq = window.matchMedia("(min-width: 681px)");
+    function sync() {
+      card.style.height = mq.matches ? leftCol.offsetHeight + "px" : "";
+    }
+    sync();
+
+    const ro = new ResizeObserver(sync);
+    ro.observe(leftCol);
+    mq.addEventListener("change", sync);
+    return () => {
+      ro.disconnect();
+      mq.removeEventListener("change", sync);
+    };
+  }, [empty, range]);
+
   return (
-    <div className="mfd-card mfd-stations-card">
+    <div className="mfd-card mfd-stations-card" ref={cardRef}>
       <CardHead icon="emoji_events" title="Top 10 Petrol Stations" sub={rangeLabel} />
       {empty || !stations.length ? (
         <div className="mfd-stations-empty">No data available</div>
@@ -1231,8 +1269,7 @@ function TopPetrolStations({ empty, range }) {
               key={s.rank}
               prefix={s.rank <= 3 ? (
                 <span className="mfd-stations-medal">
-                  <Icon name="military_tech" size={22} fill={1} color={s.rank === 1 ? "#C19A00" : s.rank === 2 ? "#7D8794" : "#B87333"} />
-                  <span className="mfd-stations-medal-rank">{s.rank}</span>
+                  <MedalIcon rank={s.rank} color={s.rank === 1 ? "#C19A00" : s.rank === 2 ? "#7D8794" : "#B87333"} />
                 </span>
               ) : null}
               title={s.name}
