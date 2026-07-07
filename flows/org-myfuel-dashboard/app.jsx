@@ -137,8 +137,10 @@ function Rail({ mobileOpen, onClose }) {
     <>
       <nav className="mfd-rail" aria-label="Main navigation">
         <div className="mfd-rail-profile">
-          <span className="mfd-rail-profile-avatar">{initials(D.org.name)}</span>
-          <Icon name="expand_more" size={14} color="var(--fg-secondary)" />
+          <div className="mfd-rail-avatar-wrap">
+            <div className="mfd-rail-avatar"><Icon name="person" size={18} fill={1} color="#94A8B2" /></div>
+            <span className="mfd-rail-org-badge">ORG</span>
+          </div>
         </div>
         <RailMenu itemClass="mfd-rail-item" />
       </nav>
@@ -171,7 +173,6 @@ function PageHeader() {
     <div className="mfd-pagehead">
       <div>
         <h1 className="mfd-title">MyFuel Dashboard</h1>
-        <div className="mfd-breadcrumb">Home / MyFuel / Dashboard</div>
       </div>
     </div>
   );
@@ -214,7 +215,7 @@ function WalletPicker({ wallets, selectedId, onSelect, onClose }) {
           onClick={() => onSelect(i)} role="menuitem">
           <span className="mfd-wallet-item-check">{w.id === selectedId && <Icon name="check" size={14} />}</span>
           <span className="mfd-wallet-item-logo"><WalletLogo wallet={w} size={14} /></span>
-          <span className="mfd-wallet-item-name">{w.name}</span>
+          <span className="mfd-wallet-item-name">{w.accNo}</span>
           <span className="mfd-wallet-item-bal">{RM(w.amount)}</span>
         </button>
       ))}
@@ -319,7 +320,7 @@ function BalanceSummary({ empty }) {
           <button className="mfd-balance-wname" onClick={() => multi && setPickerOpen((v) => !v)}
             aria-haspopup={multi ? "true" : undefined} style={!multi ? { cursor: "default" } : {}}>
             <WalletLogo wallet={b} size={14} />
-            <span className="mfd-balance-wname-label">{b.name}</span>
+            <span className="mfd-balance-wname-label">{b.accNo}</span>
             {multi && <Icon name="expand_more" size={13} color="rgba(255,255,255,.65)"
               style={{ flexShrink: 0, transition: "transform .15s", transform: pickerOpen ? "rotate(180deg)" : "rotate(0deg)" }} />}
           </button>
@@ -1403,7 +1404,6 @@ function App() {
           </button>
           <OrgSwitcher />
           <div className="mfd-topbar-spacer" />
-          <button className="mfd-iconbtn mfd-notifications-btn" aria-label="Notifications"><Icon name="notifications" size={18} /></button>
           <button className="mfd-iconbtn mfd-close-btn" onClick={() => setShowLeaveModal(true)} aria-label="Close"><Icon name="close" size={18} /></button>
         </header>
         {showLeaveModal && (
