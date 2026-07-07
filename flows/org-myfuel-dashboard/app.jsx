@@ -99,15 +99,15 @@ function OrgSwitcher() {
 
 
 const RAIL_ITEMS = [
-  { icon: "space_dashboard", label: "Dashboard", active: true },
-  { icon: "group", label: "User" },
-  { icon: "credit_card", label: "Fleet Card" },
-  { icon: "receipt_long", label: "Balance History" },
-  { icon: "payments", label: "Top-Up" },
-  { icon: "sync", label: "Subsidy" },
-  { icon: "currency_exchange", label: "Transaction" },
-  { icon: "history", label: "Payments History" },
-  { icon: "description", label: "Report" },
+  { icon: "ic-dashboard", label: "Dashboard", active: true },
+  { icon: "ic-user", label: "User" },
+  { icon: "ic-fleetcard", label: "Fleet Card" },
+  { icon: "ic-balancehistory", label: "Balance History" },
+  { icon: "ic-topup", label: "Top-Up" },
+  { icon: "ic-subsidy", label: "Subsidy" },
+  { icon: "ic-transaction", label: "Transaction" },
+  { icon: "ic_baseline-history", label: "Payments History" },
+  { icon: "ic-report", label: "Report" },
 ];
 
 function RailMenu({ className = "", itemClass = "", onItemClick }) {
@@ -116,7 +116,7 @@ function RailMenu({ className = "", itemClass = "", onItemClick }) {
       {RAIL_ITEMS.map((r) => (
         <a key={r.label} href={r.active ? "../org-dashboard/index.html" : undefined}
            className={itemClass + (r.active ? " active" : "")} title={r.label} onClick={onItemClick}>
-          <Icon name={r.icon} size={20} />
+          <img className="mfd-rail-item-icon" src={"/public/" + r.icon + ".svg"} alt="" width={20} height={20} />
           <span>{r.label}</span>
         </a>
       ))}
@@ -127,6 +127,7 @@ function RailMenu({ className = "", itemClass = "", onItemClick }) {
 /* ── Left rail (desktop) + mobile drawer ───────────────────────── */
 function Rail({ mobileOpen, onClose }) {
   const drawerRef = useRef(null);
+  const [expanded, setExpanded] = useState(false);
   useEffect(() => {
     function onKey(e) { if (e.key === "Escape" && mobileOpen) onClose(); }
     document.addEventListener("keydown", onKey);
@@ -135,13 +136,38 @@ function Rail({ mobileOpen, onClose }) {
 
   return (
     <>
-      <nav className="mfd-rail" aria-label="Main navigation">
-        <div className="mfd-rail-profile">
-          <span className="mfd-rail-profile-avatar">{initials(D.org.name)}</span>
-          <Icon name="expand_more" size={14} color="var(--fg-secondary)" />
-        </div>
-        <RailMenu itemClass="mfd-rail-item" />
-      </nav>
+      <div className={"mfd-rail-wrap" + (expanded ? " expanded" : "")}>
+        <nav className={"mfd-rail" + (expanded ? " expanded" : "")} aria-label="Main navigation">
+          <div className="mfd-rail-profile">
+            <div className="mfd-rail-avatar-wrap">
+              <div className="mfd-rail-avatar"><Icon name="person" size={18} fill={1} color="#94A8B2" /></div>
+              {!expanded && <span className="mfd-rail-org-badge">ORG</span>}
+            </div>
+            {expanded && (
+              <div className="mfd-rail-profile-text">
+                <span className="mfd-rail-profile-role">{D.user.role}</span>
+                <span className="mfd-rail-profile-name">{D.user.name}</span>
+              </div>
+            )}
+          </div>
+          <RailMenu itemClass="mfd-rail-item" />
+          <div className="mfd-rail-divider" />
+          <div className="mfd-rail-footer">
+            <a href="../org-dashboard/index.html" className="mfd-rail-item mfd-rail-signout">
+              <Icon name="logout" size={20} />
+              {expanded && <span>Sign Out</span>}
+            </a>
+            <button type="button" className="mfd-rail-item mfd-rail-lang">
+              <img className="mfd-rail-item-icon" src="/public/ic-language.svg" alt="" width={20} height={20} />
+              {expanded && <span>English</span>}
+            </button>
+          </div>
+        </nav>
+        <button type="button" className="mfd-rail-toggle" onClick={() => setExpanded((v) => !v)}
+          aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}>
+          <Icon name="chevron_left" size={16} />
+        </button>
+      </div>
 
       {mobileOpen && (
         <div className="mfd-drawer-backdrop" onClick={onClose} role="presentation">
@@ -171,7 +197,6 @@ function PageHeader() {
     <div className="mfd-pagehead">
       <div>
         <h1 className="mfd-title">MyFuel Dashboard</h1>
-        <div className="mfd-breadcrumb">Home / MyFuel / Dashboard</div>
       </div>
     </div>
   );
@@ -214,7 +239,7 @@ function WalletPicker({ wallets, selectedId, onSelect, onClose }) {
           onClick={() => onSelect(i)} role="menuitem">
           <span className="mfd-wallet-item-check">{w.id === selectedId && <Icon name="check" size={14} />}</span>
           <span className="mfd-wallet-item-logo"><WalletLogo wallet={w} size={14} /></span>
-          <span className="mfd-wallet-item-name">{w.name}</span>
+          <span className="mfd-wallet-item-name">{w.accNo}</span>
           <span className="mfd-wallet-item-bal">{RM(w.amount)}</span>
         </button>
       ))}
@@ -319,7 +344,7 @@ function BalanceSummary({ empty }) {
           <button className="mfd-balance-wname" onClick={() => multi && setPickerOpen((v) => !v)}
             aria-haspopup={multi ? "true" : undefined} style={!multi ? { cursor: "default" } : {}}>
             <WalletLogo wallet={b} size={14} />
-            <span className="mfd-balance-wname-label">{b.name}</span>
+            <span className="mfd-balance-wname-label">{b.accNo}</span>
             {multi && <Icon name="expand_more" size={13} color="rgba(255,255,255,.65)"
               style={{ flexShrink: 0, transition: "transform .15s", transform: pickerOpen ? "rotate(180deg)" : "rotate(0deg)" }} />}
           </button>
@@ -1403,7 +1428,6 @@ function App() {
           </button>
           <OrgSwitcher />
           <div className="mfd-topbar-spacer" />
-          <button className="mfd-iconbtn mfd-notifications-btn" aria-label="Notifications"><Icon name="notifications" size={18} /></button>
           <button className="mfd-iconbtn mfd-close-btn" onClick={() => setShowLeaveModal(true)} aria-label="Close"><Icon name="close" size={18} /></button>
         </header>
         {showLeaveModal && (
