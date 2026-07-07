@@ -9,6 +9,8 @@ window.MYFUEL_DASH = {
     date: "9 Jun 2026",
   },
 
+  user: { name: "Jackson Lee", role: "Organization User" },
+
   orgs: [
     { id: "padu", name: "Padu Logistik Sdn. Bhd.", role: "Admin" },
     { id: "swift", name: "Swift Cargo Express", role: "Admin" },
