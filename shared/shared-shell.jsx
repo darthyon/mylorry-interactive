@@ -105,10 +105,12 @@ function Pager({ page, perPage, total, onPage, onPerPage, perPageOptions = [10, 
     <div className="ml-pager">
       <div className="ml-pager-rpp">
         <span>Rows per page:</span>
-        <select className="ml-pager-sel" value={perPage}
-          onChange={e => { onPerPage(Number(e.target.value)); onPage(1); }}>
-          {perPageOptions.map(n => <option key={n} value={n}>{n}</option>)}
-        </select>
+        <div className="hac-select-wrap compact">
+          <select className="ml-pager-sel" value={perPage}
+            onChange={e => { onPerPage(Number(e.target.value)); onPage(1); }}>
+            {perPageOptions.map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </div>
       </div>
       <div className="ml-pager-center">
         <span className="ml-pager-range">{start}–{end} of {total}</span>

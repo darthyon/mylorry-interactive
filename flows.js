@@ -93,6 +93,19 @@ window.FLOWS = {
           ],
         },
         {
+          id: "host-subscription",
+          name: "Subscription",
+          status: "ready",
+          route: "flows/host-subscription/index.html",
+          desc: "Subscription plans — list, view, create/edit, deactivate, and org plan reassignment with duplicate-plan guard rails.",
+          screens: [
+            { label: "Subscription list", note: "Search/filter plans, compact services summary, single row action menu, default/custom/trial/recommended metadata." },
+            { label: "Plan detail", note: "Configuration summary, plan overview, grouped module access, commitment options, guarded deactivate/delete." },
+            { label: "Create / edit plan", note: "Modern SaaS-style editor for pricing, limits, trial visibility, feature access, and commitment options." },
+            { label: "Organizations tab", note: "Plan usage table plus inline change-plan flow with setup fee, driver count, trial start/date, and duplicate active-plan prevention." },
+          ],
+        },
+        {
           id: "fleet-card",
           name: "MyFuel — Fleet Card Bulk Actions",
           status: "ready",
