@@ -99,6 +99,14 @@ const __TWEAKS_STYLE = `
   select.twk-field{padding-right:22px;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
     background-repeat:no-repeat;background-position:right 8px center}
+  .twk-select-wrap{position:relative}
+  .twk-select-trigger{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;cursor:pointer}
+  .twk-select-trigger::after{content:"";flex-shrink:0;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid rgba(0,0,0,.5)}
+  .twk-select-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .twk-select-menu{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:3;padding:4px;background:rgba(250,248,244,.98);border:.5px solid rgba(0,0,0,.12);border-radius:9px;box-shadow:0 10px 24px rgba(0,0,0,.12);backdrop-filter:blur(12px)}
+  .twk-select-option{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 8px;border:none;border-radius:7px;background:transparent;color:inherit;font:inherit;cursor:pointer;text-align:left}
+  .twk-select-option:hover{background:rgba(255,255,255,.72)}
+  .twk-select-option.active{background:rgba(26,157,109,.12);color:#0f7f58;font-weight:600}
 
   .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
     border-radius:999px;background:rgba(0,0,0,.12);outline:none}
@@ -165,7 +173,18 @@ const __TWEAKS_STYLE = `
   .twk-chip>span>i:first-child{box-shadow:none}
   .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
     filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+  .twk-launch{position:fixed;right:16px;bottom:16px;z-index:2147483645;height:34px;padding:0 12px;
+    border:0;border-radius:999px;background:rgba(41,38,27,.9);color:#fff;
+    font:12px/1 ui-sans-serif,system-ui,-apple-system,sans-serif;font-weight:600;letter-spacing:.01em;
+    box-shadow:0 10px 24px rgba(0,0,0,.2);cursor:pointer}
+  .twk-launch:hover{background:rgba(41,38,27,.98)}
 `;
+
+function __ensureNativeSelectEnhancer() {
+  return;
+}
+
+__ensureNativeSelectEnhancer();
 
 // ── useTweaks ───────────────────────────────────────────────────────────────
 // Single source of truth for tweak values. setTweak persists via the host
@@ -232,9 +251,18 @@ function TweaksPanel({ title = 'Tweaks', children }) {
       if (t === '__activate_edit_mode') setOpen(true);
       else if (t === '__deactivate_edit_mode') setOpen(false);
     };
+    const onKey = (e) => {
+      if (!(e.metaKey || e.ctrlKey) || !e.shiftKey || e.key.toLowerCase() !== 'e') return;
+      e.preventDefault();
+      setOpen((prev) => !prev);
+    };
     window.addEventListener('message', onMsg);
+    document.addEventListener('keydown', onKey);
     window.parent.postMessage({ type: '__edit_mode_available' }, '*');
-    return () => window.removeEventListener('message', onMsg);
+    return () => {
+      window.removeEventListener('message', onMsg);
+      document.removeEventListener('keydown', onKey);
+    };
   }, []);
 
   const dismiss = () => {
@@ -264,22 +292,28 @@ function TweaksPanel({ title = 'Tweaks', children }) {
     window.addEventListener('mouseup', up);
   };
 
-  if (!open) return null;
   return (
     <>
       <style>{__TWEAKS_STYLE}</style>
-      <div ref={dragRef} className="twk-panel" data-omelette-chrome=""
-           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
-        <div className="twk-hd" onMouseDown={onDragStart}>
-          <b>{title}</b>
-          <button className="twk-x" aria-label="Close tweaks"
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onClick={dismiss}>✕</button>
+      {!open && (
+        <button type="button" className="twk-launch" onClick={() => setOpen(true)}>
+          Open Tweaks
+        </button>
+      )}
+      {open && (
+        <div ref={dragRef} className="twk-panel" data-omelette-chrome=""
+             style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+          <div className="twk-hd" onMouseDown={onDragStart}>
+            <b>{title}</b>
+            <button className="twk-x" aria-label="Close tweaks"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={dismiss}>✕</button>
+          </div>
+          <div className="twk-body">
+            {children}
+          </div>
         </div>
-        <div className="twk-body">
-          {children}
-        </div>
-      </div>
+      )}
     </>
   );
 }
@@ -402,15 +436,68 @@ function TweakRadio({ label, value, options, onChange }) {
 }
 
 function TweakSelect({ label, value, options, onChange }) {
+  const wrapRef = React.useRef(null);
+  const [open, setOpen] = React.useState(false);
+  const normalized = options.map((o) => {
+    const optionValue = typeof o === 'object' ? o.value : o;
+    const optionLabel = typeof o === 'object' ? o.label : o;
+    return { value: optionValue, label: optionLabel };
+  });
+  const selected = normalized.find((o) => String(o.value) === String(value)) || normalized[0];
+
+  React.useEffect(() => {
+    if (!open) return undefined;
+    const onPointerDown = (event) => {
+      if (!wrapRef.current || wrapRef.current.contains(event.target)) return;
+      setOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
   return (
     <TweakRow label={label}>
-      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
-        {options.map((o) => {
-          const v = typeof o === 'object' ? o.value : o;
-          const l = typeof o === 'object' ? o.label : o;
-          return <option key={v} value={v}>{l}</option>;
-        })}
-      </select>
+      <div className="twk-select-wrap" ref={wrapRef}>
+        <button
+          type="button"
+          className="twk-field twk-select-trigger"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span className="twk-select-label">{selected ? selected.label : 'Select'}</span>
+        </button>
+        {open && (
+          <div className="twk-select-menu" role="listbox">
+            {normalized.map((option) => {
+              const active = String(option.value) === String(value);
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  className={`twk-select-option${active ? ' active' : ''}`}
+                  onClick={() => {
+                    setOpen(false);
+                    onChange(option.value);
+                  }}
+                >
+                  <span>{option.label}</span>
+                  {active ? '✓' : null}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </TweakRow>
   );
 }

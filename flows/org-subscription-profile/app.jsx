@@ -3,11 +3,13 @@
 // (⌘⇧E) switches between the 5 required prototype data states — see
 // data.js `scenarios`.
 
-const { Icon, StatusBadge, Segmented, FeatureTabShell } = window.SharedShell;
+const { Icon, StatusBadge, FeatureTabShell, OrgSwitcher } = window.SharedShell;
 const { useTweaks, TweaksPanel, TweakSection, TweakSelect } = window;
-const { SUBSCRIPTION_PLANS, calculateMonthlyBilling, getBoundValue } = window.SUB;
+const { SUBSCRIPTION_PLANS, calculateCommittedBilling, getBoundValue } = window.SUB;
 const D = window.ORG_PROFILE;
 const PLANS_BY_ID = Object.fromEntries(SUBSCRIPTION_PLANS.map((p) => [p.id, p]));
+// Same org as org-dashboard (window.ORG_DASH.org), not a disconnected mock name.
+const ORG = { ...window.ORG_DASH.org, ...D.orgDetails };
 
 const RM = (n) => "RM " + Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
@@ -67,6 +69,9 @@ function buildUpcoming(upcoming) {
 function buildScenarioView(sc) {
   const plan = PLANS_BY_ID[sc.planId];
   const isPaid = sc.status !== "free";
+  const billing = isPaid
+    ? calculateCommittedBilling(plan, sc.vehiclesUsed, sc.commitmentMonths, sc.setupFeeStatus)
+    : null;
   return {
     planName: plan.name,
     planTier: plan.id.replace("plan-", ""),
@@ -76,11 +81,8 @@ function buildScenarioView(sc) {
     nextBillingDate: sc.nextBillingDate,
     vehiclesUsed: sc.vehiclesUsed,
     vehicleLimit: vehicleLimitOf(plan),
-    billing: isPaid ? {
-      baseMonthlyFee: plan.pricing.baseMonthlyFee,
-      perManagedVehicleFee: plan.pricing.perManagedVehicleFee,
-      monthlyTotal: calculateMonthlyBilling(plan, sc.vehiclesUsed),
-      setupFee: plan.pricing.setupFee,
+    billing: billing ? {
+      ...billing,
       setupFeeStatus: sc.setupFeeStatus,
     } : null,
     upcoming: buildUpcoming(sc.upcoming),
@@ -161,63 +163,84 @@ function OrgDetails({ org, pic }) {
   );
 }
 
-/* ── Subscription Summary (Current / Upcoming) ────────────────────── */
+/* ── Subscription Summary (Current / Upcoming) ─────────────────────
+   Three parallel stat-cards (Plan | Billing | Vehicles) per the Figma spec
+   (node 8756:37), not a header row + divider + 2-col grid. ─────────── */
+function PlanStatCard({ s }) {
+  const showUpgrade = s.planTier === "free" || s.planTier === "lite";
+  return (
+    <div className="osp-stat-card">
+      <div className="osp-plan-row">
+        <span className="osp-plan-name">{s.planName}</span>
+        {s.status === "trial" && (
+          <StatusBadge status="sub_trial" label={`Trial · ${s.trialDaysRemaining} days remaining`} />
+        )}
+        {s.status === "active" && <StatusBadge status="active" />}
+        {s.status === "free" && <StatusBadge status="sub_free" />}
+      </div>
+      {s.status === "trial" && (
+        <div className="osp-plan-date"><Icon name="calendar_today" size={14} color="var(--fg-tertiary)" /> Trial ends {fmtDate(s.trialExpiry)}</div>
+      )}
+      {s.status === "active" && (
+        <div className="osp-plan-date"><Icon name="calendar_today" size={14} color="var(--fg-tertiary)" /> Next billing date {fmtDate(s.nextBillingDate)}</div>
+      )}
+      {showUpgrade && <button className="ml-btn-primary osp-upgrade-btn">Upgrade plan</button>}
+    </div>
+  );
+}
+
+function BillingStatCard({ s, billing }) {
+  return (
+    <div className="osp-stat-card">
+      <div className="osp-block-title">
+        Current billed amount
+        <span className="ml-tooltip-wrap osp-info-wrap" tabIndex={0}>
+          <Icon name="info" size={13} color="var(--fg-tertiary)" />
+          <span className="ml-tooltip osp-info-tooltip">
+            {RM(billing.baseMonthlyFee)} base monthly fee × {billing.commitmentMonths} months
+            {billing.perManagedVehicleFee > 0
+              ? ` + ${s.vehiclesUsed} managed vehicles × ${RM(billing.perManagedVehicleFee)} × ${billing.commitmentMonths} months`
+              : ""}
+            {billing.setupFee > 0 ? ` + ${RM(billing.setupFee)} one-time setup fee` : ""}
+          </span>
+        </span>
+      </div>
+      <div className="osp-billing-amount">{RM(billing.totalLumpSum)}</div>
+      <div className="osp-billing-row">
+        <span>Commitment duration</span><strong>{billing.commitmentMonths} months</strong>
+      </div>
+      <div className="osp-billing-row">
+        <span>Setup fee</span><strong>{RM(billing.setupFee)} · {billing.setupFeeStatus}</strong>
+      </div>
+    </div>
+  );
+}
+
+function VehiclesStatCard({ s }) {
+  const slotsAvailable = s.vehicleLimit === "unlimited" ? null : Math.max(s.vehicleLimit - s.vehiclesUsed, 0);
+  return (
+    <div className="osp-stat-card">
+      <div className="osp-block-title">Managed vehicles</div>
+      {s.planTier === "free" ? (
+        <div className="osp-usage-text muted">Managed vehicles unavailable on Free</div>
+      ) : (
+        <>
+          <UsageBar used={s.vehiclesUsed} limit={s.vehicleLimit} />
+          {slotsAvailable != null && <div className="osp-slots-available">{slotsAvailable} slots available</div>}
+        </>
+      )}
+    </div>
+  );
+}
+
 function CurrentPlanView({ s }) {
   const isPaid = s.status !== "free";
-  const showUpgrade = s.planTier === "free" || s.planTier === "lite";
-  const billing = s.billing;
-
   return (
-    <>
-      <div className="osp-summary-head">
-        <div className="osp-summary-head-left">
-          <span className="osp-plan-name">{s.planName}</span>
-          {s.status === "trial" && (
-            <StatusBadge status="sub_trial" label={`Trial · ${s.trialDaysRemaining} days remaining`} />
-          )}
-          {s.status === "active" && <StatusBadge status="active" />}
-          {s.status === "free" && <StatusBadge status="sub_free" />}
-        </div>
-        {showUpgrade && <button className="ml-btn-primary osp-upgrade-btn">Upgrade plan</button>}
-      </div>
-      {s.status === "trial" && <div className="osp-summary-sub">Trial ends {fmtDate(s.trialExpiry)}</div>}
-      {s.status === "active" && <div className="osp-summary-sub">Next billing date {fmtDate(s.nextBillingDate)}</div>}
-
-      <div className="osp-summary-divider" />
-
-      <div className="osp-summary-grid">
-        <div className="osp-summary-block">
-          <div className="osp-block-title">Managed vehicles</div>
-          {s.planTier === "free"
-            ? <div className="osp-usage-text muted">Managed vehicles unavailable on Free</div>
-            : <UsageBar used={s.vehiclesUsed} limit={s.vehicleLimit} />}
-        </div>
-
-        {isPaid && billing && (
-          <div className="osp-summary-block">
-            <div className="osp-block-title">
-              Current billed amount
-              <span className="ml-tooltip-wrap osp-info-wrap" tabIndex={0}>
-                <Icon name="info" size={13} color="var(--fg-tertiary)" />
-                <span className="ml-tooltip osp-info-tooltip">
-                  {RM(billing.baseMonthlyFee)} base monthly fee
-                  {billing.perManagedVehicleFee > 0
-                    ? ` + ${s.vehiclesUsed} managed vehicles × ${RM(billing.perManagedVehicleFee)} per managed vehicle`
-                    : ""}
-                </span>
-              </span>
-            </div>
-            <div className="osp-billing-amount">{RM(billing.monthlyTotal)}</div>
-            <div className="osp-billing-row">
-              <span>Next billing date</span><strong>{fmtDate(s.nextBillingDate)}</strong>
-            </div>
-            <div className="osp-billing-row">
-              <span>Setup fee</span><strong>{RM(billing.setupFee)} · {billing.setupFeeStatus}</strong>
-            </div>
-          </div>
-        )}
-      </div>
-    </>
+    <div className="osp-stats-panel">
+      <PlanStatCard s={s} />
+      {isPaid && s.billing && <BillingStatCard s={s} billing={s.billing} />}
+      <VehiclesStatCard s={s} />
+    </div>
   );
 }
 
@@ -233,53 +256,60 @@ function UpcomingPlanView({ upcoming }) {
     );
   }
   return (
-    <>
-      <div className="osp-summary-head">
-        <div className="osp-summary-head-left">
+    <div className="osp-stats-panel">
+      <div className="osp-stat-card">
+        <div className="osp-plan-row">
           <span className="osp-plan-name">{upcoming.planName}</span>
           <span className="ml-pill ml-pill-navy">Effective {fmtDate(upcoming.effectiveDate)}</span>
         </div>
+        {upcoming.note && <div className="osp-plan-date">{upcoming.note}</div>}
       </div>
-      {upcoming.note && <div className="osp-summary-sub">{upcoming.note}</div>}
       {upcoming.vehicleLimit != null && (
-        <>
-          <div className="osp-summary-divider" />
-          <div className="osp-summary-grid">
-            <div className="osp-summary-block">
-              <div className="osp-block-title">Managed vehicles (new limit)</div>
-              <div className="osp-usage-text">
-                {upcoming.vehicleLimit === "unlimited" ? "Unlimited" : upcoming.vehicleLimit}
-              </div>
-            </div>
-            {upcoming.billing && (
-              <div className="osp-summary-block">
-                <div className="osp-block-title">New billing</div>
-                <div className="osp-billing-formula">
-                  {RM(upcoming.billing.baseMonthlyFee)} base monthly fee + {RM(upcoming.billing.perManagedVehicleFee)} per managed vehicle
-                </div>
-              </div>
-            )}
+        <div className="osp-stat-card">
+          <div className="osp-block-title">Managed vehicles (new limit)</div>
+          <div className="osp-usage-text">
+            {upcoming.vehicleLimit === "unlimited" ? "Unlimited" : upcoming.vehicleLimit}
           </div>
-        </>
+        </div>
       )}
-    </>
+      {upcoming.billing && (
+        <div className="osp-stat-card">
+          <div className="osp-block-title">New billing</div>
+          <div className="osp-billing-formula">
+            {RM(upcoming.billing.baseMonthlyFee)} base monthly fee + {RM(upcoming.billing.perManagedVehicleFee)} per managed vehicle
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Underline tabs (not the dark Segmented pill) — matches Figma's tabs-row:
+   individual per-tab indicator bar, active label stays fg-primary (only the
+   bar goes green), no full-width row border. */
+function SummaryTabs({ tab, onChange }) {
+  return (
+    <div className="ml-tabs">
+      {[{ value: "current", label: "Current" }, { value: "upcoming", label: "Upcoming" }].map((t) => (
+        <button key={t.value} className={"ml-tab" + (tab === t.value ? " active" : "")} onClick={() => onChange(t.value)}>
+          {t.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
 function SubscriptionSummary({ s }) {
   const [tab, setTab] = React.useState("current");
+  const servicesTitle = tab === "upcoming" ? "Upcoming Services" : "Services";
   return (
     <div className="ml-card osp-summary">
       <div className="osp-summary-title">Subscription Summary</div>
-      <Segmented value={tab} onChange={setTab} options={[
-        { value: "current", label: "Current" },
-        { value: "upcoming", label: "Upcoming" },
-      ]} />
-      <div className="osp-summary-tabspacer" />
+      <SummaryTabs tab={tab} onChange={setTab} />
       {tab === "current" ? <CurrentPlanView s={s} /> : <UpcomingPlanView upcoming={s.upcoming} />}
 
       <div className="osp-services-sub">
-        <div className="osp-services-title">Services</div>
+        <div className="osp-services-title">{servicesTitle}</div>
         <ServicesTabs modules={s.modules} />
       </div>
     </div>
@@ -355,12 +385,18 @@ function App() {
     <div className="od-shell">
       <Rail />
       <div className="od-main">
+        <header className="od-topbar">
+          <OrgSwitcher orgs={[ORG]} initialId={ORG.id} />
+          <div className="od-topbar-spacer" />
+          <button className="od-iconbtn"><Icon name="notifications" size={18} /></button>
+        </header>
+
         <div className="od-content osp-content">
           <div className="od-pagehead">
             <span className="od-pagetitle">Organisation Profile</span>
           </div>
 
-          <OrgDetails org={D.org} pic={D.pic} />
+          <OrgDetails org={ORG} pic={D.pic} />
           <SubscriptionSummary s={s} />
         </div>
       </div>

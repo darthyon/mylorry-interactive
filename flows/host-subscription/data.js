@@ -109,8 +109,47 @@
     };
   };
 
+  const normalizeCommitmentOptions = (options = []) =>
+    options
+      .map((option, index) => ({
+        ...option,
+        id: option.id || `tier-${index + 1}`,
+        durationMonths: Number(option.durationMonths || 1),
+        amount: Number(option.amount ?? option.discountedMonthlyPrice ?? 0),
+        isTrial: !!option.isTrial,
+      }))
+      .sort((a, b) => a.durationMonths - b.durationMonths);
+
+  const resolveCommitmentOption = (plan, commitmentMonths) => {
+    const options = normalizeCommitmentOptions(plan.pricing?.commitmentOptions || []);
+    const paidOptions = options.filter((option) => !option.isTrial);
+    if (!paidOptions.length) return null;
+    if (commitmentMonths != null) {
+      const matched = paidOptions.find((option) => option.durationMonths === Number(commitmentMonths));
+      if (matched) return matched;
+    }
+    return paidOptions[0];
+  };
+
   const calculateMonthlyBilling = (plan, vehiclesUsed) =>
     Number(plan.pricing.baseMonthlyFee || 0) + Number(vehiclesUsed || 0) * Number(plan.pricing.perManagedVehicleFee || 0);
+
+  const calculateCommittedBilling = (plan, vehiclesUsed, commitmentMonths = null, setupFeeStatus = "") => {
+    const commitment = resolveCommitmentOption(plan, commitmentMonths);
+    const months = Number(commitment?.durationMonths ?? commitmentMonths ?? 1);
+    const baseMonthlyFee = Number((commitment?.amount ?? plan.pricing.baseMonthlyFee) || 0);
+    const perManagedVehicleFee = Number(plan.pricing.perManagedVehicleFee || 0);
+    const monthlySubtotal = baseMonthlyFee + Number(vehiclesUsed || 0) * perManagedVehicleFee;
+    const setupFee = setupFeeStatus === "Waived" ? 0 : Number(plan.pricing.setupFee || 0);
+    return {
+      commitmentMonths: months,
+      baseMonthlyFee,
+      perManagedVehicleFee,
+      monthlySubtotal,
+      setupFee,
+      totalLumpSum: monthlySubtotal * months + setupFee,
+    };
+  };
 
   // Resolves a feature-row's bindPath (e.g. "limits.historyDepth") against a
   // plan record. Mirrors the local copy in subscription.jsx's editor —
@@ -449,7 +488,10 @@
     deepClone,
     cloneFeatureModules,
     serviceSummary,
+    normalizeCommitmentOptions,
+    resolveCommitmentOption,
     calculateMonthlyBilling,
+    calculateCommittedBilling,
     getBoundValue,
   };
 })();

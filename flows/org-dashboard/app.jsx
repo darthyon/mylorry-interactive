@@ -6,7 +6,7 @@
 // when emptyData is on. Reuses window.SharedShell.LockSection for all gates.
 
 const { useState, useEffect, useRef } = React;
-const { Icon, LockSection, CountCard, PetronLogo, StatusBadge } = window.SharedShell;
+const { Icon, LockSection, CountCard, PetronLogo, StatusBadge, OrgSwitcher } = window.SharedShell;
 const D = window.ORG_DASH;
 
 /* ── Helpers ───────────────────────────────────────────────────── */
@@ -26,61 +26,8 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 
 const PLAN_LABEL = { free: "Free Plan", lite: "Lite Plan", premium: "Premium Plan" };
 
-function initials(name = "") {
-  const parts = name.split(/\s+/).filter(Boolean);
-  return parts.slice(0, 2).map((p) => p[0].toUpperCase()).join("") || "?";
-}
-
-/* ── Org switcher (GitHub-style subtle dropdown) ─────────────── */
-function OrgSwitcher() {
-  const [open, setOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState(D.org.id);
-  const wrapRef = useRef(null);
-  const selected = D.orgs.find((o) => o.id === selectedId) || D.orgs[0];
-
-  useEffect(() => {
-    function onClick(e) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
-    }
-    if (open) document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, [open]);
-
-  return (
-    <div className="od-org-switcher" ref={wrapRef}>
-      <button
-        type="button"
-        className="od-org-trigger"
-        onClick={() => setOpen((v) => !v)}
-        aria-haspopup="true"
-        aria-expanded={open}
-      >
-        <span className="od-org-avatar">{initials(selected.name)}</span>
-        <span className="od-org-name">{selected.name}</span>
-        <Icon name={open ? "expand_less" : "expand_more"} size={16} />
-      </button>
-      {open && (
-        <div className="od-org-menu" role="menu">
-          <div className="od-org-menu-h">Switch organization</div>
-          {D.orgs.map((o) => (
-            <button
-              key={o.id}
-              type="button"
-              className={"od-org-item" + (o.id === selectedId ? " active" : "")}
-              role="menuitem"
-              onClick={() => { setSelectedId(o.id); setOpen(false); }}
-            >
-              <span className="od-org-item-avatar">{initials(o.name)}</span>
-              <span className="od-org-item-name">{o.name}</span>
-              <span className="od-org-item-role">{o.role}</span>
-              {o.id === selectedId && <Icon name="check" size={14} />}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+// Org switcher: window.SharedShell.OrgSwitcher (shared with the Org
+// Portal's Organisation Profile page). D.orgs carries {id, name, role}.
 
 /* ── Rail (Org Portal nav: Home / Organization / Account) ──────── */
 // Desktop: left rail. Mobile: floating bottom nav (CSS handles the swap).
@@ -907,7 +854,7 @@ function App() {
       <Rail />
       <div className="od-main">
         <header className="od-topbar">
-          <OrgSwitcher />
+          <OrgSwitcher orgs={D.orgs} initialId={D.org.id} />
           <div className="od-topbar-spacer" />
           <button className="od-iconbtn"><Icon name="notifications" size={18} /></button>
         </header>

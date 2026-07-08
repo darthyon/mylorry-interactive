@@ -34,26 +34,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .od-main{min-width:0;}
 .od-topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;
   padding:12px 24px;background:#fff;border-bottom:1px solid var(--border-light);}
-/* Org switcher — GitHub-style subtle dropdown trigger */
-.od-org-switcher{position:relative;display:inline-flex;align-items:center;}
-.od-org-trigger{display:inline-flex;align-items:center;gap:8px;height:34px;padding:6px 10px;
-  border-radius:8px;background:transparent;border:none;font-family:var(--font-sans);
-  font-size:13px;font-weight:600;color:var(--fg-primary);cursor:pointer;transition:background .14s;}
-.od-org-trigger:hover{background:var(--bg-muted);}
-.od-org-avatar{width:24px;height:24px;border-radius:50%;background:var(--green-50);color:var(--green-600);
-  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
-.od-org-name{max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.od-org-menu{position:absolute;top:calc(100% + 6px);left:0;z-index:30;min-width:260px;background:#fff;
-  border:1px solid var(--border-light);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px 0;overflow:hidden;}
-.od-org-menu-h{padding:8px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
-  color:var(--fg-tertiary);}
-.od-org-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 14px;border:none;background:transparent;
-  font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);cursor:pointer;text-align:left;transition:background .12s;}
-.od-org-item:hover,.od-org-item.active{background:var(--green-50);}
-.od-org-item-avatar{width:24px;height:24px;border-radius:50%;background:var(--green-50);color:var(--green-600);
-  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
-.od-org-item-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.od-org-item-role{font-size:11px;color:var(--fg-tertiary);flex-shrink:0;}
+/* Org switcher — window.SharedShell.OrgSwitcher, CSS in components.css. */
 .od-topbar-spacer{flex:1;}
 .od-updated{font-size:12px;color:var(--fg-tertiary);}
 .od-iconbtn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border-light);background:#fff;
@@ -531,10 +512,10 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 </head>
 <body>
 <div id="root"></div>
-<script src="../../shared/shared-shell.js?v=20260630v"></script>
-<script src="../../shared/tweaks-panel.js?v=20260630v"></script>
-<script src="data.js?v=20260630v"></script>
-<script src="app.js?v=20260630v"></script>
+<script src="../../shared/shared-shell.js?v=20260708z"></script>
+<script src="../../shared/tweaks-panel.js?v=20260708zz"></script>
+<script src="data.js?v=20260709g"></script>
+<script src="app.js?v=20260709g"></script>
 <script>
   document.addEventListener('keydown', function(e){
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'e') {

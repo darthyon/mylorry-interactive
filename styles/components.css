@@ -145,7 +145,7 @@
 .ml-pager-btn  { border: none; background: none; cursor: pointer; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--fg-secondary); }
 .ml-pager-btn:not(:disabled):hover { background: var(--bg-muted); color: var(--fg-primary); }
 .ml-pager-btn:disabled { opacity: .3; cursor: not-allowed; }
-.ml-pager-sel  { font-family: var(--font); font-size: 13px; color: var(--fg-primary); border: 1px solid var(--border-light); border-radius: 6px; padding: 4px 24px 4px 10px; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999AA5' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 8px center; appearance: none; -webkit-appearance: none; -moz-appearance: none; cursor: pointer; }
+.ml-pager-sel  { font-family: var(--font); font-size: 13px; color: var(--fg-primary); border: 1px solid var(--border-light); border-radius: 6px; padding: 4px 24px 4px 10px; background: #fff; cursor: pointer; }
 
 /* Tooltip — width 260px */
 .ml-tooltip { position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%); background: #322F35; color: #fff; font-size: 12px; line-height: 1.5; padding: 8px 11px; border-radius: 4px; width: 260px; pointer-events: none; z-index: 50; opacity: 0; transition: opacity .15s; text-align: left; }
@@ -177,7 +177,7 @@
 .hac-search-clear:hover { color: var(--fg-primary); }
 /* Leading search-scope dropdown — green outline, joined to the search bar (picks the field to search) */
 .hac-search-group.scoped { width: 480px; }
-.hac-search-scope { width: fit-content; min-width: 0; height: 42px; flex: 0 0 auto; border: 1px solid var(--green-500); border-radius: 4px 0 0 4px; background: #fff; color: var(--green-600); font-family: var(--font); font-size: 14px; font-weight: 600; padding: 0 32px 0 14px; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2300AA4F' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+.hac-search-scope { width: fit-content; min-width: 0; height: 42px; flex: 0 0 auto; border: 1px solid var(--green-500); border-radius: 4px 0 0 4px; background: #fff; color: var(--green-600); font-family: var(--font); font-size: 14px; font-weight: 600; padding: 0 32px 0 14px; cursor: pointer; }
 .hac-search-scope:focus { outline: none; }
 /* Scope owns the divider (green); search bar drops its left border so only the green line shows */
 .hac-search-group.scoped .hac-search-bar { border-left: none; border-radius: 0 4px 4px 0; }
@@ -228,7 +228,7 @@
 .hac-input:focus { border-color: var(--green-500); box-shadow: 0 0 5px rgba(0,0,0,.08); }
 .hac-input:disabled { background: var(--bg-muted); color: var(--fg-secondary); cursor: not-allowed; }
 .hac-input.hac-select-input { appearance: none; -webkit-appearance: none; -moz-appearance: none; cursor: pointer; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999AA5' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center; padding-right: 30px; }
-.hac-select { font-family: var(--font); font-size: 13px; color: var(--fg-primary); border: 1px solid var(--border-medium); border-radius: var(--radius-xs); padding: 9px 30px 9px 11px; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999AA5' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 8px center; appearance: none; -webkit-appearance: none; -moz-appearance: none; cursor: pointer; outline: none; width: 100%; transition: border-color .12s; }
+.hac-select { font-family: var(--font); font-size: 13px; color: var(--fg-primary); border: 1px solid var(--border-medium); border-radius: var(--radius-xs); padding: 9px 30px 9px 11px; background: #fff; cursor: pointer; outline: none; width: 100%; transition: border-color .12s; }
 .hac-select:focus { border-color: var(--green-500); box-shadow: 0 0 5px rgba(0,0,0,.08); }
 .hac-select-wrap { position: relative; display: block; width: 100%; }
 .hac-select-wrap::after { content: ""; position: absolute; top: 50%; right: 12px; width: 7px; height: 7px; border-right: 1.5px solid var(--fg-tertiary); border-bottom: 1.5px solid var(--fg-tertiary); transform: translateY(-62%) rotate(45deg); pointer-events: none; }
@@ -237,6 +237,16 @@
 .hac-select-wrap.compact { width: auto; }
 .hac-select-wrap.compact::after { right: 10px; }
 .hac-select-wrap.compact .ml-pager-sel { padding-right: 30px; }
+.ml-select-trigger { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; }
+.ml-select-trigger::after { content: ""; flex-shrink: 0; width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg) translateY(-1px); opacity: .72; }
+.hac-select-wrap .ml-select-trigger::after { content: none; }
+.ml-select-trigger:disabled { opacity: .5; cursor: not-allowed; }
+.ml-select-trigger-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ml-select-menu { position: fixed; z-index: 250; background: #fff; border: 1px solid var(--border-light); border-radius: 10px; box-shadow: var(--shadow-md); padding: 6px; max-height: min(320px, calc(100vh - 32px)); overflow-y: auto; }
+.ml-select-menu-item { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: none; background: transparent; border-radius: 8px; padding: 9px 10px; font-family: var(--font); font-size: 13px; color: var(--fg-primary); cursor: pointer; text-align: left; }
+.ml-select-menu-item:hover { background: var(--bg-hover); }
+.ml-select-menu-item.active { background: var(--green-50); color: var(--green-600); font-weight: 600; }
+.ml-select-menu-item:disabled { opacity: .45; cursor: not-allowed; }
 .hac-check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--fg-primary); cursor: pointer; }
 .hac-check-row input[type="checkbox"] { accent-color: var(--green-500); width: 15px; height: 15px; cursor: pointer; }
 .hac-field-hint { display: block; font-size: 12px; color: var(--fg-tertiary); margin-top: 5px; }
@@ -349,6 +359,29 @@
   cursor: pointer;
 }
 .ml-lock-cta:hover { background: #009945; }
+
+/* ── Org Switcher (window.SharedShell.OrgSwitcher) — GitHub-style
+   subtle dropdown trigger. Shared between org-dashboard and the Org
+   Portal's Organisation Profile. ─────────────────────────────────── */
+.od-org-switcher{position:relative;display:inline-flex;align-items:center;}
+.od-org-trigger{display:inline-flex;align-items:center;gap:8px;height:34px;padding:6px 10px;
+  border-radius:8px;background:transparent;border:none;font-family:var(--font-sans);
+  font-size:13px;font-weight:600;color:var(--fg-primary);cursor:pointer;transition:background .14s;}
+.od-org-trigger:hover{background:var(--bg-muted);}
+.od-org-avatar{width:24px;height:24px;border-radius:50%;background:var(--green-50);color:var(--green-600);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.od-org-name{max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.od-org-menu{position:absolute;top:calc(100% + 6px);left:0;z-index:30;min-width:260px;background:#fff;
+  border:1px solid var(--border-light);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px 0;overflow:hidden;}
+.od-org-menu-h{padding:8px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--fg-tertiary);}
+.od-org-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 14px;border:none;background:transparent;
+  font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);cursor:pointer;text-align:left;transition:background .12s;}
+.od-org-item:hover,.od-org-item.active{background:var(--green-50);}
+.od-org-item-avatar{width:24px;height:24px;border-radius:50%;background:var(--green-50);color:var(--green-600);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.od-org-item-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.od-org-item-role{font-size:11px;color:var(--fg-tertiary);flex-shrink:0;}
 
 /* ── Feature Tab Shell (window.SharedShell.FeatureTabShell) ────────
    Canonical vertical-tabs-desktop / horizontal-tabs-mobile shell, shared

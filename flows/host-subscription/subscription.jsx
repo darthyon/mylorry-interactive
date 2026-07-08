@@ -1,5 +1,5 @@
 const { useEffect, useMemo, useState, useRef } = React;
-const { FeatureTabShell } = window.SharedShell;
+const { FeatureTabShell, SelectMenu } = window.SharedShell;
 
 const {
   SUBSCRIPTION_PLANS,
@@ -513,16 +513,17 @@ function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onDeactivate 
       <div className="hac-toolbar">
         <div className="hac-toolbar-left">
           <div className="hac-search-group scoped">
-            <select
+            <SelectMenu
               className="hac-search-scope"
               value={scope}
-              onChange={(e) => { setScope(e.target.value); setPage(1); }}
-              aria-label="Search by"
+              options={[
+                { value: "name", label: "Plan" },
+                { value: "service", label: "Services" },
+              ]}
+              onChange={(next) => { setScope(next); setPage(1); }}
+              ariaLabel="Search by"
               style={{ width: scope === "name" ? "108px" : "128px" }}
-            >
-              <option value="name">Plan</option>
-              <option value="service">Services</option>
-            </select>
+            />
             <div className="hac-search-bar">
               <HIcon name="search" size={18} color="var(--fg-tertiary)" />
               <input
@@ -554,20 +555,32 @@ function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onDeactivate 
             <div className="hac-filter-field">
               <label>Status</label>
               <div className="hac-select-wrap">
-                <select className="hac-select" value={pendingStatus} onChange={(e) => setPendingStatus(e.target.value)}>
-                  <option value="all">All statuses</option>
-                  {STATUS_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-                </select>
+                <SelectMenu
+                  className="hac-select"
+                  value={pendingStatus}
+                  options={[
+                    { value: "all", label: "All statuses" },
+                    ...STATUS_OPTIONS,
+                  ]}
+                  onChange={setPendingStatus}
+                  ariaLabel="Filter by status"
+                />
               </div>
             </div>
             <div className="hac-filter-field">
               <label>Type</label>
               <div className="hac-select-wrap">
-                <select className="hac-select" value={pendingType} onChange={(e) => setPendingType(e.target.value)}>
-                  <option value="all">All types</option>
-                  <option value="default">Default</option>
-                  <option value="normal">Normal</option>
-                </select>
+                <SelectMenu
+                  className="hac-select"
+                  value={pendingType}
+                  options={[
+                    { value: "all", label: "All types" },
+                    { value: "default", label: "Default" },
+                    { value: "normal", label: "Normal" },
+                  ]}
+                  onChange={setPendingType}
+                  ariaLabel="Filter by type"
+                />
               </div>
             </div>
           </div>
@@ -788,11 +801,13 @@ function SubscriptionTierModal({ tier, onClose, onSave }) {
         <SwitchField checked={isTrial} onChange={setIsTrial} label="Set as trial" />
       </div>
       <div className="hac-select-wrap">
-        <select className="hac-select" value={durationMonths} onChange={(e) => setDurationMonths(e.target.value)}>
-          {TIER_DURATION_OPTIONS.map((option) => (
-            <option key={option} value={option}>{formatTierDuration(option)}</option>
-          ))}
-        </select>
+        <SelectMenu
+          className="hac-select"
+          value={durationMonths}
+          options={TIER_DURATION_OPTIONS.map((option) => ({ value: String(option), label: formatTierDuration(option) }))}
+          onChange={setDurationMonths}
+          ariaLabel="Tier duration"
+        />
       </div>
       <div className="hac-field-hint" style={{ marginBottom: 18 }}>Choose how long this pricing tier applies.</div>
 
@@ -1009,9 +1024,13 @@ function FeatureAccessSection({ plan, editable, onChange }) {
                           {isRowEnabled(row) ? (
                             row.controlType === "select" ? (
                               <div className="hac-select-wrap hsub-inline-select-wrap">
-                                <select className="hac-select hsub-inline-select" value={getRowValue(row)} onChange={(e) => updateRow(activeModule.key, row.key, e.target.value)}>
-                                  {row.options.map((option) => <option key={option} value={option}>{option}</option>)}
-                                </select>
+                                <SelectMenu
+                                  className="hac-select hsub-inline-select"
+                                  value={getRowValue(row)}
+                                  options={row.options.map((option) => ({ value: option, label: option }))}
+                                  onChange={(next) => updateRow(activeModule.key, row.key, next)}
+                                  ariaLabel={row.label}
+                                />
                               </div>
                             ) : (
                               <input className="hac-input hsub-mini-input" type="number" min={row.min ?? 0} value={getRowValue(row)} onChange={(e) => updateRow(activeModule.key, row.key, Number(e.target.value || 0))} />
@@ -1020,9 +1039,13 @@ function FeatureAccessSection({ plan, editable, onChange }) {
                         </div>
                       ) : row.controlType === "select" ? (
                         <div className="hac-select-wrap">
-                          <select className="hac-select" value={getRowValue(row)} onChange={(e) => updateRow(activeModule.key, row.key, e.target.value)}>
-                            {row.options.map((option) => <option key={option} value={option}>{option}</option>)}
-                          </select>
+                          <SelectMenu
+                            className="hac-select"
+                            value={getRowValue(row)}
+                            options={row.options.map((option) => ({ value: option, label: option }))}
+                            onChange={(next) => updateRow(activeModule.key, row.key, next)}
+                            ariaLabel={row.label}
+                          />
                         </div>
                       ) : (
                         <input className="hac-input hsub-mini-input" type="number" min={row.min ?? 0} value={getRowValue(row)} onChange={(e) => updateRow(activeModule.key, row.key, Number(e.target.value || 0))} />

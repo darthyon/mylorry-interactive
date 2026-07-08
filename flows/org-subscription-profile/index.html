@@ -39,8 +39,18 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .od-rail-item:hover{background:var(--bg-muted);color:var(--fg-secondary);}
 .od-rail-item.active{background:var(--green-50);color:var(--green-600);}
 .od-main{min-width:0;}
+/* Topbar — same chrome as org-dashboard's, so this page doesn't feel like
+   it dropped out of the Org Portal shell. Uses the shared OrgSwitcher
+   (window.SharedShell.OrgSwitcher, CSS in components.css) with a single-
+   item orgs list — renders the avatar+name trigger without a switch
+   dropdown, since there's nothing else to switch to on this page. */
+.od-topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;
+  padding:12px 24px;background:#fff;border-bottom:1px solid var(--border-light);}
+.od-topbar-spacer{flex:1;}
+.od-iconbtn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border-light);background:#fff;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--fg-secondary);}
 .od-content{padding:22px 24px 48px;max-width:1100px;margin:0 auto;}
-.od-pagehead{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+.od-pagehead{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
 .od-pagetitle{font-size:20px;font-weight:600;color:var(--fg-primary);}
 .od-welcome{font-size:13px;color:var(--fg-secondary);margin-bottom:18px;}
 
@@ -56,8 +66,11 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .od-rail-item:not(.active) span:not(.msr){display:none;}
 .od-rail-item.active{background:#fff;color:var(--green-600);}
 .od-content{display:flex;flex-direction:column;padding:16px 14px 96px;}
-.od-pagehead,.od-welcome{margin-bottom:0;}
+.od-pagehead{margin-bottom:16px;}
+.od-welcome{margin-bottom:0;}
 .od-pagetitle{font-size:16px;}
+.od-topbar{padding:10px 14px;}
+.od-org-name{max-width:160px;}
 
 /* Section rhythm — explicit margins (not flex gap, which display:block at
    desktop silently discards) so spacing survives both breakpoints and can
@@ -67,22 +80,29 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .osp-summary{margin-bottom:0;}
 
 /* ── Subscription Summary (Services now lives inside this same card as a
-   subsection — one card, not two, per feedback) ─────────────────────── */
-.osp-summary-title{font-size:15px;font-weight:700;color:var(--fg-primary);margin-bottom:14px;}
-.osp-summary-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
-.osp-summary-head-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+   subsection — one card, not two, per feedback). Layout matches Figma node
+   8756:37: underline tabs (not a Segmented pill), three parallel bordered
+   stat-cards (Plan | Billing | Vehicles) rather than a header row + divider
+   + 2-col grid. ────────────────────────────────────────────────────────── */
+.osp-summary-title{font-size:15px;font-weight:700;color:var(--fg-primary);margin-bottom:18px;}
+/* Current/Upcoming tabs reuse the shared .ml-tabs/.ml-tab (components.css) —
+   same component commission-host uses, not a bespoke tab implementation. */
+.osp-summary .ml-tabs{margin-bottom:16px;}
+
+.osp-stats-panel{display:flex;flex-wrap:wrap;gap:16px;}
+.osp-stat-card{flex:1 1 260px;min-width:0;border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px 20px;}
+.osp-plan-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .osp-plan-name{font-size:19px;font-weight:700;color:var(--fg-primary);}
-.osp-upgrade-btn{width:100%;justify-content:center;}
-.osp-summary-sub{font-size:12.5px;color:var(--fg-secondary);margin-top:6px;}
-.osp-summary-divider{height:1px;background:var(--border-light);margin:16px 0;}
-.osp-summary-grid{display:flex;flex-direction:column;gap:18px;}
+.osp-plan-date{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-secondary);margin-top:8px;}
+.osp-upgrade-btn{margin-top:18px;}
 .osp-block-title{display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--fg-secondary);margin-bottom:8px;}
-.osp-usage-text{font-size:20px;font-weight:600;color:var(--fg-primary);}
+.osp-usage-text{font-size:22px;font-weight:700;color:var(--fg-primary);}
 .osp-usage-text.muted{font-size:13px;font-weight:500;color:var(--fg-tertiary);}
 .osp-usage-track{height:8px;background:var(--bg-muted);border-radius:999px;overflow:hidden;margin-top:8px;}
 .osp-usage-fill{height:100%;background:var(--green-500);border-radius:999px;transition:width .3s ease;}
 .osp-usage-fill.full{background:var(--amber-500);}
-.osp-billing-amount{font-size:22px;font-weight:700;color:var(--fg-primary);}
+.osp-slots-available{font-size:12px;color:var(--fg-tertiary);margin-top:8px;}
+.osp-billing-amount{font-size:22px;font-weight:700;color:var(--fg-primary);margin-bottom:8px;}
 .osp-billing-formula{font-size:11.5px;color:var(--fg-tertiary);}
 .osp-billing-row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--fg-secondary);margin-top:8px;}
 .osp-billing-row strong{color:var(--fg-primary);font-weight:600;}
@@ -92,14 +112,14 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 
 /* ── Organisation details ─────────────────────────────────────── */
 .osp-details-row{display:flex;flex-direction:column;gap:14px;}
+.osp-details-row .hac-dcard-title{margin-bottom:16px;}
 .osp-org-grid{grid-template-columns:1fr 1fr;}
 .osp-pic-row{display:flex;align-items:flex-start;gap:12px;}
 .osp-pic-avatar{width:48px;height:48px;border-radius:50%;background:var(--bg-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .osp-pic-name{font-size:14px;font-weight:600;color:var(--fg-primary);margin-bottom:6px;}
 .osp-pic-meta{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-secondary);margin-top:4px;}
 
-/* ── Subscription Summary: Current/Upcoming tab spacer + empty state ── */
-.osp-summary-tabspacer{height:14px;}
+/* ── Subscription Summary: empty state (Upcoming, nothing scheduled) ── */
 /* Matches org-dashboard's .od-empty pattern (icon + title + sub), plus a CTA. */
 .osp-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:28px 16px;text-align:center;color:var(--fg-tertiary);}
 .osp-empty .msr{color:var(--border-strong,#c7cdcb);}
@@ -135,24 +155,22 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .od-rail-item span:not(.msr){font-size:8.5px;}
   .od-rail-item:not(.active) span:not(.msr){display:block;}
   .od-content{display:block;padding:22px 24px 48px;}
-  .od-pagehead,.od-welcome{margin-bottom:4px;}
+  .od-pagehead{margin-bottom:20px;}
   .od-pagetitle{font-size:20px;}
-  .osp-summary-head{flex-wrap:nowrap;}
-  .osp-upgrade-btn{width:auto;}
-  .osp-summary-grid{flex-direction:row;gap:32px;}
-  .osp-summary-block{flex:1;}
-  .osp-details-row{flex-direction:row;}
-  .osp-details-row>.ml-card{flex:1;}
+  .osp-details-row{flex-direction:row;align-items:stretch;}
+  .osp-details-row>.ml-card:first-child{flex:1.6;}
+  .osp-details-row>.ml-card:last-child{flex:1;}
 }
 </style>
 </head>
 <body>
 <div id="root"></div>
-<script src="../../shared/shared-shell.js?v=20260709a"></script>
-<script src="../../shared/tweaks-panel.js?v=20260709a"></script>
-<script src="../host-subscription/data.js?v=20260709d"></script>
-<script src="data.js?v=20260709d"></script>
-<script src="app.js?v=20260709d"></script>
+<script src="../../shared/shared-shell.js?v=20260708z"></script>
+<script src="../../shared/tweaks-panel.js?v=20260708zz"></script>
+<script src="../org-dashboard/data.js?v=20260709l"></script>
+<script src="../host-subscription/data.js?v=20260709l"></script>
+<script src="data.js?v=20260709l"></script>
+<script src="app.js?v=20260709l"></script>
 <script>
   document.addEventListener('keydown', function(e){
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'e') {

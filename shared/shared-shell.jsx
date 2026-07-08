@@ -91,9 +91,173 @@ function Sidebar({ active, onNav, navItems, badgeLabel }) {
   );
 }
 
+/* ─── Org Switcher (GitHub-style subtle dropdown trigger) ───── */
+// Shared between org-dashboard and the Org Portal's Organisation Profile.
+// Uncontrolled: manages its own selected-org state internally (callers never
+// consumed the selection outside the component, so no onChange prop).
+// `orgs` with a single entry renders the trigger without a chevron/dropdown
+// — nothing to switch to, so no switching affordance.
+function orgInitials(name = "") {
+  const parts = name.split(/\s+/).filter(Boolean);
+  return parts.slice(0, 2).map((p) => p[0].toUpperCase()).join("") || "?";
+}
+function OrgSwitcher({ orgs, initialId }) {
+  const [open, setOpen] = React.useState(false);
+  const [selectedId, setSelectedId] = React.useState(initialId ?? orgs[0]?.id);
+  const wrapRef = React.useRef(null);
+  const selected = orgs.find((o) => o.id === selectedId) || orgs[0];
+  const canSwitch = orgs.length > 1;
+
+  React.useEffect(() => {
+    function onClick(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  return (
+    <div className="od-org-switcher" ref={wrapRef}>
+      <button
+        type="button"
+        className="od-org-trigger"
+        onClick={() => canSwitch && setOpen((v) => !v)}
+        aria-haspopup={canSwitch}
+        aria-expanded={open}
+      >
+        <span className="od-org-avatar">{orgInitials(selected.name)}</span>
+        <span className="od-org-name">{selected.name}</span>
+        {canSwitch && <Icon name={open ? "expand_less" : "expand_more"} size={16} />}
+      </button>
+      {open && canSwitch && (
+        <div className="od-org-menu" role="menu">
+          <div className="od-org-menu-h">Switch organization</div>
+          {orgs.map((o) => (
+            <button
+              key={o.id}
+              type="button"
+              className={"od-org-item" + (o.id === selectedId ? " active" : "")}
+              role="menuitem"
+              onClick={() => { setSelectedId(o.id); setOpen(false); }}
+            >
+              <span className="od-org-item-avatar">{orgInitials(o.name)}</span>
+              <span className="od-org-item-name">{o.name}</span>
+              {o.role && <span className="od-org-item-role">{o.role}</span>}
+              {o.id === selectedId && <Icon name="check" size={14} />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Badge ─────────────────────────────────────────────────── */
 function Badge({ kind = "active", children }) {
   return <span className={"ml-badge " + kind}>{children}</span>;
+}
+
+function normalizeSelectOptions(options = []) {
+  return options.map((option) => (
+    typeof option === "object"
+      ? { value: option.value, label: option.label ?? String(option.value), disabled: !!option.disabled }
+      : { value: option, label: String(option), disabled: false }
+  ));
+}
+
+function SelectMenu({
+  value,
+  options,
+  onChange,
+  className = "",
+  wrapperClassName = "",
+  menuClassName = "",
+  disabled = false,
+  ariaLabel,
+  style,
+}) {
+  const normalized = normalizeSelectOptions(options);
+  const selected = normalized.find((option) => String(option.value) === String(value)) || normalized[0] || null;
+  const [open, setOpen] = React.useState(false);
+  const [pos, setPos] = React.useState({ top: 0, left: 0, minWidth: 0 });
+  const triggerRef = React.useRef(null);
+  const menuRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const close = (e) => {
+      if (triggerRef.current?.contains(e.target)) return;
+      if (menuRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    const dismiss = () => setOpen(false);
+    document.addEventListener("mousedown", close);
+    window.addEventListener("scroll", dismiss, true);
+    window.addEventListener("resize", dismiss);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      window.removeEventListener("scroll", dismiss, true);
+      window.removeEventListener("resize", dismiss);
+    };
+  }, [open]);
+
+  const toggle = () => {
+    if (disabled || !triggerRef.current) return;
+    if (!open) {
+      const r = triggerRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 6, left: r.left, minWidth: r.width });
+    }
+    setOpen((v) => !v);
+  };
+
+  return (
+    <div className={wrapperClassName}>
+      <button
+        ref={triggerRef}
+        type="button"
+        className={"ml-select-trigger " + className}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabel || selected?.label || "Select"}
+        disabled={disabled}
+        style={style}
+        onClick={toggle}
+      >
+        <span className="ml-select-trigger-label">{selected?.label || "Select"}</span>
+      </button>
+      {open && ReactDOM.createPortal(
+        <div
+          ref={menuRef}
+          className={"ml-select-menu" + (menuClassName ? " " + menuClassName : "")}
+          role="listbox"
+          style={{ top: pos.top, left: pos.left, minWidth: pos.minWidth }}
+        >
+          {normalized.map((option) => {
+            const active = String(option.value) === String(value);
+            return (
+              <button
+                key={String(option.value)}
+                type="button"
+                role="option"
+                aria-selected={active}
+                disabled={option.disabled}
+                className={"ml-select-menu-item" + (active ? " active" : "")}
+                onClick={() => {
+                  if (option.disabled) return;
+                  setOpen(false);
+                  onChange(option.value);
+                }}
+              >
+                <span>{option.label}</span>
+                {active && <Icon name="check" size={16} color="currentColor" />}
+              </button>
+            );
+          })}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
 }
 
 /* ─── Pager ─────────────────────────────────────────────────── */
@@ -105,12 +269,14 @@ function Pager({ page, perPage, total, onPage, onPerPage, perPageOptions = [10, 
     <div className="ml-pager">
       <div className="ml-pager-rpp">
         <span>Rows per page:</span>
-        <div className="hac-select-wrap compact">
-          <select className="ml-pager-sel" value={perPage}
-            onChange={e => { onPerPage(Number(e.target.value)); onPage(1); }}>
-            {perPageOptions.map(n => <option key={n} value={n}>{n}</option>)}
-          </select>
-        </div>
+        <SelectMenu
+          wrapperClassName="hac-select-wrap compact"
+          className="ml-pager-sel"
+          value={perPage}
+          options={perPageOptions.map((n) => ({ value: n, label: String(n) }))}
+          ariaLabel="Rows per page"
+          onChange={(next) => { onPerPage(Number(next)); onPage(1); }}
+        />
       </div>
       <div className="ml-pager-center">
         <span className="ml-pager-range">{start}–{end} of {total}</span>
@@ -475,12 +641,19 @@ function HistoryCard({ icon, prefix, title, subtitle, status, action, children }
   );
 }
 
+/* ─── Native Select Enhancer ─────────────────────────────────── */
+function installNativeSelectEnhancer() {
+  return;
+}
+
+installNativeSelectEnhancer();
+
 /* ─── Export to window ─────────────────────────────────────── */
 window.SharedShell = {
   Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu, Segmented,
   Pill, CurrencyPill, SummaryCard, CountCard, KpiTierChip,
   StatusBadge, AccountStatusBadge, KPIProgress, KPIProgressMeta,
-  LockSection, PetronLogo, HistoryCard, FeatureTabShell,
+  LockSection, PetronLogo, HistoryCard, FeatureTabShell, OrgSwitcher, SelectMenu,
 };
 window.KPIProgressMeta = KPIProgressMeta;
 }
