@@ -27,7 +27,7 @@
       summary: "Core subscription settings and operating limits",
       includeInServiceSummary: false,
       rows: [
-        { key: "admin_user_limit", label: "Number of Admin Users", helper: "Maximum admin users allowed on this plan", controlType: "number", value: 3, min: 0, bindPath: "limits.adminUserLimit" },
+        { key: "admin_user_limit", label: "Number of Admin Users", helper: "Maximum admin users allowed on this plan", controlType: "number", value: 3, min: 0, bindPath: "limits.adminUserLimit", hasUnlimited: true },
       ],
     },
     {
@@ -47,7 +47,7 @@
       summary: "Fleet, drivers, compliance, reminders",
       rows: [
         { key: "vehicle_info", label: "Vehicle Creation", helper: "Allow creation of vehicle records", controlType: "toggle", value: true },
-        { key: "managed_vehicle_limit", label: "Managed Vehicle Limit", helper: "Maximum number of managed vehicles", controlType: "number", value: 10, min: 0, bindPath: "limits.managedVehicleLimit" },
+        { key: "managed_vehicle_limit", label: "Managed Vehicle Limit", helper: "Maximum number of managed vehicles", controlType: "number", value: 10, min: 0, bindPath: "limits.managedVehicleLimit", hasUnlimited: true },
         { key: "vehicle_doc_reminder", label: "Vehicle Document Reminder", helper: "Reminder count for vehicle documents", controlType: "number", value: 3, min: 0, toggleable: true, enabled: true },
         { key: "icop", label: "Safety Checklist", helper: "Safety checklist workflows and records", controlType: "toggle", value: true },
         { key: "driver_info", label: "Driver Creation", helper: "Allow creation of driver records", controlType: "toggle", value: true },
@@ -177,8 +177,8 @@
   };
 
   const makeOrg = (plan, orgId, orgName, vehiclesUsed, adminsUsed, extra = {}) => {
-    const vehicleLimit = plan.limits.managedVehicleLimit === 0 ? "Unlimited" : plan.limits.managedVehicleLimit;
-    const adminLimit = plan.limits.adminUserLimit === 0 ? "Unlimited" : plan.limits.adminUserLimit;
+    const vehicleLimit = plan.limits.managedVehicleLimit == null ? "Unlimited" : plan.limits.managedVehicleLimit;
+    const adminLimit = plan.limits.adminUserLimit == null ? "Unlimited" : plan.limits.adminUserLimit;
     return {
       orgId,
       orgName,
@@ -346,8 +346,8 @@
         ],
       },
       limits: {
-        managedVehicleLimit: 0,
-        adminUserLimit: 0,
+        managedVehicleLimit: null,
+        adminUserLimit: null,
         historyDepth: "Unlimited",
         reportDepth: "Unlimited",
       },
@@ -445,7 +445,7 @@
   const plansById = Object.fromEntries(basePlans.map((plan) => [plan.id, plan]));
 
   plansById["plan-free"].organizations = [
-    makeOrg(plansById["plan-free"], "org-astana", "Astana Movers", 3, 1, {
+    makeOrg(plansById["plan-free"], "org-astana", "Astana Movers", 0, 1, {
       subscriptionStatus: "Active",
       nextBillingDate: "2026-07-28",
     }),
@@ -493,7 +493,7 @@
       adminCount,
       driverCount,
       monthlyBilling,
-      sampleVehicles: vehicleCount || (plan.limits.managedVehicleLimit === 0 ? 25 : Math.min(plan.limits.managedVehicleLimit, 12)),
+      sampleVehicles: vehicleCount || (plan.limits.managedVehicleLimit == null ? 25 : Math.min(plan.limits.managedVehicleLimit, 12)),
       services,
     };
     return plan;

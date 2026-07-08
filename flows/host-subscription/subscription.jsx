@@ -33,7 +33,7 @@ function buildUsageSummary(plan) {
     adminCount,
     driverCount,
     monthlyBilling,
-    sampleVehicles: vehicleCount || (plan.limits.managedVehicleLimit === 0 ? 25 : Math.min(Number(plan.limits.managedVehicleLimit || 0), 12) || 8),
+    sampleVehicles: vehicleCount || (plan.limits.managedVehicleLimit == null ? 25 : Math.min(Number(plan.limits.managedVehicleLimit || 0), 12) || 8),
     services,
   };
 }
@@ -1068,6 +1068,25 @@ function FeatureAccessSection({ plan, editable, onChange }) {
                             ariaLabel={row.label}
                           />
                         </div>
+                      ) : row.hasUnlimited ? (
+                        <div className="hsub-module-control-stack">
+                          <label className="hac-check-row">
+                            <input
+                              type="checkbox"
+                              checked={getRowValue(row) == null}
+                              onChange={(e) => updateRow(activeModule.key, row.key, e.target.checked ? null : (row.value ?? 1))}
+                            />
+                            <span>Unlimited</span>
+                          </label>
+                          <input
+                            className="hac-input hsub-mini-input"
+                            type="number"
+                            min={row.min ?? 0}
+                            value={getRowValue(row) == null ? "" : getRowValue(row)}
+                            disabled={getRowValue(row) == null}
+                            onChange={(e) => updateRow(activeModule.key, row.key, Number(e.target.value || 0))}
+                          />
+                        </div>
                       ) : (
                         <input className="hac-input hsub-mini-input" type="number" min={row.min ?? 0} value={getRowValue(row)} onChange={(e) => updateRow(activeModule.key, row.key, Number(e.target.value || 0))} />
                       )
@@ -1075,7 +1094,9 @@ function FeatureAccessSection({ plan, editable, onChange }) {
                         <div className="hsub-module-readout">
                           {row.controlType === "toggle"
                             ? (getRowValue(row) ? "Enabled" : "Disabled")
-                            : (isRowEnabled(row) ? getRowValue(row) : "Disabled")}
+                            : (isRowEnabled(row)
+                              ? (row.hasUnlimited && getRowValue(row) == null ? "Unlimited" : getRowValue(row))
+                              : "Disabled")}
                         </div>
                     )}
                   </div>
