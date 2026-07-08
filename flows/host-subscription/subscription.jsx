@@ -601,10 +601,10 @@ function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onDeactivate 
                 />
               </div>
             </div>
-          </div>
-          <div className="hac-filter-actions">
-            <button className="hac-filter-apply" onClick={applyFilters}>Apply Filters</button>
-            <button className="hac-filter-reset" onClick={resetFilters}>Reset All</button>
+            <div className="hac-filter-actions hsub-filter-actions-inline">
+              <button className="hac-filter-apply" onClick={applyFilters}>Apply Filters</button>
+              <button className="hac-filter-reset" onClick={resetFilters}>Reset All</button>
+            </div>
           </div>
         </div>
       )}

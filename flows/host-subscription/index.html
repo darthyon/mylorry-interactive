@@ -56,6 +56,11 @@ b { font-weight: 600; }
 .hsub-main .ml-card { background: #fff; }
 .hsub-main .ml-icon-btn { border: none; background: none; cursor: pointer; color: var(--fg-tertiary); display: flex; padding: 4px; border-radius: 4px; }
 .hsub-main .ml-icon-btn:hover { background: var(--bg-muted); color: var(--fg-primary); }
+.hsub-main .hac-filter-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.hsub-main .hac-filter-field { min-width: 0; }
+.hsub-filter-actions-inline { align-self: end; margin-bottom: 0; }
+.hsub-filter-actions-inline .hac-filter-apply,
+.hsub-filter-actions-inline .hac-filter-reset { height: 40px; white-space: nowrap; }
 
 /* Table */
 .hsub-table { min-width: 1080px; }
@@ -189,6 +194,8 @@ b { font-weight: 600; }
   .ml-main { grid-column: 1; grid-row: 2; padding: 14px 14px 110px; }
   .ml-h1 { font-size: 20px; }
   .hsub-overview-grid { grid-template-columns: 1fr; }
+  .hsub-main .hac-filter-grid { grid-template-columns: 1fr 1fr; }
+  .hsub-filter-actions-inline { grid-column: 1 / -1; }
   .hsub-module-row { grid-template-columns: 1fr; }
   .hsub-module-row.has-inline-config { grid-template-columns: 1fr; }
   .hsub-module-row-control { justify-content: flex-start; }
@@ -198,6 +205,7 @@ b { font-weight: 600; }
   .hsub-edit-bar { left: 0; }
 }
 @media (max-width: 640px) {
+  .hsub-main .hac-filter-grid { grid-template-columns: 1fr; }
   .ml-library-link span { display: none; }
   .ml-library-link { padding: 8px; }
 }

@@ -348,7 +348,11 @@ function Modules({ tier }) {
       </div>
       <div className="od-modules">
         {modules.map((m) => {
-          const isMyFuelLink = m.key === "myfuel" && m.state === "active";
+          const moduleHref = m.state === "active"
+            ? m.key === "myfuel" ? "../org-myfuel-dashboard/index.html"
+            : m.key === "myadmin" ? "../org-myadmin-dashboard/index.html"
+            : null
+            : null;
           const body = (
             <>
               <div className="od-mod-ico"><img src={m.iconSrc} alt="" aria-hidden="true" /></div>
@@ -359,12 +363,12 @@ function Modules({ tier }) {
                   {m.tag}
                 </span>
               </div>
-              {m.state === "active" && <Icon name="arrow_forward" size={15} style={{ marginLeft: "auto" }} />}
+              {moduleHref && <Icon name="arrow_forward" size={15} style={{ marginLeft: "auto" }} />}
             </>
           );
-          if (isMyFuelLink) {
+          if (moduleHref) {
             return (
-              <a key={m.key} href="../org-myfuel-dashboard/index.html" className="od-mod active" style={{ textDecoration: "none" }}>
+              <a key={m.key} href={moduleHref} className="od-mod active" style={{ textDecoration: "none" }}>
                 {body}
               </a>
             );
