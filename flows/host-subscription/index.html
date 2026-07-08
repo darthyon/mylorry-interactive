@@ -132,13 +132,8 @@ b { font-weight: 600; }
 .hsub-tier-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
 .hsub-tier-foot-read { font-size: 13px; color: var(--fg-primary); }
 .hsub-tier-modal-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
-.hsub-feature-shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; align-items: start; }
-.hsub-feature-tabs { display: flex; flex-direction: column; gap: 0; padding-right: 6px; }
-.hsub-feature-tab { width: 100%; text-align: left; border: none; border-left: 2px solid transparent; border-bottom: 1px solid var(--border-light); border-radius: 0; background: transparent; padding: 12px 14px 12px 12px; cursor: pointer; transition: border-color .12s, background .12s, color .12s; }
-.hsub-feature-tab:hover { border-left-color: var(--green-500); background: var(--green-50); }
-.hsub-feature-tab.active { border-left-color: var(--green-500); background: var(--green-50); box-shadow: none; }
-.hsub-feature-tab-title { display: block; font-size: 13px; font-weight: 700; color: var(--fg-primary); white-space: nowrap; }
-.hsub-module-card { border: 1px solid var(--border-light); border-radius: 14px; padding: 16px; background: #fff; }
+/* Feature access tab nav: shared window.SharedShell.FeatureTabShell, CSS in
+   components.css (.ml-modtabs-*). Only the module panel content below stays local. */
 .hsub-module-head { margin-bottom: 12px; }
 .hsub-module-title { font-size: 15px; font-weight: 700; color: var(--navy-800); }
 .hsub-module-copy { font-size: 12px; color: var(--fg-secondary); margin-top: 4px; line-height: 1.45; }
@@ -187,12 +182,6 @@ b { font-weight: 600; }
   .hsub-tier-stack-id { grid-column: 1 / -1; }
   .hsub-tier-stack.is-edit .hsub-tier-stack-card { grid-template-columns: 1fr 1fr; }
   .hsub-tier-stack.is-edit .hsub-tier-stack-card > *:last-child { position: absolute; top: 12px; right: 14px; }
-  .hsub-feature-shell { grid-template-columns: 1fr; }
-  .hsub-feature-tabs { flex-direction: row; gap: 0; padding-right: 0; padding-bottom: 2px; overflow-x: auto; border-bottom: 1px solid var(--border-light); scrollbar-width: none; -ms-overflow-style: none; }
-  .hsub-feature-tabs::-webkit-scrollbar { display: none; }
-  .hsub-feature-tab { width: auto; min-width: max-content; flex: 0 0 auto; padding: 0 14px 12px; border-left: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
-  .hsub-feature-tab:hover { border-bottom-color: var(--green-500); background: transparent; }
-  .hsub-feature-tab.active { border-bottom-color: var(--green-500); background: transparent; }
 }
 @media (max-width: 768px) {
   .ml-app { grid-template-columns: 1fr; }
@@ -200,7 +189,6 @@ b { font-weight: 600; }
   .ml-main { grid-column: 1; grid-row: 2; padding: 14px 14px 110px; }
   .ml-h1 { font-size: 20px; }
   .hsub-overview-grid { grid-template-columns: 1fr; }
-  .hsub-feature-tab { padding-bottom: 11px; }
   .hsub-module-row { grid-template-columns: 1fr; }
   .hsub-module-row.has-inline-config { grid-template-columns: 1fr; }
   .hsub-module-row-control { justify-content: flex-start; }
@@ -221,9 +209,9 @@ b { font-weight: 600; }
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 
-<script src="data.js?v=20260707"></script>
-<script src="../../shared/shared-shell.js?v=20260707"></script>
-<script src="host-shell.js?v=20260707"></script>
-<script src="subscription.js?v=20260707"></script>
+<script src="data.js?v=20260709c"></script>
+<script src="../../shared/shared-shell.js?v=20260708z"></script>
+<script src="host-shell.js?v=20260709c"></script>
+<script src="subscription.js?v=20260709c"></script>
 </body>
 </html>

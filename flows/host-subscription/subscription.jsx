@@ -1,7 +1,9 @@
 const { useEffect, useMemo, useState, useRef } = React;
+const { FeatureTabShell, SelectMenu } = window.SharedShell;
 
 const {
   SUBSCRIPTION_PLANS,
+  SUBSCRIPTION_HISTORY,
   fmtRM,
   fmtDate,
   addDays,
@@ -146,6 +148,23 @@ function getPlanTypeDisplay(plan) {
 function formatTierDuration(months) {
   const value = Number(months || 0);
   return `${value} month${value === 1 ? "" : "s"}`;
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  const datePart = d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+  const timePart = d.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+  return `${datePart} ${timePart}`;
 }
 
 function buildTierPatch(plan, tiers) {
@@ -512,16 +531,17 @@ function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onDeactivate 
       <div className="hac-toolbar">
         <div className="hac-toolbar-left">
           <div className="hac-search-group scoped">
-            <select
+            <SelectMenu
               className="hac-search-scope"
               value={scope}
-              onChange={(e) => { setScope(e.target.value); setPage(1); }}
-              aria-label="Search by"
+              options={[
+                { value: "name", label: "Plan" },
+                { value: "service", label: "Services" },
+              ]}
+              onChange={(next) => { setScope(next); setPage(1); }}
+              ariaLabel="Search by"
               style={{ width: scope === "name" ? "108px" : "128px" }}
-            >
-              <option value="name">Plan</option>
-              <option value="service">Services</option>
-            </select>
+            />
             <div className="hac-search-bar">
               <HIcon name="search" size={18} color="var(--fg-tertiary)" />
               <input
@@ -553,20 +573,32 @@ function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onDeactivate 
             <div className="hac-filter-field">
               <label>Status</label>
               <div className="hac-select-wrap">
-                <select className="hac-select" value={pendingStatus} onChange={(e) => setPendingStatus(e.target.value)}>
-                  <option value="all">All statuses</option>
-                  {STATUS_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-                </select>
+                <SelectMenu
+                  className="hac-select"
+                  value={pendingStatus}
+                  options={[
+                    { value: "all", label: "All statuses" },
+                    ...STATUS_OPTIONS,
+                  ]}
+                  onChange={setPendingStatus}
+                  ariaLabel="Filter by status"
+                />
               </div>
             </div>
             <div className="hac-filter-field">
               <label>Type</label>
               <div className="hac-select-wrap">
-                <select className="hac-select" value={pendingType} onChange={(e) => setPendingType(e.target.value)}>
-                  <option value="all">All types</option>
-                  <option value="default">Default</option>
-                  <option value="normal">Normal</option>
-                </select>
+                <SelectMenu
+                  className="hac-select"
+                  value={pendingType}
+                  options={[
+                    { value: "all", label: "All types" },
+                    { value: "default", label: "Default" },
+                    { value: "normal", label: "Normal" },
+                  ]}
+                  onChange={setPendingType}
+                  ariaLabel="Filter by type"
+                />
               </div>
             </div>
           </div>
@@ -787,11 +819,13 @@ function SubscriptionTierModal({ tier, onClose, onSave }) {
         <SwitchField checked={isTrial} onChange={setIsTrial} label="Set as trial" />
       </div>
       <div className="hac-select-wrap">
-        <select className="hac-select" value={durationMonths} onChange={(e) => setDurationMonths(e.target.value)}>
-          {TIER_DURATION_OPTIONS.map((option) => (
-            <option key={option} value={option}>{formatTierDuration(option)}</option>
-          ))}
-        </select>
+        <SelectMenu
+          className="hac-select"
+          value={durationMonths}
+          options={TIER_DURATION_OPTIONS.map((option) => ({ value: String(option), label: formatTierDuration(option) }))}
+          onChange={setDurationMonths}
+          ariaLabel="Tier duration"
+        />
       </div>
       <div className="hac-field-hint" style={{ marginBottom: 18 }}>Choose how long this pricing tier applies.</div>
 
@@ -972,26 +1006,13 @@ function FeatureAccessSection({ plan, editable, onChange }) {
   };
 
   const activeModule = plan.featureModules.find((module) => module.key === activeModuleKey) || plan.featureModules[0];
+  const tabs = plan.featureModules.map((module) => ({ key: module.key, label: module.label }));
 
   return (
     <Section title="Feature access" sub="Grouped by module with compact toggles, limits, and depth controls.">
-      <div className="hsub-feature-shell">
-        <div className="hsub-feature-tabs" role="tablist" aria-label="Feature access modules">
-          {plan.featureModules.map((module) => (
-            <button
-              key={module.key}
-              role="tab"
-              aria-selected={module.key === activeModuleKey}
-              className={"hsub-feature-tab" + (module.key === activeModuleKey ? " active" : "")}
-              onClick={() => setActiveModuleKey(module.key)}
-            >
-              <span className="hsub-feature-tab-title">{module.label}</span>
-            </button>
-          ))}
-        </div>
-
+      <FeatureTabShell tabs={tabs} activeKey={activeModuleKey} onSelect={setActiveModuleKey}>
         {activeModule && (
-          <div className="hsub-module-card" key={activeModule.key}>
+          <div key={activeModule.key}>
             <div className="hsub-module-head">
               <div className="hsub-module-title">{activeModule.label}</div>
               <div className="hsub-module-copy">{activeModule.summary}</div>
@@ -1021,9 +1042,13 @@ function FeatureAccessSection({ plan, editable, onChange }) {
                           {isRowEnabled(row) ? (
                             row.controlType === "select" ? (
                               <div className="hac-select-wrap hsub-inline-select-wrap">
-                                <select className="hac-select hsub-inline-select" value={getRowValue(row)} onChange={(e) => updateRow(activeModule.key, row.key, e.target.value)}>
-                                  {row.options.map((option) => <option key={option} value={option}>{option}</option>)}
-                                </select>
+                                <SelectMenu
+                                  className="hac-select hsub-inline-select"
+                                  value={getRowValue(row)}
+                                  options={row.options.map((option) => ({ value: option, label: option }))}
+                                  onChange={(next) => updateRow(activeModule.key, row.key, next)}
+                                  ariaLabel={row.label}
+                                />
                               </div>
                             ) : (
                               <input className="hac-input hsub-mini-input" type="number" min={row.min ?? 0} value={getRowValue(row)} onChange={(e) => updateRow(activeModule.key, row.key, Number(e.target.value || 0))} />
@@ -1032,9 +1057,13 @@ function FeatureAccessSection({ plan, editable, onChange }) {
                         </div>
                       ) : row.controlType === "select" ? (
                         <div className="hac-select-wrap">
-                          <select className="hac-select" value={getRowValue(row)} onChange={(e) => updateRow(activeModule.key, row.key, e.target.value)}>
-                            {row.options.map((option) => <option key={option} value={option}>{option}</option>)}
-                          </select>
+                          <SelectMenu
+                            className="hac-select"
+                            value={getRowValue(row)}
+                            options={row.options.map((option) => ({ value: option, label: option }))}
+                            onChange={(next) => updateRow(activeModule.key, row.key, next)}
+                            ariaLabel={row.label}
+                          />
                         </div>
                       ) : (
                         <input className="hac-input hsub-mini-input" type="number" min={row.min ?? 0} value={getRowValue(row)} onChange={(e) => updateRow(activeModule.key, row.key, Number(e.target.value || 0))} />
@@ -1052,7 +1081,7 @@ function FeatureAccessSection({ plan, editable, onChange }) {
             </div>
           </div>
         )}
-      </div>
+      </FeatureTabShell>
     </Section>
   );
 }
@@ -1067,6 +1096,68 @@ function ConfigurationView({ plan, editable, onChange }) {
   );
 }
 
+function SubscriptionHistoryTable({ plan }) {
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const entries = useMemo(
+    () => (SUBSCRIPTION_HISTORY || []).filter((item) => item.planId === plan.id).sort((a, b) => new Date(b.changeTime) - new Date(a.changeTime)),
+    [plan.id]
+  );
+  const pageData = entries.slice((page - 1) * perPage, page * perPage);
+
+  return (
+    <div>
+      {entries.length === 0 ? (
+        <div className="hac-empty-state">No subscription history available for this plan.</div>
+      ) : (
+        <>
+          <div className="hac-count">{entries.length} history record{entries.length !== 1 ? "s" : ""}</div>
+          <div className="ml-table-wrap">
+            <table className="ml-table hsub-table">
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>Change type</th>
+                  <th>Changed by</th>
+                  <th>Change time</th>
+                  <th>Changelog</th>
+                  <th>Version</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageData.map((item, index) => (
+                  <tr key={item.id}>
+                    <td className="ml-mono">{(page - 1) * perPage + index + 1}</td>
+                    <td>
+                      <MetaBadge tone={item.changeType === "create" ? "info" : "neutral"}>
+                        {item.changeType === "create" ? "Create" : "Update"}
+                      </MetaBadge>
+                    </td>
+                    <td>{item.changedBy}</td>
+                    <td className="ml-mono">{fmtDateTime(item.changeTime)}</td>
+                    <td>
+                      <a
+                        className="ml-btn-text-blue"
+                        href="#"
+                        onClick={(e) => e.preventDefault()}
+                        style={{ fontSize: 13 }}
+                      >
+                        JSON file
+                      </a>
+                    </td>
+                    <td className="ml-mono">v{item.version}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <HPager page={page} perPage={perPage} total={entries.length} onPage={setPage} onPerPage={setPerPage} />
+        </>
+      )}
+    </div>
+  );
+}
+
 function PlanPageHead({ mode, plan, onBack, onEdit, onDelete, canDelete }) {
   const isCreate = mode === "create";
   const isEdit = mode === "edit";
@@ -1075,7 +1166,7 @@ function PlanPageHead({ mode, plan, onBack, onEdit, onDelete, canDelete }) {
     ? "Configure pricing, tiers, and feature access for this plan."
     : isEdit
       ? "Adjust plan rules, pricing, tiers, and feature access."
-      : "Review subscription configuration, pricing tiers, and feature access.";
+      : null;
 
   return (
     <div className="ml-page-head">
@@ -1086,7 +1177,7 @@ function PlanPageHead({ mode, plan, onBack, onEdit, onDelete, canDelete }) {
           <span>{isCreate ? "Create plan" : isEdit ? "Edit plan" : "Plan detail"}</span>
         </div>
         <div className="ml-h1">{title}</div>
-        <div className="hsub-page-sub">{subtitle}</div>
+        {subtitle && <div className="hsub-page-sub">{subtitle}</div>}
       </div>
       {!isCreate && !isEdit && (
         <div className="hsub-head-actions">
@@ -1107,6 +1198,7 @@ function SubscriptionApp() {
   const [draftPlan, setDraftPlan] = useState(null);
   const [flash, setFlash] = useState(null);
   const [deletePlanId, setDeletePlanId] = useState(null);
+  const [viewTab, setViewTab] = useState("details");
 
   useEffect(() => {
     if (!flash) return;
@@ -1131,6 +1223,7 @@ function SubscriptionApp() {
     setSelectedPlanId(planId);
     setMode("view");
     setDraftPlan(null);
+    setViewTab("details");
   };
 
   const openCreate = () => {
@@ -1226,7 +1319,32 @@ function SubscriptionApp() {
               canDelete={canDeletePlan(workingPlan)}
             />
 
-            <ConfigurationView plan={workingPlan} editable={mode !== "view"} onChange={setPlanPatch} />
+            {mode === "view" && (
+              <div className="ml-tabs" style={{ marginTop: -4 }}>
+                {[
+                  { key: "details", label: "Subscription Details" },
+                  { key: "history", label: "Subscription History" },
+                ].map((t) => (
+                  <button
+                    key={t.key}
+                    className={"ml-tab" + (viewTab === t.key ? " active" : "")}
+                    onClick={() => setViewTab(t.key)}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {mode !== "view" && (
+              <ConfigurationView plan={workingPlan} editable={true} onChange={setPlanPatch} />
+            )}
+            {mode === "view" && viewTab === "details" && (
+              <ConfigurationView plan={workingPlan} editable={false} onChange={setPlanPatch} />
+            )}
+            {mode === "view" && viewTab === "history" && (
+              <SubscriptionHistoryTable plan={workingPlan} />
+            )}
 
             {(mode === "create" || mode === "edit") && (
               <div className="hac-edit-bar hsub-edit-bar">

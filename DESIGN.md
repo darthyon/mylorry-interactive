@@ -239,7 +239,7 @@ Depth is structural, not theatrical. The system is mostly flat at rest, with lig
 ### Don't:
 - **Don't** introduce consumer-fintech styling. No gradient cards, no neon accent colors, no glowing revenue-chart energy. This is not Robinhood or a crypto dashboard.
 - **Don't** drift into legacy ERP heaviness. No information crammed into every pixel, no 12-field visual walls, no SAP-era table weight.
-- **Don't** use border-left or border-right accent stripes greater than `1px` on cards, callouts, or list items.
+- **Don't** use border-left or border-right accent stripes greater than `1px` on cards, callouts, or passive list items. Exception: vertical tab navigation (e.g. sidebar-style feature/module tab lists) may use a border-left active-state indicator — it's a real affordance on an interactive control, not decoration on a static surface.
 - **Don't** use gradient text, decorative glassmorphism, or oversized hero metrics inside product surfaces.
 - **Don't** replace comparison-heavy structures with identical card grids. If the task is ranking or numeric comparison, alignment wins.
 - **Don't** use heavy color on inactive states. Accent belongs to intent and state change, not passive decoration.

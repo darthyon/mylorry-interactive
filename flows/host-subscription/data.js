@@ -109,8 +109,56 @@
     };
   };
 
+  const normalizeCommitmentOptions = (options = []) =>
+    options
+      .map((option, index) => ({
+        ...option,
+        id: option.id || `tier-${index + 1}`,
+        durationMonths: Number(option.durationMonths || 1),
+        amount: Number(option.amount ?? option.discountedMonthlyPrice ?? 0),
+        isTrial: !!option.isTrial,
+      }))
+      .sort((a, b) => a.durationMonths - b.durationMonths);
+
+  const resolveCommitmentOption = (plan, commitmentMonths) => {
+    const options = normalizeCommitmentOptions(plan.pricing?.commitmentOptions || []);
+    const paidOptions = options.filter((option) => !option.isTrial);
+    if (!paidOptions.length) return null;
+    if (commitmentMonths != null) {
+      const matched = paidOptions.find((option) => option.durationMonths === Number(commitmentMonths));
+      if (matched) return matched;
+    }
+    return paidOptions[0];
+  };
+
   const calculateMonthlyBilling = (plan, vehiclesUsed) =>
     Number(plan.pricing.baseMonthlyFee || 0) + Number(vehiclesUsed || 0) * Number(plan.pricing.perManagedVehicleFee || 0);
+
+  const calculateCommittedBilling = (plan, vehiclesUsed, commitmentMonths = null, setupFeeStatus = "") => {
+    const commitment = resolveCommitmentOption(plan, commitmentMonths);
+    const months = Number(commitment?.durationMonths ?? commitmentMonths ?? 1);
+    const baseMonthlyFee = Number((commitment?.amount ?? plan.pricing.baseMonthlyFee) || 0);
+    const perManagedVehicleFee = Number(plan.pricing.perManagedVehicleFee || 0);
+    const monthlySubtotal = baseMonthlyFee + Number(vehiclesUsed || 0) * perManagedVehicleFee;
+    const setupFee = setupFeeStatus === "Waived" ? 0 : Number(plan.pricing.setupFee || 0);
+    return {
+      commitmentMonths: months,
+      baseMonthlyFee,
+      perManagedVehicleFee,
+      monthlySubtotal,
+      setupFee,
+      totalLumpSum: monthlySubtotal * months + setupFee,
+    };
+  };
+
+  // Resolves a feature-row's bindPath (e.g. "limits.historyDepth") against a
+  // plan record. Mirrors the local copy in subscription.jsx's editor —
+  // exported here too so read-only consumers (Org Portal) don't need their
+  // own copy or the editor's update/patch machinery.
+  const getBoundValue = (plan, path) => {
+    if (!path) return undefined;
+    return path.split(".").reduce((acc, key) => (acc == null ? undefined : acc[key]), plan);
+  };
 
   const makeOrg = (plan, orgId, orgName, vehiclesUsed, adminsUsed, extra = {}) => {
     const vehicleLimit = plan.limits.managedVehicleLimit === 0 ? "Unlimited" : plan.limits.managedVehicleLimit;
@@ -188,11 +236,11 @@
         baseMonthlyFee: 99,
         perManagedVehicleFee: 12,
         commitmentOptions: [
-          { id: "lite-12", durationMonths: 12, discountedMonthlyPrice: 89 },
+          { id: "lite-12", durationMonths: 12, discountedMonthlyPrice: 99 },
         ],
       },
       limits: {
-        managedVehicleLimit: 30,
+        managedVehicleLimit: 10,
         adminUserLimit: 5,
         historyDepth: "6 months",
         reportDepth: "6 months",
@@ -222,15 +270,15 @@
       pricing: {
         setupFee: 500,
         waiveSetupFee: false,
-        baseMonthlyFee: 249,
+        baseMonthlyFee: 499,
         perManagedVehicleFee: 25,
         commitmentOptions: [
-          { id: "prem-12", durationMonths: 12, discountedMonthlyPrice: 229 },
-          { id: "prem-24", durationMonths: 24, discountedMonthlyPrice: 209 },
+          { id: "prem-12", durationMonths: 12, discountedMonthlyPrice: 499 },
+          { id: "prem-24", durationMonths: 24, discountedMonthlyPrice: 499 },
         ],
       },
       limits: {
-        managedVehicleLimit: 120,
+        managedVehicleLimit: 50,
         adminUserLimit: 18,
         historyDepth: "12 months",
         reportDepth: "12 months",
@@ -258,12 +306,12 @@
       recommended: false,
       displayOrder: 4,
       pricing: {
-        setupFee: 1200,
+        setupFee: 1000,
         waiveSetupFee: false,
         baseMonthlyFee: 999,
         perManagedVehicleFee: 40,
         commitmentOptions: [
-          { id: "ent-24", durationMonths: 24, discountedMonthlyPrice: 899 },
+          { id: "ent-24", durationMonths: 24, discountedMonthlyPrice: 999 },
         ],
       },
       limits: {
@@ -370,10 +418,10 @@
     }),
   ];
   plansById["plan-lite"].organizations = [
-    makeOrg(plansById["plan-lite"], "org-bluechip", "Bluechip Freight", 14, 4, {
+    makeOrg(plansById["plan-lite"], "org-bluechip", "Bluechip Freight", 8, 4, {
       nextBillingDate: "2026-08-03",
     }),
-    makeOrg(plansById["plan-lite"], "org-radiant", "Radiant Coldchain", 11, 3, {
+    makeOrg(plansById["plan-lite"], "org-radiant", "Radiant Coldchain", 10, 3, {
       subscriptionStatus: "Pending change",
       nextBillingDate: "2026-08-08",
       hasDuplicateActivePlan: true,
@@ -430,8 +478,84 @@
     }))
   );
 
+  const SUBSCRIPTION_HISTORY = [
+    {
+      id: "hist-lite-1",
+      planId: "plan-lite",
+      changeType: "create",
+      changedBy: "Ahmad Razali",
+      changeTime: "2025-02-14T09:00:00",
+      changelogFileName: "changelog-lite-v1.json",
+      version: 1,
+    },
+    {
+      id: "hist-lite-2",
+      planId: "plan-lite",
+      changeType: "update",
+      changedBy: "Siti Nurhaliza",
+      changeTime: "2025-08-22T14:15:00",
+      changelogFileName: "changelog-lite-v2.json",
+      version: 2,
+    },
+    {
+      id: "hist-lite-3",
+      planId: "plan-lite",
+      changeType: "update",
+      changedBy: "Mohd Faizal",
+      changeTime: "2026-04-18T15:37:00",
+      changelogFileName: "changelog-lite-v7.json",
+      version: 7,
+    },
+    {
+      id: "hist-premium-1",
+      planId: "plan-premium",
+      changeType: "create",
+      changedBy: "Ahmad Razali",
+      changeTime: "2025-03-08T10:30:00",
+      changelogFileName: "changelog-premium-v1.json",
+      version: 1,
+    },
+    {
+      id: "hist-premium-2",
+      planId: "plan-premium",
+      changeType: "update",
+      changedBy: "Siti Nurhaliza",
+      changeTime: "2025-11-05T11:20:00",
+      changelogFileName: "changelog-premium-v5.json",
+      version: 5,
+    },
+    {
+      id: "hist-premium-3",
+      planId: "plan-premium",
+      changeType: "update",
+      changedBy: "Mohd Faizal",
+      changeTime: "2026-01-30T09:45:00",
+      changelogFileName: "changelog-premium-v9.json",
+      version: 9,
+    },
+    {
+      id: "hist-enterprise-1",
+      planId: "plan-enterprise",
+      changeType: "create",
+      changedBy: "Ahmad Razali",
+      changeTime: "2025-04-18T08:45:00",
+      changelogFileName: "changelog-enterprise-v1.json",
+      version: 1,
+    },
+    {
+      id: "hist-enterprise-2",
+      planId: "plan-enterprise",
+      changeType: "update",
+      changedBy: "Siti Nurhaliza",
+      changeTime: "2026-02-12T16:00:00",
+      changelogFileName: "changelog-enterprise-v5.json",
+      version: 5,
+    },
+  ];
+
   window.SUB = {
     SUBSCRIPTION_PLANS,
+    SUBSCRIPTION_HISTORY,
     FEATURE_MODULE_TEMPLATES,
     ORGANIZATION_LOOKUP,
     fmtRM,
@@ -440,6 +564,10 @@
     deepClone,
     cloneFeatureModules,
     serviceSummary,
+    normalizeCommitmentOptions,
+    resolveCommitmentOption,
     calculateMonthlyBilling,
+    calculateCommittedBilling,
+    getBoundValue,
   };
 })();
