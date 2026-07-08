@@ -235,8 +235,8 @@
       featureModules: applyFeatureOverrides(cloneFeatureModules(), {
         myfuel: { subsidy_quota: { value: false } },
         myadmin: {
-          vehicle_info: { value: false },
-          driver_info: { value: false },
+          vehicle_info: { value: true },
+          driver_info: { value: true },
           icop: { value: false },
           vehicle_doc_reminder: { enabled: false },
           driver_doc_reminder: { enabled: false },
