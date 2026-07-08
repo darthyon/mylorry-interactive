@@ -219,7 +219,7 @@
         commitmentOptions: [],
       },
       limits: {
-        managedVehicleLimit: 5,
+        managedVehicleLimit: 0,
         adminUserLimit: 1,
         historyDepth: "3 months",
         reportDepth: "3 months",
