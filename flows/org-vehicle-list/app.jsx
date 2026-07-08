@@ -2,7 +2,7 @@
 
 const { useEffect, useMemo, useRef, useState } = React;
 const { Icon, OrgSwitcher, SelectMenu, Pager } = window.SharedShell;
-const { useTweaks, TweaksPanel, TweakSection, TweakSelect } = window;
+const { useTweaks, TweaksPanel, TweakSection, TweakSelect, TweakToggle } = window;
 const D = window.ORG_VEHICLE_LIST;
 
 const MYADMIN_ITEMS = [
@@ -16,7 +16,8 @@ const MYADMIN_ITEMS = [
 ];
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "scenario": "lite-active"
+  "scenario": "lite-active",
+  "veh001ActiveCheckIn": true
 }/*EDITMODE-END*/;
 
 const SCENARIO_LABEL = {
@@ -163,10 +164,16 @@ function normalizeVehicle(vehicle) {
   };
 }
 
-function deriveVehicles(scenarioKey) {
+function deriveVehicles(scenarioKey, tweaks = {}) {
   const scenario = D.scenarios[scenarioKey];
   const managedSet = new Set(scenario.managedIds);
-  return D.vehicles.map((vehicle) => normalizeVehicle({ ...vehicle, managed: managedSet.has(vehicle.id) }));
+  return D.vehicles.map((vehicle) => {
+    const v = normalizeVehicle({ ...vehicle, managed: managedSet.has(vehicle.id) });
+    if (tweaks.veh001ActiveCheckIn !== undefined && v.id === "veh-001") {
+      v.activeCheckIn = tweaks.veh001ActiveCheckIn;
+    }
+    return v;
+  });
 }
 
 function scenarioSummary(scenarioKey, usedCount) {
@@ -351,8 +358,8 @@ function DriverListPanel({ vehicle, onToggleAccessibleToAll, onOpenPicker, onRem
           <input type="checkbox" checked={vehicle.accessibleToAll} onChange={onToggleAccessibleToAll} />
           <span>Accessible to all drivers</span>
           <span className="ml-tooltip-wrap ovl-driver-info-wrap" tabIndex={0}>
-            <Icon name="info" size={16} color="#fff" />
-            <span className="ml-tooltip ovl-driver-info-tooltip">Every driver in your org can check in without individual assignment.</span>
+            <Icon name="info" size={18} color="var(--fg-tertiary)" />
+            <span className="ml-tooltip ovl-driver-info-tooltip">When enabled, all drivers can check into this vehicle without direct assignment</span>
           </span>
         </label>
         <button
@@ -803,7 +810,8 @@ function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const scenarioKey = t.scenario || "lite-active";
   const scenario = D.scenarios[scenarioKey];
-  const [vehicles, setVehicles] = useState(() => deriveVehicles(scenarioKey));
+  const tweakVeh001CheckIn = t.veh001ActiveCheckIn ?? true;
+  const [vehicles, setVehicles] = useState(() => deriveVehicles(scenarioKey, { veh001ActiveCheckIn: tweakVeh001CheckIn }));
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState("vehicle");
   const [dueDateType, setDueDateType] = useState("all");
@@ -827,12 +835,12 @@ function App() {
   const [perPage, setPerPage] = useState(10);
 
   useEffect(() => {
-    setVehicles(deriveVehicles(scenarioKey));
+    setVehicles(deriveVehicles(scenarioKey, { veh001ActiveCheckIn: tweakVeh001CheckIn }));
     setExpandedId(null);
     setMenuId(null);
     setMobileMenuId(null);
     setPage(1);
-  }, [scenarioKey]);
+  }, [scenarioKey, tweakVeh001CheckIn]);
 
   function update(key, value) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -947,15 +955,20 @@ function App() {
     : null;
 
   const nextManagedCount = managedCount
-    + (form.managed && !editingVehicle?.managed ? 1 : 0)
-    - (!form.managed && editingVehicle?.managed ? 1 : 0);
+    + (form.managed && !currentEditingVehicle?.managed ? 1 : 0)
+    - (!form.managed && currentEditingVehicle?.managed ? 1 : 0);
   const overCap = form.managed && (scenario.limit === 0 || nextManagedCount > scenario.limit);
 
   function handleToggleManaged() {
     if (form.managed) {
-      if (editingVehicle?.activeCheckIn) {
+      if (currentEditingVehicle?.activeCheckIn) {
         pushToast("warn", "This vehicle is currently in use. The driver must check out before you can deactivate Managed status.");
         return;
+      }
+      if (editingVehicle) {
+        setVehicles((current) => current.map((item) =>
+          item.id === editingVehicle.id ? { ...item, managed: false, accessibleToAll: false } : item
+        ));
       }
       update("managed", false);
       return;
@@ -963,6 +976,11 @@ function App() {
     if (scenario.limit === 0 || managedCount >= scenario.limit) {
       pushToast("warn", "You've reached your plan limit of managed vehicles. Upgrade your plan to manage more.");
       return;
+    }
+    if (editingVehicle) {
+      setVehicles((current) => current.map((item) =>
+        item.id === editingVehicle.id ? { ...item, managed: true } : item
+      ));
     }
     update("managed", true);
   }
@@ -1358,6 +1376,11 @@ function App() {
             value={scenarioKey}
             options={Object.keys(SCENARIO_LABEL).map((key) => ({ value: key, label: SCENARIO_LABEL[key] }))}
             onChange={(value) => setTweak("scenario", value)}
+          />
+          <TweakToggle
+            label="Veh-001 has active check-in"
+            value={t.veh001ActiveCheckIn ?? true}
+            onChange={(v) => setTweak("veh001ActiveCheckIn", v)}
           />
         </TweakSection>
       </TweaksPanel>

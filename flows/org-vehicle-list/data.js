@@ -35,10 +35,10 @@ window.ORG_VEHICLE_LIST = {
       managedIds: ["veh-001", "veh-002", "veh-003", "veh-004", "veh-005", "veh-006", "veh-007", "veh-009"],
     },
     "lite-at-limit": {
-      label: "Lite · 10 / 10",
+      label: "Lite · 9 / 9",
       planName: "Lite",
-      limit: 10,
-      managedIds: ["veh-001", "veh-002", "veh-003", "veh-004", "veh-005", "veh-006", "veh-007", "veh-008", "veh-009", "veh-010"],
+      limit: 9,
+      managedIds: ["veh-001", "veh-003", "veh-004", "veh-005", "veh-006", "veh-007", "veh-008", "veh-009", "veh-010"],
     },
     premium: {
       label: "Premium · 8 / 50",
