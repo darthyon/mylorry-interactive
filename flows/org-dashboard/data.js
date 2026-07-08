@@ -185,12 +185,66 @@ window.ORG_DASH = {
       { date: "4 Jun 2026, 04:00 PM", item: "DRV0012 · Roslan Ibrahim", cat: "Medical Due",     catTone: "amber", detail: "Medical Report · Due in 45 days",   amount: "—" },
     ],
     checklists: [
-      { date: "9 Jun 2026, 07:30 AM", item: "STG1161 · Ahmad Razif",    cat: "Check-out",  catTone: "green", detail: "Pre-trip checklist · Pending endorse",  amount: "—" },
-      { date: "9 Jun 2026, 06:55 AM", item: "STG0234 · Mohd Fadzli",    cat: "Check-out",  catTone: "green", detail: "Pre-trip checklist · Pending endorse",  amount: "—" },
-      { date: "8 Jun 2026, 08:10 AM", item: "BCA8831 · Zulkifli Hamid", cat: "Check-in",   catTone: "amber", detail: "Post-trip checklist · Pending endorse", amount: "—" },
-      { date: "8 Jun 2026, 07:45 AM", item: "VANB791 · Karim Abdullah", cat: "Check-out",  catTone: "green", detail: "Pre-trip checklist · Pending endorse",  amount: "—" },
-      { date: "7 Jun 2026, 09:20 AM", item: "WQM1190 · Hafiz Sulaiman", cat: "Check-in",   catTone: "amber", detail: "Post-trip checklist · Pending endorse", amount: "—" },
-      { date: "7 Jun 2026, 08:00 AM", item: "JKM4521 · Roslan Ibrahim", cat: "Check-out",  catTone: "green", detail: "Pre-trip checklist · Pending endorse",  amount: "—" },
+      {
+        driver: "Ahmad Razif", plate: "STG1161",
+        checkIn: "9 Jun 2026 · 7:02 AM", checkOut: "9 Jun 2026 · 7:30 AM",
+        startMileage: 48210, endMileage: 48252,
+        items: [
+          { label: "Daily Vehicle Checklist",   status: "passed" },
+          { label: "Daily Vehicle Maintenance", status: "passed" },
+          { label: "Daily Driver Checklist",     status: "passed" },
+        ],
+      },
+      {
+        driver: "Mohd Fadzli", plate: "STG0234",
+        checkIn: "9 Jun 2026 · 6:20 AM", checkOut: "9 Jun 2026 · 6:55 AM",
+        startMileage: 91007, endMileage: 91043,
+        items: [
+          { label: "Daily Vehicle Checklist",   status: "passed" },
+          { label: "Daily Vehicle Maintenance", status: "passed" },
+          { label: "Daily Driver Checklist",     status: "passed" },
+        ],
+      },
+      {
+        driver: "Zulkifli Hamid", plate: "BCA8831",
+        checkIn: "8 Jun 2026 · 7:40 AM", checkOut: "8 Jun 2026 · 8:10 AM",
+        startMileage: 65330, endMileage: 65378,
+        items: [
+          { label: "Daily Vehicle Checklist",   status: "passed" },
+          { label: "Daily Vehicle Maintenance", status: "warning" },
+          { label: "Daily Driver Checklist",     status: "warning" },
+        ],
+      },
+      {
+        driver: "Karim Abdullah", plate: "VANB791",
+        checkIn: "8 Jun 2026 · 7:10 AM", checkOut: "8 Jun 2026 · 7:45 AM",
+        startMileage: 33840, endMileage: 33879,
+        items: [
+          { label: "Daily Vehicle Checklist",   status: "passed" },
+          { label: "Daily Vehicle Maintenance", status: "passed" },
+          { label: "Daily Driver Checklist",     status: "passed" },
+        ],
+      },
+      {
+        driver: "Hafiz Sulaiman", plate: "WQM1190",
+        checkIn: "7 Jun 2026 · 8:55 AM", checkOut: "7 Jun 2026 · 9:20 AM",
+        startMileage: 120450, endMileage: 120498,
+        items: [
+          { label: "Daily Vehicle Checklist",   status: "passed" },
+          { label: "Daily Vehicle Maintenance", status: "passed" },
+          { label: "Daily Driver Checklist",     status: "warning" },
+        ],
+      },
+      {
+        driver: "Roslan Ibrahim", plate: "JKM4521",
+        checkIn: "7 Jun 2026 · 7:35 AM", checkOut: "7 Jun 2026 · 8:00 AM",
+        startMileage: 78120, endMileage: 78156,
+        items: [
+          { label: "Daily Vehicle Checklist",   status: "passed" },
+          { label: "Daily Vehicle Maintenance", status: "passed" },
+          { label: "Daily Driver Checklist",     status: "passed" },
+        ],
+      },
     ],
     trips: [
       { date: "9 Jun 2026, 09:00 AM", item: "STG0234 · KL → Ipoh",      cat: "Ongoing", catTone: "green", detail: "ETA 1:30 PM · 62% complete",  amount: "—" },
