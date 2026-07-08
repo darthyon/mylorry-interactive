@@ -54,15 +54,22 @@ function buildModules(plan) {
   });
 }
 
-function buildUpcoming(upcoming) {
+function buildUpcoming(upcoming, currentAgreementVehicleCount) {
   if (!upcoming) return null;
   const plan = upcoming.planId ? PLANS_BY_ID[upcoming.planId] : null;
+  const vehicleLimit = plan ? vehicleLimitOf(plan) : null;
+  const billing = plan
+    ? {
+        ...calculateCommittedBilling(plan, currentAgreementVehicleCount, upcoming.commitmentMonths, upcoming.setupFeeStatus),
+        setupFeeStatus: upcoming.setupFeeStatus,
+      }
+    : null;
   return {
     planName: plan ? plan.name : null,
     effectiveDate: upcoming.effectiveDate,
     note: upcoming.note,
-    vehicleLimit: plan ? vehicleLimitOf(plan) : null,
-    billing: plan ? { baseMonthlyFee: plan.pricing.baseMonthlyFee, perManagedVehicleFee: plan.pricing.perManagedVehicleFee } : null,
+    vehicleLimit,
+    billing,
   };
 }
 
@@ -74,9 +81,19 @@ function buildScenarioView(sc) {
     : (plan.limits.managedVehicleLimit > 0 ? plan.limits.managedVehicleLimit : sc.vehiclesUsed);
   // Free still gets a billing card — RM0 / commitment N/A / setup fee N/A —
   // not hidden entirely. Only paid plans have a real committed-billing calc.
-  const billing = isPaid
+  // Trial is a special case: no bill yet, 1-month trial duration, no setup fee.
+  let billing = isPaid
     ? { ...calculateCommittedBilling(plan, agreementVehicleCount, sc.commitmentMonths, sc.setupFeeStatus), setupFeeStatus: sc.setupFeeStatus }
     : { baseMonthlyFee: 0, perManagedVehicleFee: 0, commitmentMonths: null, setupFee: 0, totalLumpSum: 0, setupFeeStatus: "N/A" };
+  if (sc.status === "trial") {
+    billing = {
+      ...billing,
+      commitmentMonths: 1,
+      setupFee: 0,
+      setupFeeStatus: "N/A",
+      totalLumpSum: 0,
+    };
+  }
   return {
     planName: plan.name,
     planTier: plan.id.replace("plan-", ""),
@@ -88,7 +105,7 @@ function buildScenarioView(sc) {
     agreementVehicleCount,
     vehicleLimit: vehicleLimitOf(plan),
     billing,
-    upcoming: buildUpcoming(sc.upcoming),
+    upcoming: buildUpcoming(sc.upcoming, agreementVehicleCount),
     modules: buildModules(plan),
   };
 }
@@ -194,6 +211,7 @@ function PlanStatCard({ s }) {
 
 function BillingStatCard({ s, billing }) {
   const isFree = billing.commitmentMonths == null;
+  const isTrial = s.status === "trial";
   const rows = [
     { label: "Base monthly fee", value: `${RM(billing.baseMonthlyFee)} × ${billing.commitmentMonths} months` },
   ];
@@ -210,7 +228,7 @@ function BillingStatCard({ s, billing }) {
 
   return (
     <div className="osp-stat-card osp-stat-card-relative">
-      {!isFree && (
+      {!isFree && !isTrial && (
         <div className="osp-calc-corner">
           <CalcPopover title="Calculation summary" rows={rows} align="right" />
         </div>
@@ -221,7 +239,7 @@ function BillingStatCard({ s, billing }) {
         <span>Commitment duration</span><strong>{isFree ? "N/A" : `${billing.commitmentMonths} months`}</strong>
       </div>
       <div className="osp-billing-row">
-        <span>Setup fee</span><strong>{isFree ? "N/A" : `${RM(billing.setupFee)} · ${billing.setupFeeStatus}`}</strong>
+        <span>Setup fee</span><strong>{isFree || isTrial ? "N/A" : `${RM(billing.setupFee)} · ${billing.setupFeeStatus}`}</strong>
       </div>
     </div>
   );
@@ -268,28 +286,35 @@ function UpcomingPlanView({ upcoming }) {
       </div>
     );
   }
+  const b = upcoming.billing;
   return (
     <div className="osp-stats-panel">
       <div className="osp-stat-card">
-        <div className="osp-plan-row">
-          <span className="osp-plan-name">{upcoming.planName}</span>
-          <span className="ml-pill ml-pill-navy">Effective {fmtDate(upcoming.effectiveDate)}</span>
-        </div>
+        <div className="osp-plan-name">{upcoming.planName || "Upcoming change"}</div>
+        {upcoming.effectiveDate && (
+          <div className="osp-plan-date">
+            <Icon name="calendar_today" size={14} color="var(--fg-tertiary)" /> Effective {fmtDate(upcoming.effectiveDate)}
+          </div>
+        )}
         {upcoming.note && <div className="osp-plan-date">{upcoming.note}</div>}
       </div>
+      {b && (
+        <div className="osp-stat-card">
+          <div className="osp-block-title">New billed amount</div>
+          <div className="osp-billing-amount">{RM(b.totalLumpSum)}</div>
+          <div className="osp-billing-row">
+            <span>Commitment duration</span><strong>{b.commitmentMonths} months</strong>
+          </div>
+          <div className="osp-billing-row">
+            <span>Setup fee</span><strong>{`${RM(b.setupFee)} · ${b.setupFeeStatus}`}</strong>
+          </div>
+        </div>
+      )}
       {upcoming.vehicleLimit != null && (
         <div className="osp-stat-card">
           <div className="osp-block-title">Managed vehicles (new limit)</div>
           <div className="osp-usage-text">
             {upcoming.vehicleLimit === "unlimited" ? "Unlimited" : upcoming.vehicleLimit}
-          </div>
-        </div>
-      )}
-      {upcoming.billing && (
-        <div className="osp-stat-card">
-          <div className="osp-block-title">New billing</div>
-          <div className="osp-billing-formula">
-            {RM(upcoming.billing.baseMonthlyFee)} base monthly fee + {RM(upcoming.billing.perManagedVehicleFee)} per managed vehicle
           </div>
         </div>
       )}
