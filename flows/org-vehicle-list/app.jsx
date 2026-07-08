@@ -1,7 +1,7 @@
 {
 
 const { useEffect, useMemo, useRef, useState } = React;
-const { Icon, OrgSwitcher, SelectMenu, Pager, Segmented } = window.SharedShell;
+const { Icon, OrgSwitcher, SelectMenu, Pager } = window.SharedShell;
 const { useTweaks, TweaksPanel, TweakSection, TweakSelect } = window;
 const D = window.ORG_VEHICLE_LIST;
 
@@ -45,6 +45,22 @@ const VEHICLE_EDIT_TABS = [
   { key: "reminders", label: "Reminders" },
   { key: "forms", label: "Forms" },
   { key: "drivers", label: "Drivers" },
+];
+const DRIVER_POOL = [
+  { name: "Azhar Rahman", driverId: "DRV-014" },
+  { name: "Hafiz Sulaiman", driverId: "DRV-022" },
+  { name: "Roslan Ibrahim", driverId: "DRV-005" },
+  { name: "Zulkifli Hamid", driverId: "DRV-011" },
+  { name: "Karim Abdullah", driverId: "DRV-020" },
+  { name: "Farid Manaf", driverId: "DRV-041" },
+  { name: "Khalid Nordin", driverId: "DRV-028" },
+  { name: "Nazri Ishak", driverId: "DRV-038" },
+  { name: "Saiful Nizam", driverId: "DRV-031" },
+  { name: "Afiq Daniel", driverId: "DRV-044" },
+  { name: "Amirul Hakim", driverId: "DRV-052" },
+  { name: "Firdaus Kamal", driverId: "DRV-061" },
+  { name: "Iskandar Rosli", driverId: "DRV-063" },
+  { name: "Wan Aidil", driverId: "DRV-067" },
 ];
 
 function initials(name = "") {
@@ -143,6 +159,7 @@ function normalizeVehicle(vehicle) {
     managed: !!vehicle.managed,
     drivers: Array.isArray(vehicle.drivers) ? vehicle.drivers : [],
     activeCheckIn: !!vehicle.activeCheckIn,
+    accessibleToAll: !!vehicle.accessibleToAll,
   };
 }
 
@@ -160,7 +177,7 @@ function scenarioSummary(scenarioKey, usedCount) {
     return {
       state: "free",
       label: `${usedCount} / ${limit} Vehicles Managed`,
-      helper: "Managed vehicles unlock driver check-in/out, ICOP checklist, and reminders.",
+      helper: "Managed vehicles unlock driver check-in/out, safety checklist, and reminders.",
       note: "Free plan includes no managed vehicles. Manage this vehicle to enable driver features once the plan is upgraded.",
     };
   }
@@ -168,14 +185,14 @@ function scenarioSummary(scenarioKey, usedCount) {
     return {
       state: "limit",
       label: `${usedCount} / ${limit} Vehicles Managed`,
-      helper: "Managed vehicles unlock driver check-in/out, ICOP checklist, and reminders.",
+      helper: "Managed vehicles unlock driver check-in/out, safety checklist, and reminders.",
       note: `Plan limit reached. ${planName} allows up to ${limit} managed vehicles.`,
     };
   }
   return {
     state: "healthy",
     label: `${usedCount} / ${limit} Vehicles Managed`,
-    helper: "Managed vehicles unlock driver check-in/out, ICOP checklist, and reminders.",
+    helper: "Managed vehicles unlock driver check-in/out, safety checklist, and reminders.",
     note: `${limit - usedCount} managed slots available on ${planName}.`,
   };
 }
@@ -319,6 +336,149 @@ function ExpandableVehicleDriversRow({ vehicle }) {
   );
 }
 
+function DriverListPanel({ vehicle, onToggleAccessibleToAll, onOpenPicker, onRemoveDriver }) {
+  const count = vehicle.drivers.length;
+  return (
+    <div className="ml-card ovl-form-card ovl-driver-panel">
+      <div className="ovl-driver-panel-head">
+        <div className="ovl-driver-panel-title">
+          Driver List
+          {!vehicle.accessibleToAll && (
+            <span className="ovl-driver-panel-count">{count} record{count === 1 ? "" : "s"}</span>
+          )}
+        </div>
+        <label className="ovl-driver-access-check">
+          <input type="checkbox" checked={vehicle.accessibleToAll} onChange={onToggleAccessibleToAll} />
+          <span>Accessible to all drivers</span>
+          <span className="ml-tooltip-wrap ovl-driver-info-wrap" tabIndex={0}>
+            <Icon name="info" size={16} color="#fff" />
+            <span className="ml-tooltip ovl-driver-info-tooltip">Every driver in your org can check in without individual assignment.</span>
+          </span>
+        </label>
+        <button
+          className="hac-save-btn ovl-driver-add-btn"
+          type="button"
+          onClick={onOpenPicker}
+          disabled={vehicle.accessibleToAll}
+        >
+          <Icon name="add" size={16} color="#fff" /> Add Driver
+        </button>
+      </div>
+      <table className="ml-table ovl-driver-table">
+        <thead>
+          <tr>
+            <th style={{ width: 56 }}>No.</th>
+            <th>Driver Name</th>
+            <th>Driver ID</th>
+            <th style={{ width: 44 }}></th>
+          </tr>
+        </thead>
+        <tbody>
+          {vehicle.accessibleToAll ? (
+            <tr>
+              <td colSpan={4}>
+                <div className="ovl-driver-empty">
+                  <Icon name="how_to_reg" size={40} color="var(--green-500)" />
+                  <div className="ovl-driver-empty-title">All drivers can access this vehicle</div>
+                  <div className="ovl-driver-empty-sub">Please uncheck the 'Accessible to all drivers' box to reassign drivers</div>
+                </div>
+              </td>
+            </tr>
+          ) : count ? (
+            vehicle.drivers.map((driver, index) => (
+              <tr key={driver.driverId}>
+                <td>{index + 1}</td>
+                <td>{driver.name}</td>
+                <td>{driver.driverId}</td>
+                <td>
+                  <button className="ovl-driver-remove-btn" type="button" onClick={() => onRemoveDriver(driver.driverId)} aria-label={`Remove ${driver.name}`}>
+                    <Icon name="delete" size={16} color="#D55F5A" />
+                  </button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={4}>
+                <div className="ovl-driver-empty">
+                  <Icon name="person_off" size={40} color="#F5A623" />
+                  <div className="ovl-driver-empty-title">No drivers have access to the vehicle</div>
+                  <div className="ovl-driver-empty-sub">Please search driver to assign or tick the 'Accessible to all drivers' box</div>
+                </div>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function DriverPickerModal({ vehicle, onClose, onAdd }) {
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState([]);
+  const assignedIds = new Set(vehicle.drivers.map((driver) => driver.driverId));
+  const q = query.trim().toLowerCase();
+  const available = DRIVER_POOL.filter((driver) => {
+    if (assignedIds.has(driver.driverId)) return false;
+    if (!q) return true;
+    return driver.name.toLowerCase().includes(q) || driver.driverId.toLowerCase().includes(q);
+  });
+
+  function toggle(driverId) {
+    setSelected((current) => current.includes(driverId) ? current.filter((id) => id !== driverId) : [...current, driverId]);
+  }
+
+  function handleAdd() {
+    onAdd(DRIVER_POOL.filter((driver) => selected.includes(driver.driverId)));
+  }
+
+  return ReactDOM.createPortal(
+    <div className="hac-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="hac-modal">
+        <div className="hac-modal-drag" />
+        <div className="hac-modal-head">
+          <span className="hac-modal-title">Add driver</span>
+          <button className="hac-modal-close" onClick={onClose}><Icon name="close" size={20} /></button>
+        </div>
+        <div className="hac-modal-divider" />
+        <div className="hac-modal-body">
+          <div className="hac-search-bar ovl-picker-search">
+            <Icon name="search" size={17} color="var(--fg-tertiary)" />
+            <input
+              className="hac-search-input"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search driver name or ID"
+              autoFocus
+            />
+          </div>
+          <div className="ovl-picker-list">
+            {!available.length && <div className="ovl-empty-drivers">No matching drivers available.</div>}
+            {available.map((driver) => (
+              <label key={driver.driverId} className="ovl-picker-row">
+                <input type="checkbox" checked={selected.includes(driver.driverId)} onChange={() => toggle(driver.driverId)} />
+                <div className="ovl-driver-avatar">{initials(driver.name)}</div>
+                <div className="ovl-picker-row-text">
+                  <div className="ovl-driver-name">{driver.name}</div>
+                  <div className="ovl-driver-meta">{driver.driverId}</div>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+        <div className="hac-modal-foot">
+          <button className="hac-modal-cancel" type="button" onClick={onClose}>Cancel</button>
+          <button className="hac-modal-save" type="button" disabled={!selected.length} onClick={handleAdd}>
+            Add{selected.length ? ` (${selected.length})` : ""}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 function Rail() {
   const [expanded, setExpanded] = useState(false);
   return (
@@ -370,23 +530,32 @@ function Rail() {
   );
 }
 
-function VehiclePageHead({ mode, vehicle, onBack }) {
+function VehiclePageHead({ mode, vehicle, onBack, onEdit }) {
   const isCreate = mode === "create";
-  const title = isCreate ? "Create vehicle" : `Edit ${vehicle?.plate || "vehicle"}`;
+  const isView = mode === "view";
+  const title = isCreate ? "Create vehicle" : isView ? (vehicle?.plate || "Vehicle") : `Edit ${vehicle?.plate || "vehicle"}`;
   const subtitle = isCreate
     ? "Add a new vehicle profile and configure its managed access settings."
-    : "Update vehicle profile and managed access settings.";
+    : isView
+      ? "View vehicle profile and managed access settings."
+      : "Update vehicle profile and managed access settings.";
+  const crumbLabel = isCreate ? "Create vehicle" : isView ? "View vehicle" : "Edit vehicle";
   return (
     <div className="ml-page-head ovl-pagehead">
       <div>
         <div className="hac-breadcrumb">
           <button className="hac-bc-link" type="button" onClick={onBack}>Vehicles</button>
           <Icon name="chevron_right" size={16} color="var(--fg-tertiary)" />
-          <span>{isCreate ? "Create vehicle" : "Edit vehicle"}</span>
+          <span>{crumbLabel}</span>
         </div>
         <div className="ml-h1 ovl-title">{title}</div>
         <div className="ovl-subtitle">{subtitle}</div>
       </div>
+      {isView && (
+        <button className="ml-btn-outline" type="button" onClick={onEdit}>
+          <Icon name="edit" size={16} /> Edit vehicle
+        </button>
+      )}
     </div>
   );
 }
@@ -441,7 +610,69 @@ function VehiclePhotoField({ photo, onChange }) {
   );
 }
 
-function VehicleFormSections({ form, update, overCap, nextManagedCount, scope, onSubmit }) {
+function ViewField({ label, value }) {
+  return (
+    <div className="hac-fg">
+      <label className="hac-label">{label}</label>
+      <div className="hac-view-val">{value || "—"}</div>
+    </div>
+  );
+}
+
+function VehicleViewSections({ form, nextManagedCount, scope }) {
+  const remainingSlots = Math.max(scope.limit - nextManagedCount, 0);
+  const slotsLabel = scope.limit === 0
+    ? "No managed vehicle slots on this plan"
+    : `${remainingSlots} of ${scope.limit} slot${scope.limit === 1 ? "" : "s"} remaining`;
+
+  return (
+    <>
+      <div className="ml-card ovl-form-card">
+        <div className="hac-sec-header">
+          <div>Vehicle details</div>
+          <div className="ovl-sec-sub">Photo, core identity, and classification for this vehicle.</div>
+        </div>
+        <div className="hac-form-grid3 ovl-details-grid ovl-form-body">
+          <div className="ovl-details-photo-cell ovl-view-photo">
+            {form.photo ? <img src={form.photo.url} alt="" className="ovl-dropzone-preview" /> : <span>No photo uploaded</span>}
+          </div>
+          <ViewField label="Vehicle no." value={form.plate} />
+          <ViewField label="Vehicle category" value={form.category} />
+          <ViewField label="Sub category" value={form.subCategory} />
+          <ViewField label="Vendor name" value={form.vendor} />
+        </div>
+        {scope.limit > 0 && (
+          <div className="ovl-managed-row">
+            <ManagedIcon managed={form.managed} />
+            <div className="ovl-managed-card-text">
+              <div className="ovl-switch-title-row">
+                <span className="ovl-switch-title">{form.managed ? "Managed" : "Not managed"}</span>
+                <span className={`ovl-managed-count${form.managed ? " active" : ""}`}>{slotsLabel}</span>
+              </div>
+              <div className="ovl-switch-sub">Enables driver check-in/out, safety checklist, and reminders.</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="ml-card ovl-form-card">
+        <div className="hac-sec-header">
+          <div>Vehicle specifications</div>
+          <div className="ovl-sec-sub">Build attributes, weight, and capacity information used for operations and compliance.</div>
+        </div>
+        <div className="hac-form-grid3 ovl-form-body">
+          <ViewField label="Feature" value={form.feature} />
+          <ViewField label="Finishing" value={form.finishing} />
+          <ViewField label="Vehicle weight (BTM)" value={form.btm ? `${fmtNumber(form.btm)} kg` : ""} />
+          <ViewField label="Total weight (BDM)" value={form.bdm ? `${fmtNumber(form.bdm)} kg` : ""} />
+          <ViewField label="Load capacity" value={form.capacity ? `${fmtNumber(form.capacity)} kg` : ""} />
+        </div>
+      </div>
+    </>
+  );
+}
+
+function VehicleFormSections({ form, update, overCap, nextManagedCount, scope, onSubmit, onToggleManaged }) {
   const subCategoryOptions = VEHICLE_SUB_CATEGORIES_BY_CATEGORY[form.category] || [];
   const remainingSlots = Math.max(scope.limit - nextManagedCount, 0);
   const slotsLabel = scope.limit === 0
@@ -500,25 +731,29 @@ function VehicleFormSections({ form, update, overCap, nextManagedCount, scope, o
             </div>
           </div>
         </div>
-        <div className="ovl-managed-row">
-          <button
-            type="button"
-            className={`ovl-switch-btn${form.managed ? " on" : ""}`}
-            onClick={() => update("managed", !form.managed)}
-            aria-pressed={form.managed}
-          />
-          <div className="ovl-managed-card-text">
-            <div className="ovl-switch-title-row">
-              <span className="ovl-switch-title">Managed vehicle</span>
-              <span className={`ovl-managed-count${form.managed ? " active" : ""}`}>{slotsLabel}</span>
+        {scope.limit > 0 && (
+          <>
+            <div className="ovl-managed-row">
+              <button
+                type="button"
+                className={`ovl-switch-btn${form.managed ? " on" : ""}`}
+                onClick={onToggleManaged}
+                aria-pressed={form.managed}
+              />
+              <div className="ovl-managed-card-text">
+                <div className="ovl-switch-title-row">
+                  <span className="ovl-switch-title">Managed vehicle</span>
+                  <span className={`ovl-managed-count${form.managed ? " active" : ""}`}>{slotsLabel}</span>
+                </div>
+                <div className="ovl-switch-sub">Enables driver check-in/out, safety checklist, and reminders.</div>
+              </div>
             </div>
-            <div className="ovl-switch-sub">Enables driver check-in/out, ICOP checklist, and reminders.</div>
-          </div>
-        </div>
-        {overCap && (
-          <div className="ovl-switch-sub ovl-managed-warn">
-            You've reached your plan limit of managed vehicles. Upgrade your plan to manage more.
-          </div>
+            {overCap && (
+              <div className="ovl-switch-sub ovl-managed-warn">
+                You've reached your plan limit of managed vehicles. Upgrade your plan to manage more.
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -581,10 +816,12 @@ function App() {
   const [pendingEndDate, setPendingEndDate] = useState("");
   const [expandedId, setExpandedId] = useState(null);
   const [menuId, setMenuId] = useState(null);
+  const [mobileMenuId, setMobileMenuId] = useState(null);
   const [mode, setMode] = useState("list");
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [editTab, setEditTab] = useState("details");
   const [form, setForm] = useState(() => makeEmptyForm());
+  const [driverPickerOpen, setDriverPickerOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
@@ -593,6 +830,7 @@ function App() {
     setVehicles(deriveVehicles(scenarioKey));
     setExpandedId(null);
     setMenuId(null);
+    setMobileMenuId(null);
     setPage(1);
   }, [scenarioKey]);
 
@@ -611,6 +849,13 @@ function App() {
     setForm(makeFormFromVehicle(vehicle));
     setEditTab("details");
     setMode("edit");
+  }
+
+  function openView(vehicle) {
+    setEditingVehicle(vehicle);
+    setForm(makeFormFromVehicle(vehicle));
+    setEditTab("details");
+    setMode("view");
   }
 
   function closeForm() {
@@ -676,7 +921,7 @@ function App() {
 
     if (!nextManaged) {
       if (vehicle.activeCheckIn) {
-        pushToast("err", "This vehicle is currently in use. The driver must check out before you can deactivate Managed status.");
+        pushToast("warn", "This vehicle is currently in use. The driver must check out before you can deactivate Managed status.");
         return;
       }
       setVehicles((current) => current.map((item) => item.id === vehicleId ? { ...item, managed: false } : item));
@@ -697,10 +942,45 @@ function App() {
     pushToast("ok", "Managed vehicle activated. Driver tab unlocked. Billing will reflect this change.");
   }
 
+  const currentEditingVehicle = editingVehicle
+    ? (vehicles.find((item) => item.id === editingVehicle.id) || editingVehicle)
+    : null;
+
   const nextManagedCount = managedCount
     + (form.managed && !editingVehicle?.managed ? 1 : 0)
     - (!form.managed && editingVehicle?.managed ? 1 : 0);
   const overCap = form.managed && (scenario.limit === 0 || nextManagedCount > scenario.limit);
+
+  function handleToggleManaged() {
+    if (form.managed) {
+      if (editingVehicle?.activeCheckIn) {
+        pushToast("warn", "This vehicle is currently in use. The driver must check out before you can deactivate Managed status.");
+        return;
+      }
+      update("managed", false);
+      return;
+    }
+    if (scenario.limit === 0 || managedCount >= scenario.limit) {
+      pushToast("warn", "You've reached your plan limit of managed vehicles. Upgrade your plan to manage more.");
+      return;
+    }
+    update("managed", true);
+  }
+
+  function toggleAccessibleToAll(vehicleId) {
+    setVehicles((current) => current.map((item) => item.id === vehicleId ? { ...item, accessibleToAll: !item.accessibleToAll } : item));
+  }
+
+  function addDriversToVehicle(vehicleId, driversToAdd) {
+    if (!driversToAdd.length) return;
+    setVehicles((current) => current.map((item) => item.id === vehicleId ? { ...item, drivers: [...item.drivers, ...driversToAdd] } : item));
+    setDriverPickerOpen(false);
+    pushToast("ok", `${driversToAdd.length} driver${driversToAdd.length === 1 ? "" : "s"} added.`);
+  }
+
+  function removeDriverFromVehicle(vehicleId, driverId) {
+    setVehicles((current) => current.map((item) => item.id === vehicleId ? { ...item, drivers: item.drivers.filter((driver) => driver.driverId !== driverId) } : item));
+  }
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -709,7 +989,7 @@ function App() {
       const current = vehicles.find((item) => item.id === editingVehicle.id);
       if (!current) return;
       if (!form.managed && current.managed && current.activeCheckIn) {
-        pushToast("err", "This vehicle is currently in use. The driver must check out before you can deactivate Managed status.");
+        pushToast("warn", "This vehicle is currently in use. The driver must check out before you can deactivate Managed status.");
         return;
       }
       if (form.managed && !current.managed && (scenario.limit === 0 || managedCount >= scenario.limit)) {
@@ -785,17 +1065,22 @@ function App() {
         <div className="ovl-content">
           {mode !== "list" ? (
             <>
-              <VehiclePageHead mode={mode} vehicle={editingVehicle} onBack={closeForm} />
-              {mode === "edit" && (
-                <div className="ovl-tabs-row">
-                  <Segmented
-                    value={editTab}
-                    onChange={setEditTab}
-                    options={VEHICLE_EDIT_TABS.map((tab) => ({ value: tab.key, label: tab.label }))}
-                  />
+              <VehiclePageHead mode={mode} vehicle={editingVehicle} onBack={closeForm} onEdit={() => setMode("edit")} />
+              {(mode === "edit" || mode === "view") && (
+                <div className="ml-tabs ovl-tabs-row">
+                  {VEHICLE_EDIT_TABS.map((tab) => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      className={"ml-tab" + (editTab === tab.key ? " active" : "")}
+                      onClick={() => setEditTab(tab.key)}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
               )}
-              {mode === "create" || editTab === "details" ? (
+              {mode === "create" || (mode === "edit" && editTab === "details") ? (
                 <>
                   <VehicleFormSections
                     form={form}
@@ -804,9 +1089,24 @@ function App() {
                     nextManagedCount={nextManagedCount}
                     scope={scenario}
                     onSubmit={handleSubmit}
+                    onToggleManaged={handleToggleManaged}
                   />
                   <VehicleFormEditBar mode={mode} onCancel={closeForm} />
                 </>
+              ) : mode === "view" && editTab === "details" ? (
+                <VehicleViewSections form={form} nextManagedCount={nextManagedCount} scope={scenario} />
+              ) : editTab === "drivers" && !form.managed ? (
+                <div className="hac-empty-state ovl-driver-lock">
+                  <Icon name="lock" size={20} color="var(--fg-tertiary)" />
+                  <div>Manage this vehicle to enable driver check-in, ICOP compliance, and more.</div>
+                </div>
+              ) : editTab === "drivers" && currentEditingVehicle ? (
+                <DriverListPanel
+                  vehicle={currentEditingVehicle}
+                  onToggleAccessibleToAll={() => toggleAccessibleToAll(currentEditingVehicle.id)}
+                  onOpenPicker={() => setDriverPickerOpen(true)}
+                  onRemoveDriver={(driverId) => removeDriverFromVehicle(currentEditingVehicle.id, driverId)}
+                />
               ) : (
                 <div className="hac-empty-state">
                   {VEHICLE_EDIT_TABS.find((tab) => tab.key === editTab)?.label} isn't built yet in this prototype.
@@ -922,7 +1222,7 @@ function App() {
               <table className="ml-table ovl-table">
                 <thead>
                   <tr>
-                    <th>Expand</th>
+                    <th></th>
                     <th>No.</th>
                     <th>Vehicle</th>
                     <th>Managed</th>
@@ -950,12 +1250,8 @@ function App() {
                     const expanded = expandedId === vehicle.id;
                     return (
                       <React.Fragment key={vehicle.id}>
-                        <tr className="ovl-row">
-                          <td>
-                            <button className="ovl-expand-btn" type="button" onClick={() => setExpandedId(expanded ? null : vehicle.id)} aria-expanded={expanded}>
-                              <Icon name={expanded ? "expand_less" : "expand_more"} size={16} />
-                            </button>
-                          </td>
+                        <tr className={`ovl-row${expanded ? " ml-row-open" : ""}`} onClick={() => setExpandedId(expanded ? null : vehicle.id)} aria-expanded={expanded}>
+                          <td><Icon name={expanded ? "expand_more" : "chevron_right"} size={18} color="#999AA5" /></td>
                           <td className="ovl-index">{(page - 1) * perPage + index + 1}</td>
                           <td>
                             <div className="ovl-vehicle-cell">
@@ -979,7 +1275,7 @@ function App() {
                             <VehicleRowMenu
                               open={menuId === vehicle.id}
                               onToggle={(next) => setMenuId(next ? vehicle.id : null)}
-                              onView={() => { setMenuId(null); pushToast("ok", `Viewing ${vehicle.plate} details in prototype mode.`); }}
+                              onView={() => { openView(vehicle); setMenuId(null); }}
                               onEdit={() => { openEdit(vehicle); setMenuId(null); }}
                               onDelete={() => { setMenuId(null); pushToast("warn", "Delete is shown for parity only. No prototype deletion was performed."); }}
                             />
@@ -1034,11 +1330,11 @@ function App() {
                         {expanded ? "Hide drivers" : "Show drivers"}
                       </button>
                       <VehicleRowMenu
-                        open={menuId === vehicle.id}
-                        onToggle={(next) => setMenuId(next ? vehicle.id : null)}
-                        onView={() => { setMenuId(null); pushToast("ok", `Viewing ${vehicle.plate} details in prototype mode.`); }}
-                        onEdit={() => { setModal({ mode: "edit", vehicle }); setMenuId(null); }}
-                        onDelete={() => { setMenuId(null); pushToast("warn", "Delete is shown for parity only. No prototype deletion was performed."); }}
+                        open={mobileMenuId === vehicle.id}
+                        onToggle={(next) => setMobileMenuId(next ? vehicle.id : null)}
+                        onView={() => { openView(vehicle); setMobileMenuId(null); }}
+                        onEdit={() => { openEdit(vehicle); setMobileMenuId(null); }}
+                        onDelete={() => { setMobileMenuId(null); pushToast("warn", "Delete is shown for parity only. No prototype deletion was performed."); }}
                       />
                     </div>
                     {expanded && <ExpandableVehicleDriversRow vehicle={vehicle} />}
@@ -1066,11 +1362,19 @@ function App() {
         </TweakSection>
       </TweaksPanel>
 
+      {driverPickerOpen && currentEditingVehicle && (
+        <DriverPickerModal
+          vehicle={currentEditingVehicle}
+          onClose={() => setDriverPickerOpen(false)}
+          onAdd={(driversToAdd) => addDriversToVehicle(currentEditingVehicle.id, driversToAdd)}
+        />
+      )}
+
       <div className="ovl-toast-stack">
         <div className="ovl-toast-col">
           {toasts.map((toast) => (
             <div key={toast.id} className={`ovl-toast${toast.tone === "warn" ? " warn" : toast.tone === "err" ? " err" : ""}`}>
-              <Icon name={toast.tone === "err" ? "error" : toast.tone === "warn" ? "warning" : "task_alt"} size={18} color="#fff" />
+              <Icon name={toast.tone === "err" ? "error" : toast.tone === "warn" ? "warning" : "task_alt"} size={18} color={toast.tone === "warn" ? "#8A5A00" : "#fff"} />
               <div className="ovl-toast-msg">{toast.message}</div>
             </div>
           ))}
