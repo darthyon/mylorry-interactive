@@ -1,0 +1,378 @@
+// app.jsx — Organisation Profile (Subscription Summary revamp).
+// Reached via the Org Portal rail's "Organization" item. Tweaks panel
+// (⌘⇧E) switches between the 5 required prototype data states — see
+// data.js `scenarios`.
+
+const { Icon, StatusBadge, Segmented, FeatureTabShell } = window.SharedShell;
+const { useTweaks, TweaksPanel, TweakSection, TweakSelect } = window;
+const { SUBSCRIPTION_PLANS, calculateMonthlyBilling, getBoundValue } = window.SUB;
+const D = window.ORG_PROFILE;
+const PLANS_BY_ID = Object.fromEntries(SUBSCRIPTION_PLANS.map((p) => [p.id, p]));
+
+const RM = (n) => "RM " + Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+function fmtDate(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso + "T00:00:00");
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+/* ── Derive this page's view model from window.SUB (host-subscription's
+   canonical plan data) + the org-specific scenario extras in data.js. No
+   plan pricing/limits/features are re-typed here — read once, from one
+   source, so this page can't drift from what host-subscription configured. */
+const MODULE_ICONS = {
+  general: "tune", myfuel: "local_gas_station", myadmin: "admin_panel_settings",
+  mydriver: "badge", mytrip: "route", myinsurance: "shield",
+};
+
+function vehicleLimitOf(plan) {
+  return plan.limits.managedVehicleLimit === 0 ? "unlimited" : plan.limits.managedVehicleLimit;
+}
+
+function resolveRow(plan, row) {
+  const value = row.bindPath ? getBoundValue(plan, row.bindPath) : row.value;
+  if (row.toggleable && !row.enabled) return { state: "locked" };
+  if (row.controlType === "toggle") return value ? { state: "included" } : { state: "locked" };
+  if (row.controlType === "select") return value === "Unlimited" ? { state: "included" } : { state: "limited", cap: value };
+  // number
+  return value === 0 ? { state: "included", cap: "Unlimited" } : { state: "limited", cap: String(value) };
+}
+
+function buildModules(plan) {
+  return plan.featureModules.map((mod) => {
+    const rows = mod.rows.map((row) => ({ label: row.label, ...resolveRow(plan, row) }));
+    // "locked" only when every row is locked — a module with a capped
+    // (limited) row still has real access, it's not the same as zero access.
+    const access = rows.every((r) => r.state === "included") ? "included"
+      : rows.every((r) => r.state === "locked") ? "locked"
+      : "limited";
+    return { key: mod.key, label: mod.label, icon: MODULE_ICONS[mod.key] || "extension", summary: mod.summary, access, rows };
+  });
+}
+
+function buildUpcoming(upcoming) {
+  if (!upcoming) return null;
+  const plan = upcoming.planId ? PLANS_BY_ID[upcoming.planId] : null;
+  return {
+    planName: plan ? plan.name : null,
+    effectiveDate: upcoming.effectiveDate,
+    note: upcoming.note,
+    vehicleLimit: plan ? vehicleLimitOf(plan) : null,
+    billing: plan ? { baseMonthlyFee: plan.pricing.baseMonthlyFee, perManagedVehicleFee: plan.pricing.perManagedVehicleFee } : null,
+  };
+}
+
+function buildScenarioView(sc) {
+  const plan = PLANS_BY_ID[sc.planId];
+  const isPaid = sc.status !== "free";
+  return {
+    planName: plan.name,
+    planTier: plan.id.replace("plan-", ""),
+    status: sc.status,
+    trialDaysRemaining: sc.trialDaysRemaining,
+    trialExpiry: sc.trialExpiry,
+    nextBillingDate: sc.nextBillingDate,
+    vehiclesUsed: sc.vehiclesUsed,
+    vehicleLimit: vehicleLimitOf(plan),
+    billing: isPaid ? {
+      baseMonthlyFee: plan.pricing.baseMonthlyFee,
+      perManagedVehicleFee: plan.pricing.perManagedVehicleFee,
+      monthlyTotal: calculateMonthlyBilling(plan, sc.vehiclesUsed),
+      setupFee: plan.pricing.setupFee,
+      setupFeeStatus: sc.setupFeeStatus,
+    } : null,
+    upcoming: buildUpcoming(sc.upcoming),
+    modules: buildModules(plan),
+  };
+}
+
+/* ── Rail (mirrors org-dashboard's; Organization active here) ──── */
+const RAIL = [
+  { iconKey: "home", label: "Home", href: "../org-dashboard/index.html" },
+  { iconKey: "org",  label: "Organization", active: true },
+  { iconKey: "user", label: "Account" },
+];
+function Rail() {
+  return (
+    <nav className="od-rail">
+      <div className="od-rail-logo"><Icon name="local_shipping" size={22} color="#fff" /></div>
+      {RAIL.map((r) => {
+        const cls = "od-rail-item" + (r.active ? " active" : "");
+        const content = (
+          <>
+            <img src={`../../public/ic-${r.iconKey}-${r.active ? "active" : "inactive"}.svg`} width={22} height={22} alt={r.label} />
+            <span>{r.label}</span>
+          </>
+        );
+        return r.href
+          ? <a key={r.label} className={cls} href={r.href} title={r.label}>{content}</a>
+          : <div key={r.label} className={cls} title={r.label}>{content}</div>;
+      })}
+    </nav>
+  );
+}
+
+/* ── Vehicle usage bar (plain used/limit meter — not KPIProgress, which
+   carries KPI %/tooltip semantics this doesn't need) ───────────────── */
+function UsageBar({ used, limit }) {
+  if (limit === "unlimited") {
+    return <div className="osp-usage-text">{used} / Unlimited</div>;
+  }
+  const pct = Math.min(100, Math.round((used / limit) * 100));
+  const atLimit = used >= limit;
+  return (
+    <>
+      <div className="osp-usage-text">{used} / {limit}</div>
+      <div className="osp-usage-track">
+        <div className={"osp-usage-fill" + (atLimit ? " full" : "")} style={{ width: pct + "%" }} />
+      </div>
+    </>
+  );
+}
+
+/* ── Organisation details (2 cards) — leads the page, it's the namesake ── */
+function OrgDetails({ org, pic }) {
+  return (
+    <div className="osp-details-row">
+      <div className="ml-card hac-detail-card">
+        <div className="hac-dcard-title">{org.name}</div>
+        <div className="hac-detail-grid hac-view-grid osp-org-grid">
+          <div className="hac-fg"><span className="hac-label">Account Reg. No</span><span className="hac-view-val">{org.regNo}</span></div>
+          <div className="hac-fg"><span className="hac-label">TIN</span><span className="hac-view-val">{org.tin}</span></div>
+          <div className="hac-fg" style={{ gridColumn: "1 / -1" }}>
+            <span className="hac-label">Address</span><span className="hac-view-val" style={{ height: "auto" }}>{org.address}</span>
+          </div>
+        </div>
+      </div>
+      <div className="ml-card hac-detail-card">
+        <div className="hac-dcard-title">PIC Info</div>
+        <div className="osp-pic-row">
+          <div className="osp-pic-avatar"><Icon name="person" size={22} fill={1} color="#94A8B2" /></div>
+          <div>
+            <div className="osp-pic-name">{pic.name}</div>
+            <div className="osp-pic-meta"><Icon name="mail" size={14} /> {pic.email}</div>
+            <div className="osp-pic-meta"><Icon name="call" size={14} /> {pic.phone}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Subscription Summary (Current / Upcoming) ────────────────────── */
+function CurrentPlanView({ s }) {
+  const isPaid = s.status !== "free";
+  const showUpgrade = s.planTier === "free" || s.planTier === "lite";
+  const billing = s.billing;
+
+  return (
+    <>
+      <div className="osp-summary-head">
+        <div className="osp-summary-head-left">
+          <span className="osp-plan-name">{s.planName}</span>
+          {s.status === "trial" && (
+            <StatusBadge status="sub_trial" label={`Trial · ${s.trialDaysRemaining} days remaining`} />
+          )}
+          {s.status === "active" && <StatusBadge status="active" />}
+          {s.status === "free" && <StatusBadge status="sub_free" />}
+        </div>
+        {showUpgrade && <button className="ml-btn-primary osp-upgrade-btn">Upgrade plan</button>}
+      </div>
+      {s.status === "trial" && <div className="osp-summary-sub">Trial ends {fmtDate(s.trialExpiry)}</div>}
+      {s.status === "active" && <div className="osp-summary-sub">Next billing date {fmtDate(s.nextBillingDate)}</div>}
+
+      <div className="osp-summary-divider" />
+
+      <div className="osp-summary-grid">
+        <div className="osp-summary-block">
+          <div className="osp-block-title">Managed vehicles</div>
+          {s.planTier === "free"
+            ? <div className="osp-usage-text muted">Managed vehicles unavailable on Free</div>
+            : <UsageBar used={s.vehiclesUsed} limit={s.vehicleLimit} />}
+        </div>
+
+        {isPaid && billing && (
+          <div className="osp-summary-block">
+            <div className="osp-block-title">
+              Current billed amount
+              <span className="ml-tooltip-wrap osp-info-wrap" tabIndex={0}>
+                <Icon name="info" size={13} color="var(--fg-tertiary)" />
+                <span className="ml-tooltip osp-info-tooltip">
+                  {RM(billing.baseMonthlyFee)} base monthly fee
+                  {billing.perManagedVehicleFee > 0
+                    ? ` + ${s.vehiclesUsed} managed vehicles × ${RM(billing.perManagedVehicleFee)} per managed vehicle`
+                    : ""}
+                </span>
+              </span>
+            </div>
+            <div className="osp-billing-amount">{RM(billing.monthlyTotal)}</div>
+            <div className="osp-billing-row">
+              <span>Next billing date</span><strong>{fmtDate(s.nextBillingDate)}</strong>
+            </div>
+            <div className="osp-billing-row">
+              <span>Setup fee</span><strong>{RM(billing.setupFee)} · {billing.setupFeeStatus}</strong>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function UpcomingPlanView({ upcoming }) {
+  if (!upcoming) {
+    return (
+      <div className="osp-empty">
+        <Icon name="event_upcoming" size={34} />
+        <div className="osp-empty-t">No upcoming plan change</div>
+        <div className="osp-empty-s">This organisation isn't scheduled for a plan change.</div>
+        <button className="ml-btn-primary">Upgrade plan</button>
+      </div>
+    );
+  }
+  return (
+    <>
+      <div className="osp-summary-head">
+        <div className="osp-summary-head-left">
+          <span className="osp-plan-name">{upcoming.planName}</span>
+          <span className="ml-pill ml-pill-navy">Effective {fmtDate(upcoming.effectiveDate)}</span>
+        </div>
+      </div>
+      {upcoming.note && <div className="osp-summary-sub">{upcoming.note}</div>}
+      {upcoming.vehicleLimit != null && (
+        <>
+          <div className="osp-summary-divider" />
+          <div className="osp-summary-grid">
+            <div className="osp-summary-block">
+              <div className="osp-block-title">Managed vehicles (new limit)</div>
+              <div className="osp-usage-text">
+                {upcoming.vehicleLimit === "unlimited" ? "Unlimited" : upcoming.vehicleLimit}
+              </div>
+            </div>
+            {upcoming.billing && (
+              <div className="osp-summary-block">
+                <div className="osp-block-title">New billing</div>
+                <div className="osp-billing-formula">
+                  {RM(upcoming.billing.baseMonthlyFee)} base monthly fee + {RM(upcoming.billing.perManagedVehicleFee)} per managed vehicle
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+function SubscriptionSummary({ s }) {
+  const [tab, setTab] = React.useState("current");
+  return (
+    <div className="ml-card osp-summary">
+      <div className="osp-summary-title">Subscription Summary</div>
+      <Segmented value={tab} onChange={setTab} options={[
+        { value: "current", label: "Current" },
+        { value: "upcoming", label: "Upcoming" },
+      ]} />
+      <div className="osp-summary-tabspacer" />
+      {tab === "current" ? <CurrentPlanView s={s} /> : <UpcomingPlanView upcoming={s.upcoming} />}
+
+      <div className="osp-services-sub">
+        <div className="osp-services-title">Services</div>
+        <ServicesTabs modules={s.modules} />
+      </div>
+    </div>
+  );
+}
+
+/* ── Services (vertical tabs desktop / horizontal tabs mobile — same
+   pattern as host-subscription's Feature Access section, trimmed to
+   read-only rows). Active tab uses bg-tint + bold text only, no
+   border-left accent (side-stripe accents are banned in DESIGN.md). ── */
+function FeatureRow({ row }) {
+  return (
+    <div className="osp-feature-row">
+      <span className="osp-feature-label">{row.label}</span>
+      {row.state === "included" && <Icon name="check_circle" size={17} fill={1} color="var(--green-600)" />}
+      {row.state === "limited" && <span className="osp-feature-cap">{row.cap}</span>}
+      {row.state === "locked" && (
+        <span className="osp-feature-state locked">
+          <Icon name="lock" size={15} color="var(--fg-tertiary)" />
+          <a className="osp-feature-upgrade" href="#">Upgrade to unlock</a>
+        </span>
+      )}
+    </div>
+  );
+}
+
+function ServicesTabs({ modules }) {
+  const [activeKey, setActiveKey] = React.useState(modules[0].key);
+  const active = modules.find((m) => m.key === activeKey) || modules[0];
+  const tabs = modules.map((m) => ({ key: m.key, label: m.label, icon: m.icon }));
+
+  return (
+    <FeatureTabShell tabs={tabs} activeKey={activeKey} onSelect={setActiveKey}>
+      <div className="osp-svc-panel-head">
+        <div className="osp-module-name">{active.label}</div>
+        <div className="osp-module-summary">{active.summary}</div>
+      </div>
+      {active.access === "locked" ? (
+        <div className="osp-empty">
+          <Icon name="lock" size={30} />
+          <div className="osp-empty-t">{active.label} isn't available on this plan</div>
+          <div className="osp-empty-s">Upgrade to unlock this module.</div>
+          <button className="ml-btn-primary">Upgrade plan</button>
+        </div>
+      ) : (
+        <div className="osp-module-body">
+          {active.rows.map((row, i) => <FeatureRow key={i} row={row} />)}
+        </div>
+      )}
+    </FeatureTabShell>
+  );
+}
+
+/* ── Tweaks ────────────────────────────────────────────────────── */
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "scenario": "lite-active"
+}/*EDITMODE-END*/;
+
+const SCENARIO_LABEL = {
+  "free": "1 — Free plan",
+  "lite-active": "2 — Lite (active)",
+  "premium-trial": "3 — Premium (trial)",
+  "enterprise-unlimited": "4 — Enterprise (unlimited vehicles)",
+  "lite-at-limit": "5 — Lite (at vehicle limit)",
+};
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const sc = D.scenarios[t.scenario] || D.scenarios["lite-active"];
+  const s = buildScenarioView(sc);
+
+  return (
+    <div className="od-shell">
+      <Rail />
+      <div className="od-main">
+        <div className="od-content osp-content">
+          <div className="od-pagehead">
+            <span className="od-pagetitle">Organisation Profile</span>
+          </div>
+
+          <OrgDetails org={D.org} pic={D.pic} />
+          <SubscriptionSummary s={s} />
+        </div>
+      </div>
+
+      <TweaksPanel title="Prototype State">
+        <TweakSection label="Scenario" />
+        <TweakSelect label="Data state" value={t.scenario}
+          options={Object.keys(SCENARIO_LABEL).map((v) => ({ value: v, label: SCENARIO_LABEL[v] }))}
+          onChange={(v) => setTweak("scenario", v)} />
+      </TweaksPanel>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);

@@ -86,19 +86,25 @@ function OrgSwitcher() {
 // Desktop: left rail. Mobile: floating bottom nav (CSS handles the swap).
 const RAIL = [
   { iconKey: "home", label: "Home", active: true },
-  { iconKey: "org",  label: "Organization" },
+  { iconKey: "org",  label: "Organization", href: "../org-subscription-profile/index.html" },
   { iconKey: "user", label: "Account" },
 ];
 function Rail() {
   return (
     <nav className="od-rail">
       <div className="od-rail-logo"><Icon name="local_shipping" size={22} color="#fff" /></div>
-      {RAIL.map((r) => (
-        <div key={r.label} className={"od-rail-item" + (r.active ? " active" : "")} title={r.label}>
-          <img src={`../../public/ic-${r.iconKey}-${r.active ? "active" : "inactive"}.svg`} width={22} height={22} alt={r.label} />
-          <span>{r.label}</span>
-        </div>
-      ))}
+      {RAIL.map((r) => {
+        const cls = "od-rail-item" + (r.active ? " active" : "");
+        const content = (
+          <>
+            <img src={`../../public/ic-${r.iconKey}-${r.active ? "active" : "inactive"}.svg`} width={22} height={22} alt={r.label} />
+            <span>{r.label}</span>
+          </>
+        );
+        return r.href
+          ? <a key={r.label} className={cls} href={r.href} title={r.label}>{content}</a>
+          : <div key={r.label} className={cls} title={r.label}>{content}</div>;
+      })}
     </nav>
   );
 }

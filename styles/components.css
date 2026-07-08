@@ -57,6 +57,15 @@
 .ml-badge.payout-paid     { background: var(--green-50); color: var(--green-600);}
 .ml-badge.payout-rejected { background: #FFF0F0;         color: var(--red-400);  }
 
+/* Subscription status (Org Portal — FR-21) */
+.ml-badge.sub-trial { background: var(--amber-50); color: var(--amber-600); }
+.ml-badge.sub-free  { background: #F0F0F2;         color: var(--fg-secondary); }
+
+/* Module / feature access state (FR-25) */
+.ml-badge.mod-included { background: var(--green-50); color: var(--green-600);    }
+.ml-badge.mod-limited   { background: var(--amber-50); color: var(--amber-600);   }
+.ml-badge.mod-locked    { background: #F0F0F2;         color: var(--fg-secondary); }
+
 /* KPI Tier Chip — window.SharedShell.KpiTierChip */
 .ml-tierchip { font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 9999px; white-space: nowrap; }
 .ml-tierchip.good { background: var(--green-50); color: var(--green-600); }
@@ -340,6 +349,34 @@
   cursor: pointer;
 }
 .ml-lock-cta:hover { background: #009945; }
+
+/* ── Feature Tab Shell (window.SharedShell.FeatureTabShell) ────────
+   Canonical vertical-tabs-desktop / horizontal-tabs-mobile shell, shared
+   between host-subscription's Feature Access editor and the Org Portal's
+   Organisation Profile Services section. Active-state uses a border-left
+   accent on the vertical (desktop) layout — an interactive nav affordance,
+   not decoration on a passive surface, so it's the named exception in
+   DESIGN.md's side-stripe rule. Mobile switches to a horizontal scroll row
+   with a bottom-border accent instead (no room for a left rail there). */
+/* Bare by default — no own border/bg/radius. The caller supplies the single
+   card boundary (host-subscription's `Section`, org-profile's own `.ml-card`
+   wrap); this shell only owns the tab row/column + its internal divider, so
+   nesting a card-in-a-card never happens regardless of where it's dropped. */
+.ml-modtabs-shell { display: flex; flex-direction: column; }
+.ml-modtabs-tabs { display: flex; flex-direction: row; gap: 0; overflow-x: auto; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid var(--border-light); scrollbar-width: none; -ms-overflow-style: none; }
+.ml-modtabs-tabs::-webkit-scrollbar { display: none; }
+.ml-modtabs-tab { display: flex; align-items: center; gap: 7px; flex: 0 0 auto; border: none; border-bottom: 2px solid transparent; border-radius: var(--radius-sm); background: transparent; color: var(--fg-secondary); cursor: pointer; font-family: var(--font-sans); white-space: nowrap; padding: 9px 12px; transition: border-color .12s, background .12s, color .12s; }
+.ml-modtabs-tab:hover { background: var(--bg-muted); }
+.ml-modtabs-tab.active { border-bottom-color: var(--green-500); background: transparent; color: var(--green-700); }
+.ml-modtabs-tab-label { font-size: 13px; font-weight: 600; }
+.ml-modtabs-panel { min-width: 0; }
+@media (min-width: 900px) {
+  .ml-modtabs-shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; align-items: start; }
+  .ml-modtabs-tabs { flex-direction: column; overflow-x: visible; padding-bottom: 0; padding-right: 14px; margin-bottom: 0; border-bottom: none; border-right: 1px solid var(--border-light); }
+  .ml-modtabs-tab { width: 100%; justify-content: flex-start; border-bottom: none; border-left: 2px solid transparent; border-radius: 0; padding: 12px 14px 12px 12px; }
+  .ml-modtabs-tab:hover { border-left-color: var(--green-500); background: var(--green-50); }
+  .ml-modtabs-tab.active { border-left-color: var(--green-500); background: var(--green-50); color: var(--fg-primary); }
+}
 
 /* ── CountCard (icon + big count + split-stat band) ───────────────
    window.SharedShell.CountCard. Canonical fleet/count card. */

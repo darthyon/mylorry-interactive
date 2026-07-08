@@ -314,6 +314,13 @@ const STATUS_BADGE_META = {
   critical_quota: { label:"Critical", cls:"quota-critical" },
   over_quota:     { label:"Critical", cls:"quota-critical" },
   quota_safe:     { label:"Available", cls:"quota-safe"     },
+  // Subscription status (Org Portal — FR-21)
+  sub_trial: { label:"Trial",     cls:"sub-trial" },
+  sub_free:  { label:"Free plan", cls:"sub-free"  },
+  // Module / feature access state (FR-25)
+  mod_included: { label:"Included", cls:"mod-included" },
+  mod_limited:  { label:"Limited",  cls:"mod-limited"  },
+  mod_locked:   { label:"Locked",   cls:"mod-locked"   },
 };
 function StatusBadge({ status, prefix, label, fallback = "activated" }) {
   const m = STATUS_BADGE_META[status] || STATUS_BADGE_META[fallback] || { label: status, cls: "" };
@@ -365,6 +372,34 @@ function KPIProgress({ pct, actual, target, period, commissionLabel, phase }) {
         <div className="ml-kpi-tip" style={{ top: pos.top, left: pos.left }}>{tip}</div>,
         document.body
       )}
+    </div>
+  );
+}
+
+/* ─── Feature Tab Shell (module/feature tab nav) ─────────────── */
+// Canonical vertical-tabs-desktop / horizontal-tabs-mobile shell for
+// per-module feature panels. Used by host-subscription's Feature Access
+// editor and the Org Portal's Organisation Profile Services section — same
+// nav shape, different panel content (editable vs read-only), so only the
+// shell + tab list is shared here; each caller renders its own panel via
+// `children`. CSS: .ml-modtabs-* in components.css.
+// tabs: [{ key, label, icon, right }] — `right` renders trailing content in
+// the tab button (e.g. a StatusBadge).
+function FeatureTabShell({ tabs, activeKey, onSelect, children }) {
+  return (
+    <div className="ml-modtabs-shell">
+      <div className="ml-modtabs-tabs" role="tablist">
+        {tabs.map((t) => (
+          <button key={t.key} role="tab" aria-selected={t.key === activeKey}
+            className={"ml-modtabs-tab" + (t.key === activeKey ? " active" : "")}
+            onClick={() => onSelect(t.key)}>
+            {t.icon && <Icon name={t.icon} size={16} />}
+            <span className="ml-modtabs-tab-label">{t.label}</span>
+            {t.right}
+          </button>
+        ))}
+      </div>
+      <div className="ml-modtabs-panel">{children}</div>
     </div>
   );
 }
@@ -445,7 +480,7 @@ window.SharedShell = {
   Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu, Segmented,
   Pill, CurrencyPill, SummaryCard, CountCard, KpiTierChip,
   StatusBadge, AccountStatusBadge, KPIProgress, KPIProgressMeta,
-  LockSection, PetronLogo, HistoryCard,
+  LockSection, PetronLogo, HistoryCard, FeatureTabShell,
 };
 window.KPIProgressMeta = KPIProgressMeta;
 }

@@ -1,4 +1,5 @@
 const { useEffect, useMemo, useState, useRef } = React;
+const { FeatureTabShell } = window.SharedShell;
 
 const {
   SUBSCRIPTION_PLANS,
@@ -972,26 +973,13 @@ function FeatureAccessSection({ plan, editable, onChange }) {
   };
 
   const activeModule = plan.featureModules.find((module) => module.key === activeModuleKey) || plan.featureModules[0];
+  const tabs = plan.featureModules.map((module) => ({ key: module.key, label: module.label }));
 
   return (
     <Section title="Feature access" sub="Grouped by module with compact toggles, limits, and depth controls.">
-      <div className="hsub-feature-shell">
-        <div className="hsub-feature-tabs" role="tablist" aria-label="Feature access modules">
-          {plan.featureModules.map((module) => (
-            <button
-              key={module.key}
-              role="tab"
-              aria-selected={module.key === activeModuleKey}
-              className={"hsub-feature-tab" + (module.key === activeModuleKey ? " active" : "")}
-              onClick={() => setActiveModuleKey(module.key)}
-            >
-              <span className="hsub-feature-tab-title">{module.label}</span>
-            </button>
-          ))}
-        </div>
-
+      <FeatureTabShell tabs={tabs} activeKey={activeModuleKey} onSelect={setActiveModuleKey}>
         {activeModule && (
-          <div className="hsub-module-card" key={activeModule.key}>
+          <div key={activeModule.key}>
             <div className="hsub-module-head">
               <div className="hsub-module-title">{activeModule.label}</div>
               <div className="hsub-module-copy">{activeModule.summary}</div>
@@ -1052,7 +1040,7 @@ function FeatureAccessSection({ plan, editable, onChange }) {
             </div>
           </div>
         )}
-      </div>
+      </FeatureTabShell>
     </Section>
   );
 }

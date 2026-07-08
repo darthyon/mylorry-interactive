@@ -112,6 +112,15 @@
   const calculateMonthlyBilling = (plan, vehiclesUsed) =>
     Number(plan.pricing.baseMonthlyFee || 0) + Number(vehiclesUsed || 0) * Number(plan.pricing.perManagedVehicleFee || 0);
 
+  // Resolves a feature-row's bindPath (e.g. "limits.historyDepth") against a
+  // plan record. Mirrors the local copy in subscription.jsx's editor —
+  // exported here too so read-only consumers (Org Portal) don't need their
+  // own copy or the editor's update/patch machinery.
+  const getBoundValue = (plan, path) => {
+    if (!path) return undefined;
+    return path.split(".").reduce((acc, key) => (acc == null ? undefined : acc[key]), plan);
+  };
+
   const makeOrg = (plan, orgId, orgName, vehiclesUsed, adminsUsed, extra = {}) => {
     const vehicleLimit = plan.limits.managedVehicleLimit === 0 ? "Unlimited" : plan.limits.managedVehicleLimit;
     const adminLimit = plan.limits.adminUserLimit === 0 ? "Unlimited" : plan.limits.adminUserLimit;
@@ -441,5 +450,6 @@
     cloneFeatureModules,
     serviceSummary,
     calculateMonthlyBilling,
+    getBoundValue,
   };
 })();
