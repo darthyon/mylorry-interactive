@@ -103,7 +103,7 @@ const __TWEAKS_STYLE = `
   .twk-select-trigger{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;cursor:pointer}
   .twk-select-trigger::after{content:"";flex-shrink:0;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid rgba(0,0,0,.5)}
   .twk-select-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .twk-select-menu{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:3;padding:4px;background:rgba(250,248,244,.98);border:.5px solid rgba(0,0,0,.12);border-radius:9px;box-shadow:0 10px 24px rgba(0,0,0,.12);backdrop-filter:blur(12px)}
+  .twk-select-menu{position:fixed;z-index:2147483647;padding:4px;background:rgba(250,248,244,.98);border:.5px solid rgba(0,0,0,.12);border-radius:9px;box-shadow:0 10px 24px rgba(0,0,0,.12);backdrop-filter:blur(12px);max-height:min(220px,calc(100vh - 32px));overflow-y:auto}
   .twk-select-option{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 8px;border:none;border-radius:7px;background:transparent;color:inherit;font:inherit;cursor:pointer;text-align:left}
   .twk-select-option:hover{background:rgba(255,255,255,.72)}
   .twk-select-option.active{background:rgba(26,157,109,.12);color:#0f7f58;font-weight:600}
@@ -173,11 +173,6 @@ const __TWEAKS_STYLE = `
   .twk-chip>span>i:first-child{box-shadow:none}
   .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
     filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
-  .twk-launch{position:fixed;right:16px;bottom:16px;z-index:2147483645;height:34px;padding:0 12px;
-    border:0;border-radius:999px;background:rgba(41,38,27,.9);color:#fff;
-    font:12px/1 ui-sans-serif,system-ui,-apple-system,sans-serif;font-weight:600;letter-spacing:.01em;
-    box-shadow:0 10px 24px rgba(0,0,0,.2);cursor:pointer}
-  .twk-launch:hover{background:rgba(41,38,27,.98)}
 `;
 
 function __ensureNativeSelectEnhancer() {
@@ -295,11 +290,6 @@ function TweaksPanel({ title = 'Tweaks', children }) {
   return (
     <>
       <style>{__TWEAKS_STYLE}</style>
-      {!open && (
-        <button type="button" className="twk-launch" onClick={() => setOpen(true)}>
-          Open Tweaks
-        </button>
-      )}
       {open && (
         <div ref={dragRef} className="twk-panel" data-omelette-chrome=""
              style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
@@ -437,7 +427,9 @@ function TweakRadio({ label, value, options, onChange }) {
 
 function TweakSelect({ label, value, options, onChange }) {
   const wrapRef = React.useRef(null);
+  const menuRef = React.useRef(null);
   const [open, setOpen] = React.useState(false);
+  const [menuPos, setMenuPos] = React.useState({ top: 0, left: 0, width: 0 });
   const normalized = options.map((o) => {
     const optionValue = typeof o === 'object' ? o.value : o;
     const optionLabel = typeof o === 'object' ? o.label : o;
@@ -445,10 +437,28 @@ function TweakSelect({ label, value, options, onChange }) {
   });
   const selected = normalized.find((o) => String(o.value) === String(value)) || normalized[0];
 
+  React.useLayoutEffect(() => {
+    if (!open || !wrapRef.current || !menuRef.current) return undefined;
+    const triggerRect = wrapRef.current.getBoundingClientRect();
+    const menuHeight = menuRef.current.offsetHeight;
+    const spaceBelow = window.innerHeight - triggerRect.bottom - 12;
+    const spaceAbove = triggerRect.top - 12;
+    const top = spaceBelow >= menuHeight || spaceBelow >= spaceAbove
+      ? Math.min(window.innerHeight - menuHeight - 12, triggerRect.bottom + 6)
+      : Math.max(12, triggerRect.top - menuHeight - 6);
+    const left = Math.max(12, Math.min(triggerRect.left, window.innerWidth - triggerRect.width - 12));
+    setMenuPos({ top, left, width: triggerRect.width });
+    return undefined;
+  }, [open, normalized.length]);
+
   React.useEffect(() => {
     if (!open) return undefined;
     const onPointerDown = (event) => {
-      if (!wrapRef.current || wrapRef.current.contains(event.target)) return;
+      if (
+        !wrapRef.current ||
+        wrapRef.current.contains(event.target) ||
+        menuRef.current?.contains(event.target)
+      ) return;
       setOpen(false);
     };
     const onKeyDown = (event) => {
@@ -474,8 +484,13 @@ function TweakSelect({ label, value, options, onChange }) {
         >
           <span className="twk-select-label">{selected ? selected.label : 'Select'}</span>
         </button>
-        {open && (
-          <div className="twk-select-menu" role="listbox">
+        {open && ReactDOM.createPortal(
+          <div
+            ref={menuRef}
+            className="twk-select-menu"
+            role="listbox"
+            style={{ top: menuPos.top, left: menuPos.left, width: menuPos.width }}
+          >
             {normalized.map((option) => {
               const active = String(option.value) === String(value);
               return (
@@ -495,7 +510,8 @@ function TweakSelect({ label, value, options, onChange }) {
                 </button>
               );
             })}
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </TweakRow>

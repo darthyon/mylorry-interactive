@@ -236,11 +236,11 @@
         baseMonthlyFee: 99,
         perManagedVehicleFee: 12,
         commitmentOptions: [
-          { id: "lite-12", durationMonths: 12, discountedMonthlyPrice: 89 },
+          { id: "lite-12", durationMonths: 12, discountedMonthlyPrice: 99 },
         ],
       },
       limits: {
-        managedVehicleLimit: 30,
+        managedVehicleLimit: 10,
         adminUserLimit: 5,
         historyDepth: "6 months",
         reportDepth: "6 months",
@@ -270,15 +270,15 @@
       pricing: {
         setupFee: 500,
         waiveSetupFee: false,
-        baseMonthlyFee: 249,
+        baseMonthlyFee: 499,
         perManagedVehicleFee: 25,
         commitmentOptions: [
-          { id: "prem-12", durationMonths: 12, discountedMonthlyPrice: 229 },
-          { id: "prem-24", durationMonths: 24, discountedMonthlyPrice: 209 },
+          { id: "prem-12", durationMonths: 12, discountedMonthlyPrice: 499 },
+          { id: "prem-24", durationMonths: 24, discountedMonthlyPrice: 499 },
         ],
       },
       limits: {
-        managedVehicleLimit: 120,
+        managedVehicleLimit: 50,
         adminUserLimit: 18,
         historyDepth: "12 months",
         reportDepth: "12 months",
@@ -306,12 +306,12 @@
       recommended: false,
       displayOrder: 4,
       pricing: {
-        setupFee: 1200,
+        setupFee: 1000,
         waiveSetupFee: false,
         baseMonthlyFee: 999,
         perManagedVehicleFee: 40,
         commitmentOptions: [
-          { id: "ent-24", durationMonths: 24, discountedMonthlyPrice: 899 },
+          { id: "ent-24", durationMonths: 24, discountedMonthlyPrice: 999 },
         ],
       },
       limits: {
@@ -418,10 +418,10 @@
     }),
   ];
   plansById["plan-lite"].organizations = [
-    makeOrg(plansById["plan-lite"], "org-bluechip", "Bluechip Freight", 14, 4, {
+    makeOrg(plansById["plan-lite"], "org-bluechip", "Bluechip Freight", 8, 4, {
       nextBillingDate: "2026-08-03",
     }),
-    makeOrg(plansById["plan-lite"], "org-radiant", "Radiant Coldchain", 11, 3, {
+    makeOrg(plansById["plan-lite"], "org-radiant", "Radiant Coldchain", 10, 3, {
       subscriptionStatus: "Pending change",
       nextBillingDate: "2026-08-08",
       hasDuplicateActivePlan: true,

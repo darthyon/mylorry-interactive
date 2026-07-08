@@ -69,8 +69,11 @@ function buildUpcoming(upcoming) {
 function buildScenarioView(sc) {
   const plan = PLANS_BY_ID[sc.planId];
   const isPaid = sc.status !== "free";
+  const agreementVehicleCount = sc.agreementVehicleCount != null
+    ? Number(sc.agreementVehicleCount)
+    : (plan.limits.managedVehicleLimit > 0 ? plan.limits.managedVehicleLimit : sc.vehiclesUsed);
   const billing = isPaid
-    ? calculateCommittedBilling(plan, sc.vehiclesUsed, sc.commitmentMonths, sc.setupFeeStatus)
+    ? calculateCommittedBilling(plan, agreementVehicleCount, sc.commitmentMonths, sc.setupFeeStatus)
     : null;
   return {
     planName: plan.name,
@@ -80,6 +83,7 @@ function buildScenarioView(sc) {
     trialExpiry: sc.trialExpiry,
     nextBillingDate: sc.nextBillingDate,
     vehiclesUsed: sc.vehiclesUsed,
+    agreementVehicleCount,
     vehicleLimit: vehicleLimitOf(plan),
     billing: billing ? {
       ...billing,
@@ -199,7 +203,7 @@ function BillingStatCard({ s, billing }) {
           <span className="ml-tooltip osp-info-tooltip">
             {RM(billing.baseMonthlyFee)} base monthly fee × {billing.commitmentMonths} months
             {billing.perManagedVehicleFee > 0
-              ? ` + ${s.vehiclesUsed} managed vehicles × ${RM(billing.perManagedVehicleFee)} × ${billing.commitmentMonths} months`
+              ? ` + ${s.agreementVehicleCount} managed vehicles in agreement × ${RM(billing.perManagedVehicleFee)} × ${billing.commitmentMonths} months`
               : ""}
             {billing.setupFee > 0 ? ` + ${RM(billing.setupFee)} one-time setup fee` : ""}
           </span>
@@ -339,7 +343,7 @@ function FeatureRow({ row }) {
 function ServicesTabs({ modules }) {
   const [activeKey, setActiveKey] = React.useState(modules[0].key);
   const active = modules.find((m) => m.key === activeKey) || modules[0];
-  const tabs = modules.map((m) => ({ key: m.key, label: m.label, icon: m.icon }));
+  const tabs = modules.map((m) => ({ key: m.key, label: m.label }));
 
   return (
     <FeatureTabShell tabs={tabs} activeKey={activeKey} onSelect={setActiveKey}>
@@ -372,8 +376,9 @@ const SCENARIO_LABEL = {
   "free": "1 — Free plan",
   "lite-active": "2 — Lite (active)",
   "premium-trial": "3 — Premium (trial)",
-  "enterprise-unlimited": "4 — Enterprise (unlimited vehicles)",
-  "lite-at-limit": "5 — Lite (at vehicle limit)",
+  "premium-active": "4 — Premium (active)",
+  "enterprise-unlimited": "5 — Enterprise (unlimited vehicles)",
+  "lite-at-limit": "6 — Lite (at vehicle limit)",
 };
 
 function App() {

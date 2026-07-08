@@ -32,7 +32,8 @@ window.ORG_PROFILE = {
     "lite-active": {
       planId: "plan-lite",
       status: "active",
-      vehiclesUsed: 14,
+      vehiclesUsed: 8,
+      agreementVehicleCount: 10,
       adminsUsed: 4,
       commitmentMonths: 12,
       nextBillingDate: "2026-08-03",
@@ -44,6 +45,7 @@ window.ORG_PROFILE = {
       planId: "plan-premium",
       status: "trial",
       vehiclesUsed: 28,
+      agreementVehicleCount: 50,
       adminsUsed: 9,
       commitmentMonths: 12,
       trialStartDate: "2026-07-01",
@@ -56,10 +58,27 @@ window.ORG_PROFILE = {
       },
     },
 
+    "premium-active": {
+      planId: "plan-premium",
+      status: "active",
+      vehiclesUsed: 42,
+      agreementVehicleCount: 50,
+      adminsUsed: 10,
+      commitmentMonths: 12,
+      nextBillingDate: "2026-08-10",
+      setupFeeStatus: "Paid",
+      upcoming: {
+        note: "Organisation is scheduled to move to Enterprise for 50+ managed vehicles.",
+        planId: "plan-enterprise",
+        effectiveDate: "2026-08-10",
+      },
+    },
+
     "enterprise-unlimited": {
       planId: "plan-enterprise",
       status: "active",
       vehiclesUsed: 88,
+      agreementVehicleCount: 120,
       adminsUsed: 26,
       commitmentMonths: 24,
       nextBillingDate: "2026-08-15",
@@ -70,7 +89,8 @@ window.ORG_PROFILE = {
     "lite-at-limit": {
       planId: "plan-lite",
       status: "active",
-      vehiclesUsed: 30,
+      vehiclesUsed: 10,
+      agreementVehicleCount: 10,
       adminsUsed: 5,
       commitmentMonths: 12,
       nextBillingDate: "2026-07-28",
