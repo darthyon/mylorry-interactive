@@ -1,7 +1,7 @@
 {
 
 const { useEffect, useMemo, useRef, useState } = React;
-const { Icon, OrgSwitcher, SelectMenu, Pager } = window.SharedShell;
+const { Icon, OrgSwitcher, SelectMenu, Pager, Segmented } = window.SharedShell;
 const { useTweaks, TweaksPanel, TweakSection, TweakSelect } = window;
 const D = window.ORG_VEHICLE_LIST;
 
@@ -33,8 +33,19 @@ const DOC_FIELDS = [
   { key: "permit", label: "Truck Permit Expiry" },
 ];
 
-const VEHICLE_TYPES = ["Lorry", "Van", "Bus", "Truck", "MPV", "Sedan"];
+const VEHICLE_CATEGORIES = ["Lorry", "Van", "Bus", "Truck", "MPV", "Sedan"];
 const VENDORS = ["Swift Leasing", "Padu Fleet", "North Cold Chain", "Bintang Mobility", "Metro Vendor", "Bina Gemilang", "East Route Transport"];
+const VEHICLE_FEATURES = ["Normal", "Refrigerated", "Tailgate"];
+const VEHICLE_FINISHES = ["Open Gate", "Box", "Curtain Slider"];
+const VEHICLE_SUB_CATEGORIES_BY_CATEGORY = {
+  Lorry: ["Lori Rigid - Kargo Am", "Lori Rigid - Minuman Botol", "Lori Jentera Bergerak"],
+};
+const VEHICLE_EDIT_TABS = [
+  { key: "details", label: "Vehicle Details" },
+  { key: "reminders", label: "Reminders" },
+  { key: "forms", label: "Forms" },
+  { key: "drivers", label: "Drivers" },
+];
 
 function initials(name = "") {
   const parts = String(name).split(/\s+/).filter(Boolean);
@@ -94,6 +105,38 @@ function bestUrgency(vehicle) {
   return docs[0] || null;
 }
 
+function makeEmptyForm() {
+  return {
+    plate: "",
+    category: "",
+    subCategory: "",
+    feature: "",
+    finishing: "",
+    vendor: VENDORS[0],
+    btm: "",
+    bdm: "",
+    capacity: "",
+    photo: null,
+    managed: false,
+  };
+}
+
+function makeFormFromVehicle(vehicle) {
+  return {
+    plate: vehicle.plate || "",
+    category: vehicle.category || "",
+    subCategory: vehicle.subCategory || "",
+    feature: vehicle.feature || "",
+    finishing: vehicle.finishing || "",
+    vendor: vehicle.vendor || VENDORS[0],
+    btm: vehicle.btm ?? "",
+    bdm: vehicle.bdm ?? "",
+    capacity: vehicle.capacity ?? "",
+    photo: vehicle.photo || null,
+    managed: !!vehicle.managed,
+  };
+}
+
 function normalizeVehicle(vehicle) {
   return {
     ...vehicle,
@@ -143,7 +186,7 @@ function applyFilters(rows, filters) {
     if (filters.query.trim()) {
       const q = filters.query.trim().toLowerCase();
       if (filters.scope === "vehicle") {
-        const vehicleText = `${row.plate} ${row.type}`.toLowerCase();
+        const vehicleText = `${row.plate} ${row.category}`.toLowerCase();
         if (!vehicleText.includes(q)) return false;
       } else if (filters.scope === "vendor") {
         if (!row.vendor.toLowerCase().includes(q)) return false;
@@ -327,109 +370,197 @@ function Rail() {
   );
 }
 
-function VehicleModal({ mode, vehicle, scope, managedCount, onClose, onSave }) {
-  const [form, setForm] = useState(() => ({
-    plate: vehicle?.plate || "",
-    type: vehicle?.type || VEHICLE_TYPES[0],
-    vendor: vehicle?.vendor || VENDORS[0],
-    btm: vehicle?.btm ?? "",
-    bdm: vehicle?.bdm ?? "",
-    capacity: vehicle?.capacity ?? "",
-    managed: !!vehicle?.managed,
-  }));
-
-  function update(key, value) {
-    setForm((current) => ({ ...current, [key]: value }));
-  }
-
-  const nextCount = managedCount + (form.managed && !vehicle?.managed ? 1 : 0) - (!form.managed && vehicle?.managed ? 1 : 0);
-  const overCap = form.managed && scope.limit === 0 ? true : form.managed && nextCount > scope.limit;
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    onSave(form);
-  }
-
-  return ReactDOM.createPortal(
-    <div className="ovl-modal-backdrop" role="dialog" aria-modal="true" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="ovl-modal">
-        <div className="ovl-modal-head">
-          <div>
-            <div className="ovl-modal-title">{mode === "create" ? "Create Vehicle" : "Edit Vehicle"}</div>
-            <div className="ovl-modal-sub">
-              {mode === "create"
-                ? "Prototype behavior model: create a vehicle and decide whether it should be managed immediately."
-                : "Prototype behavior model: edit vehicle basics and Managed status with plan enforcement."}
-            </div>
-          </div>
-          <button className="ovl-modal-close" type="button" onClick={onClose} aria-label="Close">
-            <Icon name="close" size={18} />
-          </button>
+function VehiclePageHead({ mode, vehicle, onBack }) {
+  const isCreate = mode === "create";
+  const title = isCreate ? "Create vehicle" : `Edit ${vehicle?.plate || "vehicle"}`;
+  const subtitle = isCreate
+    ? "Add a new vehicle profile and configure its managed access settings."
+    : "Update vehicle profile and managed access settings.";
+  return (
+    <div className="ml-page-head ovl-pagehead">
+      <div>
+        <div className="hac-breadcrumb">
+          <button className="hac-bc-link" type="button" onClick={onBack}>Vehicles</button>
+          <Icon name="chevron_right" size={16} color="var(--fg-tertiary)" />
+          <span>{isCreate ? "Create vehicle" : "Edit vehicle"}</span>
         </div>
-        <form onSubmit={handleSubmit}>
-          <div className="ovl-modal-grid">
-            <div className="ovl-field">
-              <label>Plate number</label>
-              <input className="ovl-input" value={form.plate} onChange={(e) => update("plate", e.target.value)} required />
-            </div>
-            <div className="ovl-field">
-              <label>Vehicle type</label>
-              <div className="ovl-filter-wrap">
-                <select className="ovl-select" value={form.type} onChange={(e) => update("type", e.target.value)}>
-                  {VEHICLE_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
-                </select>
-              </div>
-            </div>
-            <div className="ovl-field">
-              <label>Vendor</label>
-              <div className="ovl-filter-wrap">
-                <select className="ovl-select" value={form.vendor} onChange={(e) => update("vendor", e.target.value)}>
-                  {VENDORS.map((vendor) => <option key={vendor} value={vendor}>{vendor}</option>)}
-                </select>
-              </div>
-            </div>
-            <div className="ovl-field">
-              <label>Weight (BTM) kg</label>
-              <input className="ovl-input" value={form.btm} onChange={(e) => update("btm", e.target.value)} />
-            </div>
-            <div className="ovl-field">
-              <label>Total Weight (BDM) kg</label>
-              <input className="ovl-input" value={form.bdm} onChange={(e) => update("bdm", e.target.value)} />
-            </div>
-            <div className="ovl-field">
-              <label>Load Capacity (kg)</label>
-              <input className="ovl-input" value={form.capacity} onChange={(e) => update("capacity", e.target.value)} />
-            </div>
-            <div className="ovl-field full">
-              <div className="ovl-switch">
-                <div className="ovl-switch-main">
-                  <div className="ovl-switch-title">Managed vehicle</div>
-                  <div className="ovl-switch-sub">
-                    Managed vehicles unlock driver check-in/out, ICOP checklist, and reminders.
-                  </div>
-                  {overCap && (
-                    <div className="ovl-switch-sub" style={{ color: "#B16C00", marginTop: 7 }}>
-                      You've reached your plan limit of managed vehicles. Upgrade your plan to manage more.
-                    </div>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  className={`ovl-switch-btn${form.managed ? " on" : ""}`}
-                  onClick={() => update("managed", !form.managed)}
-                  aria-pressed={form.managed}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="ovl-modal-actions">
-            <button type="button" className="ovl-btn-secondary" onClick={onClose}>Cancel</button>
-            <button type="submit" className="ovl-btn-primary">{mode === "create" ? "Create Vehicle" : "Save Changes"}</button>
-          </div>
-        </form>
+        <div className="ml-h1 ovl-title">{title}</div>
+        <div className="ovl-subtitle">{subtitle}</div>
       </div>
-    </div>,
-    document.body
+    </div>
+  );
+}
+
+function VehicleFormEditBar({ mode, onCancel }) {
+  return (
+    <div className="hac-edit-bar ovl-edit-bar">
+      <button className="hac-cancel-btn" type="button" onClick={onCancel}>Cancel</button>
+      <button className="hac-save-btn" type="submit" form="ovl-vehicle-form">
+        {mode === "create" ? "Save" : "Save changes"}
+      </button>
+    </div>
+  );
+}
+
+function VehiclePhotoField({ photo, onChange }) {
+  const inputRef = useRef(null);
+
+  function handleFiles(files) {
+    const file = files && files[0];
+    if (!file) return;
+    onChange({ name: file.name, url: URL.createObjectURL(file) });
+  }
+
+  return (
+    <div
+      className="ovl-dropzone"
+      onClick={() => inputRef.current?.click()}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); }}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        style={{ display: "none" }}
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+      {photo ? (
+        <img src={photo.url} alt="" className="ovl-dropzone-preview" />
+      ) : (
+        <>
+          <Icon name="upload_file" size={26} color="var(--green-600)" />
+          <div className="ovl-dropzone-text"><span>Click to upload</span> or drag and drop</div>
+          <div className="ovl-dropzone-hint">jpg, jpeg, png, webp (max. 12MB)</div>
+        </>
+      )}
+      <button type="button" className="ovl-btn-secondary ovl-dropzone-btn" onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}>
+        Choose file
+      </button>
+    </div>
+  );
+}
+
+function VehicleFormSections({ form, update, overCap, nextManagedCount, scope, onSubmit }) {
+  const subCategoryOptions = VEHICLE_SUB_CATEGORIES_BY_CATEGORY[form.category] || [];
+  const remainingSlots = Math.max(scope.limit - nextManagedCount, 0);
+  const slotsLabel = scope.limit === 0
+    ? "No managed vehicle slots on this plan"
+    : `${remainingSlots} of ${scope.limit} slot${scope.limit === 1 ? "" : "s"} remaining`;
+
+  return (
+    <form id="ovl-vehicle-form" className="ovl-form" onSubmit={onSubmit}>
+      <div className="ml-card ovl-form-card">
+        <div className="hac-sec-header">
+          <div>Vehicle details</div>
+          <div className="ovl-sec-sub">Photo, core identity, and classification for this vehicle.</div>
+        </div>
+        <div className="hac-form-grid3 ovl-details-grid ovl-form-body">
+          <div className="ovl-details-photo-cell">
+            <VehiclePhotoField photo={form.photo} onChange={(photo) => update("photo", photo)} />
+          </div>
+          <div className="hac-fg">
+            <label className="hac-label">Vehicle no. <span className="ovl-req">*</span></label>
+            <input className="hac-input" value={form.plate} onChange={(e) => update("plate", e.target.value)} placeholder="Enter vehicle no" required />
+          </div>
+          <div className="hac-fg">
+            <label className="hac-label">Vehicle category <span className="ovl-req">*</span></label>
+            <div className="hac-select-wrap">
+              <select
+                className="hac-select"
+                value={form.category}
+                onChange={(e) => { update("category", e.target.value); update("subCategory", ""); }}
+                required
+              >
+                <option value="" disabled>Select vehicle category</option>
+                {VEHICLE_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="hac-fg">
+            <label className="hac-label">Sub category</label>
+            <div className="hac-select-wrap">
+              <select
+                className="hac-select"
+                value={form.subCategory}
+                onChange={(e) => update("subCategory", e.target.value)}
+                disabled={!subCategoryOptions.length}
+              >
+                <option value="">{subCategoryOptions.length ? "Select vehicle sub category" : "No sub categories for this category yet"}</option>
+                {subCategoryOptions.map((sub) => <option key={sub} value={sub}>{sub}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="hac-fg">
+            <label className="hac-label">Vendor name</label>
+            <div className="hac-select-wrap">
+              <select className="hac-select" value={form.vendor} onChange={(e) => update("vendor", e.target.value)}>
+                {VENDORS.map((vendor) => <option key={vendor} value={vendor}>{vendor}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div className="ovl-managed-row">
+          <button
+            type="button"
+            className={`ovl-switch-btn${form.managed ? " on" : ""}`}
+            onClick={() => update("managed", !form.managed)}
+            aria-pressed={form.managed}
+          />
+          <div className="ovl-managed-card-text">
+            <div className="ovl-switch-title-row">
+              <span className="ovl-switch-title">Managed vehicle</span>
+              <span className={`ovl-managed-count${form.managed ? " active" : ""}`}>{slotsLabel}</span>
+            </div>
+            <div className="ovl-switch-sub">Enables driver check-in/out, ICOP checklist, and reminders.</div>
+          </div>
+        </div>
+        {overCap && (
+          <div className="ovl-switch-sub ovl-managed-warn">
+            You've reached your plan limit of managed vehicles. Upgrade your plan to manage more.
+          </div>
+        )}
+      </div>
+
+      <div className="ml-card ovl-form-card">
+        <div className="hac-sec-header">
+          <div>Vehicle specifications</div>
+          <div className="ovl-sec-sub">Build attributes, weight, and capacity information used for operations and compliance.</div>
+        </div>
+        <div className="hac-form-grid3 ovl-form-body">
+          <div className="hac-fg">
+            <label className="hac-label">Feature</label>
+            <div className="hac-select-wrap">
+              <select className="hac-select" value={form.feature} onChange={(e) => update("feature", e.target.value)}>
+                <option value="">Select feature</option>
+                {VEHICLE_FEATURES.map((feature) => <option key={feature} value={feature}>{feature}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="hac-fg">
+            <label className="hac-label">Finishing</label>
+            <div className="hac-select-wrap">
+              <select className="hac-select" value={form.finishing} onChange={(e) => update("finishing", e.target.value)}>
+                <option value="">Select finishing</option>
+                {VEHICLE_FINISHES.map((finish) => <option key={finish} value={finish}>{finish}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="hac-fg">
+            <label className="hac-label">Vehicle weight (BTM)</label>
+            <input className="hac-input" value={form.btm} onChange={(e) => update("btm", e.target.value)} placeholder="Enter weight in kg" />
+          </div>
+          <div className="hac-fg">
+            <label className="hac-label">Total weight (BDM)</label>
+            <input className="hac-input" value={form.bdm} onChange={(e) => update("bdm", e.target.value)} placeholder="Enter weight in kg" />
+          </div>
+          <div className="hac-fg">
+            <label className="hac-label">Load capacity</label>
+            <input className="hac-input" value={form.capacity} onChange={(e) => update("capacity", e.target.value)} placeholder="Enter maximum load capacity" />
+          </div>
+        </div>
+      </div>
+    </form>
   );
 }
 
@@ -450,7 +581,10 @@ function App() {
   const [pendingEndDate, setPendingEndDate] = useState("");
   const [expandedId, setExpandedId] = useState(null);
   const [menuId, setMenuId] = useState(null);
-  const [modal, setModal] = useState(null);
+  const [mode, setMode] = useState("list");
+  const [editingVehicle, setEditingVehicle] = useState(null);
+  const [editTab, setEditTab] = useState("details");
+  const [form, setForm] = useState(() => makeEmptyForm());
   const [toasts, setToasts] = useState([]);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
@@ -461,6 +595,28 @@ function App() {
     setMenuId(null);
     setPage(1);
   }, [scenarioKey]);
+
+  function update(key, value) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function openCreate() {
+    setEditingVehicle(null);
+    setForm(makeEmptyForm());
+    setMode("create");
+  }
+
+  function openEdit(vehicle) {
+    setEditingVehicle(vehicle);
+    setForm(makeFormFromVehicle(vehicle));
+    setEditTab("details");
+    setMode("edit");
+  }
+
+  function closeForm() {
+    setMode("list");
+    setEditingVehicle(null);
+  }
 
   function pushToast(tone, message) {
     const id = Date.now() + Math.random();
@@ -541,9 +697,16 @@ function App() {
     pushToast("ok", "Managed vehicle activated. Driver tab unlocked. Billing will reflect this change.");
   }
 
-  function handleSaveModal(form) {
-    if (modal.mode === "edit") {
-      const current = vehicles.find((item) => item.id === modal.vehicle.id);
+  const nextManagedCount = managedCount
+    + (form.managed && !editingVehicle?.managed ? 1 : 0)
+    - (!form.managed && editingVehicle?.managed ? 1 : 0);
+  const overCap = form.managed && (scenario.limit === 0 || nextManagedCount > scenario.limit);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    if (mode === "edit") {
+      const current = vehicles.find((item) => item.id === editingVehicle.id);
       if (!current) return;
       if (!form.managed && current.managed && current.activeCheckIn) {
         pushToast("err", "This vehicle is currently in use. The driver must check out before you can deactivate Managed status.");
@@ -554,19 +717,23 @@ function App() {
         return;
       }
       setVehicles((list) => list.map((item) => {
-        if (item.id !== modal.vehicle.id) return item;
+        if (item.id !== editingVehicle.id) return item;
         return {
           ...item,
           plate: form.plate,
-          type: form.type,
+          category: form.category,
+          subCategory: form.subCategory,
+          feature: form.feature,
+          finishing: form.finishing,
           vendor: form.vendor,
           btm: Number(form.btm || 0),
           bdm: Number(form.bdm || 0),
           capacity: Number(form.capacity || 0),
+          photo: form.photo,
           managed: form.managed,
         };
       }));
-      setModal(null);
+      closeForm();
       pushToast("ok", form.managed
         ? "Vehicle updated. Managed status remains active and Driver tab is available."
         : "Vehicle updated. Driver tab remains locked until the vehicle is managed.");
@@ -580,11 +747,15 @@ function App() {
     const created = {
       id: `veh-${Date.now()}`,
       plate: form.plate.toUpperCase(),
-      type: form.type,
+      category: form.category,
+      subCategory: form.subCategory,
+      feature: form.feature,
+      finishing: form.finishing,
       vendor: form.vendor,
       btm: Number(form.btm || 0),
       bdm: Number(form.bdm || 0),
       capacity: Number(form.capacity || 0),
+      photo: form.photo,
       managed: form.managed,
       roadTax: null,
       insurance: null,
@@ -595,7 +766,7 @@ function App() {
       drivers: [],
     };
     setVehicles((current) => [created, ...current]);
-    setModal(null);
+    closeForm();
     pushToast("ok", form.managed
       ? "Vehicle created as Managed. Driver tab unlocked and billing will update."
       : "Vehicle created. Manage this vehicle later to unlock driver features.");
@@ -612,12 +783,44 @@ function App() {
         </div>
 
         <div className="ovl-content">
+          {mode !== "list" ? (
+            <>
+              <VehiclePageHead mode={mode} vehicle={editingVehicle} onBack={closeForm} />
+              {mode === "edit" && (
+                <div className="ovl-tabs-row">
+                  <Segmented
+                    value={editTab}
+                    onChange={setEditTab}
+                    options={VEHICLE_EDIT_TABS.map((tab) => ({ value: tab.key, label: tab.label }))}
+                  />
+                </div>
+              )}
+              {mode === "create" || editTab === "details" ? (
+                <>
+                  <VehicleFormSections
+                    form={form}
+                    update={update}
+                    overCap={overCap}
+                    nextManagedCount={nextManagedCount}
+                    scope={scenario}
+                    onSubmit={handleSubmit}
+                  />
+                  <VehicleFormEditBar mode={mode} onCancel={closeForm} />
+                </>
+              ) : (
+                <div className="hac-empty-state">
+                  {VEHICLE_EDIT_TABS.find((tab) => tab.key === editTab)?.label} isn't built yet in this prototype.
+                </div>
+              )}
+            </>
+          ) : (
+          <>
           <div className="ml-page-head ovl-pagehead">
             <div>
               <div className="ml-h1 ovl-title">Vehicles</div>
               <div className="ovl-subtitle">Manage vehicle records, compliance dates, and driver access.</div>
             </div>
-            <button className="hac-create-btn ovl-create-btn" type="button" onClick={() => setModal({ mode: "create" })}>
+            <button className="hac-create-btn ovl-create-btn" type="button" onClick={openCreate}>
               <Icon name="add" size={16} color="#fff" /> Create Vehicle
             </button>
           </div>
@@ -723,7 +926,7 @@ function App() {
                     <th>No.</th>
                     <th>Vehicle</th>
                     <th>Managed</th>
-                    <th>Vehicle Type</th>
+                    <th>Vehicle Category</th>
                     <th>Vendor</th>
                     <th>Weight (BTM) kg</th>
                     <th>Total Weight (BDM) kg</th>
@@ -763,7 +966,7 @@ function App() {
                             </div>
                           </td>
                           <td><ManagedIcon managed={vehicle.managed} /></td>
-                          <td>{vehicle.type}</td>
+                          <td>{vehicle.category}</td>
                           <td>{vehicle.vendor}</td>
                           <td className="ovl-weight">{fmtNumber(vehicle.btm)}</td>
                           <td className="ovl-weight">{fmtNumber(vehicle.bdm)}</td>
@@ -777,7 +980,7 @@ function App() {
                               open={menuId === vehicle.id}
                               onToggle={(next) => setMenuId(next ? vehicle.id : null)}
                               onView={() => { setMenuId(null); pushToast("ok", `Viewing ${vehicle.plate} details in prototype mode.`); }}
-                              onEdit={() => { setModal({ mode: "edit", vehicle }); setMenuId(null); }}
+                              onEdit={() => { openEdit(vehicle); setMenuId(null); }}
                               onDelete={() => { setMenuId(null); pushToast("warn", "Delete is shown for parity only. No prototype deletion was performed."); }}
                             />
                           </td>
@@ -812,7 +1015,7 @@ function App() {
                       <ManagedIcon managed={vehicle.managed} />
                     </div>
                     <div className="ovl-mobile-meta">
-                      <span className="ovl-mobile-chip">{vehicle.type}</span>
+                      <span className="ovl-mobile-chip">{vehicle.category}</span>
                       <span className="ovl-mobile-chip">{vehicle.vendor}</span>
                     </div>
                     <div className="ovl-mobile-urgent">
@@ -847,6 +1050,8 @@ function App() {
           </section>
 
           <Pager page={page} perPage={perPage} total={filtered.length} onPage={setPage} onPerPage={setPerPage} />
+          </>
+          )}
         </div>
       </main>
 
@@ -860,17 +1065,6 @@ function App() {
           />
         </TweakSection>
       </TweaksPanel>
-
-      {modal && (
-        <VehicleModal
-          mode={modal.mode}
-          vehicle={modal.vehicle}
-          scope={scenario}
-          managedCount={managedCount}
-          onClose={() => setModal(null)}
-          onSave={handleSaveModal}
-        />
-      )}
 
       <div className="ovl-toast-stack">
         <div className="ovl-toast-col">

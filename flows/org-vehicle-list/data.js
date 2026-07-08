@@ -58,7 +58,7 @@ window.ORG_VEHICLE_LIST = {
     {
       id: "veh-001",
       plate: "VLT8421",
-      type: "Lorry",
+      category: "Lorry",
       vendor: "Swift Leasing",
       btm: 7600,
       bdm: 18000,
@@ -77,7 +77,7 @@ window.ORG_VEHICLE_LIST = {
     {
       id: "veh-002",
       plate: "JQM1189",
-      type: "Lorry",
+      category: "Lorry",
       vendor: "Padu Fleet",
       btm: 6800,
       bdm: 16500,
@@ -95,7 +95,7 @@ window.ORG_VEHICLE_LIST = {
     {
       id: "veh-003",
       plate: "STG0234",
-      type: "Truck",
+      category: "Truck",
       vendor: "North Cold Chain",
       btm: 4200,
       bdm: 8500,
@@ -111,7 +111,7 @@ window.ORG_VEHICLE_LIST = {
     {
       id: "veh-004",
       plate: "BCA8831",
-      type: "Truck",
+      category: "Truck",
       vendor: "Bintang Mobility",
       btm: 5900,
       bdm: 12000,
@@ -130,7 +130,7 @@ window.ORG_VEHICLE_LIST = {
     {
       id: "veh-005",
       plate: "WQM1190",
-      type: "Van",
+      category: "Van",
       vendor: "Metro Vendor",
       btm: 2200,
       bdm: 3500,
@@ -148,7 +148,7 @@ window.ORG_VEHICLE_LIST = {
     {
       id: "veh-006",
       plate: "JKM4521",
-      type: "Truck",
+      category: "Truck",
       vendor: "Bina Gemilang",
       btm: 7400,
       bdm: 16800,
@@ -166,7 +166,7 @@ window.ORG_VEHICLE_LIST = {
     {
       id: "veh-007",
       plate: "VANB791",
-      type: "Van",
+      category: "Van",
       vendor: "Padu Fleet",
       btm: 2500,
       bdm: 4100,
@@ -182,7 +182,7 @@ window.ORG_VEHICLE_LIST = {
     {
       id: "veh-008",
       plate: "HNO3008",
-      type: "Lorry",
+      category: "Lorry",
       vendor: "Swift Leasing",
       btm: 5100,
       bdm: 9900,
@@ -200,7 +200,7 @@ window.ORG_VEHICLE_LIST = {
     {
       id: "veh-009",
       plate: "TRK5570",
-      type: "Truck",
+      category: "Truck",
       vendor: "East Route Transport",
       btm: 7900,
       bdm: 18200,
@@ -219,7 +219,7 @@ window.ORG_VEHICLE_LIST = {
     {
       id: "veh-010",
       plate: "PKR2204",
-      type: "MPV",
+      category: "MPV",
       vendor: "Padu Fleet",
       btm: 1450,
       bdm: 1900,
