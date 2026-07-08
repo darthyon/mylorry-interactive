@@ -345,6 +345,7 @@ function ExpandableVehicleDriversRow({ vehicle }) {
 
 function DriverListPanel({ vehicle, onToggleAccessibleToAll, onOpenPicker, onRemoveDriver }) {
   const count = vehicle.drivers.length;
+  const empty = vehicle.accessibleToAll || count === 0;
   return (
     <div className="ml-card ovl-form-card ovl-driver-panel">
       <div className="ovl-driver-panel-head">
@@ -371,28 +372,32 @@ function DriverListPanel({ vehicle, onToggleAccessibleToAll, onOpenPicker, onRem
           <Icon name="add" size={16} color="#fff" /> Add Driver
         </button>
       </div>
-      <table className="ml-table ovl-driver-table">
-        <thead>
-          <tr>
-            <th style={{ width: 56 }}>No.</th>
-            <th>Driver Name</th>
-            <th>Driver ID</th>
-            <th style={{ width: 44 }}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {vehicle.accessibleToAll ? (
+      {empty ? (
+        vehicle.accessibleToAll ? (
+          <div className="ovl-driver-empty">
+            <Icon name="how_to_reg" size={34} />
+            <div className="ovl-driver-empty-title">All drivers can access this vehicle</div>
+            <div className="ovl-driver-empty-sub">Please uncheck the 'Accessible to all drivers' box to reassign drivers</div>
+          </div>
+        ) : (
+          <div className="ovl-driver-empty">
+            <Icon name="person_off" size={34} />
+            <div className="ovl-driver-empty-title">No drivers have access</div>
+            <div className="ovl-driver-empty-sub">Please search driver to assign or tick the 'Accessible to all drivers' box</div>
+          </div>
+        )
+      ) : (
+        <table className="ml-table ovl-driver-table">
+          <thead>
             <tr>
-              <td colSpan={4}>
-                <div className="ovl-driver-empty">
-                  <Icon name="how_to_reg" size={40} color="var(--green-500)" />
-                  <div className="ovl-driver-empty-title">All drivers can access this vehicle</div>
-                  <div className="ovl-driver-empty-sub">Please uncheck the 'Accessible to all drivers' box to reassign drivers</div>
-                </div>
-              </td>
+              <th style={{ width: 56 }}>No.</th>
+              <th>Driver Name</th>
+              <th>Driver ID</th>
+              <th style={{ width: 44 }}></th>
             </tr>
-          ) : count ? (
-            vehicle.drivers.map((driver, index) => (
+          </thead>
+          <tbody>
+            {vehicle.drivers.map((driver, index) => (
               <tr key={driver.driverId}>
                 <td>{index + 1}</td>
                 <td>{driver.name}</td>
@@ -403,20 +408,10 @@ function DriverListPanel({ vehicle, onToggleAccessibleToAll, onOpenPicker, onRem
                   </button>
                 </td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={4}>
-                <div className="ovl-driver-empty">
-                  <Icon name="person_off" size={40} color="#F5A623" />
-                  <div className="ovl-driver-empty-title">No drivers have access to the vehicle</div>
-                  <div className="ovl-driver-empty-sub">Please search driver to assign or tick the 'Accessible to all drivers' box</div>
-                </div>
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
@@ -1114,9 +1109,10 @@ function App() {
               ) : mode === "view" && editTab === "details" ? (
                 <VehicleViewSections form={form} nextManagedCount={nextManagedCount} scope={scenario} />
               ) : editTab === "drivers" && !form.managed ? (
-                <div className="hac-empty-state ovl-driver-lock">
-                  <Icon name="lock" size={20} color="var(--fg-tertiary)" />
-                  <div>Manage this vehicle to enable driver check-in, ICOP compliance, and more.</div>
+                <div className="ovl-driver-empty">
+                  <Icon name="lock" size={34} />
+                  <div className="ovl-driver-empty-title">Manage this vehicle</div>
+                  <div className="ovl-driver-empty-sub">Enable managed vehicle to unlock driver check-in, ICOP safety, and driver assignment.</div>
                 </div>
               ) : editTab === "drivers" && currentEditingVehicle ? (
                 <DriverListPanel
