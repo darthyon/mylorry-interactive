@@ -1,0 +1,892 @@
+{
+
+const { useEffect, useMemo, useRef, useState } = React;
+const { Icon, OrgSwitcher, SelectMenu, Pager } = window.SharedShell;
+const { useTweaks, TweaksPanel, TweakSection, TweakSelect } = window;
+const D = window.ORG_VEHICLE_LIST;
+
+const MYADMIN_ITEMS = [
+  { key: "dashboard", label: "Dashboard", icon: "dashboard", href: "../org-myadmin-dashboard/index.html" },
+  { key: "user", label: "User", icon: "group" },
+  { key: "driver", label: "Driver", icon: "badge" },
+  { key: "vehicle", label: "Vehicle", icon: "local_shipping", href: "#" },
+  { key: "vendor", label: "Vendor", icon: "storefront" },
+  { key: "checklist", label: "Checklist", icon: "fact_check" },
+  { key: "history", label: "Check In History", icon: "history" },
+];
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "scenario": "lite-active"
+}/*EDITMODE-END*/;
+
+const SCENARIO_LABEL = {
+  "lite-active": "1 — Lite (8 / 10)",
+  "lite-at-limit": "2 — Lite (at limit)",
+  "premium": "3 — Premium",
+  "free": "4 — Free (0 MV)",
+};
+
+const DOC_FIELDS = [
+  { key: "roadTax", label: "Road Tax Expiry" },
+  { key: "insurance", label: "Insurance Expiry" },
+  { key: "puspakom", label: "Puspakom Service" },
+  { key: "permit", label: "Truck Permit Expiry" },
+];
+
+const VEHICLE_TYPES = ["Lorry", "Van", "Bus", "Truck", "MPV", "Sedan"];
+const VENDORS = ["Swift Leasing", "Padu Fleet", "North Cold Chain", "Bintang Mobility", "Metro Vendor", "Bina Gemilang", "East Route Transport"];
+
+function initials(name = "") {
+  const parts = String(name).split(/\s+/).filter(Boolean);
+  return parts.slice(0, 2).map((part) => part[0].toUpperCase()).join("") || "?";
+}
+
+function VehicleThumb() {
+  return (
+    <div className="ovl-thumb" aria-hidden="true">
+      <svg className="ovl-thumb-icon" viewBox="0 0 24 24" focusable="false">
+        <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h9A1.5 1.5 0 0 1 15 6.5V8h2.4c.5 0 .98.22 1.3.6l2.1 2.52c.26.3.4.7.4 1.1V16a1 1 0 0 1-1 1h-1.05a2.5 2.5 0 0 1-4.9 0h-5.1a2.5 2.5 0 0 1-4.9 0H4a1 1 0 0 1-1-1V6.5Zm12 3.25V12h4.05l-1.48-1.78a1.25 1.25 0 0 0-.96-.47H15ZM6.7 18a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm10 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
+      </svg>
+    </div>
+  );
+}
+
+function fmtNumber(n) {
+  return Number(n || 0).toLocaleString("en-US");
+}
+
+function fmtDate(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso + "T00:00:00");
+  if (isNaN(d)) return "—";
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function daysUntil(iso) {
+  if (!iso) return null;
+  const target = new Date(iso + "T00:00:00");
+  const now = new Date("2026-07-09T00:00:00");
+  return Math.round((target - now) / 86400000);
+}
+
+function expiryTone(iso) {
+  const days = daysUntil(iso);
+  if (days == null) return "empty";
+  if (days <= 30) return "danger";
+  if (days <= 90) return "warn";
+  return "good";
+}
+
+function expiryMeta(iso) {
+  const days = daysUntil(iso);
+  if (days == null) return "Missing";
+  if (days < 0) return `${Math.abs(days)} days overdue`;
+  if (days === 0) return "Expires today";
+  if (days === 1) return "1 day left";
+  return `${days} days left`;
+}
+
+function bestUrgency(vehicle) {
+  const docs = DOC_FIELDS
+    .map((field) => ({ key: field.key, label: field.label, iso: vehicle[field.key], days: daysUntil(vehicle[field.key]) }))
+    .filter((item) => item.days != null)
+    .sort((a, b) => a.days - b.days);
+  return docs[0] || null;
+}
+
+function normalizeVehicle(vehicle) {
+  return {
+    ...vehicle,
+    managed: !!vehicle.managed,
+    drivers: Array.isArray(vehicle.drivers) ? vehicle.drivers : [],
+    activeCheckIn: !!vehicle.activeCheckIn,
+  };
+}
+
+function deriveVehicles(scenarioKey) {
+  const scenario = D.scenarios[scenarioKey];
+  const managedSet = new Set(scenario.managedIds);
+  return D.vehicles.map((vehicle) => normalizeVehicle({ ...vehicle, managed: managedSet.has(vehicle.id) }));
+}
+
+function scenarioSummary(scenarioKey, usedCount) {
+  const scenario = D.scenarios[scenarioKey];
+  const planName = scenario.planName;
+  const limit = scenario.limit;
+  if (limit === 0) {
+    return {
+      state: "free",
+      label: `${usedCount} / ${limit} Vehicles Managed`,
+      helper: "Managed vehicles unlock driver check-in/out, ICOP checklist, and reminders.",
+      note: "Free plan includes no managed vehicles. Manage this vehicle to enable driver features once the plan is upgraded.",
+    };
+  }
+  if (usedCount >= limit) {
+    return {
+      state: "limit",
+      label: `${usedCount} / ${limit} Vehicles Managed`,
+      helper: "Managed vehicles unlock driver check-in/out, ICOP checklist, and reminders.",
+      note: `Plan limit reached. ${planName} allows up to ${limit} managed vehicles.`,
+    };
+  }
+  return {
+    state: "healthy",
+    label: `${usedCount} / ${limit} Vehicles Managed`,
+    helper: "Managed vehicles unlock driver check-in/out, ICOP checklist, and reminders.",
+    note: `${limit - usedCount} managed slots available on ${planName}.`,
+  };
+}
+
+function applyFilters(rows, filters) {
+  return rows.filter((row) => {
+    if (filters.managedOnly && !row.managed) return false;
+    if (filters.query.trim()) {
+      const q = filters.query.trim().toLowerCase();
+      if (filters.scope === "vehicle") {
+        const vehicleText = `${row.plate} ${row.type}`.toLowerCase();
+        if (!vehicleText.includes(q)) return false;
+      } else if (filters.scope === "vendor") {
+        if (!row.vendor.toLowerCase().includes(q)) return false;
+      } else {
+        const driverText = row.drivers.map((driver) => `${driver.name} ${driver.driverId} ${driver.phone}`.toLowerCase()).join(" ");
+        if (!driverText.includes(q)) return false;
+      }
+    }
+
+    const relevantFields = filters.dueDateType === "all" ? DOC_FIELDS.map((field) => field.key) : [filters.dueDateType];
+    const start = filters.startDate ? new Date(filters.startDate + "T00:00:00") : null;
+    const end = filters.endDate ? new Date(filters.endDate + "T23:59:59") : null;
+
+    if (start || end) {
+      const matches = relevantFields.some((fieldKey) => {
+        const iso = row[fieldKey];
+        if (!iso) return false;
+        const value = new Date(iso + "T00:00:00");
+        if (start && value < start) return false;
+        if (end && value > end) return false;
+        return true;
+      });
+      if (!matches) return false;
+    }
+    return true;
+  });
+}
+
+function ManagedIcon({ managed }) {
+  if (!managed) return <span className="ovl-managed blank" aria-hidden="true" />;
+  return (
+    <span className="ovl-managed" title="Managed vehicle">
+      <Icon name="check_circle" size={18} fill={1} color="var(--green-600)" />
+    </span>
+  );
+}
+
+function ExpiryCell({ iso }) {
+  const tone = expiryTone(iso);
+  return (
+    <div className={`ovl-expiry ${tone}`}>
+      <span className="ovl-expiry-date">{fmtDate(iso)}</span>
+      <span className="ovl-expiry-meta">{expiryMeta(iso)}</span>
+    </div>
+  );
+}
+
+function VehicleRowMenu({ open, onToggle, onView, onEdit, onDelete }) {
+  const btnRef = useRef(null);
+  const dropRef = useRef(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const dropWidth = 198;
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event) => {
+      if (btnRef.current?.contains(event.target)) return;
+      if (dropRef.current?.contains(event.target)) return;
+      onToggle(false);
+    };
+    const dismiss = () => onToggle(false);
+    document.addEventListener("mousedown", close);
+    window.addEventListener("scroll", dismiss, true);
+    window.addEventListener("resize", dismiss);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      window.removeEventListener("scroll", dismiss, true);
+      window.removeEventListener("resize", dismiss);
+    };
+  }, [open, onToggle]);
+
+  function handleToggle(event) {
+    event.stopPropagation();
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, left: rect.right - dropWidth });
+    }
+    onToggle(!open);
+  }
+
+  return (
+    <div className="hac-ellipsis">
+      <button className="ml-icon-btn ovl-menu-btn" type="button" ref={btnRef} onClick={handleToggle}>
+        <Icon name="more_horiz" size={18} />
+      </button>
+      {open && ReactDOM.createPortal(
+        <div className="hac-drop-fixed ovl-drop" ref={dropRef} style={{ top: pos.top, left: pos.left }} onClick={(event) => event.stopPropagation()}>
+          <button className="hac-drop-item" type="button" onClick={onView}>
+            <Icon name="visibility" size={15} /> View
+          </button>
+          <button className="hac-drop-item" type="button" onClick={onEdit}>
+            <Icon name="edit" size={15} /> Edit
+          </button>
+          <button className="hac-drop-item danger" type="button" onClick={onDelete}>
+            <Icon name="delete" size={15} /> Delete
+          </button>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+function ExpandableVehicleDriversRow({ vehicle }) {
+  const driverCount = vehicle.drivers.length;
+  const driverLabel = driverCount === 1 ? "1 driver assigned" : `${driverCount} drivers assigned`;
+  return (
+    <div className="ovl-expanded-wrap">
+      <div className="ovl-expanded-head">
+        <div className="ovl-expanded-title">{driverCount ? driverLabel : "No drivers assigned"}</div>
+      </div>
+      {driverCount ? (
+        <div className="ovl-driver-grid">
+          {vehicle.drivers.map((driver) => (
+            <div className="ovl-driver-card" key={driver.driverId}>
+              <div className="ovl-driver-avatar">{initials(driver.name)}</div>
+              <div className="ovl-driver-main">
+                <div className="ovl-driver-name">{driver.name}</div>
+                <div className="ovl-driver-meta">{driver.driverId}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="ovl-empty-drivers">
+          Assign a driver to this vehicle from the vehicle detail page.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Rail() {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className={`ovl-rail-wrap${expanded ? " expanded" : ""}`}>
+      <nav className={`ovl-rail${expanded ? " expanded" : ""}`} aria-label="MyAdmin navigation">
+        <div className="ovl-rail-profile">
+          <div className="ovl-rail-avatar-wrap">
+            <div className="ovl-rail-avatar"><Icon name="person" size={18} fill={1} color="#94A8B2" /></div>
+            {!expanded && <span className="ovl-rail-badge">ORG</span>}
+          </div>
+          {expanded && (
+            <div className="ovl-rail-profile-text">
+              <span className="ovl-rail-profile-role">MyAdmin</span>
+              <span className="ovl-rail-profile-name">Module</span>
+            </div>
+          )}
+        </div>
+
+        {MYADMIN_ITEMS.map((item) => {
+          const body = (
+            <>
+              <Icon name={item.icon} size={20} fill={item.key === "vehicle" ? 1 : 0} />
+              <span>{item.label}</span>
+            </>
+          );
+          return item.href ? (
+            <a key={item.key} href={item.href} className={`ovl-rail-item${item.key === "vehicle" ? " active" : ""}`}>
+              {body}
+            </a>
+          ) : (
+            <button key={item.key} type="button" className="ovl-rail-item">
+              {body}
+            </button>
+          );
+        })}
+
+        <div className="ovl-rail-divider" />
+        <div className="ovl-rail-footer">
+          <a href="../org-dashboard/index.html" className="ovl-rail-item ovl-rail-signout">
+            <Icon name="logout" size={20} />
+            {expanded && <span>Back to Home</span>}
+          </a>
+        </div>
+      </nav>
+      <button type="button" className="ovl-rail-toggle" onClick={() => setExpanded((value) => !value)} aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}>
+        <Icon name="chevron_left" size={16} />
+      </button>
+    </div>
+  );
+}
+
+function VehicleModal({ mode, vehicle, scope, managedCount, onClose, onSave }) {
+  const [form, setForm] = useState(() => ({
+    plate: vehicle?.plate || "",
+    type: vehicle?.type || VEHICLE_TYPES[0],
+    vendor: vehicle?.vendor || VENDORS[0],
+    btm: vehicle?.btm ?? "",
+    bdm: vehicle?.bdm ?? "",
+    capacity: vehicle?.capacity ?? "",
+    managed: !!vehicle?.managed,
+  }));
+
+  function update(key, value) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  const nextCount = managedCount + (form.managed && !vehicle?.managed ? 1 : 0) - (!form.managed && vehicle?.managed ? 1 : 0);
+  const overCap = form.managed && scope.limit === 0 ? true : form.managed && nextCount > scope.limit;
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    onSave(form);
+  }
+
+  return ReactDOM.createPortal(
+    <div className="ovl-modal-backdrop" role="dialog" aria-modal="true" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="ovl-modal">
+        <div className="ovl-modal-head">
+          <div>
+            <div className="ovl-modal-title">{mode === "create" ? "Create Vehicle" : "Edit Vehicle"}</div>
+            <div className="ovl-modal-sub">
+              {mode === "create"
+                ? "Prototype behavior model: create a vehicle and decide whether it should be managed immediately."
+                : "Prototype behavior model: edit vehicle basics and Managed status with plan enforcement."}
+            </div>
+          </div>
+          <button className="ovl-modal-close" type="button" onClick={onClose} aria-label="Close">
+            <Icon name="close" size={18} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="ovl-modal-grid">
+            <div className="ovl-field">
+              <label>Plate number</label>
+              <input className="ovl-input" value={form.plate} onChange={(e) => update("plate", e.target.value)} required />
+            </div>
+            <div className="ovl-field">
+              <label>Vehicle type</label>
+              <div className="ovl-filter-wrap">
+                <select className="ovl-select" value={form.type} onChange={(e) => update("type", e.target.value)}>
+                  {VEHICLE_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="ovl-field">
+              <label>Vendor</label>
+              <div className="ovl-filter-wrap">
+                <select className="ovl-select" value={form.vendor} onChange={(e) => update("vendor", e.target.value)}>
+                  {VENDORS.map((vendor) => <option key={vendor} value={vendor}>{vendor}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="ovl-field">
+              <label>Weight (BTM) kg</label>
+              <input className="ovl-input" value={form.btm} onChange={(e) => update("btm", e.target.value)} />
+            </div>
+            <div className="ovl-field">
+              <label>Total Weight (BDM) kg</label>
+              <input className="ovl-input" value={form.bdm} onChange={(e) => update("bdm", e.target.value)} />
+            </div>
+            <div className="ovl-field">
+              <label>Load Capacity (kg)</label>
+              <input className="ovl-input" value={form.capacity} onChange={(e) => update("capacity", e.target.value)} />
+            </div>
+            <div className="ovl-field full">
+              <div className="ovl-switch">
+                <div className="ovl-switch-main">
+                  <div className="ovl-switch-title">Managed vehicle</div>
+                  <div className="ovl-switch-sub">
+                    Managed vehicles unlock driver check-in/out, ICOP checklist, and reminders.
+                  </div>
+                  {overCap && (
+                    <div className="ovl-switch-sub" style={{ color: "#B16C00", marginTop: 7 }}>
+                      You've reached your plan limit of managed vehicles. Upgrade your plan to manage more.
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className={`ovl-switch-btn${form.managed ? " on" : ""}`}
+                  onClick={() => update("managed", !form.managed)}
+                  aria-pressed={form.managed}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="ovl-modal-actions">
+            <button type="button" className="ovl-btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="submit" className="ovl-btn-primary">{mode === "create" ? "Create Vehicle" : "Save Changes"}</button>
+          </div>
+        </form>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const scenarioKey = t.scenario || "lite-active";
+  const scenario = D.scenarios[scenarioKey];
+  const [vehicles, setVehicles] = useState(() => deriveVehicles(scenarioKey));
+  const [query, setQuery] = useState("");
+  const [scope, setScope] = useState("vehicle");
+  const [dueDateType, setDueDateType] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [managedOnly, setManagedOnly] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [pendingDueDateType, setPendingDueDateType] = useState("all");
+  const [pendingStartDate, setPendingStartDate] = useState("");
+  const [pendingEndDate, setPendingEndDate] = useState("");
+  const [expandedId, setExpandedId] = useState(null);
+  const [menuId, setMenuId] = useState(null);
+  const [modal, setModal] = useState(null);
+  const [toasts, setToasts] = useState([]);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+
+  useEffect(() => {
+    setVehicles(deriveVehicles(scenarioKey));
+    setExpandedId(null);
+    setMenuId(null);
+    setPage(1);
+  }, [scenarioKey]);
+
+  function pushToast(tone, message) {
+    const id = Date.now() + Math.random();
+    setToasts((current) => [...current, { id, tone, message }]);
+    window.setTimeout(() => {
+      setToasts((current) => current.filter((toast) => toast.id !== id));
+    }, 3400);
+  }
+
+  const managedCount = useMemo(() => vehicles.filter((vehicle) => vehicle.managed).length, [vehicles]);
+  const summary = scenarioSummary(scenarioKey, managedCount);
+
+  const filters = { query, scope, dueDateType, startDate, endDate, managedOnly };
+  const filtered = useMemo(() => applyFilters(vehicles, filters), [vehicles, query, scope, dueDateType, startDate, endDate, managedOnly]);
+  const pageData = useMemo(() => filtered.slice((page - 1) * perPage, page * perPage), [filtered, page, perPage]);
+  const hasClearableFilters = !!query || dueDateType !== "all" || !!startDate || !!endDate;
+  const dateFilterCount = (dueDateType !== "all" ? 1 : 0) + (!!startDate ? 1 : 0) + (!!endDate ? 1 : 0);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+    if (page > totalPages) setPage(totalPages);
+  }, [filtered.length, page, perPage]);
+
+  function resetFilters() {
+    setQuery("");
+    setScope("vehicle");
+    setDueDateType("all");
+    setStartDate("");
+    setEndDate("");
+    setPendingDueDateType("all");
+    setPendingStartDate("");
+    setPendingEndDate("");
+    setPage(1);
+  }
+
+  function toggleFilterPanel() {
+    if (!filterOpen) {
+      setPendingDueDateType(dueDateType);
+      setPendingStartDate(startDate);
+      setPendingEndDate(endDate);
+    }
+    setFilterOpen((current) => !current);
+  }
+
+  function applyPendingFilters() {
+    setDueDateType(pendingDueDateType);
+    setStartDate(pendingStartDate);
+    setEndDate(pendingEndDate);
+    setPage(1);
+    setFilterOpen(false);
+  }
+
+  function setManagedState(vehicleId, nextManaged, source) {
+    const vehicle = vehicles.find((item) => item.id === vehicleId);
+    if (!vehicle) return;
+    if (vehicle.managed === nextManaged) return;
+
+    if (!nextManaged) {
+      if (vehicle.activeCheckIn) {
+        pushToast("err", "This vehicle is currently in use. The driver must check out before you can deactivate Managed status.");
+        return;
+      }
+      setVehicles((current) => current.map((item) => item.id === vehicleId ? { ...item, managed: false } : item));
+      setMenuId(null);
+      pushToast("warn", source === "edit"
+        ? "Managed status removed. Driver tab locked."
+        : "Managed status removed. Driver tab locked and new driver check-ins will stay blocked.");
+      return;
+    }
+
+    const count = vehicles.filter((item) => item.managed).length;
+    if (scenario.limit === 0 || count >= scenario.limit) {
+      pushToast("warn", "You've reached your plan limit of managed vehicles. Upgrade your plan to manage more.");
+      return;
+    }
+    setVehicles((current) => current.map((item) => item.id === vehicleId ? { ...item, managed: true } : item));
+    setMenuId(null);
+    pushToast("ok", "Managed vehicle activated. Driver tab unlocked. Billing will reflect this change.");
+  }
+
+  function handleSaveModal(form) {
+    if (modal.mode === "edit") {
+      const current = vehicles.find((item) => item.id === modal.vehicle.id);
+      if (!current) return;
+      if (!form.managed && current.managed && current.activeCheckIn) {
+        pushToast("err", "This vehicle is currently in use. The driver must check out before you can deactivate Managed status.");
+        return;
+      }
+      if (form.managed && !current.managed && (scenario.limit === 0 || managedCount >= scenario.limit)) {
+        pushToast("warn", "You've reached your plan limit of managed vehicles. Upgrade your plan to manage more.");
+        return;
+      }
+      setVehicles((list) => list.map((item) => {
+        if (item.id !== modal.vehicle.id) return item;
+        return {
+          ...item,
+          plate: form.plate,
+          type: form.type,
+          vendor: form.vendor,
+          btm: Number(form.btm || 0),
+          bdm: Number(form.bdm || 0),
+          capacity: Number(form.capacity || 0),
+          managed: form.managed,
+        };
+      }));
+      setModal(null);
+      pushToast("ok", form.managed
+        ? "Vehicle updated. Managed status remains active and Driver tab is available."
+        : "Vehicle updated. Driver tab remains locked until the vehicle is managed.");
+      return;
+    }
+
+    if (form.managed && (scenario.limit === 0 || managedCount >= scenario.limit)) {
+      pushToast("warn", "You've reached your plan limit of managed vehicles. Upgrade your plan to manage more.");
+      return;
+    }
+    const created = {
+      id: `veh-${Date.now()}`,
+      plate: form.plate.toUpperCase(),
+      type: form.type,
+      vendor: form.vendor,
+      btm: Number(form.btm || 0),
+      bdm: Number(form.bdm || 0),
+      capacity: Number(form.capacity || 0),
+      managed: form.managed,
+      roadTax: null,
+      insurance: null,
+      puspakom: null,
+      permit: null,
+      thumb: null,
+      activeCheckIn: false,
+      drivers: [],
+    };
+    setVehicles((current) => [created, ...current]);
+    setModal(null);
+    pushToast("ok", form.managed
+      ? "Vehicle created as Managed. Driver tab unlocked and billing will update."
+      : "Vehicle created. Manage this vehicle later to unlock driver features.");
+  }
+
+  return (
+    <div className="ovl-shell">
+      <Rail />
+
+      <main className="ovl-main">
+        <div className="ovl-topbar">
+          <OrgSwitcher orgs={D.orgs} initialId={D.org.id} />
+          <div className="ovl-topbar-spacer" />
+        </div>
+
+        <div className="ovl-content">
+          <div className="ml-page-head ovl-pagehead">
+            <div>
+              <div className="ml-h1 ovl-title">Vehicles</div>
+              <div className="ovl-subtitle">Manage vehicle records, compliance dates, and driver access.</div>
+            </div>
+            <button className="hac-create-btn ovl-create-btn" type="button" onClick={() => setModal({ mode: "create" })}>
+              <Icon name="add" size={16} color="#fff" /> Create Vehicle
+            </button>
+          </div>
+
+          <section className="ovl-toolbar">
+            <div className="hac-toolbar">
+              <div className="hac-toolbar-left ovl-toolbar-left">
+                <div className="hac-search-group scoped ovl-search-group">
+                  <SelectMenu
+                    className="hac-search-scope"
+                    value={scope}
+                    options={D.searchScopes}
+                    onChange={(next) => { setScope(next); setPage(1); }}
+                    ariaLabel="Search by"
+                    style={{ width: scope === "vehicle" ? "116px" : scope === "driver" ? "108px" : "110px" }}
+                  />
+                  <div className="hac-search-bar">
+                    <Icon name="search" size={17} color="var(--fg-tertiary)" />
+                    <input
+                      className="hac-search-input"
+                      value={query}
+                      onChange={(e) => { setQuery(e.target.value); setPage(1); }}
+                      placeholder={`Search by ${scope}`}
+                    />
+                    {query && (
+                      <button className="hac-search-clear" type="button" onClick={() => setQuery("")}>
+                        <Icon name="close" size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <button className={`hac-filter-btn${dateFilterCount ? " active" : ""}`} type="button" onClick={toggleFilterPanel}>
+                  <Icon name="tune" size={18} /> Filter
+                  {dateFilterCount > 0 && <span className="hac-filter-badge">{dateFilterCount}</span>}
+                </button>
+              </div>
+
+              <div className="ovl-toolbar-right">
+                <label className={`ovl-managed-filter${managedOnly ? " active" : ""}`}>
+                  <input
+                    type="checkbox"
+                    checked={managedOnly}
+                    onChange={() => { setManagedOnly((current) => !current); setPage(1); }}
+                  />
+                  <span className="ovl-managed-filter-text">Managed Vehicles only</span>
+                  <span className="ovl-managed-count">{managedCount} / {scenario.limit}</span>
+                </label>
+              </div>
+
+              {hasClearableFilters && (
+                <button className="ovl-clear" type="button" onClick={resetFilters}>
+                  <Icon name="ink_eraser" size={15} /> Clear filters
+                </button>
+              )}
+            </div>
+
+            {filterOpen && (
+              <div className="hac-filter-panel ovl-filter-panel">
+                <div className="hac-filter-grid ovl-filter-grid">
+                  <div className="hac-filter-field">
+                    <label>Due Date Type</label>
+                    <div className="hac-select-wrap">
+                      <SelectMenu
+                        className="hac-select"
+                        value={pendingDueDateType}
+                        options={D.dueDateTypes}
+                        onChange={setPendingDueDateType}
+                        ariaLabel="Due date type"
+                      />
+                    </div>
+                  </div>
+                  <div className="hac-filter-field">
+                    <label>Start Date</label>
+                    <div className="hac-date-range-field">
+                      <Icon name="event" size={16} color="var(--fg-tertiary)" />
+                      <input className="hac-date-range-input" type="date" value={pendingStartDate} onChange={(e) => setPendingStartDate(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="hac-filter-field">
+                    <label>End Date</label>
+                    <div className="hac-date-range-field">
+                      <Icon name="event" size={16} color="var(--fg-tertiary)" />
+                      <input className="hac-date-range-input" type="date" value={pendingEndDate} onChange={(e) => setPendingEndDate(e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+                <div className="hac-filter-actions">
+                  <button className="hac-filter-apply" type="button" onClick={applyPendingFilters}>Apply Filters</button>
+                  <button className="hac-filter-reset" type="button" onClick={resetFilters}>Reset All</button>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <div className="hac-count">{filtered.length} Vehicle{filtered.length !== 1 ? "s" : ""}</div>
+
+          <section className="ovl-table-section">
+            <div className="ml-table-wrap ovl-table-wrap">
+              <table className="ml-table ovl-table">
+                <thead>
+                  <tr>
+                    <th>Expand</th>
+                    <th>No.</th>
+                    <th>Vehicle</th>
+                    <th>Managed</th>
+                    <th>Vehicle Type</th>
+                    <th>Vendor</th>
+                    <th>Weight (BTM) kg</th>
+                    <th>Total Weight (BDM) kg</th>
+                    <th>Load Capacity (kg)</th>
+                    <th>Road Tax Expiry</th>
+                    <th>Insurance Expiry</th>
+                    <th>Puspakom Service</th>
+                    <th>Truck Permit Expiry</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {!filtered.length && (
+                    <tr>
+                      <td colSpan="14">
+                        <div className="ovl-empty-table">No vehicles match the current filters.</div>
+                      </td>
+                    </tr>
+                  )}
+                  {pageData.map((vehicle, index) => {
+                    const expanded = expandedId === vehicle.id;
+                    return (
+                      <React.Fragment key={vehicle.id}>
+                        <tr className="ovl-row">
+                          <td>
+                            <button className="ovl-expand-btn" type="button" onClick={() => setExpandedId(expanded ? null : vehicle.id)} aria-expanded={expanded}>
+                              <Icon name={expanded ? "expand_less" : "expand_more"} size={16} />
+                            </button>
+                          </td>
+                          <td className="ovl-index">{(page - 1) * perPage + index + 1}</td>
+                          <td>
+                            <div className="ovl-vehicle-cell">
+                              <VehicleThumb />
+                              <div className="ovl-vehicle-main">
+                                <div className="ml-cell-main ovl-vehicle-plate">{vehicle.plate}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td><ManagedIcon managed={vehicle.managed} /></td>
+                          <td>{vehicle.type}</td>
+                          <td>{vehicle.vendor}</td>
+                          <td className="ovl-weight">{fmtNumber(vehicle.btm)}</td>
+                          <td className="ovl-weight">{fmtNumber(vehicle.bdm)}</td>
+                          <td className="ovl-weight">{fmtNumber(vehicle.capacity)}</td>
+                          <td><ExpiryCell iso={vehicle.roadTax} /></td>
+                          <td><ExpiryCell iso={vehicle.insurance} /></td>
+                          <td><ExpiryCell iso={vehicle.puspakom} /></td>
+                          <td><ExpiryCell iso={vehicle.permit} /></td>
+                          <td onClick={(event) => event.stopPropagation()}>
+                            <VehicleRowMenu
+                              open={menuId === vehicle.id}
+                              onToggle={(next) => setMenuId(next ? vehicle.id : null)}
+                              onView={() => { setMenuId(null); pushToast("ok", `Viewing ${vehicle.plate} details in prototype mode.`); }}
+                              onEdit={() => { setModal({ mode: "edit", vehicle }); setMenuId(null); }}
+                              onDelete={() => { setMenuId(null); pushToast("warn", "Delete is shown for parity only. No prototype deletion was performed."); }}
+                            />
+                          </td>
+                        </tr>
+                        {expanded && (
+                          <tr>
+                            <td className="ovl-expanded-cell" colSpan="14">
+                              <ExpandableVehicleDriversRow vehicle={vehicle} />
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="ovl-mobile-list">
+              {pageData.map((vehicle) => {
+                const urgent = bestUrgency(vehicle);
+                const expanded = expandedId === vehicle.id;
+                return (
+                  <div key={vehicle.id} className="ovl-mobile-card">
+                    <div className="ovl-mobile-head">
+                      <div className="ovl-vehicle-cell">
+                        <VehicleThumb />
+                        <div className="ovl-vehicle-main">
+                          <div className="ovl-vehicle-plate">{vehicle.plate}</div>
+                        </div>
+                      </div>
+                      <ManagedIcon managed={vehicle.managed} />
+                    </div>
+                    <div className="ovl-mobile-meta">
+                      <span className="ovl-mobile-chip">{vehicle.type}</span>
+                      <span className="ovl-mobile-chip">{vehicle.vendor}</span>
+                    </div>
+                    <div className="ovl-mobile-urgent">
+                      {urgent ? (
+                        <div>
+                          <div style={{ fontSize: 11, color: "var(--fg-tertiary)", marginBottom: 5 }}>Most urgent expiry</div>
+                          <ExpiryCell iso={urgent.iso} />
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 12, color: "var(--fg-secondary)" }}>No upcoming compliance date</div>
+                      )}
+                    </div>
+                    <div className="ovl-mobile-actions">
+                      <button className="ovl-mobile-expand" type="button" onClick={() => setExpandedId(expanded ? null : vehicle.id)}>
+                        <Icon name={expanded ? "expand_less" : "expand_more"} size={15} />
+                        {expanded ? "Hide drivers" : "Show drivers"}
+                      </button>
+                      <VehicleRowMenu
+                        open={menuId === vehicle.id}
+                        onToggle={(next) => setMenuId(next ? vehicle.id : null)}
+                        onView={() => { setMenuId(null); pushToast("ok", `Viewing ${vehicle.plate} details in prototype mode.`); }}
+                        onEdit={() => { setModal({ mode: "edit", vehicle }); setMenuId(null); }}
+                        onDelete={() => { setMenuId(null); pushToast("warn", "Delete is shown for parity only. No prototype deletion was performed."); }}
+                      />
+                    </div>
+                    {expanded && <ExpandableVehicleDriversRow vehicle={vehicle} />}
+                  </div>
+                );
+              })}
+              {!filtered.length && <div className="ovl-mobile-card"><div className="ovl-empty-table">No vehicles match the current filters.</div></div>}
+            </div>
+          </section>
+
+          <Pager page={page} perPage={perPage} total={filtered.length} onPage={setPage} onPerPage={setPerPage} />
+        </div>
+      </main>
+
+      <TweaksPanel>
+        <TweakSection title="Vehicle states">
+          <TweakSelect
+            label="Scenario"
+            value={scenarioKey}
+            options={Object.keys(SCENARIO_LABEL).map((key) => ({ value: key, label: SCENARIO_LABEL[key] }))}
+            onChange={(value) => setTweak("scenario", value)}
+          />
+        </TweakSection>
+      </TweaksPanel>
+
+      {modal && (
+        <VehicleModal
+          mode={modal.mode}
+          vehicle={modal.vehicle}
+          scope={scenario}
+          managedCount={managedCount}
+          onClose={() => setModal(null)}
+          onSave={handleSaveModal}
+        />
+      )}
+
+      <div className="ovl-toast-stack">
+        <div className="ovl-toast-col">
+          {toasts.map((toast) => (
+            <div key={toast.id} className={`ovl-toast${toast.tone === "warn" ? " warn" : toast.tone === "err" ? " err" : ""}`}>
+              <Icon name={toast.tone === "err" ? "error" : toast.tone === "warn" ? "warning" : "task_alt"} size={18} color="#fff" />
+              <div className="ovl-toast-msg">{toast.message}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+
+}
