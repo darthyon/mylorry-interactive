@@ -38,7 +38,7 @@ window.ORG_PROFILE = {
       commitmentMonths: 12,
       nextBillingDate: "2026-08-03",
       setupFeeStatus: "Paid",
-      upcoming: { planId: "plan-premium", effectiveDate: "2026-08-03" },
+      upcoming: { planId: "plan-premium", effectiveDate: "2026-08-03", commitmentMonths: 12, setupFeeStatus: "Paid" },
     },
 
     "premium-trial": {
@@ -55,6 +55,8 @@ window.ORG_PROFILE = {
       upcoming: {
         note: "Trial converts to paid Premium at the same limits and pricing.",
         effectiveDate: "2026-07-22",
+        commitmentMonths: 12,
+        setupFeeStatus: "Pending",
       },
     },
 
@@ -71,6 +73,8 @@ window.ORG_PROFILE = {
         note: "Organisation is scheduled to move to Enterprise for 50+ managed vehicles.",
         planId: "plan-enterprise",
         effectiveDate: "2026-08-10",
+        commitmentMonths: 24,
+        setupFeeStatus: "Waived",
       },
     },
 
@@ -95,7 +99,7 @@ window.ORG_PROFILE = {
       commitmentMonths: 12,
       nextBillingDate: "2026-07-28",
       setupFeeStatus: "Paid",
-      upcoming: { planId: "plan-premium", effectiveDate: "2026-07-28" },
+      upcoming: { planId: "plan-premium", effectiveDate: "2026-07-28", commitmentMonths: 12, setupFeeStatus: "Paid" },
     },
   },
 };

@@ -150,6 +150,27 @@
 /* Tooltip — width 260px */
 .ml-tooltip { position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%); background: #322F35; color: #fff; font-size: 12px; line-height: 1.5; padding: 8px 11px; border-radius: 4px; width: 260px; pointer-events: none; z-index: 50; opacity: 0; transition: opacity .15s; text-align: left; }
 
+/* Calc Popover (window.SharedShell.CalcPopover) — click-to-open calculation
+   breakdown, originally the Commission Agent Portal's "View Calculation"
+   button (flows/commission-agent/agent-parts.jsx). Promoted here so a
+   second flow (org-subscription-profile) can reuse the same look instead of
+   a hover tooltip, which can't hold a multi-row breakdown. */
+.ml-calc-wrap { position: relative; display: inline-flex; align-items: center; }
+.ml-calc-pop-wrap { position: relative; }
+.ml-btn-calc { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; }
+/* Small soft-green button — same family as .ml-btn-soft, scaled down so it
+   fits a card corner instead of a full-size action row. */
+.ml-calc-trigger-btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 4px; border: none; background: var(--green-50); color: var(--green-600); font-family: var(--font-sans); font-size: 11.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.ml-calc-trigger-btn:hover { background: #E4F8EE; }
+.ml-calc-pop { position: absolute; left: 0; top: 0; z-index: 15; width: min(320px, calc(100vw - 72px)); background: #fff; border: 1px solid var(--border-light); border-radius: 14px; box-shadow: 0 10px 30px rgba(12,19,30,.12); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.ml-calc-pop.align-right { left: auto; right: 0; }
+.ml-calc-pop-title { font-size: 13px; font-weight: 700; color: var(--fg-primary); }
+.ml-calc-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; font-size: 12px; color: var(--fg-secondary); }
+.ml-calc-row b { font-size: 13px; color: var(--fg-primary); white-space: nowrap; }
+.ml-calc-row-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.ml-calc-row-stack span { font-size: 11px; color: var(--fg-tertiary); text-align: right; }
+.ml-calc-row-total { padding-top: 10px; border-top: 1px solid var(--border-light); }
+
 /* Button — primary + shared disabled state */
 .ml-btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 4px; border: none; background: var(--green-600); color: #fff; font-family: var(--font); font-size: 13px; font-weight: 700; cursor: pointer; }
 .ml-btn-primary:hover { background: var(--green-500); }
