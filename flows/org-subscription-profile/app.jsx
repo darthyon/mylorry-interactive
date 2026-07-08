@@ -30,7 +30,7 @@ const MODULE_ICONS = {
 };
 
 function vehicleLimitOf(plan) {
-  return plan.limits.managedVehicleLimit === 0 ? "unlimited" : plan.limits.managedVehicleLimit;
+  return plan.limits.managedVehicleLimit == null ? "unlimited" : plan.limits.managedVehicleLimit;
 }
 
 function resolveRow(plan, row) {
@@ -39,7 +39,8 @@ function resolveRow(plan, row) {
   if (row.controlType === "toggle") return value ? { state: "included" } : { state: "locked" };
   if (row.controlType === "select") return value === "Unlimited" ? { state: "included" } : { state: "limited", cap: value };
   // number
-  return value === 0 ? { state: "included", cap: "Unlimited" } : { state: "limited", cap: String(value) };
+  if (row.hasUnlimited && value == null) return { state: "included", cap: "Unlimited" };
+  return { state: "limited", cap: String(value) };
 }
 
 function buildModules(plan) {
@@ -78,7 +79,7 @@ function buildScenarioView(sc) {
   const isPaid = sc.status !== "free";
   const agreementVehicleCount = sc.agreementVehicleCount != null
     ? Number(sc.agreementVehicleCount)
-    : (plan.limits.managedVehicleLimit > 0 ? plan.limits.managedVehicleLimit : sc.vehiclesUsed);
+    : (plan.limits.managedVehicleLimit != null ? plan.limits.managedVehicleLimit : sc.vehiclesUsed);
   // Free still gets a billing card — RM0 / commitment N/A / setup fee N/A —
   // not hidden entirely. Only paid plans have a real committed-billing calc.
   // Trial is a special case: no bill yet, 1-month trial duration, no setup fee.
