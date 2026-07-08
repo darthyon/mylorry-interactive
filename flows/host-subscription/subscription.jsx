@@ -3,6 +3,7 @@ const { FeatureTabShell, SelectMenu } = window.SharedShell;
 
 const {
   SUBSCRIPTION_PLANS,
+  SUBSCRIPTION_HISTORY,
   fmtRM,
   fmtDate,
   addDays,
@@ -147,6 +148,23 @@ function getPlanTypeDisplay(plan) {
 function formatTierDuration(months) {
   const value = Number(months || 0);
   return `${value} month${value === 1 ? "" : "s"}`;
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  const datePart = d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+  const timePart = d.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+  return `${datePart} ${timePart}`;
 }
 
 function buildTierPatch(plan, tiers) {
@@ -1078,6 +1096,68 @@ function ConfigurationView({ plan, editable, onChange }) {
   );
 }
 
+function SubscriptionHistoryTable({ plan }) {
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const entries = useMemo(
+    () => (SUBSCRIPTION_HISTORY || []).filter((item) => item.planId === plan.id).sort((a, b) => new Date(b.changeTime) - new Date(a.changeTime)),
+    [plan.id]
+  );
+  const pageData = entries.slice((page - 1) * perPage, page * perPage);
+
+  return (
+    <div>
+      {entries.length === 0 ? (
+        <div className="hac-empty-state">No subscription history available for this plan.</div>
+      ) : (
+        <>
+          <div className="hac-count">{entries.length} history record{entries.length !== 1 ? "s" : ""}</div>
+          <div className="ml-table-wrap">
+            <table className="ml-table hsub-table">
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>Change type</th>
+                  <th>Changed by</th>
+                  <th>Change time</th>
+                  <th>Changelog</th>
+                  <th>Version</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageData.map((item, index) => (
+                  <tr key={item.id}>
+                    <td className="ml-mono">{(page - 1) * perPage + index + 1}</td>
+                    <td>
+                      <MetaBadge tone={item.changeType === "create" ? "info" : "neutral"}>
+                        {item.changeType === "create" ? "Create" : "Update"}
+                      </MetaBadge>
+                    </td>
+                    <td>{item.changedBy}</td>
+                    <td className="ml-mono">{fmtDateTime(item.changeTime)}</td>
+                    <td>
+                      <a
+                        className="ml-btn-text-blue"
+                        href="#"
+                        onClick={(e) => e.preventDefault()}
+                        style={{ fontSize: 13 }}
+                      >
+                        JSON file
+                      </a>
+                    </td>
+                    <td className="ml-mono">v{item.version}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <HPager page={page} perPage={perPage} total={entries.length} onPage={setPage} onPerPage={setPerPage} />
+        </>
+      )}
+    </div>
+  );
+}
+
 function PlanPageHead({ mode, plan, onBack, onEdit, onDelete, canDelete }) {
   const isCreate = mode === "create";
   const isEdit = mode === "edit";
@@ -1086,7 +1166,7 @@ function PlanPageHead({ mode, plan, onBack, onEdit, onDelete, canDelete }) {
     ? "Configure pricing, tiers, and feature access for this plan."
     : isEdit
       ? "Adjust plan rules, pricing, tiers, and feature access."
-      : "Review subscription configuration, pricing tiers, and feature access.";
+      : null;
 
   return (
     <div className="ml-page-head">
@@ -1097,7 +1177,7 @@ function PlanPageHead({ mode, plan, onBack, onEdit, onDelete, canDelete }) {
           <span>{isCreate ? "Create plan" : isEdit ? "Edit plan" : "Plan detail"}</span>
         </div>
         <div className="ml-h1">{title}</div>
-        <div className="hsub-page-sub">{subtitle}</div>
+        {subtitle && <div className="hsub-page-sub">{subtitle}</div>}
       </div>
       {!isCreate && !isEdit && (
         <div className="hsub-head-actions">
@@ -1118,6 +1198,7 @@ function SubscriptionApp() {
   const [draftPlan, setDraftPlan] = useState(null);
   const [flash, setFlash] = useState(null);
   const [deletePlanId, setDeletePlanId] = useState(null);
+  const [viewTab, setViewTab] = useState("details");
 
   useEffect(() => {
     if (!flash) return;
@@ -1142,6 +1223,7 @@ function SubscriptionApp() {
     setSelectedPlanId(planId);
     setMode("view");
     setDraftPlan(null);
+    setViewTab("details");
   };
 
   const openCreate = () => {
@@ -1237,7 +1319,32 @@ function SubscriptionApp() {
               canDelete={canDeletePlan(workingPlan)}
             />
 
-            <ConfigurationView plan={workingPlan} editable={mode !== "view"} onChange={setPlanPatch} />
+            {mode === "view" && (
+              <div className="ml-tabs" style={{ marginTop: -4 }}>
+                {[
+                  { key: "details", label: "Subscription Details" },
+                  { key: "history", label: "Subscription History" },
+                ].map((t) => (
+                  <button
+                    key={t.key}
+                    className={"ml-tab" + (viewTab === t.key ? " active" : "")}
+                    onClick={() => setViewTab(t.key)}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {mode !== "view" && (
+              <ConfigurationView plan={workingPlan} editable={true} onChange={setPlanPatch} />
+            )}
+            {mode === "view" && viewTab === "details" && (
+              <ConfigurationView plan={workingPlan} editable={false} onChange={setPlanPatch} />
+            )}
+            {mode === "view" && viewTab === "history" && (
+              <SubscriptionHistoryTable plan={workingPlan} />
+            )}
 
             {(mode === "create" || mode === "edit") && (
               <div className="hac-edit-bar hsub-edit-bar">
