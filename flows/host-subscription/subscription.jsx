@@ -816,7 +816,10 @@ function SubscriptionTierModal({ tier, onClose, onSave }) {
     >
       <div className="hsub-tier-modal-row">
         <label className="hac-label req" style={{ fontSize: 14 }}>Duration*</label>
-        <SwitchField checked={isTrial} onChange={setIsTrial} label="Set as trial" />
+        <label className="hac-check-row">
+          <input type="checkbox" checked={isTrial} onChange={(e) => setIsTrial(e.target.checked)} />
+          <span>Set as trial</span>
+        </label>
       </div>
       <div className="hac-select-wrap">
         <SelectMenu

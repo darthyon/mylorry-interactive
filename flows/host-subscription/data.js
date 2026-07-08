@@ -35,10 +35,10 @@
       label: "MyFuel",
       summary: "Fuel operations, reporting, subsidy visibility",
       rows: [
-        { key: "fuel_cards", label: "Fuel card control", helper: "Manage account and card access", controlType: "toggle", value: true },
-        { key: "transactions", label: "Transaction history", helper: "Fuel transaction visibility", controlType: "toggle", value: true },
-        { key: "history_depth", label: "Transaction History Limit", helper: "Restrict how much historical data is available", controlType: "select", value: "12 months", options: ["3 months", "6 months", "12 months", "Unlimited"], bindPath: "limits.historyDepth", toggleable: true, enabled: true },
-        { key: "report_depth", label: "Report depth", helper: "Available months of reporting", controlType: "select", value: "12 months", options: ["3 months", "6 months", "12 months", "Unlimited"], toggleable: true, enabled: true },
+        { key: "fuel_cards", label: "Fleet card control", helper: "Manage account and card access", controlType: "toggle", value: true },
+        { key: "history_depth", label: "Account History", helper: "Restrict how much historical data is available", controlType: "select", value: "6 months", options: ["3 months", "6 months", "12 months", "Unlimited"], bindPath: "limits.historyDepth", toggleable: true, enabled: true },
+        { key: "report_depth", label: "Report depth", helper: "Available months of reporting. Enterprise unlimited reports capped at 2GB storage.", controlType: "select", value: "6 months", options: ["3 months", "6 months", "12 months", "Unlimited"], bindPath: "limits.reportDepth", toggleable: true, enabled: true },
+        { key: "custom_report", label: "Customised report", helper: "Generate custom reports beyond preset depths", controlType: "toggle", value: false },
         { key: "subsidy_quota", label: "Subsidy quota visibility", helper: "Display quota consumption and health", controlType: "toggle", value: true },
       ],
     },
@@ -48,22 +48,21 @@
       summary: "Fleet, drivers, compliance, reminders",
       rows: [
         { key: "vehicle_info", label: "Vehicle Creation", helper: "Allow creation of vehicle records", controlType: "toggle", value: true },
-        { key: "driver_info", label: "Driver Creation", helper: "Allow creation of driver records", controlType: "toggle", value: true },
         { key: "managed_vehicle_limit", label: "Managed Vehicle Limit", helper: "Maximum number of managed vehicles", controlType: "number", value: 10, min: 0, bindPath: "limits.managedVehicleLimit" },
-        { key: "driver_limit", label: "Driver limit", helper: "Max drivers on this plan", controlType: "number", value: 20, min: 0 },
-        { key: "vehicle_doc_reminder", label: "Vehicle Documents Reminder", helper: "Reminder count for vehicle documents", controlType: "number", value: 3, min: 0, toggleable: true, enabled: true },
-        { key: "driver_doc_reminder", label: "Driver Documents Reminder", helper: "Reminder count for driver documents", controlType: "number", value: 3, min: 0, toggleable: true, enabled: true },
-        { key: "icop", label: "Safety Checklist", helper: "Safety checklist workflows and records", controlType: "toggle", value: false },
+        { key: "vehicle_doc_reminder", label: "Vehicle Document Reminder", helper: "Reminder count for vehicle documents", controlType: "number", value: 3, min: 0, toggleable: true, enabled: true },
+        { key: "icop", label: "Safety Checklist", helper: "Safety checklist workflows and records", controlType: "toggle", value: true },
+        { key: "driver_info", label: "Driver Creation", helper: "Allow creation of driver records", controlType: "toggle", value: true },
+        { key: "driver_doc_reminder", label: "Driver Document Reminder", helper: "Reminder count for driver documents", controlType: "number", value: 3, min: 0, toggleable: true, enabled: true },
       ],
     },
     {
       key: "mydriver",
       label: "MyDriver",
-      summary: "Driver app access, attendance, trip assignment",
+      summary: "Driver app access, attendance, profile uploads",
       rows: [
         { key: "login", label: "Driver login", helper: "Allow driver app authentication", controlType: "toggle", value: true },
         { key: "attendance", label: "Check-in / check-out", helper: "Attendance workflow in driver app", controlType: "toggle", value: true },
-        { key: "trip_assignment", label: "Trip assignment", helper: "Assign trips directly to drivers", controlType: "toggle", value: false },
+        { key: "upload_profile", label: "Upload Driver Profile", helper: "Allow drivers to upload profile documents", controlType: "toggle", value: true },
       ],
     },
     {
@@ -74,6 +73,7 @@
         { key: "routes", label: "Route creation", helper: "Create and manage routes", controlType: "toggle", value: true },
         { key: "trips", label: "Trip creation", helper: "Create and monitor trips", controlType: "toggle", value: true },
         { key: "epod", label: "ePOD + ePOP", helper: "Electronic Proof of Delivery and Electronic Proof of Pickup", controlType: "toggle", value: false },
+        { key: "trip_assignment", label: "Trip assignment", helper: "Assign trips directly to drivers", controlType: "toggle", value: false },
       ],
     },
     {
@@ -81,12 +81,29 @@
       label: "MyInsurance",
       summary: "Insurance quotation and support",
       rows: [
-        { key: "quote", label: "Free quote", helper: "Quote request access", controlType: "toggle", value: false },
+        { key: "quote", label: "Free quote", helper: "Quote request access", controlType: "toggle", value: true },
       ],
     },
   ];
 
   const cloneFeatureModules = () => deepClone(FEATURE_MODULE_TEMPLATES);
+
+  // Apply per-plan state overrides to cloned feature modules. Keeps the
+  // template structure/labels intact while letting each existing plan define
+  // its own row values.
+  const applyFeatureOverrides = (modules, overrides) => {
+    const next = deepClone(modules);
+    for (const [moduleKey, rowOverrides] of Object.entries(overrides)) {
+      const module = next.find((m) => m.key === moduleKey);
+      if (!module) continue;
+      for (const [rowKey, patch] of Object.entries(rowOverrides)) {
+        const row = module.rows.find((r) => r.key === rowKey);
+        if (!row) continue;
+        Object.assign(row, patch);
+      }
+    }
+    return next;
+  };
 
   const serviceSummary = (featureModules) => {
     const enabledModules = featureModules.filter((module) =>
@@ -204,7 +221,7 @@
       },
       limits: {
         managedVehicleLimit: 5,
-        adminUserLimit: 2,
+        adminUserLimit: 1,
         historyDepth: "3 months",
         reportDepth: "3 months",
       },
@@ -216,7 +233,18 @@
       visibility: {
         showOnWebsite: true,
       },
-      featureModules: cloneFeatureModules(),
+      featureModules: applyFeatureOverrides(cloneFeatureModules(), {
+        myfuel: { subsidy_quota: { value: false }, custom_report: { value: false } },
+        myadmin: {
+          vehicle_info: { value: false },
+          driver_info: { value: false },
+          icop: { value: false },
+          vehicle_doc_reminder: { enabled: false },
+          driver_doc_reminder: { enabled: false },
+        },
+        mydriver: { attendance: { value: false } },
+        mytrip: { routes: { value: false }, trips: { value: false }, epod: { value: false }, trip_assignment: { value: false } },
+      }),
       createdAt: "2025-01-10",
       organizations: [],
     },
@@ -241,7 +269,7 @@
       },
       limits: {
         managedVehicleLimit: 10,
-        adminUserLimit: 5,
+        adminUserLimit: 3,
         historyDepth: "6 months",
         reportDepth: "6 months",
       },
@@ -253,7 +281,10 @@
       visibility: {
         showOnWebsite: true,
       },
-      featureModules: cloneFeatureModules(),
+      featureModules: applyFeatureOverrides(cloneFeatureModules(), {
+        myfuel: { custom_report: { value: false } },
+        mytrip: { routes: { value: false }, trips: { value: false }, epod: { value: false }, trip_assignment: { value: false } },
+      }),
       createdAt: "2025-02-14",
       organizations: [],
     },
@@ -291,7 +322,10 @@
       visibility: {
         showOnWebsite: true,
       },
-      featureModules: cloneFeatureModules(),
+      featureModules: applyFeatureOverrides(cloneFeatureModules(), {
+        myfuel: { custom_report: { value: false } },
+        mytrip: { epod: { value: false }, trip_assignment: { value: false } },
+      }),
       createdAt: "2025-03-08",
       organizations: [],
     },
@@ -328,7 +362,10 @@
       visibility: {
         showOnWebsite: true,
       },
-      featureModules: cloneFeatureModules(),
+      featureModules: applyFeatureOverrides(cloneFeatureModules(), {
+        myfuel: { custom_report: { value: true } },
+        mytrip: { epod: { value: false }, trip_assignment: { value: false } },
+      }),
       createdAt: "2025-04-18",
       organizations: [],
     },
@@ -412,16 +449,16 @@
   const plansById = Object.fromEntries(basePlans.map((plan) => [plan.id, plan]));
 
   plansById["plan-free"].organizations = [
-    makeOrg(plansById["plan-free"], "org-astana", "Astana Movers", 3, 2, {
+    makeOrg(plansById["plan-free"], "org-astana", "Astana Movers", 3, 1, {
       subscriptionStatus: "Active",
       nextBillingDate: "2026-07-28",
     }),
   ];
   plansById["plan-lite"].organizations = [
-    makeOrg(plansById["plan-lite"], "org-bluechip", "Bluechip Freight", 8, 4, {
+    makeOrg(plansById["plan-lite"], "org-bluechip", "Bluechip Freight", 8, 3, {
       nextBillingDate: "2026-08-03",
     }),
-    makeOrg(plansById["plan-lite"], "org-radiant", "Radiant Coldchain", 10, 3, {
+    makeOrg(plansById["plan-lite"], "org-radiant", "Radiant Coldchain", 10, 2, {
       subscriptionStatus: "Pending change",
       nextBillingDate: "2026-08-08",
       hasDuplicateActivePlan: true,

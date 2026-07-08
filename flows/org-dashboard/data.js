@@ -72,8 +72,8 @@ window.ORG_DASH = {
   modules: [
     { key: "myfuel",      name: "MyFuel",      iconSrc: "icons/myfuel.svg",      minTier: "free"    },
     { key: "myadmin",     name: "MyAdmin",     iconSrc: "icons/myadmin.svg",     minTier: "free"    },
-    { key: "mytrip",      name: "MyTrip",      iconSrc: "icons/mytrip.svg",      minTier: "free" },
-    { key: "myinsurance", name: "MyInsurance", iconSrc: "icons/myinsurance.svg"                     },
+    { key: "mytrip",      name: "MyTrip",      iconSrc: "icons/mytrip.svg",      minTier: "premium" },
+    { key: "myinsurance", name: "MyInsurance", iconSrc: "icons/myinsurance.svg", minTier: "free"    },
     { key: "mytraining",  name: "MyTraining",  iconSrc: "icons/mytraining.svg",  soon: true         },
   ],
 
