@@ -497,6 +497,51 @@ function AccountStatusBadge({ status = "active", prefix }) {
   return <StatusBadge status={status} prefix={prefix} fallback="active" />;
 }
 
+/* ─── Calc Popover (click-to-open calculation breakdown) ─────── */
+// Same visual pattern as the Commission Agent Portal's "View Calculation"
+// button (originally flows/commission-agent/agent-parts.jsx, CSS in
+// components.css .ml-calc-*). Click toggles the popover; a mousedown
+// listener outside the popover node closes it. No portal — caller must
+// give the wrapping element `position: relative` context if needed.
+// rows: [{ label, value, tone, total }] — `tone: "green"` colors the value,
+// `total: true` adds the bordered "final total" row styling.
+// trigger: optional custom trigger content — defaults to a small icon-only
+// button (xs) so it can sit inline on the same row as a label.
+function CalcPopover({ title = "Calculation summary", rows, triggerLabel = "View calculation", align = "left", icon = "calculate" }) {
+  const [open, setOpen] = React.useState(false);
+  const popRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!open) return undefined;
+    const onDown = (e) => {
+      if (popRef.current && !popRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  return (
+    <span className="ml-calc-wrap">
+      <button type="button" className="ml-calc-trigger-btn" onClick={() => setOpen((v) => !v)}>
+        <Icon name={icon} size={13} /> {triggerLabel}
+      </button>
+      <span className="ml-calc-pop-wrap">
+        {open && (
+          <div className={"ml-calc-pop" + (align === "right" ? " align-right" : "")} ref={popRef}>
+            <div className="ml-calc-pop-title">{title}</div>
+            {rows.map((r, i) => (
+              <div key={i} className={"ml-calc-row" + (r.total ? " ml-calc-row-total" : "")}>
+                <span>{r.label}</span>
+                <b style={r.tone === "green" ? { color: "var(--green-600)" } : undefined}>{r.value}</b>
+              </div>
+            ))}
+          </div>
+        )}
+      </span>
+    </span>
+  );
+}
+
 /* ─── KPI Progress semantics ────────────────────────────────── */
 const KPI_PROGRESS_TONES = {
   green: { col: "var(--green-500)", solid: "var(--green-600)", fill: "#E4F6EC" },
@@ -654,6 +699,7 @@ window.SharedShell = {
   Pill, CurrencyPill, SummaryCard, CountCard, KpiTierChip,
   StatusBadge, AccountStatusBadge, KPIProgress, KPIProgressMeta,
   LockSection, PetronLogo, HistoryCard, FeatureTabShell, OrgSwitcher, SelectMenu,
+  CalcPopover,
 };
 window.KPIProgressMeta = KPIProgressMeta;
 }

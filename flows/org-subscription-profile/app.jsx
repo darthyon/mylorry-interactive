@@ -3,7 +3,7 @@
 // (⌘⇧E) switches between the 5 required prototype data states — see
 // data.js `scenarios`.
 
-const { Icon, StatusBadge, FeatureTabShell, OrgSwitcher } = window.SharedShell;
+const { Icon, StatusBadge, FeatureTabShell, OrgSwitcher, CalcPopover } = window.SharedShell;
 const { useTweaks, TweaksPanel, TweakSection, TweakSelect } = window;
 const { SUBSCRIPTION_PLANS, calculateCommittedBilling, getBoundValue } = window.SUB;
 const D = window.ORG_PROFILE;
@@ -72,9 +72,11 @@ function buildScenarioView(sc) {
   const agreementVehicleCount = sc.agreementVehicleCount != null
     ? Number(sc.agreementVehicleCount)
     : (plan.limits.managedVehicleLimit > 0 ? plan.limits.managedVehicleLimit : sc.vehiclesUsed);
+  // Free still gets a billing card — RM0 / commitment N/A / setup fee N/A —
+  // not hidden entirely. Only paid plans have a real committed-billing calc.
   const billing = isPaid
-    ? calculateCommittedBilling(plan, agreementVehicleCount, sc.commitmentMonths, sc.setupFeeStatus)
-    : null;
+    ? { ...calculateCommittedBilling(plan, agreementVehicleCount, sc.commitmentMonths, sc.setupFeeStatus), setupFeeStatus: sc.setupFeeStatus }
+    : { baseMonthlyFee: 0, perManagedVehicleFee: 0, commitmentMonths: null, setupFee: 0, totalLumpSum: 0, setupFeeStatus: "N/A" };
   return {
     planName: plan.name,
     planTier: plan.id.replace("plan-", ""),
@@ -85,10 +87,7 @@ function buildScenarioView(sc) {
     vehiclesUsed: sc.vehiclesUsed,
     agreementVehicleCount,
     vehicleLimit: vehicleLimitOf(plan),
-    billing: billing ? {
-      ...billing,
-      setupFeeStatus: sc.setupFeeStatus,
-    } : null,
+    billing,
     upcoming: buildUpcoming(sc.upcoming),
     modules: buildModules(plan),
   };
@@ -171,16 +170,16 @@ function OrgDetails({ org, pic }) {
    Three parallel stat-cards (Plan | Billing | Vehicles) per the Figma spec
    (node 8756:37), not a header row + divider + 2-col grid. ─────────── */
 function PlanStatCard({ s }) {
-  const showUpgrade = s.planTier === "free" || s.planTier === "lite";
+  const showUpgrade = s.planTier !== "enterprise";
   return (
     <div className="osp-stat-card">
       <div className="osp-plan-row">
         <span className="osp-plan-name">{s.planName}</span>
-        {s.status === "trial" && (
+        {s.status === "trial" ? (
           <StatusBadge status="sub_trial" label={`Trial · ${s.trialDaysRemaining} days remaining`} />
+        ) : (
+          <StatusBadge status="active" />
         )}
-        {s.status === "active" && <StatusBadge status="active" />}
-        {s.status === "free" && <StatusBadge status="sub_free" />}
       </div>
       {s.status === "trial" && (
         <div className="osp-plan-date"><Icon name="calendar_today" size={14} color="var(--fg-tertiary)" /> Trial ends {fmtDate(s.trialExpiry)}</div>
@@ -194,27 +193,35 @@ function PlanStatCard({ s }) {
 }
 
 function BillingStatCard({ s, billing }) {
+  const isFree = billing.commitmentMonths == null;
+  const rows = [
+    { label: "Base monthly fee", value: `${RM(billing.baseMonthlyFee)} × ${billing.commitmentMonths} months` },
+  ];
+  if (billing.perManagedVehicleFee > 0) {
+    rows.push({
+      label: "Managed vehicles",
+      value: `${s.agreementVehicleCount} × ${RM(billing.perManagedVehicleFee)} × ${billing.commitmentMonths} months`,
+    });
+  }
+  if (billing.setupFee > 0) {
+    rows.push({ label: "Setup fee (one-time)", value: RM(billing.setupFee) });
+  }
+  rows.push({ label: "Total", value: RM(billing.totalLumpSum), tone: "green", total: true });
+
   return (
-    <div className="osp-stat-card">
-      <div className="osp-block-title">
-        Current billed amount
-        <span className="ml-tooltip-wrap osp-info-wrap" tabIndex={0}>
-          <Icon name="info" size={13} color="var(--fg-tertiary)" />
-          <span className="ml-tooltip osp-info-tooltip">
-            {RM(billing.baseMonthlyFee)} base monthly fee × {billing.commitmentMonths} months
-            {billing.perManagedVehicleFee > 0
-              ? ` + ${s.agreementVehicleCount} managed vehicles in agreement × ${RM(billing.perManagedVehicleFee)} × ${billing.commitmentMonths} months`
-              : ""}
-            {billing.setupFee > 0 ? ` + ${RM(billing.setupFee)} one-time setup fee` : ""}
-          </span>
-        </span>
-      </div>
+    <div className="osp-stat-card osp-stat-card-relative">
+      {!isFree && (
+        <div className="osp-calc-corner">
+          <CalcPopover title="Calculation summary" rows={rows} align="right" />
+        </div>
+      )}
+      <div className="osp-block-title">Current billed amount</div>
       <div className="osp-billing-amount">{RM(billing.totalLumpSum)}</div>
       <div className="osp-billing-row">
-        <span>Commitment duration</span><strong>{billing.commitmentMonths} months</strong>
+        <span>Commitment duration</span><strong>{isFree ? "N/A" : `${billing.commitmentMonths} months`}</strong>
       </div>
       <div className="osp-billing-row">
-        <span>Setup fee</span><strong>{RM(billing.setupFee)} · {billing.setupFeeStatus}</strong>
+        <span>Setup fee</span><strong>{isFree ? "N/A" : `${RM(billing.setupFee)} · ${billing.setupFeeStatus}`}</strong>
       </div>
     </div>
   );
@@ -226,7 +233,10 @@ function VehiclesStatCard({ s }) {
     <div className="osp-stat-card">
       <div className="osp-block-title">Managed vehicles</div>
       {s.planTier === "free" ? (
-        <div className="osp-usage-text muted">Managed vehicles unavailable on Free</div>
+        <div className="osp-stat-empty">
+          <Icon name="directions_car" size={26} color="var(--fg-disabled)" />
+          <div className="osp-stat-empty-t">Not available on Free</div>
+        </div>
       ) : (
         <>
           <UsageBar used={s.vehiclesUsed} limit={s.vehicleLimit} />
@@ -238,11 +248,10 @@ function VehiclesStatCard({ s }) {
 }
 
 function CurrentPlanView({ s }) {
-  const isPaid = s.status !== "free";
   return (
     <div className="osp-stats-panel">
       <PlanStatCard s={s} />
-      {isPaid && s.billing && <BillingStatCard s={s} billing={s.billing} />}
+      <BillingStatCard s={s} billing={s.billing} />
       <VehiclesStatCard s={s} />
     </div>
   );
