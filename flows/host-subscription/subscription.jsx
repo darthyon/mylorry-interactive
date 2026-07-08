@@ -1070,14 +1070,12 @@ function FeatureAccessSection({ plan, editable, onChange }) {
                         </div>
                       ) : row.hasUnlimited ? (
                         <div className="hsub-module-control-stack">
-                          <label className="hac-check-row">
-                            <input
-                              type="checkbox"
-                              checked={getRowValue(row) == null}
-                              onChange={(e) => updateRow(activeModule.key, row.key, e.target.checked ? null : (row.value ?? 1))}
-                            />
-                            <span>Unlimited</span>
-                          </label>
+                          <SwitchField
+                            checked={getRowValue(row) == null}
+                            onChange={(value) => updateRow(activeModule.key, row.key, value ? null : (row.value ?? 1))}
+                            label="Unlimited"
+                            ariaLabel={row.label}
+                          />
                           <input
                             className="hac-input hsub-mini-input"
                             type="number"
