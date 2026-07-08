@@ -308,7 +308,7 @@
       },
       limits: {
         managedVehicleLimit: 50,
-        adminUserLimit: 18,
+        adminUserLimit: 6,
         historyDepth: "12 months",
         reportDepth: "12 months",
       },
@@ -462,11 +462,11 @@
     }),
   ];
   plansById["plan-premium"].organizations = [
-    makeOrg(plansById["plan-premium"], "org-golden", "Golden Transport", 36, 11, {
+    makeOrg(plansById["plan-premium"], "org-golden", "Golden Transport", 36, 5, {
       nextBillingDate: "2026-08-01",
       setupFee: 0,
     }),
-    makeOrg(plansById["plan-premium"], "org-eagle", "Eagle Logistics", 28, 9, {
+    makeOrg(plansById["plan-premium"], "org-eagle", "Eagle Logistics", 28, 4, {
       trialStatus: "Trial",
       trialStartDate: "2026-07-01",
       trialDurationDays: 21,
