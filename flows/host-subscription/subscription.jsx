@@ -728,13 +728,7 @@ function PricingSection({ plan, editable, onChange }) {
                   onChange={(e) => onChange({ pricing: { ...plan.pricing, setupFee: Number(e.target.value || 0) } })}
                 />
               </Field>
-              <div className="hsub-toggle-row">
-                <SwitchField
-                  checked={plan.pricing.waiveSetupFee}
-                  onChange={(value) => onChange({ pricing: { ...plan.pricing, waiveSetupFee: value } })}
-                  label="Waive setup fee"
-                />
-              </div>
+
             </div>
             <div className="hsub-price-card">
               <Field label="Base monthly fee" hint="Charged once per organization, per month.">
@@ -769,7 +763,6 @@ function PricingSection({ plan, editable, onChange }) {
         <>
           <div className="hac-detail-grid hac-view-grid">
             <ViewField label="Setup fee" value={fmtRM(setupFee)} />
-            <ViewField label="Waive setup fee" value={plan.pricing.waiveSetupFee ? "Yes" : "No"} />
             <ViewField label="Base monthly fee" value={fmtRM(baseMonthlyFee)} />
             <ViewField label="Per managed vehicle fee" value={fmtRM(perManagedVehicleFee)} />
             <ViewField
