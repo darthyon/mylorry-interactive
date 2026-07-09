@@ -322,9 +322,6 @@ function ExportMenu({ comingSoon = false }) {
         <button className="ml-btn-soft" disabled style={{ opacity:0.5, cursor:"not-allowed" }}>
           <Icon name="download" size={18} /> Export <Icon name="expand_more" size={16} />
         </button>
-        <span style={{ position:"absolute", top:"calc(100% + 4px)", right:0, fontSize:11, color:"var(--fg-tertiary)", whiteSpace:"nowrap", background:"var(--bg-hover)", padding:"2px 8px", borderRadius:4 }}>
-          Coming soon
-        </span>
       </div>
     );
   }

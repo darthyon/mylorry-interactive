@@ -51,15 +51,54 @@ window.MYADMIN_DASH = {
   ],
 
   checklists: [
-    { vehicle: "STG0234", driver: "Ahmad Razali",  submitted: "9 Jun, 8:14 AM", type: "Pre-trip iCOP",  status: "pending_endorsement" },
-    { vehicle: "WQM1190", driver: "Mohd Fadzli",   submitted: "9 Jun, 7:52 AM", type: "Pre-trip iCOP",  status: "pending_endorsement" },
-    { vehicle: "JKM4521", driver: "Zainal Abidin", submitted: "8 Jun, 6:30 PM", type: "Post-trip iCOP", status: "endorsed" },
-    { vehicle: "BCA8831", driver: "Kamal Hassan",  submitted: "8 Jun, 3:45 PM", type: "Pre-trip iCOP",  status: "endorsed" },
+    {
+      driver: "Ahmad Razali", plate: "STG0234",
+      checkIn: "9 Jun 2026 · 7:48 AM", checkOut: "9 Jun 2026 · 8:14 AM",
+      startMileage: 82130, endMileage: 82156,
+      items: [
+        { label: "Pre-trip vehicle walkaround", status: "passed" },
+        { label: "Brake and tyre condition", status: "passed" },
+        { label: "Driver fit-to-drive declaration", status: "passed" },
+      ],
+    },
+    {
+      driver: "Mohd Fadzli", plate: "WQM1190",
+      checkIn: "9 Jun 2026 · 6:12 AM", checkOut: "9 Jun 2026 · 7:52 AM",
+      startMileage: 71904, endMileage: 71946,
+      items: [
+        { label: "Pre-trip vehicle walkaround", status: "passed" },
+        { label: "Brake and tyre condition", status: "warning" },
+        { label: "Driver fit-to-drive declaration", status: "passed" },
+      ],
+    },
+    {
+      driver: "Zainal Abidin", plate: "JKM4521",
+      checkIn: "8 Jun 2026 · 5:44 PM", checkOut: "8 Jun 2026 · 6:30 PM",
+      startMileage: 64020, endMileage: 64061,
+      decision: "endorsed",
+      items: [
+        { label: "Post-trip defect reporting", status: "passed" },
+        { label: "Fuel and toll reconciliation", status: "passed" },
+        { label: "Driver incident declaration", status: "passed" },
+      ],
+    },
+    {
+      driver: "Kamal Hassan", plate: "BCA8831",
+      checkIn: "8 Jun 2026 · 2:58 PM", checkOut: "8 Jun 2026 · 3:45 PM",
+      startMileage: 55420, endMileage: 55488,
+      decision: "endorsed",
+      items: [
+        { label: "Pre-trip vehicle walkaround", status: "passed" },
+        { label: "Cargo securement check", status: "passed" },
+        { label: "Driver fit-to-drive declaration", status: "passed" },
+      ],
+    },
   ],
 
   checkInOut: [
     { vehicle: "STG0234", driver: "Ahmad Razali",  event: "check_in",  time: "9 Jun, 7:48 AM", odometer: "82,130 km",  status: "active" },
     { vehicle: "WQM1190", driver: "Mohd Fadzli",   event: "check_out", time: "9 Jun, 6:12 AM", odometer: "71,904 km",  status: "completed" },
     { vehicle: "JKM4521", driver: "Zainal Abidin", event: "check_in",  time: "8 Jun, 5:44 PM",  odometer: "64,020 km",  status: "active" },
+    { vehicle: "BCA8831", driver: "Kamal Hassan",  event: "check_out", time: "8 Jun, 3:45 PM",  odometer: "55,488 km",  status: "completed" },
   ],
 };

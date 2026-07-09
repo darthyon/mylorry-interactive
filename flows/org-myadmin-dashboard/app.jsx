@@ -1,7 +1,7 @@
 {
 
-const { useState, useMemo, useRef } = React;
-const { Icon, OrgSwitcher, CountCard, CardHead, Segmented, SelectMenu, Pager, StatusBadge, ExportMenu } = window.SharedShell;
+const { useState, useMemo, useRef, useEffect } = React;
+const { Icon, OrgSwitcher, CountCard, CardHead, Segmented, Pager, StatusBadge, ExportMenu, ChecklistCard } = window.SharedShell;
 const D = window.MYADMIN_DASH;
 
 const N = (n) => Number(n).toLocaleString("en-US");
@@ -67,12 +67,21 @@ function Rail() {
   );
 }
 
+function getDocumentFilterSummary(filter, scope) {
+  const scopeLabel = scope === "driver" ? "Driver documents" : "Vehicle documents";
+  const parts = [scopeLabel];
+  if (filter.bucket && filter.bucket !== "all") parts.push(filter.bucket);
+  if (filter.docType && filter.docType !== "all") parts.push(filter.docType);
+  return parts.join(" · ");
+}
+
 /* ── Fleet Status Summary ─────────────────────────────────────── */
 function FleetSummary({ onFilter }) {
   const f = D.fleet;
   return (
-    <div className="mad-kpi-row">
-      <div className="ml-statcard">
+    <div className="mad-kpi-stack">
+      <div className="mad-kpi-row">
+        <div className="ml-statcard mad-kpi-primary">
         <div className="ml-statcard-head">
           <div className="ml-statcard-main">
             <div className="ml-statcard-ico green"><Icon name="local_shipping" size={20} fill={1} /></div>
@@ -96,7 +105,7 @@ function FleetSummary({ onFilter }) {
         </div>
       </div>
 
-      <div className="ml-statcard">
+        <div className="ml-statcard mad-kpi-primary">
         <div className="ml-statcard-head">
           <div className="ml-statcard-main">
             <div className="ml-statcard-ico green"><Icon name="badge" size={20} fill={1} /></div>
@@ -116,20 +125,23 @@ function FleetSummary({ onFilter }) {
         </div>
       </div>
 
-      <div className="ed-kpi-tile" onClick={() => onFilter({ bucket: "Expired" })}>
-        <CountCard icon="warning" tone="red" count={f.expiredDocs.count} label="Expired Documents" sub="Action needed" />
       </div>
-
-      <div className="ml-statcard mad-cell-btn" onClick={() => onFilter({ bucket: "0-30" })} role="button" tabIndex={0}>
-        <div className="ml-statcard-head">
-          <div className="ml-statcard-main">
-            <div className="ml-statcard-ico amber"><Icon name="schedule" size={20} fill={1} /></div>
-            <div className="ml-statcard-count">{f.dueSoon.count}</div>
-          </div>
-        </div>
-        <div className="ml-statcard-labelrow"><span className="ml-statcard-label">Due Soon</span></div>
-        <button type="button" className="mad-inline-link" onClick={(e) => { e.stopPropagation(); onFilter({ bucket: "0-7 days" }); }}>
-          {f.dueSoon.within7} within 7 days
+      <div className="mad-kpi-alerts" aria-label="Document alerts">
+        <button type="button" className="mad-kpi-alert mad-kpi-alert-red" onClick={() => onFilter({ bucket: "Expired" })}>
+          <span className="mad-kpi-alert-icon"><Icon name="warning" size={16} fill={1} /></span>
+          <span className="mad-kpi-alert-copy">
+            <span className="mad-kpi-alert-label">Expired documents</span>
+            <span className="mad-kpi-alert-sub">Action needed</span>
+          </span>
+          <span className="mad-kpi-alert-count">{f.expiredDocs.count}</span>
+        </button>
+        <button type="button" className="mad-kpi-alert mad-kpi-alert-amber" onClick={() => onFilter({ bucket: "0-30" })}>
+          <span className="mad-kpi-alert-icon"><Icon name="schedule" size={16} fill={1} /></span>
+          <span className="mad-kpi-alert-copy">
+            <span className="mad-kpi-alert-label">Due soon</span>
+            <span className="mad-kpi-alert-sub">{f.dueSoon.within7} within 7 days</span>
+          </span>
+          <span className="mad-kpi-alert-count">{f.dueSoon.count}</span>
         </button>
       </div>
     </div>
@@ -137,83 +149,82 @@ function FleetSummary({ onFilter }) {
 }
 
 /* ── Document Expiry chart — stacked bar, vehicle/driver toggle ──── */
-function DocumentExpiryChart({ scope, setScope, onFilter }) {
+function DocumentExpiryChart({ scope, onFilter, filter }) {
   const [hover, setHover] = useState(null);
   const group = D.docExpiry[scope];
   const buckets = D.docExpiry.buckets;
   const maxVal = Math.max(1, ...group.series.map((row) => group.types.reduce((sum, t) => sum + row[t], 0)));
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(maxVal * f));
-  const TONES = ["#00AA4F", "#2F80ED", "#F2994A", "#9B51E0", "#94A8B2"];
-
-  const chips = [
-    { label: "Expired", count: D.fleet.expiredDocs.count, bucket: "Expired" },
-    { label: "0-7 days", count: D.fleet.dueSoon.within7, bucket: "0-7 days" },
-    { label: "8-30 days", count: group.series[2] ? group.types.reduce((s, t) => s + group.series[2][t], 0) : 0, bucket: "8-30 days" },
-    { label: "31-60 days", count: group.series[3] ? group.types.reduce((s, t) => s + group.series[3][t], 0) : 0, bucket: "31-60 days" },
-    { label: "61-90 days", count: group.series[4] ? group.types.reduce((s, t) => s + group.series[4][t], 0) : 0, bucket: "61-90 days" },
-  ];
+  const TONES = ["#00AA4F", "#0081AA", "#F5A623", "#1A2472", "#94A8B2"];
+  const chips = buckets.map((bucket, i) => ({
+    label: bucket,
+    bucket,
+    count: group.series[i] ? group.types.reduce((s, t) => s + group.series[i][t], 0) : 0,
+    tone: i === 0 ? "red" : i === 1 ? "amber" : i === 2 ? "teal" : i === 3 ? "navy" : "green",
+  }));
 
   return (
-    <div className="ed-card mad-chartcard">
-      <CardHead
-        icon="bar_chart"
-        title="Document expiry"
-        sub="Track vehicle and driver documents by expiry window."
-        right={
-          <div className="mad-chart-controls">
-            <Segmented value={scope} onChange={setScope} options={[{ value: "vehicle", label: "Vehicle docs" }, { value: "driver", label: "Driver docs" }]} />
-            <ExportMenu comingSoon />
-          </div>
-        }
-      />
-      <div className="mad-chip-row">
-        {chips.map((c) => (
-          <button key={c.label} type="button" className="mad-chip" onClick={() => onFilter({ scope, bucket: c.bucket })}>
-            {c.label}: {c.count}
-          </button>
-        ))}
+    <div className="mad-chartcard">
+      <div className="mad-range-panel">
+        <div className="mad-range-list">
+          {chips.map((c) => (
+            <button
+              key={c.label}
+              type="button"
+              className={`mad-range-card ${c.tone}${filter.bucket === c.bucket ? " active" : ""}`}
+              onClick={() => onFilter({ scope, bucket: c.bucket })}
+            >
+              <span className="mad-range-card-label">{c.label}</span>
+              <span className="mad-range-card-count">{c.count}</span>
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="ed-chart">
-        <div className="ed-chart-plotwrap">
-          <div className="ed-chart-yaxis">
-            {ticks.slice().reverse().map((t, i) => <span key={i}>{t}</span>)}
-          </div>
-          <div className="ed-chart-plot">
-            <div className="ed-bars">
-              {group.series.map((row, i) => {
-                const total = group.types.reduce((s, t) => s + row[t], 0);
-                return (
-                  <div key={i} className="ed-bar-col" onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
-                    {hover === i && (
-                      <div className="ed-bar-tip">
-                        <div className="ed-bar-tip-val">{N(total)} total · {buckets[i]}</div>
-                        {group.types.map((t, ti) => (
-                          <div className="ed-bar-tip-row" key={t}><i className="ed-dot" style={{ background: TONES[ti % TONES.length] }} />{t} {N(row[t])}</div>
-                        ))}
+      <div className="mad-chart-body">
+        <div className="mad-chart-panel">
+          <div className="ed-chart">
+            <div className="ed-chart-plotwrap">
+              <div className="ed-chart-yaxis">
+                {ticks.slice().reverse().map((t, i) => <span key={i}>{t}</span>)}
+              </div>
+              <div className="ed-chart-plot">
+                <div className="ed-bars">
+                  {group.series.map((row, i) => {
+                    const total = group.types.reduce((s, t) => s + row[t], 0);
+                    return (
+                      <div key={i} className="ed-bar-col" onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
+                        {hover === i && (
+                          <div className="ed-bar-tip">
+                            <div className="ed-bar-tip-val">{N(total)} total · {buckets[i]}</div>
+                            {group.types.map((t, ti) => (
+                              <div className="ed-bar-tip-row" key={t}><i className="ed-dot" style={{ background: TONES[ti % TONES.length] }} />{t} {N(row[t])}</div>
+                            ))}
+                          </div>
+                        )}
+                        <div className="ed-bar-track">
+                          {group.types.slice().reverse().map((t) => {
+                            const ti = group.types.indexOf(t);
+                            return (
+                              <div key={t} className="ed-bar-seg" style={{ height: `${(row[t] / maxVal) * 100}%`, background: TONES[ti % TONES.length], cursor: "pointer" }}
+                                onClick={() => onFilter({ scope, bucket: buckets[i], docType: t })} />
+                            );
+                          })}
+                        </div>
                       </div>
-                    )}
-                    <div className="ed-bar-track">
-                      {group.types.slice().reverse().map((t) => {
-                        const ti = group.types.indexOf(t);
-                        return (
-                          <div key={t} className="ed-bar-seg" style={{ height: `${(row[t] / maxVal) * 100}%`, background: TONES[ti % TONES.length], cursor: "pointer" }}
-                            onClick={() => onFilter({ scope, bucket: buckets[i], docType: t })} />
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            <div className="ed-chart-xaxis">
+              {buckets.map((b, i) => <span key={i}>{b}</span>)}
+            </div>
+            <div className="ed-chart-legend">
+              {group.types.map((t, ti) => (
+                <span key={t}><i className="ed-dot" style={{ background: TONES[ti % TONES.length] }} />{t}</span>
+              ))}
             </div>
           </div>
-        </div>
-        <div className="ed-chart-xaxis">
-          {buckets.map((b, i) => <span key={i}>{b}</span>)}
-        </div>
-        <div className="ed-chart-legend">
-          {group.types.map((t, ti) => (
-            <span key={t}><i className="ed-dot" style={{ background: TONES[ti % TONES.length] }} />{t}</span>
-          ))}
         </div>
       </div>
     </div>
@@ -221,74 +232,103 @@ function DocumentExpiryChart({ scope, setScope, onFilter }) {
 }
 
 /* ── Document Action List ─────────────────────────────────────── */
-const DOC_TYPE_OPTIONS = [{ value: "all", label: "All document types" },
-  ...Array.from(new Set([...D.docExpiry.vehicle.types, ...D.docExpiry.driver.types])).map((t) => ({ value: t, label: t }))];
-const BUCKET_OPTIONS = [{ value: "all", label: "All expiry buckets" }, ...D.docExpiry.buckets.map((b) => ({ value: b, label: b }))];
-
-function DocumentActionList({ filter, setFilter, listRef }) {
-  const [search, setSearch] = useState("");
+function DocumentActionList({ filter, listRef, chartScope }) {
   const [page, setPage] = useState(1);
-  const perPage = 10;
+  const perPage = 4;
+  const activeScope = filter.scope || chartScope || "vehicle";
 
   const rows = useMemo(() => {
     return D.documentActions.filter((r) => {
-      if (search && !r.subject.toLowerCase().includes(search.toLowerCase())) return false;
-      if (filter.scope && r.scope !== filter.scope) return false;
+      if (r.scope !== activeScope) return false;
       if (filter.docType && filter.docType !== "all" && r.docType !== filter.docType) return false;
       if (filter.bucket === "0-30" && !["Expired", "0-7 days", "8-30 days"].includes(r.bucket)) return false;
       else if (filter.bucket && filter.bucket !== "0-30" && filter.bucket !== "all" && r.bucket !== filter.bucket) return false;
       if (filter.vehicleStatus || filter.driverStatus) return false; // vehicle/driver-status filters have no document-list analog
       return true;
     });
-  }, [search, filter]);
+  }, [activeScope, filter]);
 
   const pageRows = rows.slice((page - 1) * perPage, page * perPage);
-  const activeFilterCount = ["scope", "docType", "bucket"].filter((k) => filter[k] && filter[k] !== "all").length;
+  useEffect(() => {
+    setPage(1);
+  }, [activeScope, filter.bucket, filter.docType]);
 
   return (
-    <div className="ed-card mad-doclist" ref={listRef}>
-      <CardHead icon="description" title="Documents needing action" sub="Showing expired and due within 7 days first." />
-      <div className="mad-doclist-controls">
-        <div className="hac-search-bar mad-search">
-          <Icon name="search" size={16} />
-          <input placeholder="Search vehicle / driver" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
-          {search && <button type="button" onClick={() => setSearch("")}><Icon name="close" size={14} /></button>}
+    <div className="mad-doclist" ref={listRef}>
+      {pageRows.length === 0 ? (
+        <div className="ed-emptyrow">No documents match this filter.</div>
+      ) : (
+        <div className="mad-doc-grid">
+          {pageRows.map((r, i) => (
+            <article key={`${r.subject}-${r.docType}-${i}`} className="mad-doc-row">
+              <div className="mad-doc-row-top">
+                <div className={`mad-doc-card-icon ${r.status === "expired" ? "expired" : "soon"}`}>
+                  <Icon name={activeScope === "vehicle" ? "local_shipping" : "badge"} size={18} />
+                </div>
+                <div className="mad-doc-row-copy">
+                  <div className="mad-doc-card-subject">{r.subject}</div>
+                  <div className="mad-doc-card-type">{r.docType}</div>
+                </div>
+                <StatusBadge status={r.status} />
+              </div>
+              <div className="mad-doc-row-grid">
+                <div className="mad-doc-card-field">
+                  <span className="mad-doc-card-label">Expiry date</span>
+                  <span className="mad-doc-card-value">{r.expiryDate}</span>
+                </div>
+                <div className="mad-doc-card-field">
+                  <span className="mad-doc-card-label">Expiry range</span>
+                  <span className="mad-doc-card-value">{r.bucket}</span>
+                </div>
+                <div className="mad-doc-card-field">
+                  <span className="mad-doc-card-label">Time left</span>
+                  <span className={`mad-doc-card-value ${r.status === "expired" ? "expired" : "soon"}`}>{r.daysLabel}</span>
+                </div>
+              </div>
+              <div className="mad-doc-row-footer">
+                <button type="button" className="ml-btn-text-blue">Review and renew<Icon name="chevron_right" size={16} /></button>
+              </div>
+            </article>
+          ))}
         </div>
-        <SelectMenu value={filter.docType || "all"} options={DOC_TYPE_OPTIONS} onChange={(v) => { setFilter({ ...filter, docType: v }); setPage(1); }} className="hac-select" />
-        <SelectMenu value={filter.bucket || "all"} options={BUCKET_OPTIONS} onChange={(v) => { setFilter({ ...filter, bucket: v }); setPage(1); }} className="hac-select" />
-        {activeFilterCount > 0 && (
-          <button type="button" className="mad-clear-filters" onClick={() => setFilter({})}>Clear filters</button>
-        )}
+      )}
+      <Pager page={page} perPage={perPage} total={rows.length} onPage={setPage} perPageOptions={[6, 12, 24]} />
+    </div>
+  );
+}
+
+function DocumentExpiryModule({ filter, chartScope, setChartScope, onFilter, listRef }) {
+  function handleScopeChange(nextScope) {
+    setChartScope(nextScope);
+    onFilter({
+      scope: nextScope,
+      bucket: filter.bucket && filter.bucket !== "all" ? filter.bucket : undefined,
+    });
+  }
+
+  return (
+    <div className="ed-card mad-doc-expiry-layout">
+      <CardHead
+        icon="bar_chart"
+        title="Document expiry"
+        sub="Track vehicle and driver documents by expiry window."
+        right={
+          <div className="mad-chart-controls">
+            <Segmented value={chartScope} onChange={handleScopeChange} options={[{ value: "vehicle", label: "Vehicle docs" }, { value: "driver", label: "Driver docs" }]} />
+            <ExportMenu comingSoon />
+          </div>
+        }
+      />
+      <div className="mad-doc-expiry-main">
+        <DocumentExpiryChart
+          scope={chartScope}
+          onFilter={onFilter}
+          filter={filter}
+        />
       </div>
-      <div className="ml-table-wrap">
-        <table className="ml-table">
-          <thead>
-            <tr>
-              <th>Vehicle / Driver</th>
-              <th>Document</th>
-              <th style={{ textAlign: "right" }}>Expiry Date</th>
-              <th style={{ textAlign: "right" }}>Days Left</th>
-              <th>Status</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {pageRows.length === 0 ? (
-              <tr><td colSpan={6} className="ed-emptyrow">No documents match this filter.</td></tr>
-            ) : pageRows.map((r, i) => (
-              <tr key={i}>
-                <td>{r.subject}</td>
-                <td>{r.docType}</td>
-                <td style={{ textAlign: "right" }}>{r.expiryDate}</td>
-                <td style={{ textAlign: "right" }}>{r.daysLabel}</td>
-                <td><StatusBadge status={r.status} /></td>
-                <td><a href="#" className="ml-btn-text-blue">{r.status === "expired" ? "Renew" : "Renew"}</a></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mad-doc-expiry-side">
+        <DocumentActionList filter={filter} listRef={listRef} chartScope={chartScope} />
       </div>
-      <Pager page={page} perPage={perPage} total={rows.length} onPage={setPage} perPageOptions={[10, 25, 50]} />
     </div>
   );
 }
@@ -299,62 +339,64 @@ const ACTIVITY_TABS = [
   { key: "checkinout", label: "Check-in / Check-out" },
 ];
 
-function ChecklistEndorsementTable() {
+function ChecklistEndorsementGrid() {
   return (
     <>
       <div className="mad-tab-head">
         <h2 className="ed-sec-title">Latest checklist submissions</h2>
         <div className="mad-tab-sub">Most recent submissions requiring review.</div>
       </div>
-      <div className="ml-table-wrap">
-        <table className="ml-table">
-          <thead>
-            <tr><th>Vehicle</th><th>Driver</th><th>Submitted</th><th>Type</th><th>Status</th><th></th></tr>
-          </thead>
-          <tbody>
-            {D.checklists.map((r, i) => (
-              <tr key={i}>
-                <td>{r.vehicle}</td>
-                <td>{r.driver}</td>
-                <td>{r.submitted}</td>
-                <td>{r.type}</td>
-                <td><StatusBadge status={r.status} /></td>
-                <td><a href="#" className="ml-btn-text-blue">{r.status === "pending_endorsement" ? "Endorse" : "View"}</a></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mad-activity-grid">
+        {D.checklists.map((r) => <ChecklistCard key={`${r.plate}-${r.checkIn}`} row={r} />)}
       </div>
       <div className="ed-queue-footer"><a className="ml-btn-text-blue" href="#">View all checklist submissions<Icon name="chevron_right" size={16} /></a></div>
     </>
   );
 }
 
-function CheckInOutTable() {
+function CheckInOutGrid() {
   return (
     <>
       <div className="mad-tab-head">
         <h2 className="ed-sec-title">Latest check-in / check-out</h2>
         <div className="mad-tab-sub">Recent driver activity from managed vehicles.</div>
       </div>
-      <div className="ml-table-wrap">
-        <table className="ml-table">
-          <thead>
-            <tr><th>Vehicle</th><th>Driver</th><th>Event</th><th style={{ textAlign: "right" }}>Time</th><th style={{ textAlign: "right" }}>Odometer</th><th>Status</th></tr>
-          </thead>
-          <tbody>
-            {D.checkInOut.map((r, i) => (
-              <tr key={i}>
-                <td>{r.vehicle}</td>
-                <td>{r.driver}</td>
-                <td>{r.event === "check_in" ? "Check-in" : "Check-out"}</td>
-                <td style={{ textAlign: "right" }}>{r.time}</td>
-                <td style={{ textAlign: "right" }}>{r.odometer}</td>
-                <td><StatusBadge status={"checkin_" + r.status} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mad-activity-grid mad-activity-grid--compact">
+        {D.checkInOut.map((r) => (
+          <article key={`${r.vehicle}-${r.time}`} className="od-preview-card od-checklist-card mad-check-card">
+            <div className="od-cl-header">
+              <img className="od-cl-avatar" src={`https://i.pravatar.cc/64?u=${encodeURIComponent(r.vehicle)}`} alt={r.driver} />
+              <div className="od-cl-meta">
+                <div className="od-cl-name">{r.driver}</div>
+                <div className="od-cl-plate">{r.vehicle}</div>
+              </div>
+            </div>
+            <div className="od-cl-divider" />
+            <div className="od-cl-checkinout mad-check-card-body">
+              <div className="od-cl-col">
+                <div className="od-cl-col-label">
+                  <Icon name={r.event === "check_in" ? "login" : "logout"} size={14} color={r.event === "check_in" ? "var(--green-600)" : "var(--red-400)"} />
+                  {r.event === "check_in" ? "Check-in" : "Check-out"}
+                </div>
+                <div className="od-cl-col-val">{r.time}</div>
+                <div className="od-cl-col-sub">Status: {r.status === "active" ? "Active" : "Completed"}</div>
+              </div>
+              <div className="od-cl-col">
+                <div className="od-cl-col-label">
+                  <Icon name="pin_drop" size={14} color="var(--fg-tertiary)" />
+                  Vehicle data
+                </div>
+                <div className="od-cl-col-val">{r.odometer}</div>
+                <div className="od-cl-col-sub">Recorded: {r.status === "active" ? "Live update" : "Synced"}</div>
+              </div>
+            </div>
+            <div className="od-cl-divider" />
+            <div className={"od-cl-decision " + (r.status === "active" ? "od-cl-decision-good" : "mad-check-card-decision-neutral")}>
+              <Icon name={r.status === "active" ? "schedule" : "check_circle"} size={16} />
+              {r.status === "active" ? "Awaiting latest trip sync" : "Trip record synced"}
+            </div>
+          </article>
+        ))}
       </div>
       <div className="ed-queue-footer"><a className="ml-btn-text-blue" href="#">View all check-in / check-out<Icon name="chevron_right" size={16} /></a></div>
     </>
@@ -372,7 +414,7 @@ function ActivityTabs() {
           </button>
         ))}
       </div>
-      {tab === "checklist" ? <ChecklistEndorsementTable /> : <CheckInOutTable />}
+      {tab === "checklist" ? <ChecklistEndorsementGrid /> : <CheckInOutGrid />}
     </div>
   );
 }
@@ -396,26 +438,25 @@ function App() {
         <div className="mad-topbar">
           <OrgSwitcher orgs={D.orgs} initialId={D.org.id} />
           <div className="mad-topbar-spacer" />
-          <div style={{ fontSize: 12, color: "var(--fg-tertiary)" }}>MyAdmin module</div>
-          <button className="mad-iconbtn" type="button" aria-label="Notifications"><Icon name="notifications" size={18} /></button>
+          <a className="mad-iconbtn mad-closebtn" href="../org-dashboard/index.html" aria-label="Close and return to organization dashboard">
+            <Icon name="close" size={18} />
+          </a>
         </div>
         <div className="mad-content">
           <div className="mad-pagehead">
             <div>
-              <div className="mad-breadcrumb">MyAdmin / Dashboard</div>
               <h1 className="mad-title">MyAdmin Dashboard</h1>
               <div className="mad-subtitle">Monitor fleet readiness, document expiry, and latest driver submissions.</div>
             </div>
-            <div className="mad-headctl">
-              <div className="mad-datepill"><Icon name="calendar_today" size={14} /> {D.dateLabel}</div>
-              <ExportMenu comingSoon />
-            </div>
           </div>
 
-          <FleetSummary onFilter={handleFilter} />
-          <DocumentExpiryChart scope={chartScope} setScope={setChartScope} onFilter={handleFilter} />
-          <DocumentActionList filter={filter} setFilter={setFilter} listRef={listRef} />
-          <ActivityTabs />
+          <div className="mad-overview">
+            <FleetSummary onFilter={handleFilter} />
+            <div className="mad-overview-main">
+              <DocumentExpiryModule filter={filter} chartScope={chartScope} setChartScope={setChartScope} onFilter={handleFilter} listRef={listRef} />
+              <ActivityTabs />
+            </div>
+          </div>
         </div>
       </main>
     </div>
