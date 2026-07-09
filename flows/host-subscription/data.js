@@ -37,7 +37,6 @@
       rows: [
         { key: "fuel_cards", label: "Fleet card control", helper: "Manage account and card access", controlType: "toggle", value: true },
         { key: "history_depth", label: "Account History", helper: "Restrict how much historical data is available", controlType: "select", value: "6 months", options: ["3 months", "6 months", "12 months", "Unlimited"], bindPath: "limits.historyDepth", toggleable: true, enabled: true },
-        { key: "report_depth", label: "Report depth", helper: "Available months of reporting. Enterprise unlimited reports capped at 2GB storage.", controlType: "select", value: "6 months", options: ["3 months", "6 months", "12 months", "Unlimited"], bindPath: "limits.reportDepth", toggleable: true, enabled: true },
         { key: "subsidy_quota", label: "Subsidy quota visibility", helper: "Display quota consumption and health", controlType: "toggle", value: true },
       ],
     },
@@ -67,12 +66,10 @@
     {
       key: "mytrip",
       label: "MyTrip",
-      summary: "Trips, routing, ePOD + ePOP",
+      summary: "Trips and routing",
       rows: [
         { key: "routes", label: "Route creation", helper: "Create and manage routes", controlType: "toggle", value: true },
         { key: "trips", label: "Trip creation", helper: "Create and monitor trips", controlType: "toggle", value: true },
-        { key: "epod", label: "ePOD + ePOP", helper: "Electronic Proof of Delivery and Electronic Proof of Pickup", controlType: "toggle", value: false },
-        { key: "trip_assignment", label: "Trip assignment", helper: "Assign trips directly to drivers", controlType: "toggle", value: false },
       ],
     },
     {
@@ -242,7 +239,7 @@
           driver_doc_reminder: { enabled: false },
         },
         mydriver: { attendance: { value: false } },
-        mytrip: { routes: { value: false }, trips: { value: false }, epod: { value: false }, trip_assignment: { value: false } },
+        mytrip: { routes: { value: false }, trips: { value: false } },
       }),
       createdAt: "2025-01-10",
       organizations: [],
@@ -281,7 +278,7 @@
         showOnWebsite: true,
       },
       featureModules: applyFeatureOverrides(cloneFeatureModules(), {
-        mytrip: { routes: { value: false }, trips: { value: false }, epod: { value: false }, trip_assignment: { value: false } },
+        mytrip: { routes: { value: false }, trips: { value: false } },
       }),
       createdAt: "2025-02-14",
       organizations: [],
@@ -320,9 +317,7 @@
       visibility: {
         showOnWebsite: true,
       },
-      featureModules: applyFeatureOverrides(cloneFeatureModules(), {
-        mytrip: { epod: { value: false }, trip_assignment: { value: false } },
-      }),
+      featureModules: applyFeatureOverrides(cloneFeatureModules(), {}),
       createdAt: "2025-03-08",
       organizations: [],
     },
@@ -359,9 +354,7 @@
       visibility: {
         showOnWebsite: true,
       },
-      featureModules: applyFeatureOverrides(cloneFeatureModules(), {
-        mytrip: { epod: { value: false }, trip_assignment: { value: false } },
-      }),
+      featureModules: cloneFeatureModules(),
       createdAt: "2025-04-18",
       organizations: [],
     },
