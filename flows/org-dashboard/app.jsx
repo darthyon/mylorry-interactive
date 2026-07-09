@@ -6,7 +6,7 @@
 // when emptyData is on. Reuses window.SharedShell.LockSection for all gates.
 
 const { useState, useEffect, useRef } = React;
-const { Icon, LockSection, CountCard, PetronLogo, StatusBadge, OrgSwitcher } = window.SharedShell;
+const { Icon, LockSection, CountCard, PetronLogo, StatusBadge, OrgSwitcher, ChecklistCard } = window.SharedShell;
 const D = window.ORG_DASH;
 
 /* ── Helpers ───────────────────────────────────────────────────── */
@@ -750,124 +750,6 @@ function FuelPreviewCard({ row }) {
         </div>
       </article>
     </>
-  );
-}
-
-function ConfirmBulkModal({ driver, action, count, onCancel, onConfirm }) {
-  const wrapRef = useRef(null);
-  useEffect(() => {
-    function onKey(e) { if (e.key === "Escape") onCancel(); }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onCancel]);
-  function onBackdrop(e) { if (e.target === wrapRef.current) onCancel(); }
-  const verb = action === "endorse" ? "Endorse" : "Reject";
-  return ReactDOM.createPortal(
-    <div className="od-modal-backdrop" ref={wrapRef} onMouseDown={onBackdrop} role="dialog" aria-modal="true" aria-label={`${verb} all checklists`}>
-      <div className="od-modal od-modal-sm">
-        <div className="od-modal-header">
-          <span className="od-modal-title">{verb} all checklists?</span>
-          <button className="od-modal-close" onClick={onCancel} aria-label="Close"><Icon name="close" size={18} /></button>
-        </div>
-        <div className="od-modal-body">
-          <p className="od-cl-confirm-copy">
-            {verb} all {count} checklist items for <strong>{driver}</strong> without reviewing them individually?
-          </p>
-        </div>
-        <div className="od-cl-confirm-actions">
-          <button type="button" className="ml-btn-outline" onClick={onCancel}>Cancel</button>
-          <button type="button" className="ml-btn-primary" onClick={onConfirm}>{verb} All</button>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
-
-function ChecklistCard({ row }) {
-  const [open, setOpen] = useState(false);
-  const [pending, setPending] = useState(null); // null | "endorse" | "reject"
-  const [decision, setDecision] = useState(null); // null | "endorsed" | "rejected"
-  const warnCount = row.items.filter((i) => i.status === "warning").length;
-  const allGood = warnCount === 0;
-  return (
-    <article className="od-preview-card od-checklist-card">
-      {pending && (
-        <ConfirmBulkModal
-          driver={row.driver}
-          action={pending}
-          count={row.items.length}
-          onCancel={() => setPending(null)}
-          onConfirm={() => { setDecision(pending === "endorse" ? "endorsed" : "rejected"); setPending(null); }}
-        />
-      )}
-      <div className="od-cl-header">
-        <img className="od-cl-avatar" src={`https://i.pravatar.cc/64?u=${encodeURIComponent(row.plate)}`} alt={row.driver} />
-        <div className="od-cl-meta">
-          <div className="od-cl-name">{row.driver}</div>
-          <div className="od-cl-plate">{row.plate}</div>
-        </div>
-      </div>
-      <div className="od-cl-divider" />
-      <div className="od-cl-checkinout">
-        <div className="od-cl-col">
-          <div className="od-cl-col-label"><Icon name="login" size={14} color="var(--green-600)" />Check-in</div>
-          <div className="od-cl-col-val">{row.checkIn}</div>
-          <div className="od-cl-col-sub">Start: {Number(row.startMileage).toLocaleString("en-US")} km</div>
-        </div>
-        <div className="od-cl-col">
-          <div className="od-cl-col-label"><Icon name="logout" size={14} color="var(--red-400)" />Check-out</div>
-          <div className="od-cl-col-val">{row.checkOut}</div>
-          <div className="od-cl-col-sub">End: {Number(row.endMileage).toLocaleString("en-US")} km</div>
-        </div>
-      </div>
-      <div className="od-cl-divider" />
-      <button type="button" className="od-cl-clhead" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
-        <span className="od-cl-clhead-title">Checklists</span>
-        <span className="od-cl-clhead-right">
-          {!decision && (
-            <span className={"ml-badge " + (allGood ? "acct-active" : "acct-terminated")}>
-              {allGood ? "All good" : `${warnCount} warning${warnCount > 1 ? "s" : ""}`}
-            </span>
-          )}
-          <Icon name={open ? "expand_less" : "expand_more"} size={18} />
-        </span>
-      </button>
-      {open && (
-        <div className="od-cl-items">
-          {row.items.map((it, i) => {
-            const status = decision === "endorsed" ? "passed" : decision === "rejected" ? "rejected" : it.status;
-            return (
-              <div className="od-cl-item" key={i}>
-                <div className="od-cl-item-left">
-                  <Icon name="fact_check" size={20} color="var(--fg-tertiary)" />
-                  <span>{it.label}</span>
-                </div>
-                <div className="od-cl-item-right">
-                  <Icon
-                    name={status === "passed" ? "check_circle" : status === "rejected" ? "cancel" : "error"}
-                    size={19}
-                    color={status === "passed" ? "var(--green-600)" : "var(--red-400)"}
-                  />
-                  <Icon name="chevron_right" size={16} color="var(--fg-tertiary)" />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      {decision ? (
-        <div className={"od-cl-decision " + (decision === "endorsed" ? "od-cl-decision-good" : "od-cl-decision-bad")}>
-          <Icon name={decision === "endorsed" ? "check_circle" : "cancel"} size={16} />
-          {decision === "endorsed" ? "Endorsed all checklists" : "Rejected all checklists"}
-        </div>
-      ) : (
-        <div className="od-cl-actions">
-          <button type="button" className="ml-btn-outline" onClick={() => setPending("reject")}>Reject All</button>
-          <button type="button" className="ml-btn-primary" onClick={() => setPending("endorse")}>Endorse All</button>
-        </div>
-      )}
-    </article>
   );
 }
 

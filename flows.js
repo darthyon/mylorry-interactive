@@ -82,6 +82,20 @@ window.FLOWS = {
           ],
         },
         {
+          id: "org-endorser-dashboard",
+          name: "Endorser — Dashboard",
+          status: "ready",
+          route: "flows/org-endorser-dashboard/index.html",
+          desc: "Landing page for the Endorser role — pending/endorsed/rejected/overdue checklist queue with inline Endorse/Reject All, 6-month trend, MTD summary. Restricted nav (Dashboard + Account only); reuses the shared checklist card also consumed by Org Dashboard.",
+          screens: [
+            { label: "KPI row", note: "5 equal cards: Pending/Endorsed/Rejected Today, Overdue, Avg Approval Time." },
+            { label: "Subscription banner", note: "Plan: Lite · Managed Vehicles 7/10 · Managed Drivers 3/10 (hover detail) · Upgrade CTA." },
+            { label: "Trend + MTD", note: "6-month stacked bar + total line (left) + MTD summary card (right)." },
+            { label: "Checklist Queue", note: "4 tabs, 3-col grid, shared ChecklistCard with inline Reject All/Endorse All. Footer: See all safety checklists." },
+            { label: "Restricted nav", note: "Sidebar = Dashboard + Account only, non-collapsible." },
+          ],
+        },
+        {
           id: "org-myadmin-dashboard",
           name: "MyAdmin — Dashboard",
           status: "ready",
