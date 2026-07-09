@@ -487,6 +487,15 @@ const STATUS_BADGE_META = {
   mod_included: { label:"Included", cls:"mod-included" },
   mod_limited:  { label:"Limited",  cls:"mod-limited"  },
   mod_locked:   { label:"Locked",   cls:"mod-locked"   },
+  // Document expiry status (MyAdmin dashboard) — "expired" reuses the
+  // comm-expired vocab entry above.
+  due_soon:             { label:"Due soon",              cls:"quota-at-risk"    },
+  // Checklist endorsement status (MyAdmin dashboard)
+  pending_endorsement:  { label:"Pending endorsement",   cls:"quota-at-risk"    },
+  endorsed:             { label:"Endorsed",              cls:"acct-active"      },
+  // Check-in / check-out status (MyAdmin dashboard)
+  checkin_active:        { label:"Active",               cls:"acct-active"      },
+  checkin_completed:     { label:"Completed",            cls:"mod-included"     },
 };
 function StatusBadge({ status, prefix, label, fallback = "activated" }) {
   const m = STATUS_BADGE_META[status] || STATUS_BADGE_META[fallback] || { label: status, cls: "" };

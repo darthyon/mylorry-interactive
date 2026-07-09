@@ -100,10 +100,9 @@ window.FLOWS = {
           name: "MyAdmin — Dashboard",
           status: "ready",
           route: "flows/org-myadmin-dashboard/index.html",
-          desc: "MyAdmin module shell placeholder, wired from the main Org Dashboard until the dashboard itself is designed.",
+          desc: "Fleet readiness dashboard: vehicle/driver status, document expiry chart, action list, and checklist/check-in activity.",
           screens: [
-            { label: "Module entry", note: "MyAdmin shell with module sidebar: Dashboard, User, Driver, Vehicle, Vendor, Checklist, Check In History." },
-            { label: "Empty state", note: "Dashboard route intentionally shows an empty-state placeholder because MyAdmin dashboard content is not prototyped yet." },
+            { label: "Dashboard", note: "Fleet Status Summary (Vehicles, Drivers, Expired Documents, Due Soon), Document Expiry stacked bar chart with Vehicle/Driver docs toggle, filterable Document Action List, and Checklist Endorsement / Check-in-Check-out activity tabs." },
           ],
         },
         { id: "org-mytrip-dashboard", name: "MyTrip — Dashboard",  status: "planned" },
