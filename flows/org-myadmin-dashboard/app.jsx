@@ -1,10 +1,33 @@
 {
 
 const { useState, useMemo, useRef, useEffect } = React;
-const { Icon, OrgSwitcher, CountCard, CardHead, Segmented, Pager, StatusBadge, ExportMenu, ChecklistCard } = window.SharedShell;
+const { Icon, OrgSwitcher, CountCard, CardHead, Segmented, StatusBadge, ChecklistCard } = window.SharedShell;
 const D = window.MYADMIN_DASH;
 
 const N = (n) => Number(n).toLocaleString("en-US");
+
+function LeaveConfirmModal({ onStay, onLeave }) {
+  const wrapRef = useRef(null);
+  useEffect(() => {
+    function onKey(e) { if (e.key === "Escape") onStay(); }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onStay]);
+  function onBackdrop(e) { if (e.target === wrapRef.current) onStay(); }
+  return ReactDOM.createPortal(
+    <div className="mad-leave-backdrop" ref={wrapRef} onMouseDown={onBackdrop} role="dialog" aria-modal="true" aria-label="Leave page confirmation">
+      <div className="mad-leave-modal">
+        <div className="mad-leave-title">Leave this page?</div>
+        <div className="mad-leave-msg">Are you sure you want to leave this page? Your progress may not be saved.</div>
+        <div className="mad-leave-actions">
+          <button type="button" className="mad-leave-stay" onClick={onStay}>Stay</button>
+          <button type="button" className="mad-leave-exit" onClick={onLeave}>Exit to Dashboard</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
 
 const MYADMIN_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: "dashboard", href: "index.html" },
@@ -67,17 +90,11 @@ function Rail() {
   );
 }
 
-function getDocumentFilterSummary(filter, scope) {
-  const scopeLabel = scope === "driver" ? "Driver documents" : "Vehicle documents";
-  const parts = [scopeLabel];
-  if (filter.bucket && filter.bucket !== "all") parts.push(filter.bucket);
-  if (filter.docType && filter.docType !== "all") parts.push(filter.docType);
-  return parts.join(" · ");
-}
-
 /* ── Fleet Status Summary ─────────────────────────────────────── */
 function FleetSummary({ onFilter }) {
   const f = D.fleet;
+  const docsByVehicle = D.docExpiry.vehicle.series.reduce((sum, row) => sum + D.docExpiry.vehicle.types.reduce((s, t) => s + row[t], 0), 0);
+  const docsByDriver = D.docExpiry.driver.series.reduce((sum, row) => sum + D.docExpiry.driver.types.reduce((s, t) => s + row[t], 0), 0);
   return (
     <div className="mad-kpi-stack">
       <div className="mad-kpi-row">
@@ -126,23 +143,32 @@ function FleetSummary({ onFilter }) {
       </div>
 
       </div>
-      <div className="mad-kpi-alerts" aria-label="Document alerts">
-        <button type="button" className="mad-kpi-alert mad-kpi-alert-red" onClick={() => onFilter({ bucket: "Expired" })}>
-          <span className="mad-kpi-alert-icon"><Icon name="warning" size={16} fill={1} /></span>
-          <span className="mad-kpi-alert-copy">
-            <span className="mad-kpi-alert-label">Expired documents</span>
-            <span className="mad-kpi-alert-sub">Action needed</span>
-          </span>
-          <span className="mad-kpi-alert-count">{f.expiredDocs.count}</span>
-        </button>
-        <button type="button" className="mad-kpi-alert mad-kpi-alert-amber" onClick={() => onFilter({ bucket: "0-30" })}>
-          <span className="mad-kpi-alert-icon"><Icon name="schedule" size={16} fill={1} /></span>
-          <span className="mad-kpi-alert-copy">
-            <span className="mad-kpi-alert-label">Due soon</span>
-            <span className="mad-kpi-alert-sub">{f.dueSoon.within7} within 7 days</span>
-          </span>
-          <span className="mad-kpi-alert-count">{f.dueSoon.count}</span>
-        </button>
+      <div className="ml-statcard mad-kpi-primary mad-kpi-doc-card">
+        <div className="ml-statcard-head">
+          <div className="ml-statcard-main">
+            <div className="ml-statcard-ico green"><Icon name="description" size={20} fill={1} /></div>
+            <div className="ml-statcard-count">{docsByVehicle + docsByDriver}</div>
+          </div>
+        </div>
+        <div className="ml-statcard-labelrow"><span className="ml-statcard-label">Documents</span></div>
+        <div className="ml-statcard-band">
+          <button type="button" className="ml-statcard-cell mad-cell-btn" onClick={() => onFilter({ scope: "vehicle" })}>
+            <div className="ml-statcard-n green">{docsByVehicle}</div>
+            <div className="ml-statcard-l">by vehicle</div>
+          </button>
+          <button type="button" className="ml-statcard-cell mad-cell-btn" onClick={() => onFilter({ scope: "driver" })}>
+            <div className="ml-statcard-n gray">{docsByDriver}</div>
+            <div className="ml-statcard-l">by driver</div>
+          </button>
+          <button type="button" className="ml-statcard-cell mad-cell-btn" onClick={() => onFilter({ bucket: "Expired" })}>
+            <div className="ml-statcard-n red">{f.expiredDocs.count}</div>
+            <div className="ml-statcard-l">expired</div>
+          </button>
+          <button type="button" className="ml-statcard-cell mad-cell-btn" onClick={() => onFilter({ bucket: "0-30" })}>
+            <div className="ml-statcard-n amber">{f.dueSoon.count}</div>
+            <div className="ml-statcard-l">due soon</div>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -151,33 +177,75 @@ function FleetSummary({ onFilter }) {
 /* ── Document Expiry chart — stacked bar, vehicle/driver toggle ──── */
 function DocumentExpiryChart({ scope, onFilter, filter }) {
   const [hover, setHover] = useState(null);
+  const [showMoreDropdown, setShowMoreDropdown] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.matchMedia("(max-width: 1023px)").matches);
+  const moreRef = useRef(null);
+  const dropdownRef = useRef(null);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1023px)");
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  useEffect(() => {
+    if (!showMoreDropdown) return;
+    function handleClick(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target) && moreRef.current && !moreRef.current.contains(e.target)) {
+        setShowMoreDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showMoreDropdown]);
   const group = D.docExpiry[scope];
   const buckets = D.docExpiry.buckets;
   const maxVal = Math.max(1, ...group.series.map((row) => group.types.reduce((sum, t) => sum + row[t], 0)));
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(maxVal * f));
   const TONES = ["#00AA4F", "#0081AA", "#F5A623", "#1A2472", "#94A8B2"];
-  const chips = buckets.map((bucket, i) => ({
-    label: bucket,
-    bucket,
-    count: group.series[i] ? group.types.reduce((s, t) => s + group.series[i][t], 0) : 0,
-    tone: i === 0 ? "red" : i === 1 ? "amber" : i === 2 ? "teal" : i === 3 ? "navy" : "green",
-  }));
+  const chips = buckets.map((bucket) => {
+    const count = D.documentActions.filter((d) => d.scope === scope && d.bucket === bucket).length;
+    return { label: bucket, bucket, count };
+  });
+  const visibleChips = isMobile ? chips.slice(0, 2) : chips;
+  const hiddenChips = isMobile ? chips.slice(2) : [];
 
   return (
     <div className="mad-chartcard">
       <div className="mad-range-panel">
         <div className="mad-range-list">
-          {chips.map((c) => (
+          {visibleChips.map((c) => (
             <button
               key={c.label}
               type="button"
-              className={`mad-range-card ${c.tone}${filter.bucket === c.bucket ? " active" : ""}`}
+              className={`mad-range-card mad-range-card-row${filter.bucket === c.bucket ? " active" : ""}`}
               onClick={() => onFilter({ scope, bucket: c.bucket })}
             >
               <span className="mad-range-card-label">{c.label}</span>
               <span className="mad-range-card-count">{c.count}</span>
             </button>
           ))}
+          {hiddenChips.length > 0 && (
+            <span className="mad-range-more-wrap">
+              <button ref={moreRef} type="button" className={`mad-range-more${showMoreDropdown ? " active" : ""}`} onClick={() => setShowMoreDropdown((v) => !v)}>
+                +{hiddenChips.length} more <Icon name="expand_more" size={14} />
+              </button>
+              {showMoreDropdown && (
+                <div ref={dropdownRef} className="mad-range-dropdown">
+                  {hiddenChips.map((c) => (
+                    <button
+                      key={c.label}
+                      type="button"
+                      className={`mad-range-dropdown-item${filter.bucket === c.bucket ? " active" : ""}`}
+                      onClick={() => { onFilter({ scope, bucket: c.bucket }); setShowMoreDropdown(false); }}
+                    >
+                      <span className="mad-range-dropdown-label">{c.label}</span>
+                      <span className="mad-range-dropdown-count">{c.count}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </span>
+          )}
         </div>
       </div>
       <div className="mad-chart-body">
@@ -233,8 +301,7 @@ function DocumentExpiryChart({ scope, onFilter, filter }) {
 
 /* ── Document Action List ─────────────────────────────────────── */
 function DocumentActionList({ filter, listRef, chartScope }) {
-  const [page, setPage] = useState(1);
-  const perPage = 4;
+  const showCount = 6;
   const activeScope = filter.scope || chartScope || "vehicle";
 
   const rows = useMemo(() => {
@@ -248,51 +315,46 @@ function DocumentActionList({ filter, listRef, chartScope }) {
     });
   }, [activeScope, filter]);
 
-  const pageRows = rows.slice((page - 1) * perPage, page * perPage);
-  useEffect(() => {
-    setPage(1);
-  }, [activeScope, filter.bucket, filter.docType]);
+  const shownRows = rows.slice(0, showCount);
 
   return (
     <div className="mad-doclist" ref={listRef}>
-      {pageRows.length === 0 ? (
+      <div className="mad-doclist-head">
+        <div className="mad-doclist-summary">{activeScope === "vehicle" ? "Vehicle Documents" : "Driver Documents"}</div>
+      </div>
+      {shownRows.length === 0 ? (
         <div className="ed-emptyrow">No documents match this filter.</div>
       ) : (
         <div className="mad-doc-grid">
-          {pageRows.map((r, i) => (
+          {shownRows.map((r, i) => (
             <article key={`${r.subject}-${r.docType}-${i}`} className="mad-doc-row">
-              <div className="mad-doc-row-top">
-                <div className={`mad-doc-card-icon ${r.status === "expired" ? "expired" : "soon"}`}>
+              <div className="mad-doc-row-main">
+                <div className="mad-doc-card-icon">
                   <Icon name={activeScope === "vehicle" ? "local_shipping" : "badge"} size={18} />
                 </div>
                 <div className="mad-doc-row-copy">
                   <div className="mad-doc-card-subject">{r.subject}</div>
                   <div className="mad-doc-card-type">{r.docType}</div>
                 </div>
-                <StatusBadge status={r.status} />
               </div>
-              <div className="mad-doc-row-grid">
-                <div className="mad-doc-card-field">
-                  <span className="mad-doc-card-label">Expiry date</span>
-                  <span className="mad-doc-card-value">{r.expiryDate}</span>
-                </div>
-                <div className="mad-doc-card-field">
-                  <span className="mad-doc-card-label">Expiry range</span>
-                  <span className="mad-doc-card-value">{r.bucket}</span>
-                </div>
-                <div className="mad-doc-card-field">
-                  <span className="mad-doc-card-label">Time left</span>
-                  <span className={`mad-doc-card-value ${r.status === "expired" ? "expired" : "soon"}`}>{r.daysLabel}</span>
-                </div>
+              <div className="mad-doc-card-field">
+                <span className="mad-doc-card-label">Expiry date</span>
+                <span className="mad-doc-card-value">{r.expiryDate}</span>
               </div>
-              <div className="mad-doc-row-footer">
-                <button type="button" className="ml-btn-text-blue">Review and renew<Icon name="chevron_right" size={16} /></button>
+              <div className="mad-doc-card-field">
+                <span className="mad-doc-card-label">Time left</span>
+                <span className={`mad-doc-card-value ${r.status === "expired" ? "expired" : "soon"}`}>{r.daysLabel}</span>
               </div>
+              <StatusBadge status={r.status} label={r.bucket} />
             </article>
           ))}
         </div>
       )}
-      <Pager page={page} perPage={perPage} total={rows.length} onPage={setPage} perPageOptions={[6, 12, 24]} />
+      <div className="ed-queue-footer">
+        <a className="ml-btn-text-blue" href="#">
+          View all {activeScope === "vehicle" ? "vehicle" : "driver"} docs<Icon name="chevron_right" size={16} />
+        </a>
+      </div>
     </div>
   );
 }
@@ -308,14 +370,12 @@ function DocumentExpiryModule({ filter, chartScope, setChartScope, onFilter, lis
 
   return (
     <div className="ed-card mad-doc-expiry-layout">
-      <CardHead
-        icon="bar_chart"
-        title="Document expiry"
-        sub="Track vehicle and driver documents by expiry window."
-        right={
+        <CardHead
+          icon="bar_chart"
+          title="Document expiry"
+          right={
           <div className="mad-chart-controls">
-            <Segmented value={chartScope} onChange={handleScopeChange} options={[{ value: "vehicle", label: "Vehicle docs" }, { value: "driver", label: "Driver docs" }]} />
-            <ExportMenu comingSoon />
+            <Segmented value={chartScope} onChange={handleScopeChange} options={[{ value: "vehicle", label: "By Vehicle" }, { value: "driver", label: "By Driver" }]} />
           </div>
         }
       />
@@ -342,10 +402,6 @@ const ACTIVITY_TABS = [
 function ChecklistEndorsementGrid() {
   return (
     <>
-      <div className="mad-tab-head">
-        <h2 className="ed-sec-title">Latest checklist submissions</h2>
-        <div className="mad-tab-sub">Most recent submissions requiring review.</div>
-      </div>
       <div className="mad-activity-grid">
         {D.checklists.map((r) => <ChecklistCard key={`${r.plate}-${r.checkIn}`} row={r} />)}
       </div>
@@ -357,10 +413,6 @@ function ChecklistEndorsementGrid() {
 function CheckInOutGrid() {
   return (
     <>
-      <div className="mad-tab-head">
-        <h2 className="ed-sec-title">Latest check-in / check-out</h2>
-        <div className="mad-tab-sub">Recent driver activity from managed vehicles.</div>
-      </div>
       <div className="mad-activity-grid mad-activity-grid--compact">
         {D.checkInOut.map((r) => (
           <article key={`${r.vehicle}-${r.time}`} className="od-preview-card od-checklist-card mad-check-card">
@@ -379,15 +431,15 @@ function CheckInOutGrid() {
                   {r.event === "check_in" ? "Check-in" : "Check-out"}
                 </div>
                 <div className="od-cl-col-val">{r.time}</div>
-                <div className="od-cl-col-sub">Status: {r.status === "active" ? "Active" : "Completed"}</div>
+                <div className="od-cl-col-sub">{r.location}</div>
               </div>
               <div className="od-cl-col">
                 <div className="od-cl-col-label">
                   <Icon name="pin_drop" size={14} color="var(--fg-tertiary)" />
-                  Vehicle data
+                  Mileage
                 </div>
                 <div className="od-cl-col-val">{r.odometer}</div>
-                <div className="od-cl-col-sub">Recorded: {r.status === "active" ? "Live update" : "Synced"}</div>
+                <div className="od-cl-col-sub">{r.latLng}</div>
               </div>
             </div>
             <div className="od-cl-divider" />
@@ -423,12 +475,13 @@ function ActivityTabs() {
 function App() {
   const [filter, setFilter] = useState({});
   const [chartScope, setChartScope] = useState("vehicle");
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
   const listRef = useRef(null);
 
   function handleFilter(next) {
     if (next.scope) setChartScope(next.scope);
     setFilter(next);
-    if (listRef.current) listRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (listRef.current) listRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   return (
@@ -438,10 +491,13 @@ function App() {
         <div className="mad-topbar">
           <OrgSwitcher orgs={D.orgs} initialId={D.org.id} />
           <div className="mad-topbar-spacer" />
-          <a className="mad-iconbtn mad-closebtn" href="../org-dashboard/index.html" aria-label="Close and return to organization dashboard">
+          <button className="mad-iconbtn mad-closebtn" onClick={() => setShowLeaveModal(true)} aria-label="Close">
             <Icon name="close" size={18} />
-          </a>
+          </button>
         </div>
+        {showLeaveModal && (
+          <LeaveConfirmModal onStay={() => setShowLeaveModal(false)} onLeave={() => { setShowLeaveModal(false); window.location.href = "../org-dashboard/index.html"; }} />
+        )}
         <div className="mad-content">
           <div className="mad-pagehead">
             <div>

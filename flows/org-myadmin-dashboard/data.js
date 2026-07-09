@@ -96,9 +96,9 @@ window.MYADMIN_DASH = {
   ],
 
   checkInOut: [
-    { vehicle: "STG0234", driver: "Ahmad Razali",  event: "check_in",  time: "9 Jun, 7:48 AM", odometer: "82,130 km",  status: "active" },
-    { vehicle: "WQM1190", driver: "Mohd Fadzli",   event: "check_out", time: "9 Jun, 6:12 AM", odometer: "71,904 km",  status: "completed" },
-    { vehicle: "JKM4521", driver: "Zainal Abidin", event: "check_in",  time: "8 Jun, 5:44 PM",  odometer: "64,020 km",  status: "active" },
-    { vehicle: "BCA8831", driver: "Kamal Hassan",  event: "check_out", time: "8 Jun, 3:45 PM",  odometer: "55,488 km",  status: "completed" },
+    { vehicle: "STG0234", driver: "Ahmad Razali",  event: "check_in",  time: "9 Jun, 7:48 AM", odometer: "82,130 km",  status: "active",    location: "PJ Hub Sentral",       latLng: "3.1073° N, 101.6067° E" },
+    { vehicle: "WQM1190", driver: "Mohd Fadzli",   event: "check_out", time: "9 Jun, 6:12 AM", odometer: "71,904 km",  status: "completed", location: "Shah Alam Depot",       latLng: "3.0733° N, 101.5185° E" },
+    { vehicle: "JKM4521", driver: "Zainal Abidin", event: "check_in",  time: "8 Jun, 5:44 PM",  odometer: "64,020 km",  status: "active",    location: "Port Klang Yard",       latLng: "2.9997° N, 101.3925° E" },
+    { vehicle: "BCA8831", driver: "Kamal Hassan",  event: "check_out", time: "8 Jun, 3:45 PM",  odometer: "55,488 km",  status: "completed", location: "KLIA Cargo Terminal",   latLng: "2.7456° N, 101.7099° E" },
   ],
 };
