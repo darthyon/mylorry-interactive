@@ -322,9 +322,6 @@ function ExportMenu({ comingSoon = false }) {
         <button className="ml-btn-soft" disabled style={{ opacity:0.5, cursor:"not-allowed" }}>
           <Icon name="download" size={18} /> Export <Icon name="expand_more" size={16} />
         </button>
-        <span style={{ position:"absolute", top:"calc(100% + 4px)", right:0, fontSize:11, color:"var(--fg-tertiary)", whiteSpace:"nowrap", background:"var(--bg-hover)", padding:"2px 8px", borderRadius:4 }}>
-          Coming soon
-        </span>
       </div>
     );
   }
@@ -487,6 +484,15 @@ const STATUS_BADGE_META = {
   mod_included: { label:"Included", cls:"mod-included" },
   mod_limited:  { label:"Limited",  cls:"mod-limited"  },
   mod_locked:   { label:"Locked",   cls:"mod-locked"   },
+  // Document expiry status (MyAdmin dashboard) — "expired" reuses the
+  // comm-expired vocab entry above.
+  due_soon:             { label:"Due soon",              cls:"quota-at-risk"    },
+  // Checklist endorsement status (MyAdmin dashboard)
+  pending_endorsement:  { label:"Pending endorsement",   cls:"quota-at-risk"    },
+  endorsed:             { label:"Endorsed",              cls:"acct-active"      },
+  // Check-in / check-out status (MyAdmin dashboard)
+  checkin_active:        { label:"Active",               cls:"acct-active"      },
+  checkin_completed:     { label:"Completed",            cls:"mod-included"     },
 };
 function StatusBadge({ status, prefix, label, fallback = "activated" }) {
   const m = STATUS_BADGE_META[status] || STATUS_BADGE_META[fallback] || { label: status, cls: "" };
