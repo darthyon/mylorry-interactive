@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Endorser Dashboard</title>
+<link rel="stylesheet" href="../../styles/tokens.css">
+<link rel="stylesheet" href="../../styles/components.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<style>
+/* ── Reset ──────────────────────────────────────────────────── */
+html,body{height:100%;margin:0;padding:0;}
+*,*::before,*::after{box-sizing:border-box;}
+body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);background:var(--bg-page,#F4F6F5);}
+.msr{font-family:'Material Symbols Rounded';font-style:normal;font-weight:400;line-height:1;vertical-align:middle;user-select:none;display:inline-flex;align-items:center;}
+
+/* ── Shell ──────────────────────────────────────────────────── */
+.ed-shell{display:grid;grid-template-columns:72px 1fr;min-height:100vh;}
+.ed-rail{position:sticky;top:0;align-self:start;height:100vh;background:#fff;border-right:1px solid var(--border-light);
+  display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 6px;}
+.ed-rail-logo{width:40px;height:40px;border-radius:12px;background:var(--gradient-brand);
+  display:flex;align-items:center;justify-content:center;margin-bottom:10px;flex-shrink:0;}
+.ed-rail-item{width:60px;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;border-radius:10px;cursor:pointer;color:var(--fg-tertiary);flex-shrink:0;border:none;background:none;font-family:var(--font-sans);}
+.ed-rail-item span:not(.msr){font-size:8.5px;text-align:center;line-height:1.1;}
+.ed-rail-item:hover{background:var(--bg-muted);color:var(--fg-secondary);}
+.ed-rail-item.active{background:var(--green-50);color:var(--green-600);}
+
+.ed-main{min-width:0;}
+.ed-topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;
+  padding:12px 24px;background:#fff;border-bottom:1px solid var(--border-light);}
+.ed-topbar-spacer{flex:1;}
+.ed-content{padding:22px 24px 48px;max-width:1480px;margin:0 auto;}
+
+/* ── Page head ──────────────────────────────────────────────── */
+.ed-pagehead{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px;flex-wrap:wrap;}
+.ed-pagetitle{font-size:20px;font-weight:600;color:var(--fg-primary);margin:0;}
+
+/* ── Subscription banner — sits inline in the page head, hugs its content ── */
+.ed-banner{display:flex;align-items:center;gap:16px;background:#fff;border:1px solid var(--border-light);
+  border-radius:var(--radius-md);padding:8px 14px;flex-shrink:0;}
+.ed-banner-planchip{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:var(--radius-pill);
+  background:var(--green-50);color:var(--green-600);font-size:12px;font-weight:600;flex-shrink:0;white-space:nowrap;}
+.ed-banner-div{width:1px;align-self:stretch;background:var(--border-light);}
+.ed-banner-meter{display:flex;flex-direction:column;gap:4px;}
+.ed-banner-meter-label{font-size:10px;font-weight:600;color:var(--fg-tertiary);text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;}
+.ed-banner-meter-row{display:flex;align-items:center;gap:7px;}
+.ed-banner-meter-val{font-size:12.5px;font-weight:600;color:var(--navy-800);white-space:nowrap;}
+.ed-banner-meter-track{width:48px;height:6px;background:var(--bg-muted);border-radius:999px;overflow:hidden;flex-shrink:0;}
+.ed-banner-meter-fill{height:100%;background:var(--green-500);border-radius:999px;transition:width .3s ease;}
+.ed-banner-meter-fill.full{background:var(--amber-500);}
+
+/* ── KPI row: 5 equal cards, no stat band, no fill ─────────────── */
+.ed-kpi-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:16px;align-items:stretch;}
+.ed-kpi-tile{cursor:pointer;}
+.ed-kpi-tile .ml-statcard{height:100%;cursor:pointer;}
+/* Sharpen the count/label hierarchy for this flow's narrower 1/5-width cards —
+   the shared default (24px count / 16px label) leaves the two competing for
+   attention; the count should read as the dominant number. */
+.ed-kpi-tile .ml-statcard-count{font-size:27px;}
+.ed-kpi-tile .ml-statcard-label{font-size:13px;white-space:normal;}
+
+/* ── Middle: chart (55%) + MTD (45%) ───────────────────────────── */
+.ed-midgrid{display:grid;grid-template-columns:1.9fr 1fr;gap:14px;margin-bottom:16px;align-items:stretch;}
+.ed-card{background:#fff;border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:18px;display:flex;flex-direction:column;}
+.ed-sec-title{font-size:15px;font-weight:600;color:var(--fg-primary);margin:0;}
+
+/* ── MTD card — rows distribute evenly across the card's full
+   (grid-stretched) height instead of clumping at the top ───────── */
+.ed-mtd{display:flex;flex-direction:column;flex:1;justify-content:space-evenly;margin-top:6px;}
+.ed-mtd-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;}
+.ed-mtd-label{font-size:12.5px;color:var(--fg-secondary);}
+.ed-mtd-value{font-size:14.5px;font-weight:600;color:var(--navy-800);}
+
+/* ── Trend chart ────────────────────────────────────────────── */
+.ed-chart{margin-top:10px;}
+.ed-chart-plotwrap{display:flex;gap:8px;}
+.ed-chart-yaxis{display:flex;flex-direction:column;justify-content:space-between;font-size:10.5px;color:var(--fg-tertiary);
+  height:130px;padding:2px 0;text-align:right;}
+.ed-chart-plot{position:relative;flex:1;height:130px;}
+.ed-bars{position:absolute;inset:0;display:flex;align-items:flex-end;gap:16px;padding:0 4px;border-bottom:1px solid var(--border-medium);}
+.ed-bar-col{position:relative;flex:1;height:100%;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;border-radius:4px;transition:background .15s;}
+.ed-bar-col:hover{background:rgba(0,0,0,.045);}
+.ed-bar-track{width:100%;max-width:26px;height:100%;display:flex;flex-direction:column-reverse;border-radius:4px 4px 0 0;overflow:hidden;}
+.ed-bar-seg{width:100%;}
+.ed-bar-seg.endorsed{background:var(--green-500);}
+.ed-bar-seg.rejected{background:var(--red-400);}
+.ed-bar-seg.overdue{background:var(--amber-500);}
+.ed-bar-tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) translateY(-10px);
+  background:#fff;padding:9px 13px;border:1px solid var(--border-light);border-radius:10px;
+  white-space:nowrap;z-index:10;box-shadow:0 6px 18px rgba(0,0,0,.12);text-align:left;}
+.ed-bar-tip-val{font-size:15px;font-weight:700;color:var(--navy-800);line-height:1.2;}
+.ed-bar-tip-row{font-size:11.5px;color:var(--fg-secondary);margin-top:3px;display:flex;align-items:center;gap:5px;}
+.ed-bar-tip-row .ed-dot{width:7px;height:7px;}
+.ed-chart-xaxis{display:flex;gap:8px;margin-left:calc(30px + 8px);margin-top:6px;}
+.ed-chart-xaxis span{flex:1;text-align:center;font-size:10.5px;color:var(--fg-tertiary);}
+.ed-chart-yaxis{width:30px;}
+.ed-chart-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-size:11.5px;color:var(--fg-secondary);}
+.ed-chart-legend span{display:inline-flex;align-items:center;gap:5px;}
+.ed-dot{width:8px;height:8px;border-radius:2px;display:inline-block;}
+.ed-dot.endorsed{background:var(--green-500);}
+.ed-dot.rejected{background:var(--red-400);}
+.ed-dot.overdue{background:var(--amber-500);}
+
+/* ── Checklist Queue ────────────────────────────────────────── */
+.ed-queue{margin-top:26px;}
+.ed-queue-head{margin-bottom:6px;}
+.ed-queue-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px;}
+.ed-queue-footer{display:flex;justify-content:center;margin-top:16px;}
+.ed-emptyrow{text-align:center;color:var(--fg-tertiary);padding:34px 12px;font-size:13px;}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width:1100px){
+  .ed-kpi-row{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .ed-midgrid{grid-template-columns:1fr;}
+  .ed-queue-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media (max-width:640px){
+  .ed-shell{grid-template-columns:64px 1fr;}
+  .ed-kpi-row{grid-template-columns:1fr;}
+  .ed-queue-grid{grid-template-columns:1fr;}
+  .ed-content{padding:16px 14px 40px;}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="../../shared/shared-shell.js?v=14"></script>
+<script src="data.js?v=14"></script>
+<script src="app.js?v=14"></script>
+</body>
+</html>
