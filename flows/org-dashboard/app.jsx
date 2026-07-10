@@ -351,6 +351,7 @@ function Modules({ tier }) {
           const moduleHref = m.state === "active"
             ? m.key === "myfuel" ? "../org-myfuel-dashboard/index.html"
             : m.key === "myadmin" ? "../org-myadmin-dashboard/index.html"
+            : m.key === "mytrip" ? "../org-mytrip-dashboard/index.html"
             : null
             : null;
           const body = (

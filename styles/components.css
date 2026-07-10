@@ -66,6 +66,15 @@
 .ml-badge.mod-limited   { background: var(--amber-50); color: var(--amber-600);   }
 .ml-badge.mod-locked    { background: #F0F0F2;         color: var(--fg-secondary); }
 
+/* Trip status (MyTrip dashboard). Vehicle statuses reuse trip-ongoing /
+   trip-pending; veh-idle is the quietest — idle is fact, not problem. */
+.ml-badge.trip-completed  { background: var(--green-50); color: var(--green-600);    }
+.ml-badge.trip-ongoing    { background: #EDEEF7;         color: var(--navy-800);     }
+.ml-badge.trip-pending    { background: #F0F0F2;         color: var(--fg-secondary); }
+.ml-badge.trip-paused     { background: var(--amber-50); color: var(--amber-600);    }
+.ml-badge.trip-terminated { background: #FFF0F0;         color: var(--red-400);      }
+.ml-badge.veh-idle        { background: #fff; border: 1px solid var(--border-medium); color: var(--fg-tertiary); }
+
 /* KPI Tier Chip — window.SharedShell.KpiTierChip */
 .ml-tierchip { font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 9999px; white-space: nowrap; }
 .ml-tierchip.good { background: var(--green-50); color: var(--green-600); }
@@ -86,6 +95,7 @@
 .ml-menu-item:hover { background: var(--bg-muted); }
 .ml-pager-center { display: flex; align-items: center; gap: 12px; }
 .ml-stat-icon { width: 30px; height: 30px; border-radius: 4px; background: var(--bg-muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ml-stat-icon.amber { background: var(--amber-50); }
 .ml-tab.active { color: var(--green-600); border-bottom-color: var(--green-500); }
 .ml-tab:hover { color: var(--fg-primary); }
 .ml-table tbody tr { cursor: pointer; transition: background .1s; }
@@ -106,8 +116,16 @@
 .ml-card { border: 1px solid var(--border-light); border-radius: var(--radius-lg); background: #fff; padding: 18px 22px 20px; }
 
 /* History Card — shared list item for top-up / rebate / activity history */
-.ml-history-card { border: 1px solid var(--border-light); border-radius: var(--radius-md); background: #fff; overflow: hidden; display: flex; flex-direction: column; }
+.ml-history-card { border: 1px solid var(--border-light); border-radius: var(--radius-md); background: #fff; overflow: hidden; display: flex; flex-direction: column; width: 100%; font: inherit; text-align: left; }
+.ml-history-card.clickable { cursor: pointer; transition: background .14s, border-color .14s; }
+.ml-history-card.clickable:hover { border-color: var(--border-medium); }
+.ml-history-card.clickable:hover .ml-history-card-head { background: var(--bg-hover); }
+.ml-history-card.clickable:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(0,170,79,.18); }
+.ml-history-card-meta { font-size: 12px; font-weight: 700; color: var(--fg-secondary); white-space: nowrap; }
 .ml-history-card-head { display: flex; align-items: center; gap: 10px; padding: 14px; background: #f9fafb; border-bottom: 1px solid var(--border-light); }
+/* no-body: card has no body section (just the header content), so there's
+   nothing for the tinted header to visually separate from — keep it white. */
+.ml-history-card.no-body .ml-history-card-head { background: #fff; border-bottom: none; }
 .ml-history-card-head-main { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
 .ml-history-card-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; color: var(--fg-primary); flex-shrink: 0; }
 .ml-history-card-prefix { flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
@@ -443,6 +461,12 @@
   display:flex; align-items:center; justify-content:center; color:var(--green-600); flex-shrink:0; }
 .ml-statcard-ico.amber { background:var(--amber-50); color:var(--amber-600); }
 .ml-statcard-ico.red   { background:#FCEBEC;         color:var(--red-400);  }
+.ml-statcard-ico.blue  { background:#EAF6FB;         color:var(--teal-600); }
+.ml-statcard-ico.gray  { background:#F0F0F2;         color:var(--fg-secondary); }
+.ml-statcard.clickable { cursor:pointer; }
+.ml-statcard.clickable:focus-visible { outline:none; box-shadow:0 0 0 3px rgba(0,170,79,.18); }
+.ml-statcard.attention { border-color:var(--amber-500); }
+.ml-statcard.attention .ml-statcard-count { color:var(--amber-600); }
 .ml-statcard-count { font-size:24px; font-weight:600; color:var(--fg-primary); letter-spacing:-.01em; line-height:1; }
 .ml-statcard-action {
   width:28px; height:28px; border-radius:50%; border:1px solid var(--border-light);
@@ -486,6 +510,12 @@
 
 /* Generic modal chrome (also used by org-dashboard's transaction-detail modal) */
 .od-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
+
+/* Generic Modal shell (window.SharedShell.Modal). Callers override
+   `className` for their own panel sizing/padding; this default matches the
+   modal-lift elevation vocabulary (rgba(0,0,0,.45) scrim, 0 8px 40px shadow). */
+.ml-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.ml-modal{background:#fff;border-radius:var(--radius-lg);width:100%;max-width:420px;padding:22px 24px 24px;box-shadow:0 8px 40px rgba(0,0,0,.18);}
 .od-modal{background:#fff;border-radius:var(--radius-lg);width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.18);}
 .od-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border-light);}
 .od-modal-title{font-size:15px;font-weight:600;color:var(--fg-primary);}

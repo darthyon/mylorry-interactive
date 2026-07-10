@@ -628,7 +628,7 @@ function VehicleViewSections({ form, nextManagedCount, scope }) {
     : `${remainingSlots} of ${scope.limit} slot${scope.limit === 1 ? "" : "s"} remaining`;
 
   return (
-    <>
+    <div className="ovl-form">
       <div className="ml-card ovl-form-card">
         <div className="hac-sec-header">
           <div>Vehicle details</div>
@@ -670,7 +670,7 @@ function VehicleViewSections({ form, nextManagedCount, scope }) {
           <ViewField label="Load capacity" value={form.capacity ? `${fmtNumber(form.capacity)} kg` : ""} />
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -1180,7 +1180,7 @@ function App() {
                     onChange={() => { setManagedOnly((current) => !current); setPage(1); }}
                   />
                   <span className="ovl-managed-filter-text">Managed Vehicles only</span>
-                  <span className="ovl-managed-count">{managedCount} / {scenario.limit}</span>
+                  <span className="ovl-managed-count">{managedCount} of {scenario.limit} slot{scenario.limit === 1 ? "" : "s"} used</span>
                 </label>
               </div>
 

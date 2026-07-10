@@ -295,11 +295,17 @@ function Pager({ page, perPage, total, onPage, onPerPage, perPageOptions = [10, 
 }
 
 /* ─── CardHead ──────────────────────────────────────────────── */
-function CardHead({ icon, title, sub, right }) {
+// tone — optional icon-chip variant ("amber" = attention cards: amber tint
+// bg + amber solid icon). Default stays the muted chip + green outline icon.
+const CARDHEAD_TONES = { amber: { color: "var(--amber-600)", fill: 1 } };
+function CardHead({ icon, title, sub, right, tone }) {
+  const t = CARDHEAD_TONES[tone];
   return (
     <div className="ml-cardhead">
       <div className="ml-cardhead-left">
-        <div className="ml-stat-icon"><Icon name={icon} size={18} color="#00AA4F" /></div>
+        <div className={"ml-stat-icon" + (tone ? " " + tone : "")}>
+          <Icon name={icon} size={18} color={t ? t.color : "#00AA4F"} fill={t ? t.fill : 0} />
+        </div>
         <div>
           <div className="ml-cardhead-title">{title}</div>
           {sub && <div className="ml-cardhead-sub">{sub}</div>}
@@ -404,16 +410,27 @@ function SummaryCard({ icon, title, sub, value, trend, accent }) {
 // extra — optional, plain body content rendered after trend/before the band,
 // no bg-subtle wrapper (e.g. Operating Cost's category-breakdown metadata,
 // which doesn't fit the equal-cell band once every category has data).
-function CountCard({ icon, count, label, sub, stats = [], fill = false, actionLabel, trend, children, extra, tone = "green" }) {
+// onClick — optional; makes the whole card an interactive drill-down target
+// (adds .clickable affordance + keyboard activation).
+// attention — optional; amber border + amber count color for "needs
+// attention" states (e.g. a paused/overdue count > 0). Independent of
+// `tone`, which only colors the icon chip.
+function CountCard({ icon, count, label, sub, stats = [], fill = false, actionLabel, trend, children, extra, tone = "green", onClick, attention = false }) {
+  const interactive = onClick ? {
+    onClick,
+    role: "button",
+    tabIndex: 0,
+    onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } },
+  } : {};
   return (
-    <div className={"ml-statcard" + (fill ? " fill" : "")}>
+    <div className={"ml-statcard" + (fill ? " fill" : "") + (onClick ? " clickable" : "") + (attention ? " attention" : "")} {...interactive}>
       <div className="ml-statcard-head">
         <div className="ml-statcard-main">
           <div className={"ml-statcard-ico " + tone}><Icon name={icon} size={20} fill={1} /></div>
           <div className="ml-statcard-count">{count}</div>
         </div>
         {actionLabel && (
-          <button className="ml-statcard-action" aria-label={actionLabel}>
+          <button className="ml-statcard-action" aria-label={actionLabel} tabIndex={onClick ? -1 : 0}>
             <Icon name="arrow_forward" size={15} />
           </button>
         )}
@@ -493,6 +510,17 @@ const STATUS_BADGE_META = {
   // Check-in / check-out status (MyAdmin dashboard)
   checkin_active:        { label:"Active",               cls:"acct-active"      },
   checkin_completed:     { label:"Completed",            cls:"mod-included"     },
+  // Trip status (MyTrip dashboard) — trip-level lifecycle
+  trip_completed:  { label:"Completed",  cls:"trip-completed"  },
+  trip_ongoing:    { label:"Ongoing",    cls:"trip-ongoing"    },
+  trip_pending:    { label:"Pending",    cls:"trip-pending"    },
+  trip_paused:     { label:"Paused",     cls:"trip-paused"     },
+  trip_terminated: { label:"Terminated", cls:"trip-terminated" },
+  // Vehicle status (MyTrip fleet-status lens) — vehicle-level, deliberately
+  // separate vocabulary from trip status so the two never blur.
+  veh_in_progress: { label:"In Progress",            cls:"trip-ongoing" },
+  veh_idle:        { label:"Idle",                   cls:"veh-idle"     },
+  veh_assigned:    { label:"Assigned – Not Started", cls:"trip-pending" },
 };
 function StatusBadge({ status, prefix, label, fallback = "activated" }) {
   const m = STATUS_BADGE_META[status] || STATUS_BADGE_META[fallback] || { label: status, cls: "" };
@@ -662,10 +690,41 @@ function PetronLogo({ size = 16 }) {
   );
 }
 
+/* ─── Modal (generic backdrop + esc/backdrop-close shell) ───────
+   Portal-rendered dialog shell: escape key and backdrop-click both call
+   `onClose`. Caller owns all inner content/styling via `children` and can
+   override the backdrop/panel classNames — this only wires the boilerplate
+   (portal, esc listener, backdrop mousedown) so flow-specific modals don't
+   each reimplement it. `ConfirmBulkModal` predates this and is left as-is
+   (different call sites, no need to churn working code); new modals should
+   build on this instead. */
+function Modal({ onClose, ariaLabel, backdropClassName = "ml-modal-backdrop", className = "ml-modal", children }) {
+  const wrapRef = React.useRef(null);
+  React.useEffect(() => {
+    function onKey(e) { if (e.key === "Escape") onClose(); }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  function onBackdrop(e) { if (e.target === wrapRef.current) onClose(); }
+  return ReactDOM.createPortal(
+    <div className={backdropClassName} ref={wrapRef} onMouseDown={onBackdrop} role="dialog" aria-modal="true" aria-label={ariaLabel}>
+      <div className={className}>{children}</div>
+    </div>,
+    document.body
+  );
+}
+
 /* ─── History Card ────────────────────────────────────────────── */
-function HistoryCard({ icon, prefix, title, subtitle, status, action, children }) {
+// onClick — optional; whole card becomes a button (same interactive-affordance
+// pattern as CountCard: role/tabIndex/Enter-Space handled by the native
+// <button>, .clickable class for hover/cursor styling).
+// meta — optional trailing content in the header-right slot, alongside (or
+// instead of) `status`/`action` — e.g. a duration or timestamp.
+function HistoryCard({ icon, prefix, title, subtitle, status, action, meta, onClick, children }) {
+  const Tag = onClick ? "button" : "article";
+  const interactive = onClick ? { type: "button", onClick } : {};
   return (
-    <article className="ml-history-card">
+    <Tag className={"ml-history-card" + (onClick ? " clickable" : "") + (!children ? " no-body" : "")} {...interactive}>
       <div className="ml-history-card-head">
         <div className="ml-history-card-head-main">
           {prefix ? (
@@ -682,13 +741,12 @@ function HistoryCard({ icon, prefix, title, subtitle, status, action, children }
         </div>
         <div className="ml-history-card-head-right">
           {status && <StatusBadge status={status} />}
+          {meta && <span className="ml-history-card-meta">{meta}</span>}
           {action}
         </div>
       </div>
-      <div className="ml-history-card-body">
-        {children}
-      </div>
-    </article>
+      {children && <div className="ml-history-card-body">{children}</div>}
+    </Tag>
   );
 }
 
@@ -830,7 +888,7 @@ window.SharedShell = {
   Pill, CurrencyPill, SummaryCard, CountCard, KpiTierChip,
   StatusBadge, AccountStatusBadge, KPIProgress, KPIProgressMeta,
   LockSection, PetronLogo, HistoryCard, FeatureTabShell, OrgSwitcher, SelectMenu,
-  CalcPopover, ChecklistCard, ConfirmBulkModal,
+  CalcPopover, ChecklistCard, ConfirmBulkModal, Modal,
 };
 window.KPIProgressMeta = KPIProgressMeta;
 }

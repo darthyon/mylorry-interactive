@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyTrip Dashboard — Org Portal</title>
+<link rel="stylesheet" href="../../styles/tokens.css">
+<link rel="stylesheet" href="../../styles/components.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<style>
+html,body{height:100%;margin:0;padding:0;}
+*,*::before,*::after{box-sizing:border-box;}
+body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);background:#fff;}
+.msr{font-family:'Material Symbols Rounded';font-style:normal;font-weight:400;line-height:1;vertical-align:middle;user-select:none;display:inline-flex;align-items:center;}
+
+/* ── Module shell (rail pattern shared with MyAdmin) ─────────── */
+.mt-shell{display:grid;grid-template-columns:72px 1fr;min-height:100vh;background:#fff;}
+.mt-rail-wrap{position:sticky;top:0;align-self:start;height:100vh;z-index:25;}
+.mt-rail{height:100%;background:#fff;border-right:1px solid var(--border-light);display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 6px;overflow-y:auto;width:72px;transition:width .18s ease,box-shadow .18s ease;}
+.mt-rail::-webkit-scrollbar{width:0;}
+.mt-rail.expanded{width:220px;align-items:stretch;box-shadow:4px 0 16px rgba(0,0,0,.08);}
+.mt-rail-profile{display:flex;align-items:center;gap:4px;margin-bottom:12px;padding:6px 4px;border-radius:10px;cursor:pointer;transition:background .14s;}
+.mt-rail-profile:hover{background:var(--bg-muted);}
+.mt-rail.expanded .mt-rail-profile{flex-direction:row;align-items:center;gap:10px;cursor:default;}
+.mt-rail-avatar-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.mt-rail-avatar{width:32px;height:32px;border-radius:50%;background:rgb(223,234,239);display:flex;align-items:center;justify-content:center;}
+.mt-rail-badge{border-radius:12px;background:var(--gradient-brand);padding:1px 5px;font-size:6px;font-weight:700;color:#fff;line-height:1.6;letter-spacing:0.5px;text-transform:uppercase;}
+.mt-rail-profile-text{display:flex;flex-direction:column;gap:2px;overflow:hidden;min-width:0;}
+.mt-rail-profile-role{font-size:10px;font-weight:600;letter-spacing:.04em;color:var(--fg-tertiary);white-space:nowrap;}
+.mt-rail-profile-name{font-size:14px;font-weight:600;color:var(--fg-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mt-rail-item{width:60px;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:10px;cursor:pointer;color:var(--fg-tertiary);flex-shrink:0;text-decoration:none;padding:6px 2px;border:none;background:transparent;font-family:inherit;}
+.mt-rail-item span:not(.msr){font-size:8.5px;text-align:center;line-height:1.15;max-width:100%;}
+.mt-rail-item:hover{background:var(--bg-muted);color:var(--fg-secondary);}
+.mt-rail-item.active{background:var(--green-50);color:var(--green-600);}
+.mt-rail.expanded .mt-rail-item{flex-direction:row;justify-content:flex-start;width:100%;padding:10px 8px;gap:10px;}
+.mt-rail.expanded .mt-rail-item span:not(.msr){font-size:13px;text-align:left;max-width:none;}
+.mt-rail-divider{background:#f6f6f6;height:1px;width:100%;margin:8px 0;flex-shrink:0;}
+.mt-rail-footer{display:flex;flex-direction:column;gap:2px;width:100%;margin-top:auto;flex-shrink:0;}
+.mt-rail-signout{color:#D55F5A;}
+.mt-rail-toggle{position:absolute;top:34px;left:57px;width:28px;height:28px;border-radius:8px;background:#fff;border:1px solid var(--border-light);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:26;box-shadow:0 2px 6px rgba(0,0,0,.06);color:var(--fg-secondary);transition:left .18s ease;}
+.mt-rail-wrap.expanded .mt-rail-toggle{left:205px;}
+.mt-main{min-width:0;background:#fff;}
+.mt-topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;padding:12px 24px;background:#fff;border-bottom:1px solid var(--border-light);}
+.mt-topbar-spacer{flex:1;}
+.mt-iconbtn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border-light);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--fg-secondary);flex-shrink:0;}
+.mt-closebtn{text-decoration:none;border:none;background:var(--bg-muted);border-radius:8px;}
+.mt-closebtn:hover{background:var(--bg-hover);color:var(--fg-primary);}
+
+/* Leave confirmation modal */
+.mt-leave-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.mt-leave-modal{background:#fff;border-radius:var(--radius-lg);width:100%;max-width:380px;padding:22px 24px 24px;box-shadow:0 8px 40px rgba(0,0,0,.18);text-align:center;}
+.mt-leave-title{font-size:17px;font-weight:600;color:var(--fg-primary);margin-bottom:8px;}
+.mt-leave-msg{font-size:13px;line-height:1.5;color:var(--fg-secondary);margin-bottom:22px;}
+.mt-leave-actions{display:flex;gap:10px;justify-content:center;}
+.mt-leave-actions button{height:38px;padding:0 16px;border-radius:8px;font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:background .15s;}
+.mt-leave-stay{background:var(--bg-muted);color:var(--fg-primary);}
+.mt-leave-stay:hover{background:var(--bg-hover);}
+.mt-leave-exit{background:var(--green-600);color:#fff;}
+.mt-leave-exit:hover{background:#009945;}
+.mt-content{padding:22px 24px 48px;margin:0 auto;}
+.mt-pagehead{margin-bottom:18px;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+.mt-title{font-size:20px;font-weight:600;color:var(--fg-primary);margin:0;}
+.mt-subtitle{margin-top:6px;font-size:13px;color:var(--fg-secondary);}
+.mt-back{display:inline-flex;align-items:center;gap:6px;border:none;background:transparent;padding:0 0 10px;color:var(--fg-secondary);font:600 13px var(--font-sans);cursor:pointer;}
+.mt-back:hover{color:var(--fg-primary);}
+
+/* ── Dashboard: KPI row ──────────────────────────────────────── */
+.mt-kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px;align-items:stretch;}
+
+/* ── Dashboard: chart + paused split ─────────────────────────── */
+.mt-band{display:grid;grid-template-columns:minmax(0,3fr) minmax(300px,2fr);gap:16px;align-items:stretch;margin-bottom:16px;}
+.mt-card{background:#fff;border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:18px;display:flex;flex-direction:column;min-width:0;}
+/* Unboxed section — same anatomy as .mt-card (CardHead + content) but no
+   border/bg/padding. For single-purpose pages (Schedule) where the section
+   already fills the page; a bordered box around it would just be nesting
+   a card inside the page for no reason. */
+.mt-section{display:flex;flex-direction:column;min-width:0;}
+.mt-chart-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.mt-dot{width:8px;height:8px;border-radius:2px;display:inline-block;flex-shrink:0;}
+.mt-chart-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:11.5px;color:var(--fg-secondary);}
+.mt-chart-legend span{display:inline-flex;align-items:center;gap:5px;}
+/* Horizontal assigned/completed bar rows */
+.mt-hbar-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;flex-wrap:wrap;}
+.mt-hbar-count{font-size:12px;color:var(--fg-tertiary);white-space:nowrap;font-variant-numeric:tabular-nums;}
+.mt-hbar-list{display:flex;flex-direction:column;gap:4px;margin-top:10px;}
+.mt-hbar-row{display:grid;grid-template-columns:118px 1fr 74px;align-items:center;gap:12px;border:none;background:transparent;padding:8px 8px;margin:0 -8px;cursor:pointer;font-family:inherit;text-align:left;border-radius:8px;transition:background .14s;}
+.mt-hbar-row:hover{background:var(--bg-subtle);}
+.mt-hbar-label{font-size:13px;font-weight:700;color:var(--fg-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mt-hbar-track{position:relative;height:18px;background:var(--bg-muted);border-radius:999px;transition:background .14s;}
+.mt-hbar-row:hover .mt-hbar-track{background:#EBEBEE;}
+.mt-hbar-group{position:relative;display:flex;height:100%;border-radius:3px;overflow:hidden;}
+.mt-hbar-fill{height:100%;flex-shrink:0;}
+.mt-hbar-fill.assigned{background:#0081AA;}
+.mt-hbar-fill.completed{background:var(--green-500);}
+.mt-hbar-tip{position:absolute;bottom:100%;left:0;transform:translateY(-10px);background:#fff;padding:9px 13px;border:1px solid var(--border-light);border-radius:10px;white-space:nowrap;z-index:10;box-shadow:0 6px 18px rgba(0,0,0,.12);text-align:left;pointer-events:none;}
+.mt-hbar-tip-val{font-size:13px;font-weight:700;color:var(--navy-800);line-height:1.2;}
+.mt-hbar-tip-row{font-size:11.5px;color:var(--fg-secondary);margin-top:3px;display:flex;align-items:center;gap:5px;}
+.mt-hbar-val{font-size:12.5px;font-weight:600;color:var(--fg-secondary);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.mt-hbar-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;}
+
+/* Paused card — rows render via shared HistoryCard */
+.mt-paused-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.mt-empty{padding:28px 12px;text-align:center;color:var(--fg-tertiary);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:8px;}
+.mt-card-footer{display:flex;justify-content:center;margin-top:auto;padding-top:14px;}
+
+/* Dashboard: Today's operations — labeled fleet mini-timeline */
+.mt-ops{display:flex;flex-direction:column;margin-top:12px;border:1px solid var(--border-light);border-radius:12px;overflow:hidden;}
+.mt-ops-axis,.mt-ops-row{display:grid;grid-template-columns:170px 1fr 76px;align-items:center;gap:12px;}
+.mt-ops-axis{background:var(--bg-subtle);border-bottom:1px solid var(--border-light);min-height:26px;}
+.mt-ops-axis-track{position:relative;height:26px;}
+.mt-ops-tick{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:9.5px;font-weight:600;color:var(--fg-tertiary);white-space:nowrap;}
+.mt-ops-row{border:none;background:#fff;padding:0;font-family:inherit;text-align:left;cursor:pointer;min-height:38px;transition:background .14s;}
+.mt-ops-row + .mt-ops-row{border-top:1px solid var(--border-light);}
+.mt-ops-row:hover{background:var(--bg-subtle);}
+.mt-ops-veh{display:flex;align-items:center;gap:8px;min-width:0;padding:5px 0 5px 12px;}
+.mt-ops-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.mt-ops-dot.in_progress{background:#0081AA;}
+.mt-ops-dot.assigned{background:var(--amber-500);}
+.mt-ops-dot.idle{background:var(--border-medium);}
+.mt-ops-veh-copy{display:flex;flex-direction:column;gap:1px;min-width:0;}
+.mt-ops-plate{font-size:12px;font-weight:700;color:var(--fg-primary);white-space:nowrap;}
+.mt-ops-driver{font-size:10.5px;color:var(--fg-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mt-ops-lane{position:relative;height:100%;min-height:38px;display:block;}
+.mt-ops-grid{position:absolute;top:0;bottom:0;width:1px;background:var(--border-light);opacity:.6;}
+.mt-ops-now{position:absolute;top:0;bottom:0;width:2px;background:var(--red-400);z-index:3;}
+.mt-now-line{display:inline-block;width:2px;height:12px;background:var(--red-400);flex-shrink:0;}
+.mt-ops-bar{position:absolute;top:50%;transform:translateY(-50%);height:12px;border-radius:3px;z-index:2;}
+.mt-ops-bar.completed{background:var(--green-500);}
+.mt-ops-bar.assigned{background:#0081AA;}
+.mt-ops-bar.terminated{background:var(--red-400);}
+.mt-ops-frac{font-size:11px;font-weight:600;color:var(--fg-secondary);text-align:right;padding-right:12px;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.mt-ops-tip{position:fixed;transform:translate(-50%,-100%);background:#fff;padding:9px 13px;border:1px solid var(--border-light);border-radius:10px;white-space:nowrap;z-index:300;box-shadow:0 6px 18px rgba(0,0,0,.12);text-align:left;pointer-events:none;}
+.mt-ops-tip-val{font-size:13px;font-weight:700;color:var(--navy-800);line-height:1.2;}
+.mt-ops-tip-row{font-size:11.5px;color:var(--fg-secondary);margin-top:3px;}
+.mt-ops-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;}
+.mt-ops-links{display:flex;gap:16px;}
+/* .roomy — Schedule page density: taller rows. Row itself opens the
+   vehicle's current trip; each bar is its own button (stops propagation)
+   opening that specific trip instead. */
+.mt-ops.roomy .mt-ops-row{min-height:46px;}
+.mt-ops.roomy .mt-ops-plate{font-size:13px;}
+.mt-ops.roomy .mt-ops-bar{height:16px;border-radius:4px;border:none;padding:0;cursor:pointer;transition:filter .14s,box-shadow .14s;}
+.mt-ops.roomy .mt-ops-bar:hover{filter:brightness(1.1);box-shadow:0 2px 8px rgba(0,0,0,.18);}
+.mt-ops.roomy .mt-ops-bar:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(0,129,170,.25);}
+
+/* ── Trips page ──────────────────────────────────────────────── */
+.mt-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center;}
+.mt-chip{display:inline-flex;align-items:center;gap:6px;background:var(--green-50);color:var(--green-700);border:1px solid var(--green-200);border-radius:999px;padding:5px 8px 5px 12px;font-size:12px;font-weight:600;}
+.mt-chip button{border:none;background:transparent;padding:0;display:flex;align-items:center;cursor:pointer;color:inherit;border-radius:50%;}
+.mt-chip button:hover{background:rgba(0,0,0,.06);}
+.mt-chips-clear{border:none;background:transparent;padding:5px 8px;font:600 12px var(--font-sans);color:var(--fg-secondary);cursor:pointer;border-radius:8px;}
+.mt-chips-clear:hover{background:var(--bg-muted);color:var(--fg-primary);}
+.mt-table-row{cursor:pointer;}
+.mt-table-row:hover td{background:var(--bg-subtle);}
+.mt-cell-link{border:none;background:transparent;padding:0;font:600 13px var(--font-sans);color:var(--fg-primary);cursor:pointer;text-align:left;}
+.mt-cell-link:hover{text-decoration:underline;}
+.mt-cell-sub{margin-top:2px;font-size:11px;color:var(--fg-tertiary);}
+.mt-cell-muted{color:var(--fg-tertiary);}
+/* Standalone link variant — used where the value is the only clickable
+   thing in its field (e.g. Trip Detail's info grid), so it needs visible
+   link color. Table cells stay plain (.mt-cell-link) since the row itself
+   is already the primary click target there. Navy matches the existing
+   .ml-btn-text-blue hyperlink convention. */
+.mt-info-link{border:none;background:transparent;padding:0;font:700 13.5px var(--font-sans);color:var(--navy-800);cursor:pointer;text-align:left;}
+.mt-info-link:hover{color:var(--navy-900);text-decoration:underline;}
+
+/* ── Schedule page (shares .mt-ops timeline; .roomy = page density) ── */
+.mt-tl-veh-plate{border:none;background:transparent;padding:0;font:700 13px var(--font-sans);color:var(--fg-primary);cursor:pointer;}
+.mt-tl-veh-plate:hover{text-decoration:underline;}
+.mt-tl-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:11.5px;color:var(--fg-secondary);}
+.mt-tl-legend span{display:inline-flex;align-items:center;gap:5px;}
+.mt-custom-range{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--fg-secondary);}
+.mt-custom-range input{font:inherit;border:1px solid var(--border-light);border-radius:8px;padding:6px 8px;color:var(--fg-primary);}
+.mt-sched-toolbar{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap;}
+.mt-search{display:flex;align-items:center;gap:7px;border:1px solid var(--border-medium);border-radius:4px;background:#fff;padding:0 10px;flex:0 1 260px;min-width:180px;}
+.mt-search input{border:none;outline:none;background:transparent;font:13px var(--font-sans);color:var(--fg-primary);padding:9px 0;width:100%;}
+.mt-search input::placeholder{color:var(--fg-tertiary);}
+.mt-search:focus-within{border-color:var(--green-500);box-shadow:0 0 5px rgba(0,0,0,.08);}
+
+/* Mobile timeline list fallback */
+.mt-tl-mobile{display:none;flex-direction:column;gap:12px;margin-top:14px;}
+.mt-tlm-card{border:1px solid var(--border-light);border-radius:12px;padding:12px 14px;}
+.mt-tlm-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;}
+.mt-tlm-trips{display:flex;flex-direction:column;gap:6px;}
+.mt-tlm-trip{display:flex;align-items:center;gap:10px;border:none;background:var(--bg-subtle);border-radius:8px;padding:9px 12px;cursor:pointer;font-family:inherit;text-align:left;width:100%;}
+.mt-tlm-trip:hover{background:var(--bg-muted);}
+.mt-tlm-trip .ml-badge{flex-shrink:0;}
+.mt-tlm-time{font-size:11.5px;font-weight:700;color:var(--fg-secondary);width:130px;flex-shrink:0;}
+.mt-tlm-id{font-size:12.5px;font-weight:600;color:var(--fg-primary);flex:1;}
+
+/* ── Trip detail ─────────────────────────────────────────────── */
+.mt-detail-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(300px,2fr);gap:16px;align-items:start;}
+.mt-detail-head-badges{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.mt-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px;margin-top:14px;}
+.mt-info-field{min-width:0;}
+.mt-info-label{font-size:11px;font-weight:600;color:var(--fg-tertiary);}
+.mt-info-value{margin-top:3px;font-size:13.5px;font-weight:600;color:var(--fg-primary);}
+.mt-route{display:flex;flex-direction:column;gap:0;margin-top:14px;}
+.mt-route-stop{display:flex;gap:12px;}
+.mt-route-marker{display:flex;flex-direction:column;align-items:center;width:16px;flex-shrink:0;}
+.mt-route-dot{width:10px;height:10px;border-radius:50%;border:2.5px solid var(--green-500);background:#fff;flex-shrink:0;margin-top:4px;}
+.mt-route-dot.dest{border-color:var(--navy-800);background:var(--navy-800);}
+.mt-route-line{width:2px;flex:1;background:var(--border-medium);min-height:22px;}
+.mt-route-copy{padding-bottom:18px;min-width:0;}
+.mt-route-name{font-size:13.5px;font-weight:700;color:var(--fg-primary);}
+.mt-route-sub{margin-top:2px;font-size:11.5px;color:var(--fg-secondary);}
+.mt-map{margin-top:14px;height:190px;border-radius:12px;border:1px solid var(--border-light);background:
+  linear-gradient(rgba(148,168,178,.12) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(148,168,178,.12) 1px,transparent 1px),
+  linear-gradient(160deg,#EEF4F1 0%,#E5EEF2 100%);
+  background-size:28px 28px,28px 28px,cover;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.mt-map-pin{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--fg-secondary);font-size:11.5px;font-weight:600;}
+.mt-map-truck{width:38px;height:38px;border-radius:50%;background:var(--green-600);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,170,79,.4);}
+.mt-events{display:flex;flex-direction:column;gap:0;margin-top:14px;}
+.mt-event{display:flex;gap:12px;}
+.mt-event-rail{display:flex;flex-direction:column;align-items:center;width:26px;flex-shrink:0;}
+.mt-event-ico{width:26px;height:26px;border-radius:50%;background:var(--bg-subtle);color:var(--fg-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.mt-event-line{width:2px;flex:1;background:var(--border-light);min-height:14px;}
+.mt-event-copy{padding-bottom:16px;min-width:0;}
+.mt-event-label{font-size:12.5px;font-weight:600;color:var(--fg-primary);}
+.mt-event-time{margin-top:2px;font-size:11px;color:var(--fg-tertiary);}
+.mt-eta-strip{margin-top:14px;border:1px solid var(--green-200);background:var(--green-50);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;}
+.mt-eta-strip .msr{color:var(--green-600);}
+.mt-eta-label{font-size:11px;font-weight:600;color:var(--fg-secondary);}
+.mt-eta-value{margin-top:2px;font-size:15px;font-weight:700;color:var(--green-700);}
+.mt-pause-note{margin-top:14px;border:1px solid var(--amber-500);background:var(--amber-50);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start;font-size:12.5px;color:var(--amber-600);}
+
+/* ── Share modal ─────────────────────────────────────────────── */
+.mt-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.mt-modal{background:#fff;border-radius:var(--radius-lg);width:100%;max-width:440px;padding:22px 24px 24px;box-shadow:0 8px 40px rgba(0,0,0,.18);}
+.mt-modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;}
+.mt-modal-title{font-size:16px;font-weight:700;color:var(--fg-primary);}
+.mt-modal-close{border:none;background:transparent;cursor:pointer;color:var(--fg-secondary);padding:4px;border-radius:8px;display:flex;}
+.mt-modal-close:hover{background:var(--bg-muted);}
+.mt-modal-sub{font-size:12.5px;color:var(--fg-secondary);line-height:1.5;margin-bottom:16px;}
+.mt-share-url{display:flex;gap:8px;align-items:center;}
+.mt-share-url input{flex:1;min-width:0;font:600 12.5px var(--font-mono,monospace);border:1px solid var(--border-light);border-radius:10px;padding:10px 12px;color:var(--fg-primary);background:var(--bg-subtle);}
+.mt-share-actions{display:flex;gap:10px;margin-top:14px;}
+.mt-share-wa{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:10px;background:#25D366;color:#fff;font:700 13px var(--font-sans);padding:11px 14px;cursor:pointer;}
+.mt-share-wa:hover{background:#1FB858;}
+.mt-share-scope{margin-top:16px;border-top:1px solid var(--border-light);padding-top:14px;display:flex;flex-direction:column;gap:8px;}
+.mt-share-scope-row{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--fg-secondary);line-height:1.45;}
+.mt-share-scope-row .msr{color:var(--green-600);flex-shrink:0;margin-top:1px;}
+.mt-share-preview-link{margin-top:14px;text-align:center;}
+
+/* ── Public tracking view ────────────────────────────────────── */
+.mt-public{min-height:100vh;background:var(--bg-subtle);display:flex;flex-direction:column;align-items:center;}
+.mt-public-topbar{width:100%;background:var(--gradient-brand);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:10px;}
+.mt-public-topbar b{font-size:15px;}
+.mt-public-topbar span{font-size:11.5px;opacity:.85;}
+.mt-public-body{width:100%;max-width:520px;padding:20px 16px 48px;display:flex;flex-direction:column;gap:14px;}
+.mt-public-card{background:#fff;border:1px solid var(--border-light);border-radius:14px;padding:16px;}
+.mt-public-map{height:260px;position:relative;}
+.mt-public-card.mt-public-map{background:
+  linear-gradient(rgba(148,168,178,.12) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(148,168,178,.12) 1px,transparent 1px),
+  linear-gradient(160deg,#EEF4F1 0%,#E5EEF2 100%);
+  background-size:28px 28px,28px 28px,cover;}
+.mt-public-exit{margin:10px auto 0;}
+.mt-public-eta{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.mt-public-eta-num{font-size:22px;font-weight:700;color:var(--green-700);}
+.mt-public-note{text-align:center;font-size:11px;color:var(--fg-tertiary);line-height:1.5;padding:0 12px;}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width:1023px){
+  .mt-shell{grid-template-columns:1fr;}
+  .mt-rail-wrap{position:fixed;left:50%;bottom:16px;top:auto;transform:translateX(-50%);height:auto;z-index:60;}
+  .mt-rail,.mt-rail.expanded{width:auto;height:auto;flex-direction:row;gap:4px;padding:6px;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border:1px solid var(--border-light);border-radius:999px;box-shadow:0 8px 28px rgba(0,0,0,.16);align-items:center;}
+  .mt-rail-profile,.mt-rail-toggle,.mt-rail-divider,.mt-rail-footer{display:none;}
+  .mt-rail-item,.mt-rail.expanded .mt-rail-item{min-height:auto;width:auto;flex-direction:row;gap:6px;padding:9px 14px;border-radius:999px;}
+  .mt-rail-item span:not(.msr),.mt-rail.expanded .mt-rail-item span:not(.msr){font-size:11px;}
+  .mt-rail-item:not(.active) span:not(.msr){display:none;}
+  .mt-topbar{padding:10px 14px;}
+  .mt-content{padding:16px 14px 96px;}
+  .mt-kpi-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+  .mt-band,.mt-detail-grid{grid-template-columns:1fr;}
+  .mt-hbar-row{grid-template-columns:92px 1fr 66px;gap:8px;}
+  .mt-chart-controls{width:100%;}
+  .mt-chart-controls .ml-seg{display:flex;flex:1;}
+  .mt-chart-controls .ml-seg-btn{flex:1;}
+  .mt-ops-axis,.mt-ops-row{grid-template-columns:104px 1fr 60px;gap:8px;}
+  .mt-ops-driver{display:none;}
+}
+@media (max-width:760px){
+  .mt-ops.roomy{display:none;}
+  .mt-card .mt-ops.roomy ~ .mt-tl-legend{display:none;}
+  .mt-tl-mobile{display:flex;}
+  .mt-info-grid{grid-template-columns:1fr;}
+  .mt-chart-xaxis span{font-size:8.5px;}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="../../shared/shared-shell.js?v=20260710a"></script>
+<script src="data.js?v=20260710a"></script>
+<script src="app.js?v=20260710a"></script>
+</body>
+</html>

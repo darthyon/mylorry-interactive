@@ -55,6 +55,20 @@ mount("acctStatus", <>
   <AccountStatusBadge status="terminated" />
 </>);
 
+mount("tripStatus", <>
+  <StatusBadge status="trip_completed" />
+  <StatusBadge status="trip_ongoing" />
+  <StatusBadge status="trip_pending" />
+  <StatusBadge status="trip_paused" />
+  <StatusBadge status="trip_terminated" />
+</>);
+
+mount("vehStatus", <>
+  <StatusBadge status="veh_in_progress" />
+  <StatusBadge status="veh_idle" />
+  <StatusBadge status="veh_assigned" />
+</>);
+
 document.getElementById("payoutStatus").innerHTML = `
   <span class="ml-badge payout-pending">Pending</span>
   <span class="ml-badge payout-approved">Approved</span>
@@ -77,6 +91,18 @@ mount("countCards", <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
         { n: 5, label: "On duty", tone: "green" },
         { n: 8, label: "Off duty", tone: "gray" },
       ]} />
+  </div>
+  <div style={{ width: 200 }}>
+    <CountCard icon="local_shipping" count={5} label="Ongoing" tone="blue"
+      actionLabel="View ongoing trips" onClick={() => {}} />
+  </div>
+  <div style={{ width: 200 }}>
+    <CountCard icon="schedule" count={4} label="Pending" tone="gray"
+      actionLabel="View pending trips" onClick={() => {}} />
+  </div>
+  <div style={{ width: 200 }}>
+    <CountCard icon="pause_circle" count={2} label="Paused" sub="needs attention" tone="amber" attention
+      actionLabel="View paused trips" onClick={() => {}} />
   </div>
 </div>);
 
@@ -132,6 +158,13 @@ mount("historyCards", <div style={{ display: "grid", gridTemplateColumns: "repea
       <div className="ml-history-card-cell" style={{ textAlign: "right" }}><StatusBadge status="completed" /></div>
     </div>
   </HistoryCard>
+  <HistoryCard
+    prefix={<div className="ml-stat-icon amber"><span className="msr" style={{ fontSize: 18, color: "var(--amber-600)" }}>pause_circle</span></div>}
+    title="BMA 8830 · Faizal Rahman"
+    subtitle="Shah Alam Hub → Nilai Industrial Park"
+    meta="2h 23m"
+    onClick={() => {}}
+  />
 </div>);
 mount("lockPremium", <LockSection locked tier="premium" cta="Unlock MyTrip"
   note="Track trip progress and driver locations in real time.">{lockDemo}</LockSection>);

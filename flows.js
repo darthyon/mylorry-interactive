@@ -56,6 +56,20 @@ window.FLOWS = {
           ],
         },
         {
+          id: "org-mytrip-dashboard",
+          name: "MyTrip — Dashboard",
+          status: "ready",
+          route: "flows/org-mytrip-dashboard/index.html",
+          desc: "Org Portal MyTrip module — trip KPIs, paused-trip triage, assigned vs completed per vehicle/driver, trips + fleet status tables, schedule timeline, trip detail with customer tracking share link. Premium only.",
+          screens: [
+            { label: "Dashboard", note: "KPI cards (Completed/Ongoing/Pending/Paused, clickable), Assigned vs Completed chart with Vehicle/Driver toggle + Today/MTD/6mo, Paused trips card, schedule preview." },
+            { label: "Trips", note: "Trips tab (filter chips from KPI/bar clicks, row → detail) + Fleet Status tab (In Progress / Idle / Assigned – Not Started)." },
+            { label: "Schedule", note: "Vehicle swim-lane timeline, Today/Tomorrow/Custom, Completed/Assigned/Terminated bars, now-line, bar → trip detail. Vertical list on mobile." },
+            { label: "Trip Detail", note: "Route, ETA, activity timeline, map placeholder, paused/terminated callouts. Share tracking link modal → WhatsApp + scope notes." },
+            { label: "Customer view", note: "Public single-trip tracking page mock — location, trip info, ETA only. Reached via share modal preview." },
+          ],
+        },
+        {
           id: "org-subscription-profile",
           name: "Organisation Profile",
           status: "ready",

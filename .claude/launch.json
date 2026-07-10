@@ -8,5 +8,6 @@
       "port": 8000,
       "autoPort": true
     }
-  ]
+  ],
+  "autoVerify": false
 }
