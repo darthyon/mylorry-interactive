@@ -1,4 +1,4 @@
-const { Badge, StatusBadge, AccountStatusBadge, LockSection, CountCard, HistoryCard } = window.SharedShell;
+const { Badge, StatusBadge, AccountStatusBadge, LockSection, CountCard, HistoryCard, HacModal, HacFileUpload, SelectMenu } = window.SharedShell;
 
 /* ── Token swatches (read straight from tokens.css via getComputedStyle) ── */
 const COLOR_TOKENS = [
@@ -32,6 +32,27 @@ document.getElementById("typeScale").innerHTML = TYPE.map(([n,s,w]) =>
 /* ── Live shared components ── */
 function span(node){ const d=document.createElement("span"); return d; }
 function mount(id, el){ ReactDOM.createRoot(document.getElementById(id)).render(el); }
+
+function ModalDemo() {
+  const [open, setOpen] = React.useState(false);
+  return <><button className="ml-btn-primary" type="button" onClick={() => setOpen(true)}>Open modal</button>{open && <HacModal title="Edit record" onClose={() => setOpen(false)} footer={<><button className="hac-modal-cancel" type="button" onClick={() => setOpen(false)}>Cancel</button><button className="hac-modal-save" type="button" onClick={() => setOpen(false)}>Save changes</button></>}><div className="hac-fg"><label className="hac-label">Example field</label><input className="hac-input" defaultValue="Shared modal content" /></div></HacModal>}</>;
+}
+
+mount("modalDemo", <ModalDemo />);
+
+function FileUploadDemo() {
+  const [names, setNames] = React.useState([]);
+  return <div style={{ width: 360 }}><HacFileUpload accept="image/*,.pdf" multiple onFiles={(files) => setNames(Array.from(files).map((file) => file.name))} description={<><span>Click to upload</span> or drag and drop</>} hint="Images or PDF, up to 3 files" />{names.length > 0 && <div className="lbl" style={{ marginTop: 8 }}>{names.join(", ")}</div>}</div>;
+}
+
+mount("fileUploadDemo", <FileUploadDemo />);
+
+function SelectMenuDemo() {
+  const [value, setValue] = React.useState("Last completed year");
+  return <SelectMenu className="ds-select-menu" value={value} options={["Last completed year", "Trailing 12 months"]} onChange={setValue} ariaLabel="Evaluation period" />;
+}
+
+mount("selectMenuDemo", <SelectMenuDemo />);
 
 mount("badgeKinds", <>
   <Badge kind="active">Active</Badge>

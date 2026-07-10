@@ -1,7 +1,7 @@
 {
 
 const { useEffect, useMemo, useRef, useState } = React;
-const { Icon, OrgSwitcher: BaseOrgSwitcher, SelectMenu, Pager } = window.SharedShell;
+const { Icon, OrgSwitcher: BaseOrgSwitcher, SelectMenu, Pager, HacFileUpload } = window.SharedShell;
 const { useTweaks, TweaksPanel, TweakSection, TweakSelect, TweakToggle } = window;
 const D = window.ORG_VEHICLE_LIST;
 
@@ -575,42 +575,12 @@ function VehicleFormEditBar({ mode, onCancel }) {
 }
 
 function VehiclePhotoField({ photo, onChange }) {
-  const inputRef = useRef(null);
-
   function handleFiles(files) {
     const file = files && files[0];
     if (!file) return;
     onChange({ name: file.name, url: URL.createObjectURL(file) });
   }
-
-  return (
-    <div
-      className="ovl-dropzone"
-      onClick={() => inputRef.current?.click()}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); }}
-    >
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        style={{ display: "none" }}
-        onChange={(e) => handleFiles(e.target.files)}
-      />
-      {photo ? (
-        <img src={photo.url} alt="" className="ovl-dropzone-preview" />
-      ) : (
-        <>
-          <Icon name="upload_file" size={26} color="var(--green-600)" />
-          <div className="ovl-dropzone-text"><span>Click to upload</span> or drag and drop</div>
-          <div className="ovl-dropzone-hint">jpg, jpeg, png, webp (max. 12MB)</div>
-        </>
-      )}
-      <button type="button" className="ovl-btn-secondary ovl-dropzone-btn" onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}>
-        Choose file
-      </button>
-    </div>
-  );
+  return <HacFileUpload accept="image/jpeg,image/png,image/webp" onFiles={handleFiles} description={<><span>Click to upload</span> or drag and drop</>} hint="jpg, jpeg, png, webp (max. 12MB)" preview={photo && <img src={photo.url} alt="" className="hac-file-upload-preview" />} />;
 }
 
 function ViewField({ label, value }) {

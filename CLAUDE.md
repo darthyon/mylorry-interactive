@@ -59,6 +59,10 @@ The shared layer is already consolidated — **reuse it, don't re-create it.**
 - **Shared component CSS** lives in `styles/components.css`: badges, buttons
   (outline/soft/primary), cards, tables, tabs, pager, tooltip, menu, toast,
   section headers. Don't re-inline these per flow.
+- **`HacModal` is the canonical CRUD dialog.** Use `window.SharedShell.HacModal`
+  for new create, edit, and preview dialogs. Do not reuse only generic portal or
+  backdrop behavior while recreating the modal’s visual chrome locally. Variants
+  may change width and content layout, never the structural shell.
 - **`StatusBadge` is the canonical metadata pattern** — one component covers every
   status pill (commission / account / payout). Extend `STATUS_BADGE_META`; do NOT
   fork a new badge. Apply the same instinct elsewhere: extend the shared component
@@ -68,8 +72,9 @@ The shared layer is already consolidated — **reuse it, don't re-create it.**
   every state is visible.
 
 ## Don'ts (quick list)
-- In-browser Babel. Editing generated `.js`. New badge components. Inline token
-  redefinition. A third copy of component CSS. Bundler / router / state lib / backend.
+- In-browser Babel. Editing generated `.js`. New badge components. Custom modal
+  shells. Inline token redefinition. A third copy of component CSS. Bundler /
+  router / state lib / backend.
 
 ## Verifying without a browser
 Browser tooling here is flaky. To sanity-check a flow renders, SSR the compiled

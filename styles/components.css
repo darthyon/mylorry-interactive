@@ -341,6 +341,14 @@
 .hac-modal-save:hover:not(:disabled) { background: var(--green-600); }
 .hac-modal-save:disabled { opacity: .4; cursor: not-allowed; }
 
+/* ── File upload ─────────────────────────────────────────────── */
+.hac-file-upload { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 120px; padding: 16px; border: 1px dashed var(--border-medium); border-radius: var(--radius-sm); background: var(--bg-hover); cursor: pointer; text-align: center; }
+.hac-file-upload-text { font-size: 12.5px; color: var(--fg-secondary); }
+.hac-file-upload-text span { color: var(--green-600); font-weight: 700; }
+.hac-file-upload-hint { font-size: 11px; color: var(--fg-tertiary); }
+.hac-file-upload-btn { margin-top: 4px; }
+.hac-file-upload-preview { max-width: 100%; max-height: 80px; border-radius: 8px; object-fit: cover; }
+
 /* ── Responsive (shared form/detail grids) ───────────────────── */
 @media (max-width: 1100px) {
   .hac-detail-grid { grid-template-columns: repeat(3, 1fr); }

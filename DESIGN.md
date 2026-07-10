@@ -184,6 +184,19 @@ Depth is structural, not theatrical. The system is mostly flat at rest, with lig
 
 ## 5. Components
 
+### Modals
+- **Canonical form dialog:** Use the shared HAC modal composition: drag handle, title row, divider, scrollable body, and paired footer actions.
+- **Implementation:** Use `window.SharedShell.HacModal` for new CRUD and preview dialogs. Do not recreate a custom modal shell or mix a generic backdrop with flow-specific modal chrome.
+- **Variants:** Content may adjust width or internal layout only. The overlay, panel, header, divider, body, footer, close affordance, and action-button treatment stay canonical.
+
+### File uploads
+- **Canonical upload control:** Use `window.SharedShell.HacFileUpload` for photo and document uploads. It provides the standard click, drag-and-drop, helper-copy, preview, and choose-file interaction.
+- **Variants:** File type, multiplicity, preview rendering, and helper copy may vary. Do not recreate a flow-local drop zone.
+
+### Selects
+- **Canonical select:** Use `window.SharedShell.SelectMenu` for in-app option selection. Do not use a native `<select>` unless the platform-native picker is explicitly required.
+- **Variants:** Width, option set, helper text, and disabled state may vary. Trigger and option-menu treatment stay canonical.
+
 ### Buttons
 - **Character:** Direct, compact, and outcome-oriented.
 - **Shape:** Gently squared corners (`4px` radius), never pill buttons for primary task actions.
@@ -193,7 +206,7 @@ Depth is structural, not theatrical. The system is mostly flat at rest, with lig
 
 ### Chips
 - **Character:** Informational tags, not decorative badges.
-- **Style:** Small uppercase or compact labels, muted grey or semantic tint fills, tight radius (`4px`), short horizontal padding.
+- **Style:** Compact sentence-case labels, muted grey or semantic tint fills, tight radius (`4px`), short horizontal padding. Do not use all caps for labels, tabs, metadata, or badges.
 - **Use:** Role chips, status badges, and compact categorical markers.
 
 ### Cards / Containers

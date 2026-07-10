@@ -55,8 +55,9 @@ table.ml-table{border:1px solid var(--border-medium);border-radius:6px;overflow:
 
 .field{display:flex;flex-direction:column;gap:6px;max-width:280px;}
 .field label{font-size:12px;font-weight:600;color:var(--fg-secondary);}
-.field input,.field select{height:38px;padding:0 12px;border:1px solid var(--border-light);border-radius:var(--radius-sm);font-family:var(--font);font-size:14px;outline:none;background:#fff;}
-.field input:focus,.field select:focus{border-color:var(--green-500);box-shadow:0 0 0 3px rgba(0,170,79,.08);}
+.field input{height:38px;padding:0 12px;border:1px solid var(--border-light);border-radius:var(--radius-sm);font-family:var(--font);font-size:14px;outline:none;background:#fff;}
+.field input:focus{border-color:var(--green-500);box-shadow:0 0 0 3px rgba(0,170,79,.08);}
+.ds-select-menu{width:100%;height:38px;padding:0 12px;border:1px solid var(--border-light);border-radius:var(--radius-sm);font-family:var(--font);font-size:14px;background:#fff;}
 .field.error input{border-color:var(--red-400);}
 .field .hint{font-size:11px;color:var(--fg-tertiary);}
 .field .err{font-size:11px;color:var(--red-400);}
@@ -138,6 +139,20 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;back
       <button class="ml-btn-soft"><span class="ms">download</span> Soft</button>
       <button class="ml-btn-primary" disabled>Disabled</button>
     </div>
+  </section>
+
+  <!-- Modal -->
+  <section class="sec" id="modal">
+    <div class="sec-h">CRUD modal — <code>HacModal</code></div>
+    <div class="row" id="modalDemo"></div>
+    <p class="note">Use the shared HAC modal for create, edit, and preview flows. Keep the shell canonical; vary only width and content layout.</p>
+  </section>
+
+  <!-- File upload -->
+  <section class="sec" id="file-upload">
+    <div class="sec-h">File upload — <code>HacFileUpload</code></div>
+    <div class="row" id="fileUploadDemo"></div>
+    <p class="note">Use this shared drop zone for photo and document uploads. Vary accepted types, file count, preview, and helper copy only.</p>
   </section>
 
   <!-- Badges + status (live, via consolidated StatusBadge) -->
@@ -234,7 +249,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;back
     <div class="row" style="align-items:flex-start;">
       <div class="field"><label>KPI Target (L)</label><input value="200000"><span class="hint">Monthly target volume</span></div>
       <div class="field"><label>Evaluation period</label>
-        <select><option>Last completed year</option><option>Trailing 12 months</option></select></div>
+        <div id="selectMenuDemo"></div></div>
       <div class="field error"><label>Commission rate</label><input value="-0.5"><span class="err">Rate must be positive</span></div>
     </div>
   </section>
