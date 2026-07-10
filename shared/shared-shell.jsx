@@ -295,11 +295,17 @@ function Pager({ page, perPage, total, onPage, onPerPage, perPageOptions = [10, 
 }
 
 /* ─── CardHead ──────────────────────────────────────────────── */
-function CardHead({ icon, title, sub, right }) {
+// tone — optional icon-chip variant ("amber" = attention cards: amber tint
+// bg + amber solid icon). Default stays the muted chip + green outline icon.
+const CARDHEAD_TONES = { amber: { color: "var(--amber-600)", fill: 1 } };
+function CardHead({ icon, title, sub, right, tone }) {
+  const t = CARDHEAD_TONES[tone];
   return (
     <div className="ml-cardhead">
       <div className="ml-cardhead-left">
-        <div className="ml-stat-icon"><Icon name={icon} size={18} color="#00AA4F" /></div>
+        <div className={"ml-stat-icon" + (tone ? " " + tone : "")}>
+          <Icon name={icon} size={18} color={t ? t.color : "#00AA4F"} fill={t ? t.fill : 0} />
+        </div>
         <div>
           <div className="ml-cardhead-title">{title}</div>
           {sub && <div className="ml-cardhead-sub">{sub}</div>}
@@ -404,16 +410,24 @@ function SummaryCard({ icon, title, sub, value, trend, accent }) {
 // extra — optional, plain body content rendered after trend/before the band,
 // no bg-subtle wrapper (e.g. Operating Cost's category-breakdown metadata,
 // which doesn't fit the equal-cell band once every category has data).
-function CountCard({ icon, count, label, sub, stats = [], fill = false, actionLabel, trend, children, extra, tone = "green" }) {
+// onClick — optional; makes the whole card an interactive drill-down target
+// (adds .clickable affordance + keyboard activation).
+function CountCard({ icon, count, label, sub, stats = [], fill = false, actionLabel, trend, children, extra, tone = "green", onClick }) {
+  const interactive = onClick ? {
+    onClick,
+    role: "button",
+    tabIndex: 0,
+    onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } },
+  } : {};
   return (
-    <div className={"ml-statcard" + (fill ? " fill" : "")}>
+    <div className={"ml-statcard" + (fill ? " fill" : "") + (onClick ? " clickable" : "")} {...interactive}>
       <div className="ml-statcard-head">
         <div className="ml-statcard-main">
           <div className={"ml-statcard-ico " + tone}><Icon name={icon} size={20} fill={1} /></div>
           <div className="ml-statcard-count">{count}</div>
         </div>
         {actionLabel && (
-          <button className="ml-statcard-action" aria-label={actionLabel}>
+          <button className="ml-statcard-action" aria-label={actionLabel} tabIndex={onClick ? -1 : 0}>
             <Icon name="arrow_forward" size={15} />
           </button>
         )}
@@ -493,6 +507,17 @@ const STATUS_BADGE_META = {
   // Check-in / check-out status (MyAdmin dashboard)
   checkin_active:        { label:"Active",               cls:"acct-active"      },
   checkin_completed:     { label:"Completed",            cls:"mod-included"     },
+  // Trip status (MyTrip dashboard) — trip-level lifecycle
+  trip_completed:  { label:"Completed",  cls:"trip-completed"  },
+  trip_ongoing:    { label:"Ongoing",    cls:"trip-ongoing"    },
+  trip_pending:    { label:"Pending",    cls:"trip-pending"    },
+  trip_paused:     { label:"Paused",     cls:"trip-paused"     },
+  trip_terminated: { label:"Terminated", cls:"trip-terminated" },
+  // Vehicle status (MyTrip fleet-status lens) — vehicle-level, deliberately
+  // separate vocabulary from trip status so the two never blur.
+  veh_in_progress: { label:"In Progress",            cls:"trip-ongoing" },
+  veh_idle:        { label:"Idle",                   cls:"veh-idle"     },
+  veh_assigned:    { label:"Assigned – Not Started", cls:"trip-pending" },
 };
 function StatusBadge({ status, prefix, label, fallback = "activated" }) {
   const m = STATUS_BADGE_META[status] || STATUS_BADGE_META[fallback] || { label: status, cls: "" };

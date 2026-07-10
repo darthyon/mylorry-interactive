@@ -66,6 +66,15 @@
 .ml-badge.mod-limited   { background: var(--amber-50); color: var(--amber-600);   }
 .ml-badge.mod-locked    { background: #F0F0F2;         color: var(--fg-secondary); }
 
+/* Trip status (MyTrip dashboard). Vehicle statuses reuse trip-ongoing /
+   trip-pending; veh-idle is the quietest — idle is fact, not problem. */
+.ml-badge.trip-completed  { background: var(--green-50); color: var(--green-600);    }
+.ml-badge.trip-ongoing    { background: #EAF6FB;         color: var(--teal-600);     }
+.ml-badge.trip-pending    { background: #F0F0F2;         color: var(--fg-secondary); }
+.ml-badge.trip-paused     { background: var(--amber-50); color: var(--amber-600);    }
+.ml-badge.trip-terminated { background: #FFF0F0;         color: var(--red-400);      }
+.ml-badge.veh-idle        { background: #fff; border: 1px solid var(--border-medium); color: var(--fg-tertiary); }
+
 /* KPI Tier Chip — window.SharedShell.KpiTierChip */
 .ml-tierchip { font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 9999px; white-space: nowrap; }
 .ml-tierchip.good { background: var(--green-50); color: var(--green-600); }
@@ -86,6 +95,7 @@
 .ml-menu-item:hover { background: var(--bg-muted); }
 .ml-pager-center { display: flex; align-items: center; gap: 12px; }
 .ml-stat-icon { width: 30px; height: 30px; border-radius: 4px; background: var(--bg-muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ml-stat-icon.amber { background: var(--amber-50); }
 .ml-tab.active { color: var(--green-600); border-bottom-color: var(--green-500); }
 .ml-tab:hover { color: var(--fg-primary); }
 .ml-table tbody tr { cursor: pointer; transition: background .1s; }
@@ -443,6 +453,10 @@
   display:flex; align-items:center; justify-content:center; color:var(--green-600); flex-shrink:0; }
 .ml-statcard-ico.amber { background:var(--amber-50); color:var(--amber-600); }
 .ml-statcard-ico.red   { background:#FCEBEC;         color:var(--red-400);  }
+.ml-statcard-ico.blue  { background:#EAF6FB;         color:var(--teal-600); }
+.ml-statcard-ico.gray  { background:#F0F0F2;         color:var(--fg-secondary); }
+.ml-statcard.clickable { cursor:pointer; }
+.ml-statcard.clickable:focus-visible { outline:none; box-shadow:0 0 0 3px rgba(0,170,79,.18); }
 .ml-statcard-count { font-size:24px; font-weight:600; color:var(--fg-primary); letter-spacing:-.01em; line-height:1; }
 .ml-statcard-action {
   width:28px; height:28px; border-radius:50%; border:1px solid var(--border-light);

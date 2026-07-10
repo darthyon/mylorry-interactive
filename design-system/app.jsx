@@ -55,6 +55,20 @@ mount("acctStatus", <>
   <AccountStatusBadge status="terminated" />
 </>);
 
+mount("tripStatus", <>
+  <StatusBadge status="trip_completed" />
+  <StatusBadge status="trip_ongoing" />
+  <StatusBadge status="trip_pending" />
+  <StatusBadge status="trip_paused" />
+  <StatusBadge status="trip_terminated" />
+</>);
+
+mount("vehStatus", <>
+  <StatusBadge status="veh_in_progress" />
+  <StatusBadge status="veh_idle" />
+  <StatusBadge status="veh_assigned" />
+</>);
+
 document.getElementById("payoutStatus").innerHTML = `
   <span class="ml-badge payout-pending">Pending</span>
   <span class="ml-badge payout-approved">Approved</span>
@@ -77,6 +91,14 @@ mount("countCards", <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
         { n: 5, label: "On duty", tone: "green" },
         { n: 8, label: "Off duty", tone: "gray" },
       ]} />
+  </div>
+  <div style={{ width: 200 }}>
+    <CountCard icon="local_shipping" count={5} label="Ongoing" tone="blue"
+      actionLabel="View ongoing trips" onClick={() => {}} />
+  </div>
+  <div style={{ width: 200 }}>
+    <CountCard icon="schedule" count={4} label="Pending" tone="gray"
+      actionLabel="View pending trips" onClick={() => {}} />
   </div>
 </div>);
 
