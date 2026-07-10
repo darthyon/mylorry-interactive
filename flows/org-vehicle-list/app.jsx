@@ -1,14 +1,21 @@
 {
 
 const { useEffect, useMemo, useRef, useState } = React;
-const { Icon, OrgSwitcher, SelectMenu, Pager } = window.SharedShell;
+const { Icon, OrgSwitcher: BaseOrgSwitcher, SelectMenu, Pager } = window.SharedShell;
 const { useTweaks, TweaksPanel, TweakSection, TweakSelect, TweakToggle } = window;
 const D = window.ORG_VEHICLE_LIST;
+
+function CloseControl() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => { const onKey = (e) => { if (e.key === "Escape") setOpen(false); }; document.addEventListener("keydown", onKey); return () => document.removeEventListener("keydown", onKey); }, []);
+  return <><style>{`.ovl-closebtn{width:36px;height:36px;border:0;border-radius:8px;background:var(--bg-muted);color:var(--fg-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer}.ovl-closebtn:hover{background:var(--bg-hover);color:var(--fg-primary)}.ovl-leave-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}.ovl-leave-modal{background:#fff;border-radius:var(--radius-lg);width:100%;max-width:380px;padding:22px 24px 24px;box-shadow:0 8px 40px rgba(0,0,0,.18);text-align:center}.ovl-leave-title{font-size:17px;font-weight:600;color:var(--fg-primary);margin-bottom:8px}.ovl-leave-msg{font-size:13px;line-height:1.5;color:var(--fg-secondary);margin-bottom:22px}.ovl-leave-actions{display:flex;gap:10px;justify-content:center}.ovl-leave-actions button{height:38px;padding:0 16px;border-radius:8px;font:600 13px var(--font-sans);cursor:pointer;border:0}.ovl-leave-stay{background:var(--bg-muted);color:var(--fg-primary)}.ovl-leave-exit{background:var(--green-600);color:#fff}`}</style><button className="ovl-closebtn" type="button" aria-label="Close" onClick={() => setOpen(true)}><Icon name="close" size={18} /></button>{open && ReactDOM.createPortal(<div className="ovl-leave-backdrop" role="dialog" aria-modal="true" aria-label="Leave page confirmation" onMouseDown={(e) => e.currentTarget === e.target && setOpen(false)}><div className="ovl-leave-modal"><div className="ovl-leave-title">Leave this page?</div><div className="ovl-leave-msg">Are you sure you want to leave this page? Your progress may not be saved.</div><div className="ovl-leave-actions"><button className="ovl-leave-stay" type="button" onClick={() => setOpen(false)}>Stay</button><button className="ovl-leave-exit" type="button" onClick={() => { window.location.href = "../org-dashboard/index.html"; }}>Exit to Dashboard</button></div></div></div>, document.body)}</>;
+}
+function OrgSwitcher(props) { return <BaseOrgSwitcher {...props} />; }
 
 const MYADMIN_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: "dashboard", href: "../org-myadmin-dashboard/index.html" },
   { key: "user", label: "User", icon: "group" },
-  { key: "driver", label: "Driver", icon: "badge" },
+  { key: "driver", label: "Driver", icon: "badge", href: "../org-driver-list/index.html" },
   { key: "vehicle", label: "Vehicle", icon: "local_shipping", href: "#" },
   { key: "vendor", label: "Vendor", icon: "storefront" },
   { key: "checklist", label: "Checklist", icon: "fact_check" },
@@ -536,12 +543,7 @@ function VehiclePageHead({ mode, vehicle, onBack, onEdit }) {
   const isCreate = mode === "create";
   const isView = mode === "view";
   const title = isCreate ? "Create vehicle" : isView ? (vehicle?.plate || "Vehicle") : `Edit ${vehicle?.plate || "vehicle"}`;
-  const subtitle = isCreate
-    ? "Add a new vehicle profile and configure its managed access settings."
-    : isView
-      ? "View vehicle profile and managed access settings."
-      : "Update vehicle profile and managed access settings.";
-  const crumbLabel = isCreate ? "Create vehicle" : isView ? "View vehicle" : "Edit vehicle";
+  const crumbLabel = isCreate ? "Create" : isView ? "View" : "Edit";
   return (
     <div className="ml-page-head ovl-pagehead">
       <div>
@@ -550,8 +552,7 @@ function VehiclePageHead({ mode, vehicle, onBack, onEdit }) {
           <Icon name="chevron_right" size={16} color="var(--fg-tertiary)" />
           <span>{crumbLabel}</span>
         </div>
-        <div className="ml-h1 ovl-title">{title}</div>
-        <div className="ovl-subtitle">{subtitle}</div>
+        <h1 className="ml-h1 ovl-title" style={{ margin: "10px 0 18px" }}>{title}</h1>
       </div>
       {isView && (
         <button className="ml-btn-outline" type="button" onClick={onEdit}>
@@ -1073,6 +1074,7 @@ function App() {
         <div className="ovl-topbar">
           <OrgSwitcher orgs={D.orgs} initialId={D.org.id} />
           <div className="ovl-topbar-spacer" />
+          <CloseControl />
         </div>
 
         <div className="ovl-content">
