@@ -1,7 +1,7 @@
 {
 
 const { useState, useMemo, useRef, useEffect } = React;
-const { Icon, OrgSwitcher, CardHead, Segmented, StatusBadge, ExportMenu, Pager, SelectMenu, CountCard } = window.SharedShell;
+const { Icon, OrgSwitcher, CardHead, Segmented, StatusBadge, ExportMenu, Pager, SelectMenu, CountCard, HistoryCard, Modal } = window.SharedShell;
 const D = window.MYTRIP_DASH;
 
 const N = (n) => Number(n).toLocaleString("en-US");
@@ -72,6 +72,17 @@ function Rail({ active, go }) {
   );
 }
 
+/* ── Search box (shared within this file — chart card + schedule toolbar) ── */
+function SearchBox({ value, onChange, placeholder }) {
+  return (
+    <div className="mt-search">
+      <Icon name="search" size={16} color="var(--fg-tertiary)" />
+      <input value={value} onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder} aria-label={placeholder} />
+    </div>
+  );
+}
+
 /* ── Toast ─────────────────────────────────────────────────────── */
 function useToast() {
   const [toast, setToast] = useState(null);
@@ -104,13 +115,11 @@ function KpiRow({ go }) {
     <div className="mt-kpi-row">
       {KPI_DEFS.map((k) => {
         const count = D.kpis[k.key];
-        const attention = k.key === "paused" && count > 0;
         return (
-          <div key={k.key} className={attention ? "mt-kpi-attn" : undefined}>
-            <CountCard icon={k.icon} count={count} label={k.label} sub={k.sub} tone={k.tone} fill
-              actionLabel={`View ${k.label.toLowerCase()} trips`}
-              onClick={() => go({ name: "trips", tab: "trips", filter: { status: k.key, range: "today" } })} />
-          </div>
+          <CountCard key={k.key} icon={k.icon} count={count} label={k.label} sub={k.sub} tone={k.tone} fill
+            attention={k.key === "paused" && count > 0}
+            actionLabel={`View ${k.label.toLowerCase()} trips`}
+            onClick={() => go({ name: "trips", tab: "trips", filter: { status: k.key, range: "today" } })} />
         );
       })}
     </div>
@@ -125,6 +134,7 @@ function TripChartCard({ go }) {
   const [range, setRange] = useState("today");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [hover, setHover] = useState(null);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -134,7 +144,8 @@ function TripChartCard({ go }) {
       .sort((a, b) => b.assigned - a.assigned);
   }, [scope, range, query]);
 
-  useEffect(() => { setPage(1); }, [scope, range, query]);
+  useEffect(() => { setPage(1); setHover(null); }, [scope, range, query]);
+  useEffect(() => { setHover(null); }, [page]);
 
   const maxVal = Math.max(1, ...rows.map((r) => r.assigned));
   const totalPages = Math.max(1, Math.ceil(rows.length / CHART_PER_PAGE));
@@ -154,31 +165,40 @@ function TripChartCard({ go }) {
           </div>
         } />
       <div className="mt-hbar-toolbar">
-        <div className="mt-search">
-          <Icon name="search" size={16} color="var(--fg-tertiary)" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)}
-            placeholder={scope === "vehicle" ? "Search vehicle" : "Search driver"}
-            aria-label={scope === "vehicle" ? "Search vehicle" : "Search driver"} />
-        </div>
+        <SearchBox value={query} onChange={setQuery} placeholder={scope === "vehicle" ? "Search vehicle" : "Search driver"} />
         <span className="mt-hbar-count">{rows.length} {scope === "vehicle" ? "vehicles" : "drivers"}</span>
       </div>
       <div className="mt-hbar-list">
         {shown.length === 0 && <div className="mt-empty">No {scope === "vehicle" ? "vehicles" : "drivers"} match this search.</div>}
-        {shown.map((r) => (
-          <button key={r.id} type="button" className="mt-hbar-row"
-            title={`${r.label} · ${N(r.completed)} completed of ${N(r.assigned)} assigned — view trips`}
-            onClick={() => go({
-              name: "trips", tab: "trips",
-              filter: scope === "vehicle" ? { vehicleId: r.id, range } : { driverId: r.id, range },
-            })}>
-            <span className="mt-hbar-label">{r.label}</span>
-            <span className="mt-hbar-track">
-              <i className="mt-hbar-fill assigned" style={{ width: `${(r.assigned / maxVal) * 100}%` }} />
-              <i className="mt-hbar-fill completed" style={{ width: `${(r.completed / maxVal) * 100}%` }} />
-            </span>
-            <span className="mt-hbar-val">{N(r.completed)} / {N(r.assigned)}</span>
-          </button>
-        ))}
+        {shown.map((r, i) => {
+          const remaining = r.assigned - r.completed;
+          const completedPct = r.assigned ? (r.completed / r.assigned) * 100 : 0;
+          const remainingPct = r.assigned ? (remaining / r.assigned) * 100 : 0;
+          return (
+            <button key={r.id} type="button" className="mt-hbar-row"
+              onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}
+              onClick={() => go({
+                name: "trips", tab: "trips",
+                filter: scope === "vehicle" ? { vehicleId: r.id, range } : { driverId: r.id, range },
+              })}>
+              <span className="mt-hbar-label">{r.label}</span>
+              <span className="mt-hbar-track">
+                {hover === i && (
+                  <div className="mt-hbar-tip">
+                    <div className="mt-hbar-tip-val">{r.label}</div>
+                    <div className="mt-hbar-tip-row"><i className="mt-dot" style={{ background: "#00AA4F" }} />Completed {N(r.completed)}</div>
+                    <div className="mt-hbar-tip-row"><i className="mt-dot" style={{ background: "#0081AA" }} />Assigned, not completed {N(remaining)}</div>
+                  </div>
+                )}
+                <span className="mt-hbar-group" style={{ width: `${(r.assigned / maxVal) * 100}%` }}>
+                  <i className="mt-hbar-fill completed" style={{ width: `${completedPct}%` }} />
+                  <i className="mt-hbar-fill assigned" style={{ width: `${remainingPct}%` }} />
+                </span>
+              </span>
+              <span className="mt-hbar-val">{N(r.completed)} / {N(r.assigned)}</span>
+            </button>
+          );
+        })}
       </div>
       <div className="mt-hbar-footer">
         <span className="mt-hbar-count">
@@ -217,15 +237,12 @@ function PausedCard({ go }) {
           {paused.map((t) => {
             const v = vehicleById(t.vehicleId); const d = driverById(t.driverId);
             return (
-              <button key={t.id} type="button" className="mt-paused-row"
-                onClick={() => go({ name: "detail", tripId: t.id, from: { name: "dashboard" } })}>
-                <div className="mt-paused-ico"><Icon name="pause_circle" size={18} fill={1} /></div>
-                <div className="mt-paused-copy">
-                  <div className="mt-paused-main">{v.plate} · {d.name}</div>
-                  <div className="mt-paused-sub">{t.from} → {t.to} · {t.pauseReason}</div>
-                </div>
-                <div className="mt-paused-dur">{t.pausedFor}</div>
-              </button>
+              <HistoryCard key={t.id}
+                prefix={<div className="ml-stat-icon amber"><Icon name="pause_circle" size={18} fill={1} color="var(--amber-600)" /></div>}
+                title={`${v.plate} · ${d.name}`}
+                subtitle={`${t.from} → ${t.to} · ${t.pauseReason}`}
+                meta={t.pausedFor}
+                onClick={() => go({ name: "detail", tripId: t.id, from: { name: "dashboard" } })} />
             );
           })}
         </div>
@@ -248,20 +265,35 @@ const OPS_TICKS = [6, 9, 12, 15, 18, 21];
 const fleetStatusOf = (vehicleId) => D.fleetStatus.find((r) => r.vehicleId === vehicleId);
 
 /* Shared fleet timeline — dashboard preview (dense) and Schedule page (roomy)
-   render the same anatomy. onRow makes the whole row a target; onBar makes
-   individual trip bars targets (use one or the other, not both). */
+   render the same anatomy. Whole row is the click target (opens that
+   vehicle's current active trip) on both densities — bars are hover-only
+   (tooltip), not independently clickable, so there's one click target per
+   row, not one per bar plus the row. */
 function TimelineLegend({ showNow }) {
   return (
     <div className="mt-tl-legend">
       <span><i className="mt-dot" style={{ background: "var(--green-500)" }} />Completed</span>
       <span><i className="mt-dot" style={{ background: "#0081AA" }} />Assigned</span>
       <span><i className="mt-dot" style={{ background: "var(--red-400)" }} />Terminated</span>
-      {showNow && <span><i className="mt-dot" style={{ background: "var(--red-400)", borderRadius: "50%" }} />Now · {D.nowLabel}</span>}
+      {showNow && <span><i className="mt-now-line" />Now · {D.nowLabel}</span>}
     </div>
   );
 }
 
+const BAR_STATUS_LABEL = { completed: "Completed", assigned: "Assigned", terminated: "Terminated" };
+
 function FleetTimeline({ rows, showNow, onRow, onBar, roomy }) {
+  // Portal-rendered tooltip (position:fixed via getBoundingClientRect) — the
+  // .mt-ops container clips overflow for its rounded corners, so an in-flow
+  // absolute tooltip would be cut off for bars in the first/last row. Same
+  // technique as the existing KPIProgress hover tooltip in shared-shell.jsx.
+  const [hover, setHover] = useState(null);
+  const showTip = (e, b) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    setHover({ top: r.top - 8, left: r.left + r.width / 2, b });
+  };
+  const hideTip = () => setHover(null);
+
   return (
     <div className={"mt-ops" + (roomy ? " roomy" : "")}>
       <div className="mt-ops-axis" aria-hidden="true">
@@ -279,10 +311,13 @@ function FleetTimeline({ rows, showNow, onRow, onBar, roomy }) {
         const d = st && driverById(st.driverId);
         const done = row.bars.filter((b) => b.status === "completed").length;
         const planned = row.bars.filter((b) => b.status !== "terminated").length;
-        const RowTag = onRow ? "button" : "div";
+        // Row is a div (not a button) so a real nested <button> per bar stays
+        // valid HTML. Clicking a bar opens THAT trip and stops propagation;
+        // clicking anywhere else in the row opens the vehicle's current trip.
         return (
-          <RowTag key={row.vehicleId} {...(onRow ? { type: "button", onClick: () => onRow(row) } : {})}
-            className="mt-ops-row">
+          <div key={row.vehicleId} role="button" tabIndex={0} className="mt-ops-row"
+            onClick={() => onRow(row)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onRow(row); } }}>
             <span className="mt-ops-veh">
               <span className={"mt-ops-dot " + (st ? st.status : "idle")} />
               <span className="mt-ops-veh-copy">
@@ -295,20 +330,28 @@ function FleetTimeline({ rows, showNow, onRow, onBar, roomy }) {
               {showNow && <i className="mt-ops-now" style={{ left: `${tlPct(D.nowHour)}%` }} />}
               {row.bars.map((b) => {
                 const style = { left: `${tlPct(b.start)}%`, width: `${Math.max(tlPct(b.end) - tlPct(b.start), 1.5)}%` };
-                const tip = `${b.tripId} · ${fmtHour(Math.floor(b.start))}–${fmtHour(Math.ceil(b.end))} · ${b.status}`;
+                const label = `${b.tripId} · ${fmtHour(Math.floor(b.start))}–${fmtHour(Math.ceil(b.end))} · ${BAR_STATUS_LABEL[b.status]}`;
+                const hoverProps = { onMouseEnter: (e) => showTip(e, b), onMouseLeave: hideTip };
                 return onBar ? (
-                  <button key={b.tripId} type="button" className={"mt-ops-bar " + b.status}
-                    style={style} title={tip} aria-label={tip} onClick={() => onBar(b)} />
+                  <button key={b.tripId} type="button" className={"mt-ops-bar " + b.status} style={style}
+                    aria-label={label} onClick={(e) => { e.stopPropagation(); onBar(b); }} {...hoverProps} />
                 ) : (
-                  <i key={b.tripId} className={"mt-ops-bar " + b.status} style={style} title={tip} />
+                  <i key={b.tripId} className={"mt-ops-bar " + b.status} style={style} aria-label={label} {...hoverProps} />
                 );
               })}
             </span>
             <span className="mt-ops-frac">{done}/{planned} done</span>
-          </RowTag>
+          </div>
         );
       })}
       {rows.length === 0 && <div className="mt-empty">No vehicles match this filter.</div>}
+      {hover && ReactDOM.createPortal(
+        <div className="mt-ops-tip" style={{ top: hover.top, left: hover.left }}>
+          <div className="mt-ops-tip-val">{hover.b.tripId}</div>
+          <div className="mt-ops-tip-row">{fmtHour(Math.floor(hover.b.start))}–{fmtHour(Math.ceil(hover.b.end))} · {BAR_STATUS_LABEL[hover.b.status]}</div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
@@ -398,21 +441,127 @@ function FilterChips({ filter, onChange }) {
 
 const STATUS_LABEL = { completed: "Completed", ongoing: "Ongoing", pending: "Pending", paused: "Paused", terminated: "Terminated" };
 
-function TripsTable({ filter, go, toast }) {
+/* ── Trips toolbar: scoped search + status/date filter panel ──────
+   Follows the codebase's established .hac-search-group.scoped / .hac-filter-*
+   convention (org-vehicle-list, host-sp-account) — same classes, same
+   pending-until-Apply filter panel, reused verbatim rather than inventing
+   a new search widget. */
+const TRIP_SEARCH_SCOPES = [
+  { value: "tripId", label: "Trip ID" },
+  { value: "vehicle", label: "Vehicle" },
+  { value: "driver", label: "Driver" },
+];
+const TRIPS_STATUS_OPTIONS = [
+  { value: "all", label: "All statuses" },
+  { value: "completed", label: "Completed" },
+  { value: "ongoing", label: "Ongoing" },
+  { value: "pending", label: "Pending" },
+  { value: "paused", label: "Paused" },
+  { value: "terminated", label: "Terminated" },
+];
+
+function TripsToolbar({ scope, setScope, query, setQuery, filter, onChange }) {
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState(filter.status || "all");
+  const [pendingStart, setPendingStart] = useState("2026-07-10");
+  const [pendingEnd, setPendingEnd] = useState("2026-07-10");
+  const activeCount = filter.status ? 1 : 0;
+
+  const toggleFilterPanel = () => {
+    if (!filterOpen) setPendingStatus(filter.status || "all");
+    setFilterOpen((v) => !v);
+  };
+  const applyFilters = () => {
+    onChange({ ...filter, status: pendingStatus === "all" ? undefined : pendingStatus });
+    setFilterOpen(false);
+  };
+  const resetFilters = () => {
+    setQuery("");
+    setScope("tripId");
+    setPendingStatus("all");
+    setPendingStart("2026-07-10");
+    setPendingEnd("2026-07-10");
+    onChange({ ...filter, status: undefined });
+    setFilterOpen(false);
+  };
+
+  return (
+    <div className="hac-toolbar">
+      <div className="hac-toolbar-left">
+        <div className="hac-search-group scoped">
+          <SelectMenu className="hac-search-scope" value={scope} options={TRIP_SEARCH_SCOPES}
+            onChange={setScope} ariaLabel="Search by" />
+          <div className="hac-search-bar">
+            <Icon name="search" size={17} color="var(--fg-tertiary)" />
+            <input className="hac-search-input" value={query} onChange={(e) => setQuery(e.target.value)}
+              placeholder={`Search by ${TRIP_SEARCH_SCOPES.find((s) => s.value === scope).label.toLowerCase()}`} />
+            {query && (
+              <button type="button" className="hac-search-clear" onClick={() => setQuery("")} aria-label="Clear search">
+                <Icon name="close" size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+        <button type="button" className={"hac-filter-btn" + (activeCount ? " active" : "")} onClick={toggleFilterPanel}>
+          <Icon name="tune" size={18} /> Filter
+          {activeCount > 0 && <span className="hac-filter-badge">{activeCount}</span>}
+        </button>
+      </div>
+      {filterOpen && (
+        <div className="hac-filter-panel" style={{ width: "100%" }}>
+          <div className="hac-filter-grid">
+            <div className="hac-filter-field">
+              <label>Status</label>
+              <div className="hac-select-wrap">
+                <SelectMenu className="hac-select" value={pendingStatus} options={TRIPS_STATUS_OPTIONS}
+                  onChange={setPendingStatus} ariaLabel="Status" />
+              </div>
+            </div>
+            <div className="hac-filter-field">
+              <label>Start date</label>
+              <div className="hac-date-range-field">
+                <Icon name="event" size={16} color="var(--fg-tertiary)" />
+                <input className="hac-date-range-input" type="date" value={pendingStart} onChange={(e) => setPendingStart(e.target.value)} />
+              </div>
+            </div>
+            <div className="hac-filter-field">
+              <label>End date</label>
+              <div className="hac-date-range-field">
+                <Icon name="event" size={16} color="var(--fg-tertiary)" />
+                <input className="hac-date-range-input" type="date" value={pendingEnd} onChange={(e) => setPendingEnd(e.target.value)} />
+              </div>
+            </div>
+          </div>
+          <div className="mt-cell-sub" style={{ marginBottom: 12 }}>This prototype only has today&rsquo;s trip data — date range is for review only.</div>
+          <div className="hac-filter-actions">
+            <button type="button" className="hac-filter-apply" onClick={applyFilters}>Apply Filters</button>
+            <button type="button" className="hac-filter-reset" onClick={resetFilters}>Reset All</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TripsTable({ filter, scope, query, go, onVehicle, onDriver }) {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const rows = useMemo(() => D.trips.filter((t) => {
     if (filter.status && t.status !== filter.status) return false;
     if (filter.vehicleId && t.vehicleId !== filter.vehicleId) return false;
     if (filter.driverId && t.driverId !== filter.driverId) return false;
-    return true;
-  }), [filter]);
-  useEffect(() => { setPage(1); }, [filter]);
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    if (scope === "tripId") return t.id.toLowerCase().includes(q);
+    if (scope === "vehicle") return vehicleById(t.vehicleId).plate.toLowerCase().includes(q);
+    return driverById(t.driverId).name.toLowerCase().includes(q);
+  }), [filter, scope, query]);
+  useEffect(() => { setPage(1); }, [filter, scope, query]);
   const shown = rows.slice((page - 1) * perPage, page * perPage);
 
   return (
     <>
-      <div className="ml-tablewrap">
+      <div className="ml-table-wrap">
         <table className="ml-table">
           <thead><tr>
             <th>Trip ID</th><th>Vehicle</th><th>Driver</th><th>Route</th><th>Status</th><th>Started / ETA</th>
@@ -428,13 +577,13 @@ function TripsTable({ filter, go, toast }) {
                   onClick={() => go({ name: "detail", tripId: t.id, from: { name: "trips", tab: "trips", filter } })}>
                   <td><b>{t.id}</b></td>
                   <td>
-                    <a className="mt-cell-link" href="../org-vehicle-list/index.html"
-                      onClick={(e) => e.stopPropagation()}>{v.plate}</a>
+                    <button type="button" className="mt-cell-link"
+                      onClick={(e) => { e.stopPropagation(); onVehicle(v.id); }}>{v.plate}</button>
                     <div className="mt-cell-sub">{v.model}</div>
                   </td>
                   <td>
                     <button type="button" className="mt-cell-link"
-                      onClick={(e) => { e.stopPropagation(); toast("Driver profile — separate flow, not in this prototype"); }}>
+                      onClick={(e) => { e.stopPropagation(); onDriver(d.id); }}>
                       {d.name}
                     </button>
                   </td>
@@ -460,41 +609,133 @@ function TripsTable({ filter, go, toast }) {
   );
 }
 
-function FleetStatusTable({ go, toast }) {
+const FLEET_SEARCH_SCOPES = [
+  { value: "vehicle", label: "Vehicle" },
+  { value: "driver", label: "Driver" },
+];
+const FLEET_STATUS_OPTIONS = [
+  { value: "all", label: "All statuses" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "assigned", label: "Assigned" },
+  { value: "idle", label: "Idle" },
+];
+
+function FleetStatusToolbar({ scope, setScope, query, setQuery, status, setStatus }) {
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState(status);
+  const activeCount = status !== "all" ? 1 : 0;
+
+  const toggleFilterPanel = () => {
+    if (!filterOpen) setPendingStatus(status);
+    setFilterOpen((v) => !v);
+  };
+  const applyFilters = () => { setStatus(pendingStatus); setFilterOpen(false); };
+  const resetFilters = () => {
+    setQuery(""); setScope("vehicle"); setStatus("all"); setPendingStatus("all"); setFilterOpen(false);
+  };
+
   return (
-    <div className="ml-tablewrap">
-      <table className="ml-table">
-        <thead><tr><th>Vehicle</th><th>Driver</th><th>Current status</th><th>Active trip</th></tr></thead>
-        <tbody>
-          {D.fleetStatus.map((r) => {
-            const v = vehicleById(r.vehicleId); const d = driverById(r.driverId);
-            const clickable = !!r.tripId;
-            return (
-              <tr key={r.vehicleId} className={clickable ? "mt-table-row" : ""}
-                onClick={clickable ? () => go({ name: "detail", tripId: r.tripId, from: { name: "trips", tab: "fleet", filter: {} } }) : undefined}>
-                <td>
-                  <a className="mt-cell-link" href="../org-vehicle-list/index.html"
-                    onClick={(e) => e.stopPropagation()}>{v.plate}</a>
-                  <div className="mt-cell-sub">{v.model}</div>
-                </td>
-                <td>
-                  <button type="button" className="mt-cell-link"
-                    onClick={(e) => { e.stopPropagation(); toast("Driver profile — separate flow, not in this prototype"); }}>
-                    {d.name}
-                  </button>
-                </td>
-                <td><StatusBadge status={FLEET_STATUS_KEY[r.status]} /></td>
-                <td>{r.tripId ? <b>{r.tripId}</b> : <span className="mt-cell-muted">—</span>}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <div className="hac-toolbar">
+      <div className="hac-toolbar-left">
+        <div className="hac-search-group scoped">
+          <SelectMenu className="hac-search-scope" value={scope} options={FLEET_SEARCH_SCOPES}
+            onChange={setScope} ariaLabel="Search by" />
+          <div className="hac-search-bar">
+            <Icon name="search" size={17} color="var(--fg-tertiary)" />
+            <input className="hac-search-input" value={query} onChange={(e) => setQuery(e.target.value)}
+              placeholder={`Search by ${FLEET_SEARCH_SCOPES.find((s) => s.value === scope).label.toLowerCase()}`} />
+            {query && (
+              <button type="button" className="hac-search-clear" onClick={() => setQuery("")} aria-label="Clear search">
+                <Icon name="close" size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+        <button type="button" className={"hac-filter-btn" + (activeCount ? " active" : "")} onClick={toggleFilterPanel}>
+          <Icon name="tune" size={18} /> Filter
+          {activeCount > 0 && <span className="hac-filter-badge">{activeCount}</span>}
+        </button>
+      </div>
+      {filterOpen && (
+        <div className="hac-filter-panel" style={{ width: "100%" }}>
+          <div className="hac-filter-grid">
+            <div className="hac-filter-field">
+              <label>Status</label>
+              <div className="hac-select-wrap">
+                <SelectMenu className="hac-select" value={pendingStatus} options={FLEET_STATUS_OPTIONS}
+                  onChange={setPendingStatus} ariaLabel="Status" />
+              </div>
+            </div>
+          </div>
+          <div className="hac-filter-actions">
+            <button type="button" className="hac-filter-apply" onClick={applyFilters}>Apply Filters</button>
+            <button type="button" className="hac-filter-reset" onClick={resetFilters}>Reset All</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function TripsView({ go, tab, filter, toast }) {
+function FleetStatusTable({ go, onVehicle, onDriver }) {
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [scope, setScope] = useState("vehicle");
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("all");
+
+  const rows = useMemo(() => D.fleetStatus.filter((r) => {
+    if (status !== "all" && r.status !== status) return false;
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    if (scope === "vehicle") return vehicleById(r.vehicleId).plate.toLowerCase().includes(q);
+    return driverById(r.driverId).name.toLowerCase().includes(q);
+  }), [scope, query, status]);
+  useEffect(() => { setPage(1); }, [scope, query, status]);
+  const shown = rows.slice((page - 1) * perPage, page * perPage);
+  return (
+    <>
+      <FleetStatusToolbar scope={scope} setScope={setScope} query={query} setQuery={setQuery} status={status} setStatus={setStatus} />
+      <div className="ml-table-wrap">
+        <table className="ml-table">
+          <thead><tr><th>Vehicle</th><th>Driver</th><th>Current status</th><th>Active trip</th></tr></thead>
+          <tbody>
+            {shown.length === 0 && (
+              <tr><td colSpan={4}><div className="mt-empty">No vehicles match this filter.</div></td></tr>
+            )}
+            {shown.map((r) => {
+              const v = vehicleById(r.vehicleId); const d = driverById(r.driverId);
+              const clickable = !!r.tripId;
+              return (
+                <tr key={r.vehicleId} className={clickable ? "mt-table-row" : ""}
+                  onClick={clickable ? () => go({ name: "detail", tripId: r.tripId, from: { name: "trips", tab: "fleet", filter: {} } }) : undefined}>
+                  <td>
+                    <button type="button" className="mt-cell-link"
+                      onClick={(e) => { e.stopPropagation(); onVehicle(v.id); }}>{v.plate}</button>
+                    <div className="mt-cell-sub">{v.model}</div>
+                  </td>
+                  <td>
+                    <button type="button" className="mt-cell-link"
+                      onClick={(e) => { e.stopPropagation(); onDriver(d.id); }}>
+                      {d.name}
+                    </button>
+                  </td>
+                  <td><StatusBadge status={FLEET_STATUS_KEY[r.status]} /></td>
+                  <td>{r.tripId ? <b>{r.tripId}</b> : <span className="mt-cell-muted">—</span>}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <Pager page={page} perPage={perPage} total={rows.length} onPage={setPage} onPerPage={setPerPage} />
+    </>
+  );
+}
+
+function TripsView({ go, tab, filter, onVehicle, onDriver }) {
+  const [scope, setScope] = useState("tripId");
+  const [query, setQuery] = useState("");
   const setTab = (next) => go({ name: "trips", tab: next, filter });
   const setFilter = (next) => {
     const clean = Object.fromEntries(Object.entries(next).filter(([, v]) => v !== undefined));
@@ -518,11 +759,12 @@ function TripsView({ go, tab, filter, toast }) {
       </div>
       {tab === "trips" ? (
         <>
+          <TripsToolbar scope={scope} setScope={setScope} query={query} setQuery={setQuery} filter={filter} onChange={setFilter} />
           <FilterChips filter={filter} onChange={setFilter} />
-          <TripsTable filter={filter} go={go} toast={toast} />
+          <TripsTable filter={filter} scope={scope} query={query} go={go} onVehicle={onVehicle} onDriver={onDriver} />
         </>
       ) : (
-        <FleetStatusTable go={go} toast={toast} />
+        <FleetStatusTable go={go} onVehicle={onVehicle} onDriver={onDriver} />
       )}
     </>
   );
@@ -543,7 +785,7 @@ const SCHED_STATUS_OPTIONS = [
   { value: "terminated", label: "Terminated" },
 ];
 
-function ScheduleView({ go }) {
+function ScheduleView({ go, onVehicle, onDriver }) {
   const [range, setRange] = useState("today");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
@@ -567,6 +809,10 @@ function ScheduleView({ go }) {
       });
   }, [range, query, status]);
 
+  const openRow = (row) => {
+    const st = fleetStatusOf(row.vehicleId);
+    if (st && st.tripId) go({ name: "detail", tripId: st.tripId, from: { name: "schedule" } });
+  };
   const openBar = (b) => tripById(b.tripId) && go({ name: "detail", tripId: b.tripId, from: { name: "schedule" } });
 
   return (
@@ -574,11 +820,11 @@ function ScheduleView({ go }) {
       <div className="mt-pagehead">
         <div>
           <h1 className="mt-title">Schedule</h1>
-          <div className="mt-subtitle">Vehicle trip timelines · click a bar to open the trip</div>
+          <div className="mt-subtitle">Vehicle trip timelines · click a trip to open it, or the row for its current trip</div>
         </div>
         <ExportMenu />
       </div>
-      <div className="mt-card">
+      <div className="mt-section">
         <CardHead icon="calendar_view_day" title={range === "tomorrow" ? "Tomorrow" : range === "custom" ? "Custom range" : "Today"}
           sub={range === "today" ? D.dateLabel : range === "tomorrow" ? "Saturday, 11 Jul 2026" : "Pick a date range"}
           right={
@@ -596,15 +842,11 @@ function ScheduleView({ go }) {
           </div>
         )}
         <div className="mt-sched-toolbar">
-          <div className="mt-search">
-            <Icon name="search" size={16} color="var(--fg-tertiary)" />
-            <input value={query} onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search vehicle or driver" aria-label="Search vehicle or driver" />
-          </div>
+          <SearchBox value={query} onChange={setQuery} placeholder="Search vehicle or driver" />
           <SelectMenu value={status} options={SCHED_STATUS_OPTIONS} onChange={setStatus}
             ariaLabel="Filter by status" wrapperClassName="hac-select-wrap compact" className="hac-select" />
         </div>
-        <FleetTimeline rows={rows} showNow={showNow} onBar={openBar} roomy />
+        <FleetTimeline rows={rows} showNow={showNow} onRow={openRow} onBar={openBar} roomy />
         <TimelineLegend showNow={showNow} />
 
         {/* Mobile fallback: vertical per-vehicle list */}
@@ -614,7 +856,7 @@ function ScheduleView({ go }) {
             return (
               <div key={row.vehicleId} className="mt-tlm-card">
                 <div className="mt-tlm-head">
-                  <a className="mt-tl-veh-plate" href="../org-vehicle-list/index.html">{v.plate}</a>
+                  <button type="button" className="mt-tl-veh-plate" onClick={() => onVehicle(v.id)}>{v.plate}</button>
                   <span className="mt-cell-muted" style={{ fontSize: 11 }}>{row.bars.length} trip{row.bars.length === 1 ? "" : "s"}</span>
                 </div>
                 <div className="mt-tlm-trips">
@@ -633,63 +875,187 @@ function ScheduleView({ go }) {
           })}
         </div>
       </div>
+      <UpcomingTripsSection go={go} onVehicle={onVehicle} onDriver={onDriver} />
     </>
+  );
+}
+
+const parseClock = (str) => {
+  const m = /^(\d+):(\d+)\s*(AM|PM)$/i.exec(str.trim());
+  if (!m) return 0;
+  let h = parseInt(m[1], 10) % 12;
+  if (/pm/i.test(m[3])) h += 12;
+  return h * 60 + parseInt(m[2], 10);
+};
+
+function UpcomingTripsSection({ go, onVehicle, onDriver }) {
+  const upcoming = useMemo(() =>
+    D.trips.filter((t) => t.status === "pending").sort((a, b) => parseClock(a.scheduled) - parseClock(b.scheduled)),
+  []);
+  const shown = upcoming.slice(0, 6);
+  return (
+    <div className="mt-section" style={{ marginTop: 28 }}>
+      <CardHead icon="event" title="Upcoming trips" sub="Pending departures, soonest first" />
+      <div className="ml-table-wrap" style={{ marginTop: 12 }}>
+        <table className="ml-table">
+          <thead><tr><th>Trip ID</th><th>Vehicle</th><th>Driver</th><th>Route</th><th>Departs</th></tr></thead>
+          <tbody>
+            {shown.length === 0 && (
+              <tr><td colSpan={5}><div className="mt-empty">No upcoming trips.</div></td></tr>
+            )}
+            {shown.map((t) => {
+              const v = vehicleById(t.vehicleId); const d = driverById(t.driverId);
+              return (
+                <tr key={t.id} className="mt-table-row"
+                  onClick={() => go({ name: "detail", tripId: t.id, from: { name: "schedule" } })}>
+                  <td><b>{t.id}</b></td>
+                  <td>
+                    <button type="button" className="mt-cell-link"
+                      onClick={(e) => { e.stopPropagation(); onVehicle(v.id); }}>{v.plate}</button>
+                    <div className="mt-cell-sub">{v.model}</div>
+                  </td>
+                  <td>
+                    <button type="button" className="mt-cell-link"
+                      onClick={(e) => { e.stopPropagation(); onDriver(d.id); }}>{d.name}</button>
+                  </td>
+                  <td>{t.from} <span className="mt-cell-muted">→</span> {t.to}</td>
+                  <td>{t.scheduled}<div className="mt-cell-sub">ETA {t.eta}</div></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {upcoming.length > shown.length && (
+        <div className="mt-card-footer" style={{ justifyContent: "flex-start", paddingTop: 10 }}>
+          <button type="button" className="ml-btn-text-blue"
+            onClick={() => go({ name: "trips", tab: "trips", filter: { status: "pending", range: "today" } })}>
+            View all {upcoming.length} pending trips<Icon name="chevron_right" size={16} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Vehicle / driver info modals ──────────────────────────────────
+   Vehicle and driver profile pages aren't part of this prototype — clicking
+   a plate or driver name used to either navigate away to a different flow
+   (org-vehicle-list) or just toast. Neither belongs inside a trip-scoped
+   view, so both now open a small in-context info modal instead. */
+function VehicleInfoModal({ vehicleId, onClose }) {
+  const v = vehicleById(vehicleId);
+  const st = fleetStatusOf(vehicleId);
+  const todayTrips = D.trips.filter((t) => t.vehicleId === vehicleId);
+  return (
+    <Modal onClose={onClose} ariaLabel={`${v.plate} details`} backdropClassName="mt-modal-backdrop" className="mt-modal">
+      <div className="mt-modal-head">
+        <span className="mt-modal-title">{v.plate}</span>
+        <button type="button" className="mt-modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={18} /></button>
+      </div>
+      <div className="mt-modal-sub">{v.model}</div>
+      <div className="mt-info-grid" style={{ marginTop: 14 }}>
+        <div className="mt-info-field">
+          <div className="mt-info-label">Current status</div>
+          <div className="mt-info-value">{st ? <StatusBadge status={FLEET_STATUS_KEY[st.status]} /> : "—"}</div>
+        </div>
+        <div className="mt-info-field">
+          <div className="mt-info-label">Driver</div>
+          <div className="mt-info-value">{st ? driverById(st.driverId).name : "Unassigned"}</div>
+        </div>
+        <div className="mt-info-field">
+          <div className="mt-info-label">Category</div>
+          <div className="mt-info-value">{v.category}</div>
+        </div>
+        <div className="mt-info-field">
+          <div className="mt-info-label">Vendor</div>
+          <div className="mt-info-value">{v.vendor}</div>
+        </div>
+        <div className="mt-info-field">
+          <div className="mt-info-label">Capacity</div>
+          <div className="mt-info-value">{N(v.capacity)} kg</div>
+        </div>
+        <div className="mt-info-field">
+          <div className="mt-info-label">Trips today</div>
+          <div className="mt-info-value">{todayTrips.length}</div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function DriverInfoModal({ driverId, onClose }) {
+  const d = driverById(driverId);
+  const st = D.fleetStatus.find((r) => r.driverId === driverId);
+  const todayTrips = D.trips.filter((t) => t.driverId === driverId);
+  return (
+    <Modal onClose={onClose} ariaLabel={`${d.name} details`} backdropClassName="mt-modal-backdrop" className="mt-modal">
+      <div className="mt-modal-head">
+        <span className="mt-modal-title">{d.name}</span>
+        <button type="button" className="mt-modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={18} /></button>
+      </div>
+      <div className="mt-modal-sub">{d.driverId} · {d.phone}</div>
+      <div className="mt-info-grid" style={{ marginTop: 14 }}>
+        <div className="mt-info-field">
+          <div className="mt-info-label">Vehicle</div>
+          <div className="mt-info-value">{st ? vehicleById(st.vehicleId).plate : "Unassigned"}</div>
+        </div>
+        <div className="mt-info-field">
+          <div className="mt-info-label">Current status</div>
+          <div className="mt-info-value">{st ? <StatusBadge status={FLEET_STATUS_KEY[st.status]} /> : "—"}</div>
+        </div>
+        <div className="mt-info-field">
+          <div className="mt-info-label">Trips today</div>
+          <div className="mt-info-value">{todayTrips.length}</div>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
 /* ── Share modal ───────────────────────────────────────────────── */
 function ShareModal({ trip, onClose, go, toast }) {
-  const wrapRef = useRef(null);
   const url = `https://track.mylorry.my/t/${trip.id.toLowerCase()}-9f3kq7`;
-  useEffect(() => {
-    function onKey(e) { if (e.key === "Escape") onClose(); }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
   const copy = () => {
     if (navigator.clipboard) navigator.clipboard.writeText(url).catch(() => {});
     toast("Tracking link copied");
   };
-  return ReactDOM.createPortal(
-    <div className="mt-modal-backdrop" ref={wrapRef}
-      onMouseDown={(e) => { if (e.target === wrapRef.current) onClose(); }}
-      role="dialog" aria-modal="true" aria-label="Share tracking link">
-      <div className="mt-modal">
-        <div className="mt-modal-head">
-          <span className="mt-modal-title">Share tracking link</span>
-          <button type="button" className="mt-modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={18} /></button>
-        </div>
-        <div className="mt-modal-sub">
-          Send this link to your customer so they can follow <b>{trip.id}</b> live. No MyLorry account needed.
-        </div>
-        <div className="mt-share-url">
-          <input readOnly value={url} onFocus={(e) => e.target.select()} aria-label="Tracking link" />
-          <button type="button" className="ml-btn-outline" onClick={copy}><Icon name="content_copy" size={16} /> Copy</button>
-        </div>
-        <div className="mt-share-actions">
-          <button type="button" className="mt-share-wa" onClick={() => toast("Opening WhatsApp… (prototype)")}>
-            <Icon name="chat" size={18} fill={1} /> Share via WhatsApp
-          </button>
-        </div>
-        <div className="mt-share-scope">
-          <div className="mt-share-scope-row"><Icon name="check" size={15} />Recipient sees truck location, trip details, and estimated arrival only.</div>
-          <div className="mt-share-scope-row"><Icon name="check" size={15} />Scoped to this trip — no other trips or organisation data.</div>
-          <div className="mt-share-scope-row"><Icon name="check" size={15} />Link stops working when the trip is completed.</div>
-        </div>
-        <div className="mt-share-preview-link">
-          <button type="button" className="ml-btn-text-blue"
-            onClick={() => { onClose(); go({ name: "public", tripId: trip.id }); }}>
-            Preview what the customer sees<Icon name="chevron_right" size={16} />
-          </button>
-        </div>
+  return (
+    <Modal onClose={onClose} ariaLabel="Share tracking link"
+      backdropClassName="mt-modal-backdrop" className="mt-modal">
+      <div className="mt-modal-head">
+        <span className="mt-modal-title">Share tracking link</span>
+        <button type="button" className="mt-modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={18} /></button>
       </div>
-    </div>,
-    document.body
+      <div className="mt-modal-sub">
+        Send this link to your customer so they can follow <b>{trip.id}</b> live. No MyLorry account needed.
+      </div>
+      <div className="mt-share-url">
+        <input readOnly value={url} onFocus={(e) => e.target.select()} aria-label="Tracking link" />
+        <button type="button" className="ml-btn-outline" onClick={copy}><Icon name="content_copy" size={16} /> Copy</button>
+      </div>
+      <div className="mt-share-actions">
+        <button type="button" className="mt-share-wa" onClick={() => toast("Opening WhatsApp… (prototype)")}>
+          <Icon name="chat" size={18} fill={1} /> Share via WhatsApp
+        </button>
+      </div>
+      <div className="mt-share-scope">
+        <div className="mt-share-scope-row"><Icon name="check" size={15} />Recipient sees truck location, trip details, and estimated arrival only.</div>
+        <div className="mt-share-scope-row"><Icon name="check" size={15} />Scoped to this trip — no other trips or organisation data.</div>
+        <div className="mt-share-scope-row"><Icon name="check" size={15} />Link stops working when the trip is completed.</div>
+      </div>
+      <div className="mt-share-preview-link">
+        <button type="button" className="ml-btn-text-blue"
+          onClick={() => { onClose(); go({ name: "public", tripId: trip.id }); }}>
+          Preview what the customer sees<Icon name="chevron_right" size={16} />
+        </button>
+      </div>
+    </Modal>
   );
 }
 
 /* ── Trip detail ───────────────────────────────────────────────── */
-function DetailView({ tripId, from, go, toast }) {
+function DetailView({ tripId, from, go, toast, onVehicle, onDriver }) {
   const [shareOpen, setShareOpen] = useState(false);
   const trip = tripById(tripId);
   if (!trip) return <div className="mt-empty">Trip not found.</div>;
@@ -720,15 +1086,14 @@ function DetailView({ tripId, from, go, toast }) {
             <div className="mt-info-field">
               <div className="mt-info-label">Vehicle</div>
               <div className="mt-info-value">
-                <a className="mt-cell-link" href="../org-vehicle-list/index.html">{v.plate}</a>
+                <button type="button" className="mt-info-link" onClick={() => onVehicle(v.id)}>{v.plate}</button>
                 <div className="mt-cell-sub">{v.model}</div>
               </div>
             </div>
             <div className="mt-info-field">
               <div className="mt-info-label">Driver</div>
               <div className="mt-info-value">
-                <button type="button" className="mt-cell-link"
-                  onClick={() => toast("Driver profile — separate flow, not in this prototype")}>{d.name}</button>
+                <button type="button" className="mt-info-link" onClick={() => onDriver(d.id)}>{d.name}</button>
               </div>
             </div>
             <div className="mt-info-field">
@@ -870,7 +1235,11 @@ function PublicView({ tripId, go }) {
 function App() {
   const [route, setRoute] = useState({ name: "dashboard" });
   const [toast, toastNode] = useToast();
+  const [infoModal, setInfoModal] = useState(null); // { type: "vehicle"|"driver", id } | null
   const go = (next) => { setRoute(next); window.scrollTo(0, 0); };
+  const onVehicle = (vehicleId) => setInfoModal({ type: "vehicle", id: vehicleId });
+  const onDriver = (driverId) => setInfoModal({ type: "driver", id: driverId });
+  const closeInfoModal = () => setInfoModal(null);
 
   if (route.name === "public") {
     return <>{toastNode}<PublicView tripId={route.tripId} go={go} /></>;
@@ -890,11 +1259,13 @@ function App() {
         </div>
         <div className="mt-content">
           {route.name === "dashboard" && <DashboardView go={go} />}
-          {route.name === "trips" && <TripsView go={go} tab={route.tab || "trips"} filter={route.filter || {}} toast={toast} />}
-          {route.name === "schedule" && <ScheduleView go={go} />}
-          {route.name === "detail" && <DetailView tripId={route.tripId} from={route.from} go={go} toast={toast} />}
+          {route.name === "trips" && <TripsView go={go} tab={route.tab || "trips"} filter={route.filter || {}} onVehicle={onVehicle} onDriver={onDriver} />}
+          {route.name === "schedule" && <ScheduleView go={go} onVehicle={onVehicle} onDriver={onDriver} />}
+          {route.name === "detail" && <DetailView tripId={route.tripId} from={route.from} go={go} toast={toast} onVehicle={onVehicle} onDriver={onDriver} />}
         </div>
       </main>
+      {infoModal?.type === "vehicle" && <VehicleInfoModal vehicleId={infoModal.id} onClose={closeInfoModal} />}
+      {infoModal?.type === "driver" && <DriverInfoModal driverId={infoModal.id} onClose={closeInfoModal} />}
       {toastNode}
     </div>
   );

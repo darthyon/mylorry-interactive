@@ -6,25 +6,28 @@ window.MYTRIP_DASH = {
   nowLabel: "2:45 PM",
   nowHour: 14.75,
 
+  // Vehicle fields (category, vendor, capacity) mirror the shape used in
+  // flows/org-vehicle-list/data.js so the info modal reads like the same
+  // fleet record, not a separate MyTrip-only summary.
   vehicles: [
-    { id: "v1", plate: "WXY 4521", model: "Hino 500 · 10t" },
-    { id: "v2", plate: "BMA 8830", model: "Isuzu NPR · 5t" },
-    { id: "v3", plate: "JJC 2214", model: "Fuso Fighter · 10t" },
-    { id: "v4", plate: "PGK 6633", model: "Hino 300 · 3t" },
-    { id: "v5", plate: "VBT 1108", model: "Scania P360 · Prime" },
-    { id: "v6", plate: "WTC 9902", model: "Isuzu FVR · 15t" },
-    { id: "v7", plate: "KEL 3377", model: "Hino 500 · 10t" },
-    { id: "v8", plate: "NCS 5541", model: "Daihatsu Gran Max · 1t" },
+    { id: "v1", plate: "WXY 4521", model: "Hino 500 · 10t", category: "Lorry", vendor: "Padu Fleet", capacity: 10400 },
+    { id: "v2", plate: "BMA 8830", model: "Isuzu NPR · 5t", category: "Lorry", vendor: "Swift Leasing", capacity: 5100 },
+    { id: "v3", plate: "JJC 2214", model: "Fuso Fighter · 10t", category: "Truck", vendor: "Padu Fleet", capacity: 10200 },
+    { id: "v4", plate: "PGK 6633", model: "Hino 300 · 3t", category: "Lorry", vendor: "Padu Fleet", capacity: 3100 },
+    { id: "v5", plate: "VBT 1108", model: "Scania P360 · Prime", category: "Prime Mover", vendor: "Bintang Mobility", capacity: 25000 },
+    { id: "v6", plate: "WTC 9902", model: "Isuzu FVR · 15t", category: "Truck", vendor: "North Cold Chain", capacity: 15300 },
+    { id: "v7", plate: "KEL 3377", model: "Hino 500 · 10t", category: "Lorry", vendor: "Padu Fleet", capacity: 10400 },
+    { id: "v8", plate: "NCS 5541", model: "Daihatsu Gran Max · 1t", category: "Van", vendor: "Swift Leasing", capacity: 1000 },
   ],
   drivers: [
-    { id: "d1", name: "Azman Hashim" },
-    { id: "d2", name: "Faizal Rahman" },
-    { id: "d3", name: "Kumar Subramaniam" },
-    { id: "d4", name: "Lim Wei Jian" },
-    { id: "d5", name: "Syed Amir" },
-    { id: "d6", name: "Hafiz Zulkifli" },
-    { id: "d7", name: "Ravi Chandran" },
-    { id: "d8", name: "Zainal Abidin" },
+    { id: "d1", name: "Azman Hashim", driverId: "DRV-014", phone: "012-883 9214" },
+    { id: "d2", name: "Faizal Rahman", driverId: "DRV-022", phone: "012-661 1024" },
+    { id: "d3", name: "Kumar Subramaniam", driverId: "DRV-005", phone: "013-800 2265" },
+    { id: "d4", name: "Lim Wei Jian", driverId: "DRV-031", phone: "016-274 5589" },
+    { id: "d5", name: "Syed Amir", driverId: "DRV-009", phone: "017-390 1147" },
+    { id: "d6", name: "Hafiz Zulkifli", driverId: "DRV-018", phone: "019-552 8830" },
+    { id: "d7", name: "Ravi Chandran", driverId: "DRV-027", phone: "011-2045 6613" },
+    { id: "d8", name: "Zainal Abidin", driverId: "DRV-012", phone: "012-770 3391" },
   ],
 
   // Trip records (today). status: completed | ongoing | pending | paused | terminated
