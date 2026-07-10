@@ -215,7 +215,7 @@ function TripChartCard({ go }) {
       </div>
       <div className="mt-chart-legend">
         <span><i className="mt-dot" style={{ background: "#00AA4F" }} />Completed</span>
-        <span><i className="mt-dot" style={{ background: "#0081AA" }} />Assigned, not yet completed</span>
+        <span><i className="mt-dot" style={{ background: "#0081AA" }} />Assigned</span>
       </div>
     </div>
   );
@@ -1231,11 +1231,35 @@ function PublicView({ tripId, go }) {
   );
 }
 
+function LeaveConfirmModal({ onStay, onLeave }) {
+  const wrapRef = useRef(null);
+  useEffect(() => {
+    function onKey(e) { if (e.key === "Escape") onStay(); }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onStay]);
+  function onBackdrop(e) { if (e.target === wrapRef.current) onStay(); }
+  return ReactDOM.createPortal(
+    <div className="mt-leave-backdrop" ref={wrapRef} onMouseDown={onBackdrop} role="dialog" aria-modal="true" aria-label="Leave page confirmation">
+      <div className="mt-leave-modal">
+        <div className="mt-leave-title">Leave this page?</div>
+        <div className="mt-leave-msg">Are you sure you want to leave this page? Your progress may not be saved.</div>
+        <div className="mt-leave-actions">
+          <button type="button" className="mt-leave-stay" onClick={onStay}>Stay</button>
+          <button type="button" className="mt-leave-exit" onClick={onLeave}>Exit to Dashboard</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 /* ── App ───────────────────────────────────────────────────────── */
 function App() {
   const [route, setRoute] = useState({ name: "dashboard" });
   const [toast, toastNode] = useToast();
   const [infoModal, setInfoModal] = useState(null); // { type: "vehicle"|"driver", id } | null
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
   const go = (next) => { setRoute(next); window.scrollTo(0, 0); };
   const onVehicle = (vehicleId) => setInfoModal({ type: "vehicle", id: vehicleId });
   const onDriver = (driverId) => setInfoModal({ type: "driver", id: driverId });
@@ -1253,9 +1277,9 @@ function App() {
         <div className="mt-topbar">
           <OrgSwitcher orgs={D.orgs} initialId={D.org.id} />
           <div className="mt-topbar-spacer" />
-          <a className="mt-iconbtn mt-closebtn" href="../org-dashboard/index.html" aria-label="Close">
+          <button type="button" className="mt-iconbtn mt-closebtn" onClick={() => setShowLeaveModal(true)} aria-label="Close">
             <Icon name="close" size={18} />
-          </a>
+          </button>
         </div>
         <div className="mt-content">
           {route.name === "dashboard" && <DashboardView go={go} />}
@@ -1266,6 +1290,9 @@ function App() {
       </main>
       {infoModal?.type === "vehicle" && <VehicleInfoModal vehicleId={infoModal.id} onClose={closeInfoModal} />}
       {infoModal?.type === "driver" && <DriverInfoModal driverId={infoModal.id} onClose={closeInfoModal} />}
+      {showLeaveModal && (
+        <LeaveConfirmModal onStay={() => setShowLeaveModal(false)} onLeave={() => { setShowLeaveModal(false); window.location.href = "../org-dashboard/index.html"; }} />
+      )}
       {toastNode}
     </div>
   );

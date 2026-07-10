@@ -49,6 +49,18 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mt-iconbtn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border-light);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--fg-secondary);flex-shrink:0;}
 .mt-closebtn{text-decoration:none;border:none;background:var(--bg-muted);border-radius:8px;}
 .mt-closebtn:hover{background:var(--bg-hover);color:var(--fg-primary);}
+
+/* Leave confirmation modal */
+.mt-leave-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.mt-leave-modal{background:#fff;border-radius:var(--radius-lg);width:100%;max-width:380px;padding:22px 24px 24px;box-shadow:0 8px 40px rgba(0,0,0,.18);text-align:center;}
+.mt-leave-title{font-size:17px;font-weight:600;color:var(--fg-primary);margin-bottom:8px;}
+.mt-leave-msg{font-size:13px;line-height:1.5;color:var(--fg-secondary);margin-bottom:22px;}
+.mt-leave-actions{display:flex;gap:10px;justify-content:center;}
+.mt-leave-actions button{height:38px;padding:0 16px;border-radius:8px;font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:background .15s;}
+.mt-leave-stay{background:var(--bg-muted);color:var(--fg-primary);}
+.mt-leave-stay:hover{background:var(--bg-hover);}
+.mt-leave-exit{background:var(--green-600);color:#fff;}
+.mt-leave-exit:hover{background:#009945;}
 .mt-content{padding:22px 24px 48px;margin:0 auto;}
 .mt-pagehead{margin-bottom:18px;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;}
 .mt-title{font-size:20px;font-weight:600;color:var(--fg-primary);margin:0;}
