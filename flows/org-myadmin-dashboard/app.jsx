@@ -32,7 +32,7 @@ function LeaveConfirmModal({ onStay, onLeave }) {
 const MYADMIN_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: "dashboard", href: "index.html" },
   { key: "user", label: "User", icon: "group" },
-  { key: "driver", label: "Driver", icon: "badge" },
+  { key: "driver", label: "Driver", icon: "badge", href: "../org-driver-list/index.html" },
   { key: "vehicle", label: "Vehicle", icon: "local_shipping", href: "../org-vehicle-list/index.html" },
   { key: "vendor", label: "Vendor", icon: "storefront" },
   { key: "checklist", label: "Checklist", icon: "fact_check" },

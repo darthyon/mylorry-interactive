@@ -96,6 +96,18 @@ window.FLOWS = {
           ],
         },
         {
+          id: "org-driver-list",
+          name: "Driver List",
+          status: "ready",
+          route: "flows/org-driver-list/index.html",
+          desc: "MyAdmin driver CRUD scaffold with a responsive list, Personal Details create/edit, and post-creation tab placeholders.",
+          screens: [
+            { label: "Driver list", note: "Search, operational-duty filter, desktop table, and compact mobile cards." },
+            { label: "Create & edit", note: "Personal Details form with validation and row-menu edit/delete actions." },
+            { label: "Post-creation tabs", note: "Additional Info, Emergency Contacts, and Documents remain scoped placeholders." },
+          ],
+        },
+        {
           id: "org-endorser-dashboard",
           name: "Endorser — Dashboard",
           status: "ready",

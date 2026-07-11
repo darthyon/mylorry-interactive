@@ -714,6 +714,34 @@ function Modal({ onClose, ariaLabel, backdropClassName = "ml-modal-backdrop", cl
   );
 }
 
+/* ─── HAC Modal ─────────────────────────────────────────────────
+   Canonical form-dialog composition: drag handle, title row, divider,
+   scrollable body and paired footer actions. Use this for CRUD modals. */
+function HacModal({ title, onClose, children, footer, ariaLabel = title, className = "" }) {
+  return <Modal onClose={onClose} ariaLabel={ariaLabel} backdropClassName="hac-modal-overlay" className={`hac-modal ${className}`}>
+    <div className="hac-modal-drag" />
+    <div className="hac-modal-head">
+      <span className="hac-modal-title">{title}</span>
+      <button className="hac-modal-close" type="button" aria-label="Close" onClick={onClose}><Icon name="cancel" size={22} fill={1} color="var(--fg-disabled)" /></button>
+    </div>
+    <div className="hac-modal-divider" />
+    <div className="hac-modal-body" style={{ paddingBottom: 20 }}>{children}</div>
+    {footer && <div className="hac-modal-foot">{footer}</div>}
+  </Modal>;
+}
+
+/* ─── File Upload ───────────────────────────────────────────────
+   Shared drop-zone interaction for single-image and multi-document uploads. */
+function HacFileUpload({ accept, multiple = false, onFiles, description = "Click to upload or drag and drop", hint, chooseLabel = "Choose file", preview }) {
+  const inputRef = React.useRef(null);
+  function handleFiles(files) { if (files?.length) onFiles?.(files); }
+  return <div className="hac-file-upload" onClick={() => inputRef.current?.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); }}>
+    <input ref={inputRef} type="file" accept={accept} multiple={multiple} style={{ display: "none" }} onChange={(e) => handleFiles(e.target.files)} />
+    {preview || <><Icon name="upload_file" size={26} color="var(--green-600)" /><div className="hac-file-upload-text">{description}</div>{hint && <div className="hac-file-upload-hint">{hint}</div>}</>}
+    <button type="button" className="ml-btn-outline hac-file-upload-btn" onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}>{chooseLabel}</button>
+  </div>;
+}
+
 /* ─── History Card ────────────────────────────────────────────── */
 // onClick — optional; whole card becomes a button (same interactive-affordance
 // pattern as CountCard: role/tabIndex/Enter-Space handled by the native
@@ -888,7 +916,7 @@ window.SharedShell = {
   Pill, CurrencyPill, SummaryCard, CountCard, KpiTierChip,
   StatusBadge, AccountStatusBadge, KPIProgress, KPIProgressMeta,
   LockSection, PetronLogo, HistoryCard, FeatureTabShell, OrgSwitcher, SelectMenu,
-  CalcPopover, ChecklistCard, ConfirmBulkModal, Modal,
+  CalcPopover, ChecklistCard, ConfirmBulkModal, Modal, HacModal, HacFileUpload,
 };
 window.KPIProgressMeta = KPIProgressMeta;
 }
