@@ -1,7 +1,7 @@
 {
 
 const { useEffect, useMemo, useRef, useState } = React;
-const { Icon, OrgSwitcher: BaseOrgSwitcher, SelectMenu, Pager, HacFileUpload } = window.SharedShell;
+const { Icon, OrgSwitcher: BaseOrgSwitcher, SelectMenu, Pager, HacModal, HacFileUpload } = window.SharedShell;
 const { useTweaks, TweaksPanel, TweakSection, TweakSelect, TweakToggle } = window;
 const D = window.ORG_VEHICLE_LIST;
 
@@ -35,10 +35,10 @@ const SCENARIO_LABEL = {
 };
 
 const DOC_FIELDS = [
-  { key: "roadTax", label: "Road Tax Expiry" },
-  { key: "insurance", label: "Insurance Expiry" },
-  { key: "puspakom", label: "Puspakom Service" },
-  { key: "permit", label: "Truck Permit Expiry" },
+  { key: "roadTax", type: "Road Tax", label: "Road Tax Expiry", startRequired: false, defaultReminder: 30 },
+  { key: "insurance", type: "Insurance", label: "Insurance Expiry", startRequired: true, defaultReminder: 30 },
+  { key: "puspakom", type: "Puspakom Service", label: "Puspakom Service", startRequired: true, defaultReminder: 60 },
+  { key: "permit", type: "Truck Permit", label: "Truck Permit Expiry", startRequired: false, defaultReminder: 30 },
 ];
 
 const VEHICLE_CATEGORIES = ["Lorry", "Van", "Bus", "Truck", "MPV", "Sedan"];
@@ -50,8 +50,8 @@ const VEHICLE_SUB_CATEGORIES_BY_CATEGORY = {
 };
 const VEHICLE_EDIT_TABS = [
   { key: "details", label: "Vehicle Details" },
-  { key: "reminders", label: "Reminders" },
   { key: "forms", label: "Forms" },
+  { key: "reminders", label: "Documents" },
   { key: "drivers", label: "Drivers" },
 ];
 const DRIVER_POOL = [
@@ -129,6 +129,41 @@ function bestUrgency(vehicle) {
   return docs[0] || null;
 }
 
+function documentStatus(iso) {
+  if (!iso) return "Not set";
+  return daysUntil(iso) < 0 ? "Expired" : "Active";
+}
+
+function documentTone(iso) {
+  const days = daysUntil(iso);
+  if (days == null) return "empty";
+  if (days < 7) return "danger";
+  if (days <= 30) return "warn";
+  return "good";
+}
+
+function formatReminderList(reminders = []) {
+  const values = reminders.map(Number).filter((value) => Number.isFinite(value) && value > 0);
+  return values.length ? values.map((value) => `${value} days before expiry`).join(", ") : "—";
+}
+
+function remindersForTier(reminders = [], tier) {
+  return tier === "free" ? [reminders[0]] : reminders;
+}
+
+function makeVehicleDocuments(vehicle) {
+  if (Array.isArray(vehicle.documents)) return vehicle.documents;
+  return DOC_FIELDS.map((field) => ({
+    id: `${vehicle.id}-${field.key}`,
+    type: field.type,
+    startDate: "",
+    expireDate: vehicle[field.key] || "",
+    reminders: [field.defaultReminder, "", ""],
+    files: [],
+    history: [],
+  }));
+}
+
 function makeEmptyForm() {
   return {
     plate: "",
@@ -142,6 +177,7 @@ function makeEmptyForm() {
     capacity: "",
     photo: null,
     managed: false,
+    documents: [],
   };
 }
 
@@ -158,6 +194,7 @@ function makeFormFromVehicle(vehicle) {
     capacity: vehicle.capacity ?? "",
     photo: vehicle.photo || null,
     managed: !!vehicle.managed,
+    documents: makeVehicleDocuments(vehicle),
   };
 }
 
@@ -168,6 +205,7 @@ function normalizeVehicle(vehicle) {
     drivers: Array.isArray(vehicle.drivers) ? vehicle.drivers : [],
     activeCheckIn: !!vehicle.activeCheckIn,
     accessibleToAll: !!vehicle.accessibleToAll,
+    documents: makeVehicleDocuments(vehicle),
   };
 }
 
@@ -256,10 +294,12 @@ function ManagedIcon({ managed }) {
 }
 
 function ExpiryCell({ iso }) {
-  const tone = expiryTone(iso);
+  const tone = documentTone(iso);
+  const status = documentStatus(iso);
   return (
     <div className={`ovl-expiry ${tone}`}>
       <span className="ovl-expiry-date">{fmtDate(iso)}</span>
+      <span className={`ovl-expiry-status ${tone}`}>{status}</span>
       <span className="ovl-expiry-meta">{expiryMeta(iso)}</span>
     </div>
   );
@@ -772,10 +812,121 @@ function VehicleFormSections({ form, update, overCap, nextManagedCount, scope, o
   );
 }
 
+function vehicleDocumentStatus(doc) {
+  const status = documentStatus(doc.expireDate);
+  return <span className={`ovl-doc-status ${status === "Expired" ? "expired" : status === "Active" ? "active" : "empty"}`}>{status}</span>;
+}
+
+function VehicleDocumentUpload({ files, onFiles }) {
+  const currentFiles = files || [];
+  function addFiles(fileList) {
+    const next = Array.from(fileList || []).slice(0, 3 - currentFiles.length).map((file) => ({
+      id: `file-${Date.now()}-${file.name}`,
+      name: file.name,
+      kind: file.type?.startsWith("image/") ? "image" : "pdf",
+      url: file.type?.startsWith("image/") ? URL.createObjectURL(file) : "",
+      uploadedDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+    }));
+    if (next.length) onFiles([...currentFiles, ...next]);
+  }
+  function removeFile(id) {
+    onFiles(currentFiles.filter((file) => file.id !== id));
+  }
+  return <><HacFileUpload multiple accept="image/jpeg,image/png,image/webp,application/pdf" onFiles={addFiles} description={<><span>Click to upload</span> or drag and drop</>} hint="Images or PDF, up to 3 files" />{currentFiles.length > 0 && <div className="ovl-upload-files">{currentFiles.map((file) => <div className="ovl-upload-file" key={file.id}>{file.kind === "image" ? <img src={file.url} alt="" /> : <span className="ovl-upload-pdf"><Icon name="picture_as_pdf" size={22} color="#bd4f48" /></span>}<span className="ovl-upload-file-name">{file.name}</span><button type="button" className="ovl-upload-remove" aria-label={`Remove ${file.name}`} onClick={() => removeFile(file.id)}><Icon name="close" size={16} /></button></div>)}</div>}</>;
+}
+
+function VehicleFilePreview({ file, onClose }) {
+  return <HacModal title="File preview" onClose={onClose} className="ovl-preview-hac-modal" footer={<><button className="ml-btn-soft" type="button"><Icon name="download" size={15} color="var(--green-600)" />Download</button><button className="hac-modal-cancel" type="button" onClick={onClose}>Close</button></>}>
+    <div className="ovl-preview-body">{file.kind === "image" ? <div className="ovl-preview-image"><img src={file.url} alt={file.name} /></div> : <div className="ovl-preview-placeholder"><Icon name="picture_as_pdf" size={48} color="#bd4f48" /><span>PDF preview is not available in this prototype.</span></div>}<div className="ovl-preview-name">{file.name}</div><div className="ovl-preview-date">Uploaded {file.uploadedDate || "—"}</div></div>
+  </HacModal>;
+}
+
+function fileCountLabel(files = []) {
+  return files.length === 1 ? "1 file" : files.length ? `${files.length} files` : "No files";
+}
+
+function VehicleFileLink({ file, onPreview }) {
+  return <button className="ovl-file-link" type="button" onClick={() => onPreview(file)}>{file.kind === "image" ? <img src={file.url} alt="" /> : <Icon name="picture_as_pdf" size={27} color="#bd4f48" />}<span>{file.name}</span></button>;
+}
+
+function VehicleDocumentMenu({ onEdit, onDelete }) {
+  const [open, setOpen] = useState(false);
+  return <div className="ovl-doc-menu"><button type="button" aria-label="Document actions" aria-expanded={open} onClick={() => setOpen((value) => !value)}><Icon name="more_horiz" size={19} /></button>{open && <div className="ovl-doc-menu-pop"><button type="button" onClick={() => { setOpen(false); onEdit(); }}><Icon name="edit" size={15} />Edit</button><button className="danger" type="button" onClick={() => { setOpen(false); onDelete(); }}><Icon name="delete" size={15} />Delete</button></div>}</div>;
+}
+
+function VehicleReminderSummary({ reminders = [] }) {
+  const values = reminders.map(Number).filter((value) => Number.isFinite(value) && value > 0);
+  const [open, setOpen] = useState(false);
+  if (!values.length) return "—";
+  const nearest = Math.min(...values);
+  if (values.length === 1) return `${nearest} days before`;
+  return <>{nearest} days before <span className="ovl-reminder-summary"><button className="ovl-reminder-trigger" type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)}>+{values.length - 1} more<Icon name="expand_more" size={14} /></button>{open && <span className="ovl-reminder-pop" role="dialog" aria-label="Reminder schedule"><span className="ovl-reminder-pop-title">Reminder schedule</span>{values.map((value, index) => <span className="ovl-reminder-pop-row" key={`${value}-${index}`}><span>Reminder {index + 1}</span><span>{value} days before expiry</span></span>)}</span>}</span></>;
+}
+
+function VehicleHistoryRow({ record }) {
+  return <div className="ovl-history-row"><div className="ovl-history-top"><div className="ovl-history-sub">Uploaded {record.uploadedDate || record.createdDate || "—"}{record.uploadedBy ? ` by ${record.uploadedBy}` : ""}</div></div><div className="ovl-history-bottom"><div className="ovl-history-meta-group"><div className="ovl-history-meta"><span className="ovl-history-label">Start date</span><span className="ovl-history-value">{fmtDate(record.startDate)}</span></div><div className="ovl-history-meta"><span className="ovl-history-label">Due date</span><span className="ovl-history-value">{fmtDate(record.expireDate)}</span></div><div className="ovl-history-meta"><span className="ovl-history-label">Status</span><span className="ovl-doc-status expired">Expired</span></div><div className="ovl-history-meta"><span className="ovl-history-label">Expiry reminders</span><span className="ovl-history-reminder">{formatReminderList(record.reminders)}</span></div></div><div className="ovl-history-actions"><button className="ml-btn-soft" type="button"><Icon name="download" size={15} color="var(--green-600)" />Download</button></div></div></div>;
+}
+
+function VehicleDocumentModal({ initial, tier, onClose, onSave, onUpgrade }) {
+  const [form, setForm] = useState({ ...initial, reminders: [...(initial.reminders || [30, "", ""])] });
+  const [errors, setErrors] = useState({});
+  const rule = DOC_FIELDS.find((field) => field.type === form.type) || DOC_FIELDS[0];
+  const paid = tier !== "free";
+  const reminderIndexes = paid ? [0, 1, 2] : [0];
+  function update(key, value) { setForm((current) => ({ ...current, [key]: value })); }
+  function updateReminder(index, value) {
+    setForm((current) => ({ ...current, reminders: current.reminders.map((item, i) => i === index ? (value === "" ? "" : Number(value)) : item) }));
+  }
+  function submit(event) {
+    event.preventDefault();
+    const next = {};
+    if (rule.startRequired && !form.startDate) next.startDate = "Start Date is required for this document type.";
+    if (!form.expireDate) next.expireDate = "Due Date is required.";
+    if (!form.reminders[0]) next.reminder = "Reminder 1 is required.";
+    setErrors(next);
+    if (!Object.keys(next).length) onSave({ ...form, reminders: paid ? form.reminders : [form.reminders[0], "", ""], files: (form.files || []).slice(0, 3) });
+  }
+  const title = initial.id ? `Edit ${form.type}` : `Add ${form.type}`;
+  return <HacModal title={title} onClose={onClose} className="ovl-doc-modal" footer={<><button className="hac-modal-cancel" type="button" onClick={onClose}>Cancel</button><button className="hac-modal-save" type="submit" form="vehicle-document-form">{initial.id ? "Save changes" : "Add document"}</button></>}>
+    <form id="vehicle-document-form" onSubmit={submit}>
+      <div className="ovl-doc-fields">
+        <div className="ovl-doc-field"><label>Document type *</label><SelectMenu className="ovl-doc-select" value={form.type} options={DOC_FIELDS.map((field) => ({ value: field.type, label: field.type }))} onChange={(value) => { const next = DOC_FIELDS.find((field) => field.type === value) || DOC_FIELDS[0]; setForm((current) => ({ ...current, type: value, reminders: [next.defaultReminder, current.reminders[1] || "", current.reminders[2] || ""] })); }} ariaLabel="Document type" /></div>
+        <div className="ovl-doc-field"><label>Issued / Start date{rule.startRequired ? " *" : ""}</label><input type="date" value={form.startDate || ""} onChange={(e) => update("startDate", e.target.value)} />{errors.startDate && <span className="ovl-doc-error">{errors.startDate}</span>}</div>
+        <div className="ovl-doc-field"><label>Expire date *</label><input type="date" value={form.expireDate || ""} onChange={(e) => update("expireDate", e.target.value)} />{errors.expireDate && <span className="ovl-doc-error">{errors.expireDate}</span>}</div>
+        <div className="ovl-doc-field full"><label>File upload</label><VehicleDocumentUpload files={form.files || []} onFiles={(files) => update("files", files)} /></div>
+      </div>
+      <div className="ovl-doc-reminders"><h3>Reminder schedule</h3><div className="ovl-reminder-grid">{reminderIndexes.map((index) => <div className="ovl-doc-field ovl-reminder-input" key={index}><label>Reminder {index + 1}{index === 0 ? " *" : ""}</label><input type="number" min="1" value={form.reminders[index] || ""} placeholder={index === 0 ? String(rule.defaultReminder) : "Optional"} onChange={(e) => updateReminder(index, e.target.value)} /><span className="ovl-reminder-unit">days</span>{index === 0 && errors.reminder && <span className="ovl-doc-error">{errors.reminder}</span>}</div>)}</div>{!paid && <div className="ovl-upgrade-alert"><span>Free includes 1 reminder slot. Upgrade to add more reminder intervals.</span><button type="button" onClick={onUpgrade}>Upgrade plan</button></div>}</div>
+    </form>
+  </HacModal>;
+}
+
+function VehicleDocumentCard({ doc, editable, tier, onEdit, onDelete, onPreview }) {
+  const [historyModal, setHistoryModal] = useState(false);
+  const [historyLimit, setHistoryLimit] = useState(5);
+  const history = doc.history || [];
+  const visibleReminders = remindersForTier(doc.reminders || [], tier);
+  function openHistory() {
+    setHistoryLimit(5);
+    setHistoryModal(true);
+  }
+  return <article className="ovl-doc-row"><div className="ovl-doc-top"><div className="ovl-doc-type">{doc.type}</div>{vehicleDocumentStatus(doc)}<div className="ovl-doc-top-spacer" />{doc.files?.[0]?.uploadedDate && <div className="ovl-doc-upload-info">Uploaded {doc.files[0].uploadedDate}</div>}{editable && <VehicleDocumentMenu onEdit={onEdit} onDelete={onDelete} />}</div><div className="ovl-doc-meta-row"><div className="ovl-doc-meta"><span>Issued / Start date</span><span>{fmtDate(doc.startDate)}</span></div><div className="ovl-doc-meta"><span>Expire date</span><span>{fmtDate(doc.expireDate)}</span></div><div className="ovl-doc-meta"><span>Expiry reminders</span><span>{doc.expireDate ? <VehicleReminderSummary reminders={visibleReminders} /> : "—"}</span></div></div><div className="ovl-doc-file-row"><div className="ovl-doc-file-list">{doc.files?.length ? doc.files.map((file) => <VehicleFileLink key={file.id} file={file} onPreview={onPreview} />) : <span className="ovl-doc-file-empty">No files uploaded</span>}</div><div className="ovl-doc-file-count"><Icon name="attach_file" size={14} />{fileCountLabel(doc.files)}</div></div>{history.length ? <><button className="ovl-doc-history" type="button" onClick={openHistory}>View history ({history.length})<Icon name="chevron_right" size={17} /></button>{historyModal && <HacModal title={`Document History — ${doc.type}`} onClose={() => setHistoryModal(false)} className="ovl-history-modal"><div className="ovl-history-modal-body">{history.slice(0, historyLimit).map((record) => <VehicleHistoryRow key={record.id} record={record} />)}{historyLimit < history.length && <button className="ml-btn-soft ovl-history-load" type="button" onClick={() => setHistoryLimit((value) => value + 5)}>Load more</button>}</div></HacModal>}</> : <div className="ovl-doc-no-history">No historical data</div>}</article>;
+}
+
+function VehicleRemindersTab({ vehicle, documents, editable, tier, onChange, onToast }) {
+  const [modal, setModal] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  function saveDocument(doc) { const exists = documents.some((item) => item.id === doc.id); onChange(exists ? documents.map((item) => item.id === doc.id ? doc : item) : [doc, ...documents]); setModal(null); onToast(exists ? `${doc.type} changes saved.` : `${doc.type} added.`); }
+  function removeDocument() { if (!deleteTarget) return; onChange(documents.filter((item) => item.id !== deleteTarget.id)); onToast(`${deleteTarget.type} deleted.`); setDeleteTarget(null); }
+  function newDocument() { const field = DOC_FIELDS[0]; return { id: null, type: field.type, startDate: "", expireDate: "", reminders: [field.defaultReminder, "", ""], files: [], history: [] }; }
+  return <section className="ml-card ovl-documents-panel"><div className="ovl-doc-title-row"><div><h2>Uploaded Documents</h2></div>{editable && <button className="ml-btn-soft ovl-doc-add" type="button" onClick={() => setModal(newDocument())}><Icon name="add" size={16} color="var(--green-600)" />Add document</button>}</div><div className="ovl-doc-list">{documents.map((doc) => <VehicleDocumentCard key={doc.id} doc={doc} editable={editable} tier={tier} onEdit={() => setModal(doc)} onDelete={() => setDeleteTarget(doc)} onPreview={setPreview} />)}</div>{modal && <VehicleDocumentModal initial={modal} tier={tier} onClose={() => setModal(null)} onSave={saveDocument} onUpgrade={() => onToast("Upgrade options would open here.")} />}{preview && <VehicleFilePreview file={preview} onClose={() => setPreview(null)} />}{deleteTarget && <HacModal title="Delete document?" onClose={() => setDeleteTarget(null)} footer={<><button className="hac-modal-cancel" type="button" onClick={() => setDeleteTarget(null)}>Cancel</button><button className="hac-modal-save ovl-delete-action" type="button" onClick={removeDocument}>Delete document</button></>}><p className="ovl-delete-copy">{deleteTarget.type} and its current files will be removed from this vehicle. Historical records are retained in the prototype history model.</p></HacModal>}</section>;
+}
+
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const scenarioKey = t.scenario || "lite-active";
   const scenario = D.scenarios[scenarioKey];
+  const reminderTier = scenarioKey === "free" ? "free" : scenarioKey === "premium" ? "premium" : "lite";
   const tweakVeh001CheckIn = t.veh001ActiveCheckIn ?? true;
   const [vehicles, setVehicles] = useState(() => deriveVehicles(scenarioKey, { veh001ActiveCheckIn: tweakVeh001CheckIn }));
   const [query, setQuery] = useState("");
@@ -966,6 +1117,19 @@ function App() {
     setVehicles((current) => current.map((item) => item.id === vehicleId ? { ...item, drivers: item.drivers.filter((driver) => driver.driverId !== driverId) } : item));
   }
 
+  function updateVehicleDocuments(vehicleId, documents) {
+    setVehicles((current) => current.map((item) => {
+      if (item.id !== vehicleId) return item;
+      const next = { ...item, documents };
+      DOC_FIELDS.forEach((field) => {
+        const record = documents.find((doc) => doc.type === field.type);
+        next[field.key] = record?.expireDate || null;
+      });
+      return next;
+    }));
+    setForm((current) => ({ ...current, documents }));
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
 
@@ -995,6 +1159,7 @@ function App() {
           capacity: Number(form.capacity || 0),
           photo: form.photo,
           managed: form.managed,
+          documents: form.documents || makeVehicleDocuments(current),
         };
       }));
       closeForm();
@@ -1025,6 +1190,7 @@ function App() {
       insurance: null,
       puspakom: null,
       permit: null,
+      documents: makeVehicleDocuments({ id: `veh-${Date.now()}`, roadTax: null, insurance: null, puspakom: null, permit: null }),
       thumb: null,
       activeCheckIn: false,
       drivers: [],
@@ -1076,10 +1242,22 @@ function App() {
                     onSubmit={handleSubmit}
                     onToggleManaged={handleToggleManaged}
                   />
-                  <VehicleFormEditBar mode={mode} onCancel={closeForm} />
+                  <VehicleFormEditBar
+                    mode={mode}
+                    onCancel={mode === "edit" && currentEditingVehicle ? () => openView(currentEditingVehicle) : closeForm}
+                  />
                 </>
               ) : mode === "view" && editTab === "details" ? (
                 <VehicleViewSections form={form} nextManagedCount={nextManagedCount} scope={scenario} />
+              ) : editTab === "reminders" && currentEditingVehicle ? (
+                <VehicleRemindersTab
+                  vehicle={currentEditingVehicle}
+                  documents={form.documents || currentEditingVehicle.documents || []}
+                  editable={mode !== "create"}
+                  tier={reminderTier}
+                  onChange={(documents) => updateVehicleDocuments(currentEditingVehicle.id, documents)}
+                  onToast={(message) => pushToast("ok", message)}
+                />
               ) : editTab === "drivers" && !form.managed ? (
                 <div className="ovl-driver-empty">
                   <Icon name="lock" size={34} />

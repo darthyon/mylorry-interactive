@@ -67,6 +67,12 @@ window.ORG_VEHICLE_LIST = {
       insurance: "2026-09-10",
       puspakom: "2026-08-21",
       permit: "2026-10-18",
+      documents: [
+        { id: "veh-001-roadTax", type: "Road Tax", startDate: "2025-11-23", expireDate: "2026-11-22", reminders: [30, 14, 7], files: [{ id: "veh-001-roadTax-file", name: "road-tax-2026.pdf", kind: "file", uploadedDate: "23 Nov 2025" }], history: [{ id: "veh-001-roadTax-history-1", startDate: "2024-11-23", expireDate: "2025-11-22", createdDate: "23 Nov 2024", files: [{ id: "veh-001-roadTax-old", name: "road-tax-2025.pdf", kind: "file" }] }] },
+        { id: "veh-001-insurance", type: "Insurance", startDate: "2025-09-11", expireDate: "2026-09-10", reminders: [30, 14, 7], files: [{ id: "veh-001-insurance-file", name: "insurance-policy-2026.pdf", kind: "file", uploadedDate: "11 Sep 2025" }], history: [] },
+        { id: "veh-001-puspakom", type: "Puspakom Service", startDate: "2026-02-21", expireDate: "2026-08-21", reminders: [60, 30, 7], files: [], history: [] },
+        { id: "veh-001-permit", type: "Truck Permit", startDate: "", expireDate: "2026-10-18", reminders: [30, 14, 7], files: [], history: [] },
+      ],
       thumb: "#DDEEE4",
       activeCheckIn: true,
       drivers: [
