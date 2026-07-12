@@ -1242,7 +1242,10 @@ function App() {
                     onSubmit={handleSubmit}
                     onToggleManaged={handleToggleManaged}
                   />
-                  <VehicleFormEditBar mode={mode} onCancel={closeForm} />
+                  <VehicleFormEditBar
+                    mode={mode}
+                    onCancel={mode === "edit" && currentEditingVehicle ? () => openView(currentEditingVehicle) : closeForm}
+                  />
                 </>
               ) : mode === "view" && editTab === "details" ? (
                 <VehicleViewSections form={form} nextManagedCount={nextManagedCount} scope={scenario} />
