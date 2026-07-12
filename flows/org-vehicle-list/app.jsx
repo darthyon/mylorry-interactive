@@ -872,6 +872,7 @@ function VehicleDocumentModal({ initial, tier, onClose, onSave, onUpgrade }) {
   const [errors, setErrors] = useState({});
   const rule = DOC_FIELDS.find((field) => field.type === form.type) || DOC_FIELDS[0];
   const paid = tier !== "free";
+  const reminderIndexes = paid ? [0, 1, 2] : [0];
   function update(key, value) { setForm((current) => ({ ...current, [key]: value })); }
   function updateReminder(index, value) {
     setForm((current) => ({ ...current, reminders: current.reminders.map((item, i) => i === index ? (value === "" ? "" : Number(value)) : item) }));
@@ -894,7 +895,7 @@ function VehicleDocumentModal({ initial, tier, onClose, onSave, onUpgrade }) {
         <div className="ovl-doc-field"><label>Expire date *</label><input type="date" value={form.expireDate || ""} onChange={(e) => update("expireDate", e.target.value)} />{errors.expireDate && <span className="ovl-doc-error">{errors.expireDate}</span>}</div>
         <div className="ovl-doc-field full"><label>File upload</label><VehicleDocumentUpload files={form.files || []} onFiles={(files) => update("files", files)} /></div>
       </div>
-      <div className="ovl-doc-reminders"><h3>Reminder schedule</h3><div className="ovl-reminder-grid">{[0, 1, 2].map((index) => <div className="ovl-doc-field ovl-reminder-input" key={index}><label>Reminder {index + 1}{index === 0 ? " *" : ""}</label><input type="number" min="1" value={index > 0 && !paid ? "" : form.reminders[index] || ""} disabled={index > 0 && !paid} placeholder={index === 0 ? String(rule.defaultReminder) : "Optional"} onChange={(e) => updateReminder(index, e.target.value)} /><span className="ovl-reminder-unit">days</span>{index === 0 && errors.reminder && <span className="ovl-doc-error">{errors.reminder}</span>}{index > 0 && !paid && <button className="ovl-upgrade-link" type="button" onClick={onUpgrade}>Upgrade to unlock</button>}</div>)}</div>{!paid && <div className="ovl-upgrade-alert"><span>Free includes 1 reminder slot. Reminders 2 and 3 are locked.</span><button type="button" onClick={onUpgrade}>Upgrade to Lite</button></div>}</div>
+      <div className="ovl-doc-reminders"><h3>Reminder schedule</h3><div className="ovl-reminder-grid">{reminderIndexes.map((index) => <div className="ovl-doc-field ovl-reminder-input" key={index}><label>Reminder {index + 1}{index === 0 ? " *" : ""}</label><input type="number" min="1" value={form.reminders[index] || ""} placeholder={index === 0 ? String(rule.defaultReminder) : "Optional"} onChange={(e) => updateReminder(index, e.target.value)} /><span className="ovl-reminder-unit">days</span>{index === 0 && errors.reminder && <span className="ovl-doc-error">{errors.reminder}</span>}</div>)}</div>{!paid && <div className="ovl-upgrade-alert"><span>Free includes 1 reminder slot. Upgrade to add more reminder intervals.</span><button type="button" onClick={onUpgrade}>Upgrade plan</button></div>}</div>
     </form>
   </HacModal>;
 }
