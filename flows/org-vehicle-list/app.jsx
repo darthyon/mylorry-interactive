@@ -35,10 +35,11 @@ const SCENARIO_LABEL = {
 };
 
 const DOC_FIELDS = [
-  { key: "roadTax", type: "Road Tax", label: "Road Tax Expiry", startRequired: false, defaultReminder: 30 },
-  { key: "insurance", type: "Insurance", label: "Insurance Expiry", startRequired: true, defaultReminder: 30 },
-  { key: "puspakom", type: "Puspakom Service", label: "Puspakom Service", startRequired: true, defaultReminder: 60 },
-  { key: "permit", type: "Truck Permit", label: "Truck Permit Expiry", startRequired: false, defaultReminder: 30 },
+  { key: "roadTax", type: "Road Tax", label: "Road Tax Expiry", startRequired: false, expiryRequired: true, defaultReminder: 30 },
+  { key: "insurance", type: "Insurance", label: "Insurance Expiry", startRequired: true, expiryRequired: true, defaultReminder: 30 },
+  { key: "puspakom", type: "Puspakom Service", label: "Puspakom Service", startRequired: true, expiryRequired: true, defaultReminder: 60 },
+  { key: "permit", type: "Truck Permit", label: "Truck Permit Expiry", startRequired: false, expiryRequired: true, defaultReminder: 30 },
+  { key: "others", type: "Others", label: "Others", startRequired: false, expiryRequired: false, defaultReminder: 30 },
 ];
 
 const VEHICLE_CATEGORIES = ["Lorry", "Van", "Bus", "Truck", "MPV", "Sedan"];
@@ -864,7 +865,8 @@ function VehicleReminderSummary({ reminders = [] }) {
 }
 
 function VehicleHistoryRow({ record }) {
-  return <div className="ovl-history-row"><div className="ovl-history-top"><div className="ovl-history-sub">Uploaded {record.uploadedDate || record.createdDate || "—"}{record.uploadedBy ? ` by ${record.uploadedBy}` : ""}</div></div><div className="ovl-history-bottom"><div className="ovl-history-meta-group"><div className="ovl-history-meta"><span className="ovl-history-label">Start date</span><span className="ovl-history-value">{fmtDate(record.startDate)}</span></div><div className="ovl-history-meta"><span className="ovl-history-label">Due date</span><span className="ovl-history-value">{fmtDate(record.expireDate)}</span></div><div className="ovl-history-meta"><span className="ovl-history-label">Status</span><span className="ovl-doc-status expired">Expired</span></div><div className="ovl-history-meta"><span className="ovl-history-label">Expiry reminders</span><span className="ovl-history-reminder">{formatReminderList(record.reminders)}</span></div></div><div className="ovl-history-actions"><button className="ml-btn-soft" type="button"><Icon name="download" size={15} color="var(--green-600)" />Download</button></div></div></div>;
+  const status = documentStatus(record.expireDate);
+  return <div className="ovl-history-row"><div className="ovl-history-top"><div className="ovl-history-sub">Uploaded {record.uploadedDate || record.createdDate || "—"}{record.uploadedBy ? ` by ${record.uploadedBy}` : ""}</div></div><div className="ovl-history-bottom"><div className="ovl-history-meta-group"><div className="ovl-history-meta"><span className="ovl-history-label">Start date</span><span className="ovl-history-value">{fmtDate(record.startDate)}</span></div><div className="ovl-history-meta"><span className="ovl-history-label">Due date</span><span className="ovl-history-value">{fmtDate(record.expireDate)}</span></div><div className="ovl-history-meta"><span className="ovl-history-label">Status</span><span className={`ovl-doc-status ${status === "Expired" ? "expired" : status === "Active" ? "active" : "empty"}`}>{status}</span></div><div className="ovl-history-meta"><span className="ovl-history-label">Expiry reminders</span><span className="ovl-history-reminder">{record.expireDate ? formatReminderList(record.reminders) : "—"}</span></div></div><div className="ovl-history-actions"><button className="ml-btn-soft" type="button"><Icon name="download" size={15} color="var(--green-600)" />Download</button></div></div></div>;
 }
 
 function VehicleDocumentModal({ initial, tier, onClose, onSave, onUpgrade }) {
@@ -872,6 +874,7 @@ function VehicleDocumentModal({ initial, tier, onClose, onSave, onUpgrade }) {
   const [errors, setErrors] = useState({});
   const rule = DOC_FIELDS.find((field) => field.type === form.type) || DOC_FIELDS[0];
   const paid = tier !== "free";
+  const showReminders = Boolean(form.expireDate);
   const reminderIndexes = paid ? [0, 1, 2] : [0];
   function update(key, value) { setForm((current) => ({ ...current, [key]: value })); }
   function updateReminder(index, value) {
@@ -881,8 +884,8 @@ function VehicleDocumentModal({ initial, tier, onClose, onSave, onUpgrade }) {
     event.preventDefault();
     const next = {};
     if (rule.startRequired && !form.startDate) next.startDate = "Start Date is required for this document type.";
-    if (!form.expireDate) next.expireDate = "Due Date is required.";
-    if (!form.reminders[0]) next.reminder = "Reminder 1 is required.";
+    if (rule.expiryRequired && !form.expireDate) next.expireDate = "Expire date is required.";
+    if (showReminders && !form.reminders[0]) next.reminder = "Reminder 1 is required.";
     setErrors(next);
     if (!Object.keys(next).length) onSave({ ...form, reminders: paid ? form.reminders : [form.reminders[0], "", ""], files: (form.files || []).slice(0, 3) });
   }
@@ -892,10 +895,10 @@ function VehicleDocumentModal({ initial, tier, onClose, onSave, onUpgrade }) {
       <div className="ovl-doc-fields">
         <div className="ovl-doc-field"><label>Document type *</label><SelectMenu className="ovl-doc-select" value={form.type} options={DOC_FIELDS.map((field) => ({ value: field.type, label: field.type }))} onChange={(value) => { const next = DOC_FIELDS.find((field) => field.type === value) || DOC_FIELDS[0]; setForm((current) => ({ ...current, type: value, reminders: [next.defaultReminder, current.reminders[1] || "", current.reminders[2] || ""] })); }} ariaLabel="Document type" /></div>
         <div className="ovl-doc-field"><label>Issued / Start date{rule.startRequired ? " *" : ""}</label><input type="date" value={form.startDate || ""} onChange={(e) => update("startDate", e.target.value)} />{errors.startDate && <span className="ovl-doc-error">{errors.startDate}</span>}</div>
-        <div className="ovl-doc-field"><label>Expire date *</label><input type="date" value={form.expireDate || ""} onChange={(e) => update("expireDate", e.target.value)} />{errors.expireDate && <span className="ovl-doc-error">{errors.expireDate}</span>}</div>
+        <div className="ovl-doc-field"><label>Expire date{rule.expiryRequired ? " *" : ""}</label><input type="date" value={form.expireDate || ""} onChange={(e) => update("expireDate", e.target.value)} />{errors.expireDate && <span className="ovl-doc-error">{errors.expireDate}</span>}</div>
         <div className="ovl-doc-field full"><label>File upload</label><VehicleDocumentUpload files={form.files || []} onFiles={(files) => update("files", files)} /></div>
       </div>
-      <div className="ovl-doc-reminders"><h3>Reminder schedule</h3><div className="ovl-reminder-grid">{reminderIndexes.map((index) => <div className="ovl-doc-field ovl-reminder-input" key={index}><label>Reminder {index + 1}{index === 0 ? " *" : ""}</label><input type="number" min="1" value={form.reminders[index] || ""} placeholder={index === 0 ? String(rule.defaultReminder) : "Optional"} onChange={(e) => updateReminder(index, e.target.value)} /><span className="ovl-reminder-unit">days</span>{index === 0 && errors.reminder && <span className="ovl-doc-error">{errors.reminder}</span>}</div>)}</div>{!paid && <div className="ovl-upgrade-alert"><span>Free includes 1 reminder slot. Upgrade to add more reminder intervals.</span><button type="button" onClick={onUpgrade}>Upgrade plan</button></div>}</div>
+      {showReminders && <div className="ovl-doc-reminders"><h3>Reminder schedule</h3><div className="ovl-reminder-grid">{reminderIndexes.map((index) => <div className="ovl-doc-field ovl-reminder-input" key={index}><label>Reminder {index + 1}{index === 0 ? " *" : ""}</label><input type="number" min="1" value={form.reminders[index] || ""} placeholder={index === 0 ? String(rule.defaultReminder) : "Optional"} onChange={(e) => updateReminder(index, e.target.value)} /><span className="ovl-reminder-unit">days</span>{index === 0 && errors.reminder && <span className="ovl-doc-error">{errors.reminder}</span>}</div>)}</div>{!paid && <div className="ovl-upgrade-alert"><span>Free includes 1 reminder slot. Upgrade to add more reminder intervals.</span><button type="button" onClick={onUpgrade}>Upgrade plan</button></div>}</div>}
     </form>
   </HacModal>;
 }

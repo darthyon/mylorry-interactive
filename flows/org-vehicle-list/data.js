@@ -19,6 +19,7 @@ window.ORG_VEHICLE_LIST = {
     { value: "insurance", label: "Insurance Expiry" },
     { value: "puspakom", label: "Puspakom Service" },
     { value: "permit", label: "Truck Permit Expiry" },
+    { value: "others", label: "Others" },
   ],
 
   searchScopes: [
@@ -72,6 +73,7 @@ window.ORG_VEHICLE_LIST = {
         { id: "veh-001-insurance", type: "Insurance", startDate: "2025-09-11", expireDate: "2026-09-10", reminders: [30, 14, 7], files: [{ id: "veh-001-insurance-file", name: "insurance-policy-2026.pdf", kind: "file", uploadedDate: "11 Sep 2025" }], history: [] },
         { id: "veh-001-puspakom", type: "Puspakom Service", startDate: "2026-02-21", expireDate: "2026-08-21", reminders: [60, 30, 7], files: [], history: [] },
         { id: "veh-001-permit", type: "Truck Permit", startDate: "", expireDate: "2026-10-18", reminders: [30, 14, 7], files: [], history: [] },
+        { id: "veh-001-others", type: "Others", startDate: "", expireDate: "", reminders: ["", "", ""], files: [{ id: "veh-001-others-file", name: "vehicle-inspection-note.pdf", kind: "file", uploadedDate: "09 Jul 2026" }], history: [{ id: "veh-001-others-history-1", startDate: "", expireDate: "", reminders: ["", "", ""], createdDate: "14 Jan 2026", uploadedBy: "Admin", files: [{ id: "veh-001-others-old", name: "previous-inspection-note.pdf", kind: "file" }] }] },
       ],
       thumb: "#DDEEE4",
       activeCheckIn: true,
