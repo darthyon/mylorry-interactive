@@ -110,6 +110,9 @@ b { font-weight: 600; }
 .hsub-price-card { border: 1px solid var(--border-light); border-radius: 12px; padding: 16px; background: #fff; }
 .hsub-toggle-row { margin-top: 12px; }
 .hsub-billing-preview { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; border: 1px dashed var(--border-medium); border-radius: 10px; padding: 12px 14px; margin-top: 16px; background: #fbfbfb; font-size: 13px; color: var(--fg-primary); }
+.hsub-cap-readout { display: flex; align-items: center; justify-content: space-between; gap: 14px; border: 1px solid var(--border-light); border-radius: 10px; padding: 13px 14px; margin-top: 14px; background: #fff; }
+.hsub-cap-title { font-size: 13px; font-weight: 700; color: var(--navy-800); }
+.hsub-cap-copy { font-size: 12px; color: var(--fg-secondary); margin-top: 3px; line-height: 1.45; }
 .hsub-switch { display: inline-flex; align-items: center; gap: 10px; border: none; background: transparent; padding: 0; cursor: pointer; font: inherit; color: var(--fg-primary); }
 .hsub-switch-track { position: relative; width: 38px; height: 22px; border-radius: 999px; background: #d9dde5; transition: background .14s ease; flex-shrink: 0; }
 .hsub-switch-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.16); transition: transform .14s ease; }
@@ -142,6 +145,7 @@ b { font-weight: 600; }
 .hsub-module-head { margin-bottom: 12px; }
 .hsub-module-title { font-size: 15px; font-weight: 700; color: var(--navy-800); }
 .hsub-module-copy { font-size: 12px; color: var(--fg-secondary); margin-top: 4px; line-height: 1.45; }
+.hsub-module-note { display: inline-flex; align-items: center; margin-top: 12px; padding: 6px 9px; border-radius: 6px; background: var(--bg-subtle); color: var(--fg-secondary); font-size: 12px; line-height: 1.35; }
 .hsub-module-rows { display: flex; flex-direction: column; }
 .hsub-module-row { display: grid; grid-template-columns: minmax(0, 1fr) 132px; gap: 12px; align-items: center; padding: 11px 0; border-top: 1px solid var(--border-light); }
 .hsub-module-row.has-inline-config { grid-template-columns: minmax(0, 1fr) 208px; }
@@ -173,6 +177,8 @@ b { font-weight: 600; }
 .hsub-info-trigger { display: inline-flex; align-items: center; justify-content: center; cursor: help; }
 .hsub-info-tooltip { width: 240px; left: 0; transform: none; }
 .hsub-info-tooltip::after { left: 14px; transform: none; }
+.hac-drop-item.disabled { color: var(--fg-tertiary); cursor: not-allowed; background: transparent; opacity: .72; }
+.hac-drop-item.disabled:hover { background: transparent; color: var(--fg-tertiary); }
 .hsub-delete-modal { text-align: center; padding: 8px 12px 4px; }
 .hsub-delete-icon { width: 68px; height: 68px; border-radius: 50%; background: var(--amber-500); color: #fff; display: inline-flex; align-items: center; justify-content: center; margin: 6px auto 22px; }
 .hsub-delete-heading { font-size: 24px; font-weight: 700; color: var(--fg-primary); line-height: 1.2; }

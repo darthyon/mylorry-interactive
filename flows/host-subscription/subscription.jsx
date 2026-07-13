@@ -150,6 +150,19 @@ function formatTierDuration(months) {
   return `${value} month${value === 1 ? "" : "s"}`;
 }
 
+function managedVehicleCeilingLabel(plan) {
+  const limit = plan.limits.managedVehicleLimit;
+  if (plan.visibility?.managedVehiclesIncluded === false) return "Managed vehicles not included";
+  if (limit == null) return "Allows unlimited managed vehicles";
+  if (Number(limit) <= 0) return "Managed vehicles not included";
+  return `Allows up to ${Number(limit).toLocaleString("en-US")} managed vehicles`;
+}
+
+function hasManagedVehicleAccess(plan) {
+  if (plan.visibility?.managedVehiclesIncluded === false) return false;
+  return plan.limits.managedVehicleLimit == null || Number(plan.limits.managedVehicleLimit || 0) > 0;
+}
+
 function fmtDateTime(iso) {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -320,7 +333,7 @@ function SwitchField({ checked, onChange, label, ariaLabel }) {
   );
 }
 
-function EllipsisMenu({ onView, onEdit, onDelete, onDeactivate, canDelete, canDeactivate }) {
+function EllipsisMenu({ onView, onEdit, onDelete, onActivate, onDeactivate, canDelete, deleteReason, canActivate, canDeactivate }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
@@ -363,11 +376,16 @@ function EllipsisMenu({ onView, onEdit, onDelete, onDeactivate, canDelete, canDe
         <div className="hac-drop-fixed" ref={dropRef} style={{ top: pos.top, left: pos.left }} onClick={(e) => e.stopPropagation()}>
           <button className="hac-drop-item" onClick={() => { setOpen(false); onView(); }}><HIcon name="visibility" size={15} /> View</button>
           <button className="hac-drop-item" onClick={() => { setOpen(false); onEdit(); }}><HIcon name="edit" size={15} /> Edit</button>
-          {canDelete && (
-            <button className="hac-drop-item danger" onClick={() => { setOpen(false); onDelete(); }}><HIcon name="delete" size={15} /> Delete</button>
+          {canActivate && (
+            <button className="hac-drop-item" onClick={() => { setOpen(false); onActivate(); }}><HIcon name="check_circle" size={15} /> Activate</button>
           )}
-          {!canDelete && canDeactivate && (
+          {canDeactivate && (
             <button className="hac-drop-item" onClick={() => { setOpen(false); onDeactivate(); }}><HIcon name="block" size={15} /> Deactivate</button>
+          )}
+          {canDelete ? (
+            <button className="hac-drop-item danger" onClick={() => { setOpen(false); onDelete(); }}><HIcon name="delete" size={15} /> Delete</button>
+          ) : (
+            <button className="hac-drop-item disabled" disabled title={deleteReason}><HIcon name="delete" size={15} /> Delete</button>
           )}
         </div>,
         document.body
@@ -475,7 +493,7 @@ function ViewField({ label, value, hint, info }) {
   );
 }
 
-function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onDeactivate }) {
+function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onActivate, onDeactivate }) {
   const [q, setQ] = useState("");
   const [scope, setScope] = useState("name");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -627,8 +645,13 @@ function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onDeactivate 
           </thead>
           <tbody>
             {pageData.map((plan, index) => {
-              const canDelete = !plan.protectedPlan && (plan.organizations || []).length === 0;
-              const canDeactivate = !plan.protectedPlan && !canDelete;
+              const isDefaultPlan = plan.type === "default";
+              const canActivate = !isDefaultPlan && plan.status === "inactive";
+              const canDeactivate = !isDefaultPlan && plan.status === "active";
+              const canDelete = !isDefaultPlan && plan.status === "inactive";
+              const deleteReason = isDefaultPlan
+                ? "Default plans cannot be deleted."
+                : "Deactivate this plan before deleting it.";
               const typeDisplay = getPlanTypeDisplay(plan);
               return (
                 <tr key={plan.id} onClick={() => onView(plan.id)}>
@@ -646,10 +669,13 @@ function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onDeactivate 
                   <td onClick={(e) => e.stopPropagation()}>
                     <EllipsisMenu
                       canDelete={canDelete}
+                      deleteReason={deleteReason}
+                      canActivate={canActivate}
                       canDeactivate={canDeactivate}
                       onView={() => onView(plan.id)}
                       onEdit={() => onEdit(plan.id)}
                       onDelete={() => onDelete(plan.id)}
+                      onActivate={() => onActivate(plan.id)}
                       onDeactivate={() => onDeactivate(plan.id)}
                     />
                   </td>
@@ -757,6 +783,23 @@ function PricingSection({ plan, editable, onChange }) {
             <strong>Estimated monthly billing</strong>
             <span>{fmtRM(baseMonthlyFee)} + {sampleVehicles} managed vehicles × {fmtRM(perManagedVehicleFee)} = <b>{fmtRM(preview)}</b></span>
           </div>
+          <div className="hsub-cap-readout">
+            <div>
+              <div className="hsub-cap-title">Managed vehicle ceiling</div>
+              <div className="hsub-cap-copy">{managedVehicleCeilingLabel(plan)}. Exact managed vehicle number is set per organization.</div>
+            </div>
+            <SwitchField
+              checked={hasManagedVehicleAccess(plan)}
+              onChange={(value) => onChange({
+                visibility: {
+                  ...plan.visibility,
+                  managedVehiclesIncluded: value,
+                },
+              })}
+              label={hasManagedVehicleAccess(plan) ? "Included" : "Not included"}
+              ariaLabel="Managed vehicle availability"
+            />
+          </div>
           <EditableSubscriptionTiers plan={plan} onChange={onChange} title="Pricing tiers" />
         </>
       ) : (
@@ -769,6 +812,11 @@ function PricingSection({ plan, editable, onChange }) {
               label="Estimated monthly billing"
               value={fmtRM(preview)}
               info={previewBreakdown}
+            />
+            <ViewField
+              label="Managed vehicle ceiling"
+              value={managedVehicleCeilingLabel(plan)}
+              hint="Exact managed vehicle number is set per organization."
             />
           </div>
           <ReadOnlySubscriptionTiers plan={plan} title="Pricing tiers" />
@@ -1093,6 +1141,11 @@ function FeatureAccessSection({ plan, editable, onChange }) {
                   </div>
                 </div>
               ))}
+              {activeModule.key === "myadmin" && (
+                <div className="hsub-module-note">
+                  Managed vehicle number is set in Organization Management. This plan {managedVehicleCeilingLabel(plan).toLowerCase()}.
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1255,7 +1308,7 @@ function SubscriptionApp() {
     setDraftPlan(decoratePlan(deepClone(plan)));
   };
 
-  const canDeletePlan = (plan) => !plan.protectedPlan && (plan.organizations || []).length === 0;
+  const canDeletePlan = (plan) => plan.type !== "default" && plan.status === "inactive";
 
   const saveDraft = () => {
     if (!draftPlan?.name?.trim()) {
@@ -1281,7 +1334,7 @@ function SubscriptionApp() {
     const plan = plans.find((item) => item.id === planId);
     if (!plan) return;
     if (!canDeletePlan(plan)) {
-      setFlash({ tone: "warning", message: "Delete is only available for unused normal plans. Default or in-use plans cannot be deleted." });
+      setFlash({ tone: "warning", message: "Delete is only available for inactive non-default plans. Deactivate the plan first." });
       return;
     }
     setDeletePlanId(planId);
@@ -1305,6 +1358,12 @@ function SubscriptionApp() {
     setFlash({ tone: "warning", message: `${plan?.name || "Plan"} set to inactive.` });
   };
 
+  const activatePlan = (planId) => {
+    setPlans((current) => decoratePlans(current.map((plan) => plan.id === planId ? { ...plan, status: "active" } : plan)));
+    const plan = plans.find((item) => item.id === planId);
+    setFlash({ tone: "success", message: `${plan?.name || "Plan"} set to active.` });
+  };
+
   return (
     <div className="ml-app">
       <HostTopBar />
@@ -1319,6 +1378,7 @@ function SubscriptionApp() {
             onView={openView}
             onEdit={openEdit}
             onDelete={removePlan}
+            onActivate={activatePlan}
             onDeactivate={deactivatePlan}
           />
         )}

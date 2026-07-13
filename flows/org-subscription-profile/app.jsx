@@ -33,6 +33,11 @@ function vehicleLimitOf(plan) {
   return plan.limits.managedVehicleLimit == null ? "unlimited" : plan.limits.managedVehicleLimit;
 }
 
+function vehicleCeilingCopy(plan) {
+  const limit = vehicleLimitOf(plan);
+  return limit === "unlimited" ? "Allows unlimited managed vehicles" : `Allows up to ${limit} managed vehicles`;
+}
+
 function resolveRow(plan, row) {
   const value = row.bindPath ? getBoundValue(plan, row.bindPath) : row.value;
   if (row.toggleable && !row.enabled) return { state: "locked" };
@@ -51,8 +56,28 @@ function buildModules(plan) {
     const access = rows.every((r) => r.state === "included") ? "included"
       : rows.every((r) => r.state === "locked") ? "locked"
       : "limited";
-    return { key: mod.key, label: mod.label, icon: MODULE_ICONS[mod.key] || "extension", summary: mod.summary, access, rows };
+    return {
+      key: mod.key,
+      label: mod.label,
+      icon: MODULE_ICONS[mod.key] || "extension",
+      summary: mod.summary,
+      access,
+      rows,
+      note: mod.key === "myadmin"
+        ? `Managed vehicle number is set in Organization Management. This plan ${vehicleCeilingCopy(plan).toLowerCase()}.`
+        : null,
+    };
   });
+}
+
+function asOngoingBilling(billing) {
+  if (!billing) return null;
+  return {
+    ...billing,
+    setupFee: 0,
+    setupFeeStatus: "N/A",
+    totalLumpSum: Number(billing.monthlySubtotal || 0) * Number(billing.commitmentMonths || 0),
+  };
 }
 
 function buildUpcoming(upcoming, currentAgreementVehicleCount) {
@@ -60,10 +85,10 @@ function buildUpcoming(upcoming, currentAgreementVehicleCount) {
   const plan = upcoming.planId ? PLANS_BY_ID[upcoming.planId] : null;
   const vehicleLimit = plan ? vehicleLimitOf(plan) : null;
   const billing = plan
-    ? {
+    ? asOngoingBilling({
         ...calculateCommittedBilling(plan, currentAgreementVehicleCount, upcoming.commitmentMonths, upcoming.setupFeeStatus),
         setupFeeStatus: upcoming.setupFeeStatus,
-      }
+      })
     : null;
   return {
     planName: plan ? plan.name : null,
@@ -71,6 +96,7 @@ function buildUpcoming(upcoming, currentAgreementVehicleCount) {
     note: upcoming.note,
     vehicleLimit,
     billing,
+    modules: plan ? buildModules(plan) : null,
   };
 }
 
@@ -84,7 +110,7 @@ function buildScenarioView(sc) {
   // not hidden entirely. Only paid plans have a real committed-billing calc.
   // Trial is a special case: no bill yet, 1-month trial duration, no setup fee.
   let billing = isPaid
-    ? { ...calculateCommittedBilling(plan, agreementVehicleCount, sc.commitmentMonths, sc.setupFeeStatus), setupFeeStatus: sc.setupFeeStatus }
+    ? asOngoingBilling({ ...calculateCommittedBilling(plan, agreementVehicleCount, sc.commitmentMonths, sc.setupFeeStatus), setupFeeStatus: sc.setupFeeStatus })
     : { baseMonthlyFee: 0, perManagedVehicleFee: 0, commitmentMonths: null, setupFee: 0, totalLumpSum: 0, setupFeeStatus: "N/A" };
   if (sc.status === "trial") {
     billing = {
@@ -222,9 +248,6 @@ function BillingStatCard({ s, billing }) {
       value: `${s.agreementVehicleCount} × ${RM(billing.perManagedVehicleFee)} × ${billing.commitmentMonths} months`,
     });
   }
-  if (billing.setupFee > 0) {
-    rows.push({ label: "Setup fee (one-time)", value: RM(billing.setupFee) });
-  }
   rows.push({ label: "Total", value: RM(billing.totalLumpSum), tone: "green", total: true });
 
   return (
@@ -238,9 +261,6 @@ function BillingStatCard({ s, billing }) {
       <div className="osp-billing-amount">{RM(billing.totalLumpSum)}</div>
       <div className="osp-billing-row">
         <span>Commitment duration</span><strong>{isFree ? "N/A" : `${billing.commitmentMonths} months`}</strong>
-      </div>
-      <div className="osp-billing-row">
-        <span>Setup fee</span><strong>{isFree || isTrial ? "N/A" : `${RM(billing.setupFee)} · ${billing.setupFeeStatus}`}</strong>
       </div>
     </div>
   );
@@ -306,9 +326,6 @@ function UpcomingPlanView({ upcoming }) {
           <div className="osp-billing-row">
             <span>Commitment duration</span><strong>{b.commitmentMonths} months</strong>
           </div>
-          <div className="osp-billing-row">
-            <span>Setup fee</span><strong>{`${RM(b.setupFee)} · ${b.setupFeeStatus}`}</strong>
-          </div>
         </div>
       )}
       {upcoming.vehicleLimit != null && (
@@ -341,6 +358,7 @@ function SummaryTabs({ tab, onChange }) {
 function SubscriptionSummary({ s }) {
   const [tab, setTab] = React.useState("current");
   const servicesTitle = tab === "upcoming" ? "Upcoming Services" : "Services";
+  const serviceModules = tab === "upcoming" && s.upcoming?.modules ? s.upcoming.modules : s.modules;
   return (
     <div className="ml-card osp-summary">
       <div className="osp-summary-title">Subscription Summary</div>
@@ -349,7 +367,7 @@ function SubscriptionSummary({ s }) {
 
       <div className="osp-services-sub">
         <div className="osp-services-title">{servicesTitle}</div>
-        <ServicesTabs modules={s.modules} />
+        <ServicesTabs modules={serviceModules} />
       </div>
     </div>
   );
@@ -377,6 +395,11 @@ function FeatureRow({ row }) {
 
 function ServicesTabs({ modules }) {
   const [activeKey, setActiveKey] = React.useState(modules[0].key);
+  React.useEffect(() => {
+    if (!modules.some((module) => module.key === activeKey)) {
+      setActiveKey(modules[0].key);
+    }
+  }, [modules, activeKey]);
   const active = modules.find((m) => m.key === activeKey) || modules[0];
   const tabs = modules.map((m) => ({ key: m.key, label: m.label }));
 
@@ -396,6 +419,7 @@ function ServicesTabs({ modules }) {
       ) : (
         <div className="osp-module-body">
           {active.rows.map((row, i) => <FeatureRow key={i} row={row} />)}
+          {active.note && <div className="osp-module-note">{active.note}</div>}
         </div>
       )}
     </FeatureTabShell>

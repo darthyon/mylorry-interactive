@@ -46,7 +46,6 @@
       summary: "Fleet, drivers, compliance, reminders",
       rows: [
         { key: "vehicle_info", label: "Vehicle Creation", helper: "Allow creation of vehicle records", controlType: "toggle", value: true },
-        { key: "managed_vehicle_limit", label: "Managed Vehicle Limit", helper: "Maximum number of managed vehicles", controlType: "number", value: 10, min: 0, bindPath: "limits.managedVehicleLimit", hasUnlimited: true },
         { key: "vehicle_doc_reminder", label: "Vehicle Document Reminder", helper: "Reminder count for vehicle documents", controlType: "number", value: 3, min: 0, toggleable: true, enabled: true },
         { key: "icop", label: "Safety Checklist", helper: "Safety checklist workflows and records", controlType: "toggle", value: true },
         { key: "driver_info", label: "Driver Creation", helper: "Allow creation of driver records", controlType: "toggle", value: true },
