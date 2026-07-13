@@ -296,11 +296,9 @@ function ManagedIcon({ managed }) {
 
 function ExpiryCell({ iso }) {
   const tone = documentTone(iso);
-  const status = documentStatus(iso);
   return (
     <div className={`ovl-expiry ${tone}`}>
       <span className="ovl-expiry-date">{fmtDate(iso)}</span>
-      <span className={`ovl-expiry-status ${tone}`}>{status}</span>
       <span className="ovl-expiry-meta">{expiryMeta(iso)}</span>
     </div>
   );

@@ -96,11 +96,10 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .ovl-expiry{display:flex;flex-direction:column;gap:3px;line-height:1.2;min-width:106px;}
 .ovl-expiry-date{font-weight:600;font-size:12.5px;}
 .ovl-expiry-meta{font-size:11px;color:var(--fg-tertiary);}
-.ovl-expiry-status,.ovl-doc-status{display:inline-flex;align-items:center;width:max-content;padding:3px 6px;border-radius:4px;font-size:10px;font-weight:700;line-height:1;}
-.ovl-expiry-status.good,.ovl-doc-status.active{background:#EFFAF4;color:#397051;}
-.ovl-expiry-status.warn{background:#FFF6E8;color:#A56710;}
-.ovl-expiry-status.danger,.ovl-doc-status.expired{background:#FFF0EF;color:#B64B43;}
-.ovl-expiry-status.empty,.ovl-doc-status.empty{background:#F1F2F3;color:var(--fg-tertiary);}
+.ovl-doc-status{display:inline-flex;align-items:center;width:max-content;padding:3px 6px;border-radius:4px;font-size:10px;font-weight:700;line-height:1;}
+.ovl-doc-status.active{background:#EFFAF4;color:#397051;}
+.ovl-doc-status.expired{background:#FFF0EF;color:#B64B43;}
+.ovl-doc-status.empty{background:#F1F2F3;color:var(--fg-tertiary);}
 .ovl-expiry.good .ovl-expiry-date{color:#416D52;}
 .ovl-expiry.warn .ovl-expiry-date{color:#A56710;}
 .ovl-expiry.danger .ovl-expiry-date{color:#BE2F2C;}
@@ -189,7 +188,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .ovl-toast-msg{font-size:12.5px;line-height:1.4;}
 .ovl-empty-table{padding:28px 18px;text-align:center;color:var(--fg-secondary);}
 .ovl-documents-panel{padding:0;border:none;overflow:visible;}
-.ovl-doc-title-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;border-bottom:1px solid var(--border-light);}
+.ovl-doc-title-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;}
 .ovl-doc-title-row h2{margin:0;font-size:15px;font-weight:700;color:var(--fg-primary);}
 .ovl-doc-title-row p{margin:5px 0 0;color:var(--fg-secondary);font-size:12px;}
 .ovl-doc-add{height:36px;}
