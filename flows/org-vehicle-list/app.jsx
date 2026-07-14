@@ -365,9 +365,12 @@ function VehicleDueDates({
   dateFilterCount,
   hasClearableFilters,
   onView,
+  onEdit,
+  onDelete,
 }) {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
+  const [dueMenuId, setDueMenuId] = useState(null);
   const rows = useMemo(() => flattenVehicleDueDates(vehicles).filter(({ vehicle, doc }) => {
     const q = query.trim().toLowerCase();
     if (q) {
@@ -386,10 +389,85 @@ function VehicleDueDates({
     if (startDate && due < new Date(`${startDate}T00:00:00`)) return false;
     if (endDate && due > new Date(`${endDate}T23:59:59`)) return false;
     return true;
-  }), [vehicles, query, scope, dueDateType, startDate, endDate]);
+  }), [vehicles, query, scope, dueDateType, dueRange, startDate, endDate]);
   const pageData = useMemo(() => rows.slice((page - 1) * perPage, page * perPage), [rows, page, perPage]);
   useEffect(() => { const totalPages = Math.max(1, Math.ceil(rows.length / perPage)); if (page > totalPages) setPage(totalPages); }, [rows.length, page, perPage]);
-  return <><section className="ovl-toolbar"><div className="hac-toolbar"><div className="hac-toolbar-left ovl-toolbar-left"><div className="hac-search-group scoped ovl-search-group"><SelectMenu className="hac-search-scope" value={scope} options={D.searchScopes} onChange={(next) => { setScope(next); setPage(1); }} ariaLabel="Search by" style={{ width: scope === "vehicle" ? "116px" : scope === "driver" ? "108px" : "110px" }} /><div className="hac-search-bar"><Icon name="search" size={17} color="var(--fg-tertiary)" /><input className="hac-search-input" value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder={`Search by ${scope}`} />{query && <button className="hac-search-clear" type="button" onClick={() => setQuery("")}><Icon name="close" size={16} /></button>}</div></div><button className={`hac-filter-btn${dateFilterCount ? " active" : ""}`} type="button" onClick={toggleFilterPanel}><Icon name="tune" size={18} /> Filter{dateFilterCount > 0 && <span className="hac-filter-badge">{dateFilterCount}</span>}</button>{hasClearableFilters && <button className="ovl-clear" type="button" onClick={resetFilters}><Icon name="ink_eraser" size={15} /> Clear filters</button>}</div></div>{filterOpen && <div className="hac-filter-panel ovl-filter-panel"><div className="hac-filter-grid ovl-filter-grid"><div className="hac-filter-field"><label>Due Date Type</label><div className="hac-select-wrap"><SelectMenu className="hac-select" value={pendingDueDateType} options={D.dueDateTypes} onChange={setPendingDueDateType} ariaLabel="Due date type" /></div></div><div className="hac-filter-field"><label>Status</label><div className="hac-select-wrap"><SelectMenu className="hac-select" value={pendingDueRange} options={DUE_RANGE_OPTIONS} onChange={setPendingDueRange} ariaLabel="Due date status" /></div></div><div className="hac-filter-field"><label>Start Date</label><div className="hac-date-range-field"><Icon name="event" size={16} color="var(--fg-tertiary)" /><input className="hac-date-range-input" type="date" value={pendingStartDate} onChange={(e) => setPendingStartDate(e.target.value)} /></div></div><div className="hac-filter-field"><label>End Date</label><div className="hac-date-range-field"><Icon name="event" size={16} color="var(--fg-tertiary)" /><input className="hac-date-range-input" type="date" value={pendingEndDate} onChange={(e) => setPendingEndDate(e.target.value)} /></div></div></div><div className="hac-filter-actions"><button className="hac-filter-apply" type="button" onClick={() => { applyPendingFilters(); setPage(1); }}>Apply Filters</button><button className="hac-filter-reset" type="button" onClick={() => { resetFilters(); setPage(1); }}>Reset All</button></div></div>}</section><div className="hac-count">{rows.length} due date{rows.length === 1 ? "" : "s"}</div><section className="ovl-table-section"><div className="ml-table-wrap ovl-table-wrap"><table className="ml-table ovl-table ovl-due-table"><thead><tr><th>No.</th><th>Vehicle</th><th>Type</th><th>Due Date</th><th>Status</th><th>Reminders</th><th>Description</th><th>Actions</th></tr></thead><tbody>{!rows.length && <tr><td colSpan="8"><div className="ovl-empty-table">No vehicle due dates match the current filters.</div></td></tr>}{pageData.map(({ vehicle, doc }, index) => <tr key={`${vehicle.id}-${doc.id}`}><td className="ovl-index">{(page - 1) * perPage + index + 1}</td><td><div className="ovl-vehicle-cell"><VehicleThumb inUse={vehicle.activeCheckIn} /><div className="ovl-vehicle-main"><div className="ml-cell-main ovl-vehicle-plate">{vehicle.plate}</div><div className="ovl-due-sub">{vehicle.vendor}</div></div></div></td><td><div className="ovl-due-type-cell"><strong>{vehicleDocumentTitle(doc)}</strong><span>{doc.type}</span></div></td><td><ExpiryCell iso={doc.expireDate} /></td><td>{vehicleDocumentStatus(doc)}</td><td>{formatReminderList(doc.reminders)}</td><td className="ovl-due-description">{doc.description || "—"}</td><td><button className="ml-btn-soft" type="button" onClick={() => onView(vehicle)}>View vehicle</button></td></tr>)}</tbody></table></div><div className="ovl-mobile-list">{pageData.map(({ vehicle, doc }) => <div key={`${vehicle.id}-${doc.id}`} className="ovl-mobile-card"><div className="ovl-mobile-head"><div className="ovl-vehicle-cell"><VehicleThumb inUse={vehicle.activeCheckIn} /><div className="ovl-vehicle-main"><div className="ovl-vehicle-plate">{vehicle.plate}</div><div className="ovl-due-sub">{vehicleDocumentTitle(doc)}</div></div></div>{vehicleDocumentStatus(doc)}</div><div className="ovl-mobile-urgent"><ExpiryCell iso={doc.expireDate} /></div><div className="ovl-mobile-meta"><span className="ovl-mobile-chip">{doc.type}</span><span className="ovl-mobile-chip">{formatReminderList(doc.reminders)}</span></div><div className="ovl-mobile-actions"><button className="ml-btn-soft" type="button" onClick={() => onView(vehicle)}>View vehicle</button></div></div>)}{!rows.length && <div className="ovl-mobile-card"><div className="ovl-empty-table">No vehicle due dates match the current filters.</div></div>}</div></section><Pager page={page} perPage={perPage} total={rows.length} onPage={setPage} onPerPage={setPerPage} /></>;
+  function renderDueMenu(vehicle, doc, rowId) {
+    return (
+      <VehicleRowMenu
+        open={dueMenuId === rowId}
+        onToggle={(next) => setDueMenuId(next ? rowId : null)}
+        onView={() => { setDueMenuId(null); onView(vehicle, doc); }}
+        onEdit={() => { setDueMenuId(null); onEdit(vehicle, doc); }}
+        onDelete={() => { setDueMenuId(null); onDelete(vehicle, doc); }}
+      />
+    );
+  }
+
+  return (
+    <>
+      <section className="ovl-toolbar">
+        <div className="hac-toolbar">
+          <div className="hac-toolbar-left ovl-toolbar-left">
+            <div className="hac-search-group scoped ovl-search-group">
+              <SelectMenu className="hac-search-scope" value={scope} options={D.searchScopes} onChange={(next) => { setScope(next); setPage(1); }} ariaLabel="Search by" style={{ width: scope === "vehicle" ? "116px" : scope === "driver" ? "108px" : "110px" }} />
+              <div className="hac-search-bar">
+                <Icon name="search" size={17} color="var(--fg-tertiary)" />
+                <input className="hac-search-input" value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder={`Search by ${scope}`} />
+                {query && <button className="hac-search-clear" type="button" onClick={() => setQuery("")}><Icon name="close" size={16} /></button>}
+              </div>
+            </div>
+            <button className={`hac-filter-btn${dateFilterCount ? " active" : ""}`} type="button" onClick={toggleFilterPanel}><Icon name="tune" size={18} /> Filter{dateFilterCount > 0 && <span className="hac-filter-badge">{dateFilterCount}</span>}</button>
+            {hasClearableFilters && <button className="ovl-clear" type="button" onClick={resetFilters}><Icon name="ink_eraser" size={15} /> Clear filters</button>}
+          </div>
+        </div>
+        {filterOpen && <div className="hac-filter-panel ovl-filter-panel"><div className="hac-filter-grid ovl-filter-grid"><div className="hac-filter-field"><label>Due Date Type</label><div className="hac-select-wrap"><SelectMenu className="hac-select" value={pendingDueDateType} options={D.dueDateTypes} onChange={setPendingDueDateType} ariaLabel="Due date type" /></div></div><div className="hac-filter-field"><label>Status</label><div className="hac-select-wrap"><SelectMenu className="hac-select" value={pendingDueRange} options={DUE_RANGE_OPTIONS} onChange={setPendingDueRange} ariaLabel="Due date status" /></div></div><div className="hac-filter-field"><label>Start Date</label><div className="hac-date-range-field"><Icon name="event" size={16} color="var(--fg-tertiary)" /><input className="hac-date-range-input" type="date" value={pendingStartDate} onChange={(e) => setPendingStartDate(e.target.value)} /></div></div><div className="hac-filter-field"><label>End Date</label><div className="hac-date-range-field"><Icon name="event" size={16} color="var(--fg-tertiary)" /><input className="hac-date-range-input" type="date" value={pendingEndDate} onChange={(e) => setPendingEndDate(e.target.value)} /></div></div></div><div className="hac-filter-actions"><button className="hac-filter-apply" type="button" onClick={() => { applyPendingFilters(); setPage(1); }}>Apply Filters</button><button className="hac-filter-reset" type="button" onClick={() => { resetFilters(); setPage(1); }}>Reset All</button></div></div>}
+      </section>
+      <div className="hac-count">{rows.length} due date{rows.length === 1 ? "" : "s"}</div>
+      <section className="ovl-table-section">
+        <div className="ml-table-wrap ovl-table-wrap">
+          <table className="ml-table ovl-table ovl-due-table">
+            <thead><tr><th>No.</th><th>Vehicle</th><th>Type</th><th>Due Date</th><th>Status</th><th>Reminders</th><th>Description</th><th><span className="sr-only">Actions</span></th></tr></thead>
+            <tbody>
+              {!rows.length && <tr><td colSpan="8"><div className="ovl-empty-table">No vehicle due dates match the current filters.</div></td></tr>}
+              {pageData.map(({ vehicle, doc }, index) => {
+                const rowId = `${vehicle.id}-${doc.id}`;
+                return (
+                  <tr key={rowId}>
+                    <td className="ovl-index">{(page - 1) * perPage + index + 1}</td>
+                    <td><div className="ovl-vehicle-cell"><VehicleThumb inUse={vehicle.activeCheckIn} /><div className="ovl-vehicle-main"><div className="ml-cell-main ovl-vehicle-plate">{vehicle.plate}</div><div className="ovl-due-sub">{vehicle.vendor}</div></div></div></td>
+                    <td><div className="ovl-due-type-cell"><strong>{vehicleDocumentTitle(doc)}</strong><span>{doc.type}</span></div></td>
+                    <td><ExpiryCell iso={doc.expireDate} /></td>
+                    <td>{vehicleDocumentStatus(doc)}</td>
+                    <td>{formatReminderList(doc.reminders)}</td>
+                    <td className="ovl-due-description">{doc.description || "—"}</td>
+                    <td>{renderDueMenu(vehicle, doc, rowId)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="ovl-mobile-list">
+          {pageData.map(({ vehicle, doc }) => {
+            const rowId = `mobile-${vehicle.id}-${doc.id}`;
+            return (
+              <div key={`${vehicle.id}-${doc.id}`} className="ovl-mobile-card">
+                <div className="ovl-mobile-head">
+                  <div className="ovl-vehicle-cell"><VehicleThumb inUse={vehicle.activeCheckIn} /><div className="ovl-vehicle-main"><div className="ovl-vehicle-plate">{vehicle.plate}</div><div className="ovl-due-sub">{vehicleDocumentTitle(doc)}</div></div></div>
+                  <div className="ovl-mobile-head-actions">{vehicleDocumentStatus(doc)}{renderDueMenu(vehicle, doc, rowId)}</div>
+                </div>
+                <div className="ovl-mobile-urgent"><ExpiryCell iso={doc.expireDate} /></div>
+                <div className="ovl-mobile-meta"><span className="ovl-mobile-chip">{doc.type}</span><span className="ovl-mobile-chip">{formatReminderList(doc.reminders)}</span></div>
+              </div>
+            );
+          })}
+          {!rows.length && <div className="ovl-mobile-card"><div className="ovl-empty-table">No vehicle due dates match the current filters.</div></div>}
+        </div>
+      </section>
+      <Pager page={page} perPage={perPage} total={rows.length} onPage={setPage} onPerPage={setPerPage} />
+    </>
+  );
 }
 
 function VehicleRowMenu({ open, onToggle, onView, onEdit, onDelete }) {
@@ -1079,18 +1157,26 @@ function App() {
     setMode("create");
   }
 
-  function openEdit(vehicle) {
+  function openEdit(vehicle, options = {}) {
     setEditingVehicle(vehicle);
     setForm(makeFormFromVehicle(vehicle));
-    setEditTab("details");
+    setEditTab(options.tab === "documents" ? "reminders" : "details");
     setMode("edit");
   }
 
-  function openView(vehicle) {
+  function openView(vehicle, options = {}) {
     setEditingVehicle(vehicle);
     setForm(makeFormFromVehicle(vehicle));
-    setEditTab("details");
+    setEditTab(options.tab === "documents" ? "reminders" : "details");
     setMode("view");
+  }
+
+  function openDueDateView(vehicle, doc) {
+    openView(vehicle, { tab: "documents", documentId: doc.id });
+  }
+
+  function openDueDateEdit(vehicle, doc) {
+    openEdit(vehicle, { tab: "documents", documentId: doc.id });
   }
 
   function closeForm() {
@@ -1440,7 +1526,9 @@ function App() {
               resetFilters={resetFilters}
               dateFilterCount={dateFilterCount}
               hasClearableFilters={hasClearableFilters}
-              onView={openView}
+              onView={openDueDateView}
+              onEdit={openDueDateEdit}
+              onDelete={() => pushToast("warn", "Delete is shown for parity only. Open the vehicle Documents tab to delete this document with confirmation.")}
             />
           ) : (
           <>
