@@ -192,14 +192,18 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .ovl-toast-msg{font-size:12.5px;line-height:1.4;}
 .ovl-empty-table{padding:28px 18px;text-align:center;color:var(--fg-secondary);}
 .ovl-documents-panel{padding:0;border:none;overflow:visible;}
-.ovl-doc-title-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;}
-.ovl-doc-title-row h2{margin:0;font-size:15px;font-weight:700;color:var(--fg-primary);}
-.ovl-doc-title-row p{margin:5px 0 0;color:var(--fg-secondary);font-size:12px;}
+.ovl-doc-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 16px;}
+.ovl-doc-heading{margin:0;font-size:15px;line-height:1.2;color:var(--fg-primary);font-weight:700;}
 .ovl-doc-add{height:36px;}
-.ovl-doc-list{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 16px;}
+.ovl-doc-groups{display:flex;flex-direction:column;gap:18px;padding:14px 16px;}
+.ovl-doc-section-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.ovl-doc-section-title{font-size:13px;font-weight:700;color:var(--fg-primary);}
+.ovl-doc-section-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 7px;border-radius:999px;background:#F4F5F5;color:var(--fg-secondary);font-size:11px;font-weight:700;line-height:1;}
+.ovl-doc-list{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0;align-items:start;}
 .ovl-doc-row{border:1px solid var(--border-light);border-radius:8px;background:#fff;overflow:visible;}
 .ovl-doc-top{display:flex;align-items:center;gap:10px;padding:14px 12px 8px;}
 .ovl-doc-top-spacer{flex:1;}
+.ovl-doc-type-wrap{display:flex;flex-direction:column;gap:2px;min-width:0;}
 .ovl-doc-type{font-weight:700;color:var(--fg-primary);font-size:13px;}
 .ovl-doc-status{justify-content:center;min-width:59px;padding:4px 7px;}
 .ovl-doc-upload-info{font-size:11px;color:var(--fg-tertiary);white-space:nowrap;flex-shrink:0;}
@@ -213,6 +217,13 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .ovl-doc-meta{display:flex;flex-direction:column;gap:3px;min-width:0;}
 .ovl-doc-meta span:first-child,.ovl-history-label{font-size:11px;font-weight:600;color:var(--fg-secondary);}
 .ovl-doc-meta span:last-child{font-size:12px;color:var(--fg-primary);white-space:nowrap;}
+.ovl-doc-description-block{padding:2px 12px 10px;}
+.ovl-doc-description-label{display:block;margin-bottom:4px;font-size:11px;font-weight:600;color:var(--fg-secondary);}
+.ovl-doc-description-text{margin:0;color:var(--fg-primary);font-size:12px;line-height:1.45;white-space:normal;}
+.ovl-doc-description-text.clamped{display:-webkit-box;overflow:hidden;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.ovl-doc-description-toggle{display:inline-flex;align-items:center;gap:2px;margin-top:5px;border:0;background:transparent;color:var(--green-600);font:700 12px var(--font-sans);padding:0;cursor:pointer;}
+.ovl-doc-description-toggle:hover{text-decoration:underline;text-underline-offset:3px;}
+.ovl-doc-description-toggle .msr{color:var(--green-600);}
 .ovl-doc-file-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border-top:1px solid var(--border-light);}
 .ovl-doc-file-list{display:flex;align-items:center;gap:8px;min-width:0;flex:1;flex-wrap:wrap;}
 .ovl-doc-file-empty{font-size:12px;color:var(--fg-tertiary);}
@@ -241,7 +252,9 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .ovl-doc-field input:focus,.ovl-doc-select:focus{outline:none;border-color:var(--green-500);box-shadow:0 0 0 2px rgba(0,170,79,.1);}
 .ovl-doc-field input:disabled{background:var(--bg-muted);color:var(--fg-tertiary);}
 .ovl-doc-field.full{grid-column:1/-1;}
-.ovl-doc-description{padding:0 12px 4px;color:var(--fg-secondary);font-size:12px;line-height:1.45;}
+.ovl-doc-empty{min-height:250px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;gap:9px;}
+.ovl-doc-empty h3{margin:4px 0 0;font-size:15px;}
+.ovl-doc-empty p{max-width:330px;margin:0;color:var(--fg-secondary);line-height:1.45;}
 .ovl-doc-textarea{min-height:78px;width:100%;resize:vertical;border:1px solid var(--border-medium);border-radius:4px;background:#fff;color:var(--fg-primary);font:inherit;padding:10px;outline:0;}
 .ovl-doc-textarea:focus{border-color:var(--green-500);box-shadow:0 0 0 2px rgba(0,170,79,.1);}
 .ovl-doc-reminders{grid-column:1/-1;border-top:1px solid var(--border-light);padding-top:16px;margin-top:16px;}
