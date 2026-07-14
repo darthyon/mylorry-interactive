@@ -42,7 +42,7 @@ mount("modalDemo", <ModalDemo />);
 
 function FileUploadDemo() {
   const [names, setNames] = React.useState([]);
-  return <div style={{ width: 360 }}><HacFileUpload accept="image/*,.pdf" multiple onFiles={(files) => setNames(Array.from(files).map((file) => file.name))} description={<><span>Click to upload</span> or drag and drop</>} hint="Images or PDF, up to 3 files" />{names.length > 0 && <div className="lbl" style={{ marginTop: 8 }}>{names.join(", ")}</div>}</div>;
+  return <div style={{ display: "grid", gridTemplateColumns: "360px 320px", gap: 18, alignItems: "start" }}><div><HacFileUpload accept="image/*,.pdf" multiple onFiles={(files) => setNames(Array.from(files).map((file) => file.name))} description={<><span>Click to upload</span> or drag and drop</>} hint="Images or PDF, up to 3 files" />{names.length > 0 && <div className="lbl" style={{ marginTop: 8 }}>{names.join(", ")}</div>}</div><HacFileUpload variant="mini" accept="image/*,.pdf" multiple onFiles={() => {}} description={<><span>Click to upload</span> or drag and drop</>} hint="Mini upload variant" /></div>;
 }
 
 mount("fileUploadDemo", <FileUploadDemo />);

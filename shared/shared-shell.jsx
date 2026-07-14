@@ -732,12 +732,15 @@ function HacModal({ title, onClose, children, footer, ariaLabel = title, classNa
 
 /* ─── File Upload ───────────────────────────────────────────────
    Shared drop-zone interaction for single-image and multi-document uploads. */
-function HacFileUpload({ accept, multiple = false, onFiles, description = "Click to upload or drag and drop", hint, chooseLabel = "Choose file", preview }) {
+function HacFileUpload({ accept, multiple = false, onFiles, description = "Click to upload or drag and drop", hint, chooseLabel = "Choose file", preview, variant = "default", className = "" }) {
   const inputRef = React.useRef(null);
   function handleFiles(files) { if (files?.length) onFiles?.(files); }
-  return <div className="hac-file-upload" onClick={() => inputRef.current?.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); }}>
+  const classes = ["hac-file-upload", variant === "mini" ? "mini" : "", className].filter(Boolean).join(" ");
+  return <div className={classes} onClick={() => inputRef.current?.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); }}>
     <input ref={inputRef} type="file" accept={accept} multiple={multiple} style={{ display: "none" }} onChange={(e) => handleFiles(e.target.files)} />
-    {preview || <><Icon name="upload_file" size={26} color="var(--green-600)" /><div className="hac-file-upload-text">{description}</div>{hint && <div className="hac-file-upload-hint">{hint}</div>}</>}
+    {preview || (variant === "mini"
+      ? <div className="hac-file-upload-main"><Icon name="upload_file" size={20} color="var(--green-600)" /><div className="hac-file-upload-copy"><div className="hac-file-upload-text">{description}</div>{hint && <div className="hac-file-upload-hint">{hint}</div>}</div></div>
+      : <><Icon name="upload_file" size={26} color="var(--green-600)" /><div className="hac-file-upload-text">{description}</div>{hint && <div className="hac-file-upload-hint">{hint}</div>}</>)}
     <button type="button" className="ml-btn-outline hac-file-upload-btn" onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}>{chooseLabel}</button>
   </div>;
 }

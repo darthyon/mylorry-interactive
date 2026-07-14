@@ -46,6 +46,7 @@
       summary: "Fleet, drivers, compliance, reminders",
       rows: [
         { key: "vehicle_info", label: "Vehicle Creation", helper: "Allow creation of vehicle records", controlType: "toggle", value: true },
+        { key: "managed_vehicle", label: "Managed Vehicle", helper: "Allow managed vehicle reminders and managed vehicle billing", controlType: "toggle", value: true, bindPath: "visibility.managedVehiclesIncluded" },
         { key: "vehicle_doc_reminder", label: "Vehicle Document Reminder", helper: "Reminder count for vehicle documents", controlType: "number", value: 3, min: 0, toggleable: true, enabled: true },
         { key: "icop", label: "Safety Checklist", helper: "Safety checklist workflows and records", controlType: "toggle", value: true },
         { key: "driver_info", label: "Driver Creation", helper: "Allow creation of driver records", controlType: "toggle", value: true },
@@ -227,11 +228,12 @@
       },
       visibility: {
         showOnWebsite: true,
+        managedVehiclesIncluded: false,
       },
       featureModules: applyFeatureOverrides(cloneFeatureModules(), {
         myfuel: { subsidy_quota: { value: false } },
         myadmin: {
-          vehicle_info: { value: true },
+          managed_vehicle: { value: false },
           driver_info: { value: true },
           icop: { value: false },
           vehicle_doc_reminder: { enabled: false },

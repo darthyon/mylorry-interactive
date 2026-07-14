@@ -152,6 +152,20 @@ window.FLOWS = {
           ],
         },
         {
+          id: "host-organization-management",
+          name: "Host — Organization Management",
+          status: "ready",
+          route: "flows/host-organization-management/index.html",
+          desc: "Organization CRUD for host admins with subscription assignment, managed vehicle number validation, upcoming plans, company email files, and partner assignments.",
+          screens: [
+            { label: "Organization list", note: "Search, filter, Excel action, Create New Org, production-style columns, status pill, and kebab actions for view/edit/delete." },
+            { label: "Create organization", note: "Organization Details, PIC Details, company emails, optional uploads, subscription assignment, and disabled partner assignment until saved." },
+            { label: "Edit organization", note: "All three tabs editable: organization detail, current/upcoming subscription, and partner assignment." },
+            { label: "View organization", note: "Read-only key-value cards across Organization Detail, Subscription, and Partner Assignment." },
+            { label: "Subscription states", note: "Seeded Free, Paid, Trial, Upcoming Plan, over-limit validation, duplicate upcoming-plan guard, upload completed, and required-field validation." },
+          ],
+        },
+        {
           id: "host-sp-account",
           name: "Host — SP Account",
           status: "ready",

@@ -143,33 +143,24 @@ function FleetSummary({ onFilter }) {
       </div>
 
       </div>
-      <div className="ml-statcard mad-kpi-primary mad-kpi-doc-card">
+      <button type="button" className="ml-statcard mad-kpi-primary mad-kpi-doc-card mad-kpi-doc-solo mad-cell-btn" onClick={() => onFilter({ scope: "vehicle" })}>
         <div className="ml-statcard-head">
           <div className="ml-statcard-main">
             <div className="ml-statcard-ico green"><Icon name="description" size={20} fill={1} /></div>
-            <div className="ml-statcard-count">{docsByVehicle + docsByDriver}</div>
+            <div className="ml-statcard-count">{docsByVehicle}</div>
           </div>
         </div>
-        <div className="ml-statcard-labelrow"><span className="ml-statcard-label">Documents</span></div>
-        <div className="ml-statcard-band">
-          <button type="button" className="ml-statcard-cell mad-cell-btn" onClick={() => onFilter({ scope: "vehicle" })}>
-            <div className="ml-statcard-n green">{docsByVehicle}</div>
-            <div className="ml-statcard-l">by vehicle</div>
-          </button>
-          <button type="button" className="ml-statcard-cell mad-cell-btn" onClick={() => onFilter({ scope: "driver" })}>
-            <div className="ml-statcard-n gray">{docsByDriver}</div>
-            <div className="ml-statcard-l">by driver</div>
-          </button>
-          <button type="button" className="ml-statcard-cell mad-cell-btn" onClick={() => onFilter({ bucket: "Expired" })}>
-            <div className="ml-statcard-n red">{f.expiredDocs.count}</div>
-            <div className="ml-statcard-l">expired</div>
-          </button>
-          <button type="button" className="ml-statcard-cell mad-cell-btn" onClick={() => onFilter({ bucket: "0-30" })}>
-            <div className="ml-statcard-n amber">{f.dueSoon.count}</div>
-            <div className="ml-statcard-l">due soon</div>
-          </button>
+        <div className="ml-statcard-labelrow"><span className="ml-statcard-label">Vehicle Documents</span></div>
+      </button>
+      <button type="button" className="ml-statcard mad-kpi-primary mad-kpi-doc-card mad-kpi-doc-solo mad-cell-btn" onClick={() => onFilter({ scope: "driver" })}>
+        <div className="ml-statcard-head">
+          <div className="ml-statcard-main">
+            <div className="ml-statcard-ico green"><Icon name="badge" size={20} fill={1} /></div>
+            <div className="ml-statcard-count">{docsByDriver}</div>
+          </div>
         </div>
-      </div>
+        <div className="ml-statcard-labelrow"><span className="ml-statcard-label">Driver Documents</span></div>
+      </button>
     </div>
   );
 }
