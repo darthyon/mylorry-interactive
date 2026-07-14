@@ -60,18 +60,20 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mad-doc-expiry-side{min-width:0;display:flex;flex-direction:column;}
 
 /* ── Fleet Status Summary ─────────────────────────────────────── */
-.mad-kpi-stack{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(250px,.9fr);gap:14px;align-items:stretch;}
-.mad-kpi-row{grid-column:1 / span 2;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:stretch;}
+.mad-kpi-stack{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:stretch;}
+.mad-kpi-row{display:contents;}
 .mad-kpi-row > *{height:100%;}
 .mad-kpi-row .ml-statcard,
 .mad-kpi-row .ed-kpi-tile,
 .mad-kpi-row .ed-kpi-tile .ml-statcard{height:100%;}
 .mad-kpi-primary{min-height:176px;}
-.mad-kpi-doc-card{grid-column:3;}
+.mad-kpi-doc-card{grid-column:auto;}
 .mad-kpi-doc-card .ml-statcard-band{flex-wrap:nowrap;}
 .mad-kpi-doc-card .ml-statcard-cell{flex:1 1 0;min-width:0;}
 .mad-kpi-doc-card .ml-statcard-n,
 .mad-kpi-doc-card .ml-statcard-l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mad-kpi-doc-solo{border:1px solid var(--border-light);text-align:left;cursor:pointer;font-family:inherit;}
+.mad-kpi-doc-solo:hover{background:var(--bg-hover);}
 .mad-cell-btn{cursor:pointer;}
 .ml-statcard-cell.mad-cell-btn{border:none;background:transparent;font-family:inherit;}
 .mad-inline-link{margin-top:8px;border:none;background:transparent;padding:0;color:var(--green-700);font:700 12px/1 var(--font-sans);cursor:pointer;text-align:left;}
@@ -170,6 +172,10 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mad-leave-stay:hover{background:var(--bg-hover);}
 .mad-leave-exit{background:var(--green-600);color:#fff;}
 .mad-leave-exit:hover{background:#009945;}
+
+@media (min-width:1024px) and (max-width:1180px){
+  .mad-kpi-stack{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
 
 @media (max-width:1023px){
   .mad-shell{grid-template-columns:1fr;}
