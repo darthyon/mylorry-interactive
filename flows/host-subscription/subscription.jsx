@@ -783,23 +783,6 @@ function PricingSection({ plan, editable, onChange }) {
             <strong>Estimated monthly billing</strong>
             <span>{fmtRM(baseMonthlyFee)} + {sampleVehicles} managed vehicles × {fmtRM(perManagedVehicleFee)} = <b>{fmtRM(preview)}</b></span>
           </div>
-          <div className="hsub-cap-readout">
-            <div>
-              <div className="hsub-cap-title">Managed vehicle ceiling</div>
-              <div className="hsub-cap-copy">{managedVehicleCeilingLabel(plan)}. Exact managed vehicle number is set per organization.</div>
-            </div>
-            <SwitchField
-              checked={hasManagedVehicleAccess(plan)}
-              onChange={(value) => onChange({
-                visibility: {
-                  ...plan.visibility,
-                  managedVehiclesIncluded: value,
-                },
-              })}
-              label={hasManagedVehicleAccess(plan) ? "Included" : "Not included"}
-              ariaLabel="Managed vehicle availability"
-            />
-          </div>
           <EditableSubscriptionTiers plan={plan} onChange={onChange} title="Pricing tiers" />
         </>
       ) : (
@@ -812,11 +795,6 @@ function PricingSection({ plan, editable, onChange }) {
               label="Estimated monthly billing"
               value={fmtRM(preview)}
               info={previewBreakdown}
-            />
-            <ViewField
-              label="Managed vehicle ceiling"
-              value={managedVehicleCeilingLabel(plan)}
-              hint="Exact managed vehicle number is set per organization."
             />
           </div>
           <ReadOnlySubscriptionTiers plan={plan} title="Pricing tiers" />
