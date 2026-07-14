@@ -67,13 +67,9 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mad-kpi-row .ed-kpi-tile,
 .mad-kpi-row .ed-kpi-tile .ml-statcard{height:100%;}
 .mad-kpi-primary{min-height:176px;}
-.mad-kpi-doc-card{grid-column:auto;}
-.mad-kpi-doc-card .ml-statcard-band{flex-wrap:nowrap;}
-.mad-kpi-doc-card .ml-statcard-cell{flex:1 1 0;min-width:0;}
-.mad-kpi-doc-card .ml-statcard-n,
-.mad-kpi-doc-card .ml-statcard-l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.mad-kpi-doc-solo{border:1px solid var(--border-light);text-align:left;cursor:pointer;font-family:inherit;}
-.mad-kpi-doc-solo:hover{background:var(--bg-hover);}
+.mad-kpi-doc-main{display:block;width:100%;padding:0;border:0;background:transparent;text-align:left;font:inherit;color:inherit;}
+.mad-kpi-doc-main:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(0,170,79,.18);border-radius:8px;}
+.mad-kpi-stack .ml-statcard-cell{cursor:default;}
 .mad-cell-btn{cursor:pointer;}
 .ml-statcard-cell.mad-cell-btn{border:none;background:transparent;font-family:inherit;}
 .mad-inline-link{margin-top:8px;border:none;background:transparent;padding:0;color:var(--green-700);font:700 12px/1 var(--font-sans);cursor:pointer;text-align:left;}

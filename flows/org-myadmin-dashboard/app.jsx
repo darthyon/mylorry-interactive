@@ -1,7 +1,7 @@
 {
 
 const { useState, useMemo, useRef, useEffect } = React;
-const { Icon, OrgSwitcher, CountCard, CardHead, Segmented, StatusBadge, ChecklistCard } = window.SharedShell;
+const { Icon, OrgSwitcher, CardHead, Segmented, StatusBadge, ChecklistCard } = window.SharedShell;
 const D = window.MYADMIN_DASH;
 
 const N = (n) => Number(n).toLocaleString("en-US");
@@ -93,8 +93,16 @@ function Rail() {
 /* ── Fleet Status Summary ─────────────────────────────────────── */
 function FleetSummary({ onFilter }) {
   const f = D.fleet;
-  const docsByVehicle = D.docExpiry.vehicle.series.reduce((sum, row) => sum + D.docExpiry.vehicle.types.reduce((s, t) => s + row[t], 0), 0);
-  const docsByDriver = D.docExpiry.driver.series.reduce((sum, row) => sum + D.docExpiry.driver.types.reduce((s, t) => s + row[t], 0), 0);
+  const getDocTotals = (scope) => D.docExpiry[scope].series.reduce((totals, row) => {
+    const count = D.docExpiry[scope].types.reduce((sum, type) => sum + row[type], 0);
+    return {
+      total: totals.total + count,
+      expired: totals.expired + (row.bucket === "Expired" ? count : 0),
+      dueSoon: totals.dueSoon + (["0-7 days", "8-30 days"].includes(row.bucket) ? count : 0),
+    };
+  }, { total: 0, expired: 0, dueSoon: 0 });
+  const vehicleDocs = getDocTotals("vehicle");
+  const driverDocs = getDocTotals("driver");
   return (
     <div className="mad-kpi-stack">
       <div className="mad-kpi-row">
@@ -107,18 +115,18 @@ function FleetSummary({ onFilter }) {
         </div>
         <div className="ml-statcard-labelrow"><span className="ml-statcard-label">Vehicles</span></div>
         <div className="ml-statcard-band">
-          <button type="button" className="ml-statcard-cell mad-cell-btn" onClick={() => onFilter({ scope: "vehicle", vehicleStatus: "in_use" })}>
+          <div className="ml-statcard-cell">
             <div className="ml-statcard-n green">{f.vehicles.inUse}</div>
             <div className="ml-statcard-l">in use</div>
-          </button>
-          <button type="button" className="ml-statcard-cell mad-cell-btn" onClick={() => onFilter({ scope: "vehicle", vehicleStatus: "unused" })}>
+          </div>
+          <div className="ml-statcard-cell">
             <div className="ml-statcard-n gray">{f.vehicles.unused}</div>
             <div className="ml-statcard-l">unused</div>
-          </button>
-          <button type="button" className="ml-statcard-cell mad-cell-btn" onClick={() => onFilter({ scope: "vehicle", vehicleStatus: "inactive" })}>
+          </div>
+          <div className="ml-statcard-cell">
             <div className="ml-statcard-n red">{f.vehicles.inactive}</div>
             <div className="ml-statcard-l">inactive</div>
-          </button>
+          </div>
         </div>
       </div>
 
@@ -131,36 +139,60 @@ function FleetSummary({ onFilter }) {
         </div>
         <div className="ml-statcard-labelrow"><span className="ml-statcard-label">Drivers</span></div>
         <div className="ml-statcard-band">
-          <button type="button" className="ml-statcard-cell mad-cell-btn" onClick={() => onFilter({ scope: "driver", driverStatus: "on_duty" })}>
+          <div className="ml-statcard-cell">
             <div className="ml-statcard-n green">{f.drivers.onDuty}</div>
             <div className="ml-statcard-l">on duty</div>
-          </button>
-          <button type="button" className="ml-statcard-cell mad-cell-btn" onClick={() => onFilter({ scope: "driver", driverStatus: "off_duty" })}>
+          </div>
+          <div className="ml-statcard-cell">
             <div className="ml-statcard-n gray">{f.drivers.offDuty}</div>
             <div className="ml-statcard-l">off duty</div>
-          </button>
+          </div>
         </div>
       </div>
 
       </div>
-      <button type="button" className="ml-statcard mad-kpi-primary mad-kpi-doc-card mad-kpi-doc-solo mad-cell-btn" onClick={() => onFilter({ scope: "vehicle" })}>
-        <div className="ml-statcard-head">
-          <div className="ml-statcard-main">
-            <div className="ml-statcard-ico green"><Icon name="description" size={20} fill={1} /></div>
-            <div className="ml-statcard-count">{docsByVehicle}</div>
+      <div className="ml-statcard mad-kpi-primary mad-kpi-doc-card">
+        <button type="button" className="mad-kpi-doc-main mad-cell-btn" onClick={() => onFilter({ scope: "vehicle" })}>
+          <div className="ml-statcard-head">
+            <div className="ml-statcard-main">
+              <div className="ml-statcard-ico green"><Icon name="description" size={20} fill={1} /></div>
+              <div className="ml-statcard-count">{vehicleDocs.total}</div>
+            </div>
+          </div>
+          <div className="ml-statcard-labelrow"><span className="ml-statcard-label">Vehicle Documents</span></div>
+        </button>
+        <div className="ml-statcard-band">
+          <div className="ml-statcard-cell">
+            <div className="ml-statcard-n red">{vehicleDocs.expired}</div>
+            <div className="ml-statcard-l">expired</div>
+          </div>
+          <div className="ml-statcard-cell">
+            <div className="ml-statcard-n amber">{vehicleDocs.dueSoon}</div>
+            <div className="ml-statcard-l">due soon</div>
           </div>
         </div>
-        <div className="ml-statcard-labelrow"><span className="ml-statcard-label">Vehicle Documents</span></div>
-      </button>
-      <button type="button" className="ml-statcard mad-kpi-primary mad-kpi-doc-card mad-kpi-doc-solo mad-cell-btn" onClick={() => onFilter({ scope: "driver" })}>
-        <div className="ml-statcard-head">
-          <div className="ml-statcard-main">
-            <div className="ml-statcard-ico green"><Icon name="badge" size={20} fill={1} /></div>
-            <div className="ml-statcard-count">{docsByDriver}</div>
+      </div>
+      <div className="ml-statcard mad-kpi-primary mad-kpi-doc-card">
+        <button type="button" className="mad-kpi-doc-main mad-cell-btn" onClick={() => onFilter({ scope: "driver" })}>
+          <div className="ml-statcard-head">
+            <div className="ml-statcard-main">
+              <div className="ml-statcard-ico green"><Icon name="badge" size={20} fill={1} /></div>
+              <div className="ml-statcard-count">{driverDocs.total}</div>
+            </div>
+          </div>
+          <div className="ml-statcard-labelrow"><span className="ml-statcard-label">Driver Documents</span></div>
+        </button>
+        <div className="ml-statcard-band">
+          <div className="ml-statcard-cell">
+            <div className="ml-statcard-n red">{driverDocs.expired}</div>
+            <div className="ml-statcard-l">expired</div>
+          </div>
+          <div className="ml-statcard-cell">
+            <div className="ml-statcard-n amber">{driverDocs.dueSoon}</div>
+            <div className="ml-statcard-l">due soon</div>
           </div>
         </div>
-        <div className="ml-statcard-labelrow"><span className="ml-statcard-label">Driver Documents</span></div>
-      </button>
+      </div>
     </div>
   );
 }
