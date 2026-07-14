@@ -47,6 +47,12 @@ window.ORG_VEHICLE_LIST = {
       limit: 50,
       managedIds: ["veh-001", "veh-002", "veh-003", "veh-004", "veh-005", "veh-006", "veh-007", "veh-009"],
     },
+    enterprise: {
+      label: "Enterprise · Unlimited",
+      planName: "Enterprise",
+      limit: Infinity,
+      managedIds: ["veh-001", "veh-002", "veh-003", "veh-004", "veh-005", "veh-006", "veh-007", "veh-009"],
+    },
     free: {
       label: "Free · 0 / 0",
       planName: "Free",
