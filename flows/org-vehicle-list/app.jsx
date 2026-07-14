@@ -1,7 +1,7 @@
 {
 
 const { useEffect, useMemo, useRef, useState } = React;
-const { Icon, OrgSwitcher: BaseOrgSwitcher, SelectMenu, Pager, HacModal, HacFileUpload } = window.SharedShell;
+const { Icon, OrgSwitcher: BaseOrgSwitcher, SelectMenu, Pager, HacModal, HacFileUpload, StatusBadge } = window.SharedShell;
 const { useTweaks, TweaksPanel, TweakSection, TweakSelect, TweakToggle } = window;
 const D = window.ORG_VEHICLE_LIST;
 
@@ -178,6 +178,12 @@ function documentTone(iso) {
 function formatReminderList(reminders = []) {
   const values = reminders.map(Number).filter((value) => Number.isFinite(value) && value > 0);
   return values.length ? values.map((value) => `${value} days before due date`).join(", ") : "—";
+}
+
+function ReminderBadges({ reminders = [] }) {
+  const values = reminders.map(Number).filter((value) => Number.isFinite(value) && value > 0);
+  if (!values.length) return "—";
+  return <div className="ovl-reminder-badges">{values.map((value, index) => <span className="ovl-reminder-badge" key={`${value}-${index}`}>{value} days</span>)}</div>;
 }
 
 function remindersForTier(reminders = [], tier) {
@@ -439,7 +445,7 @@ function VehicleDueDates({
                     <td><div className="ovl-due-type-cell"><strong>{vehicleDocumentTitle(doc)}</strong><span>{doc.type}</span></div></td>
                     <td><ExpiryCell iso={doc.expireDate} /></td>
                     <td>{vehicleDocumentStatus(doc)}</td>
-                    <td>{formatReminderList(doc.reminders)}</td>
+                    <td><ReminderBadges reminders={doc.reminders} /></td>
                     <td className="ovl-due-description">{doc.description || "—"}</td>
                     <td>{renderDueMenu(vehicle, doc, rowId)}</td>
                   </tr>
@@ -458,7 +464,7 @@ function VehicleDueDates({
                   <div className="ovl-mobile-head-actions">{vehicleDocumentStatus(doc)}{renderDueMenu(vehicle, doc, rowId)}</div>
                 </div>
                 <div className="ovl-mobile-urgent"><ExpiryCell iso={doc.expireDate} /></div>
-                <div className="ovl-mobile-meta"><span className="ovl-mobile-chip">{doc.type}</span><span className="ovl-mobile-chip">{formatReminderList(doc.reminders)}</span></div>
+                <div className="ovl-mobile-meta"><span className="ovl-mobile-chip">{doc.type}</span><ReminderBadges reminders={doc.reminders} /></div>
               </div>
             );
           })}
@@ -979,7 +985,7 @@ function VehicleFormSections({ form, update, overCap, nextManagedCount, scope, o
 
 function vehicleDocumentStatus(doc) {
   const status = documentStatus(doc.expireDate);
-  return <span className={`ovl-doc-status ${status === "Expired" ? "expired" : status === "Active" ? "active" : "empty"}`}>{status}</span>;
+  return <StatusBadge status={status === "Expired" ? "expired" : "active"} label={status} />;
 }
 
 function VehicleDocumentUpload({ files, onFiles }) {
@@ -1031,7 +1037,7 @@ function VehicleReminderSummary({ reminders = [] }) {
 function VehicleHistoryRow({ record }) {
   const status = documentStatus(record.expireDate);
   const isOther = record.type === "Others" || record.title || record.description;
-  return <div className="ovl-history-row"><div className="ovl-history-top"><div className="ovl-history-sub">Uploaded {record.uploadedDate || record.createdDate || "—"}{record.uploadedBy ? ` by ${record.uploadedBy}` : ""}</div></div><div className="ovl-history-bottom"><div className="ovl-history-meta-group">{isOther && <div className="ovl-history-meta"><span className="ovl-history-label">Title</span><span className="ovl-history-value">{record.title || "Others"}</span></div>}{!isOther && <div className="ovl-history-meta"><span className="ovl-history-label">Start date</span><span className="ovl-history-value">{fmtDate(record.startDate)}</span></div>}<div className="ovl-history-meta"><span className="ovl-history-label">Due date</span><span className="ovl-history-value">{fmtDate(record.expireDate)}</span></div><div className="ovl-history-meta"><span className="ovl-history-label">Status</span><span className={`ovl-doc-status ${status === "Expired" ? "expired" : status === "Active" ? "active" : "empty"}`}>{status}</span></div><div className="ovl-history-meta"><span className="ovl-history-label">Reminders</span><span className="ovl-history-reminder">{record.expireDate ? formatReminderList(record.reminders) : "—"}</span></div></div><div className="ovl-history-actions"><button className="ml-btn-soft" type="button"><Icon name="download" size={15} color="var(--green-600)" />Download</button></div></div></div>;
+  return <div className="ovl-history-row"><div className="ovl-history-top"><div className="ovl-history-sub">Uploaded {record.uploadedDate || record.createdDate || "—"}{record.uploadedBy ? ` by ${record.uploadedBy}` : ""}</div></div><div className="ovl-history-bottom"><div className="ovl-history-meta-group">{isOther && <div className="ovl-history-meta"><span className="ovl-history-label">Title</span><span className="ovl-history-value">{record.title || "Others"}</span></div>}{!isOther && <div className="ovl-history-meta"><span className="ovl-history-label">Start date</span><span className="ovl-history-value">{fmtDate(record.startDate)}</span></div>}<div className="ovl-history-meta"><span className="ovl-history-label">Due date</span><span className="ovl-history-value">{fmtDate(record.expireDate)}</span></div><div className="ovl-history-meta"><span className="ovl-history-label">Status</span><StatusBadge status={status === "Expired" ? "expired" : "active"} label={status} /></div><div className="ovl-history-meta"><span className="ovl-history-label">Reminders</span><span className="ovl-history-reminder">{record.expireDate ? formatReminderList(record.reminders) : "—"}</span></div></div><div className="ovl-history-actions"><button className="ml-btn-soft" type="button"><Icon name="download" size={15} color="var(--green-600)" />Download</button></div></div></div>;
 }
 
 function VehicleDocumentModal({ initial, tier, onClose, onSave, onUpgrade }) {
