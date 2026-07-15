@@ -484,7 +484,7 @@ function VehicleDueDates({
                     <td className="ovl-index">{(page - 1) * perPage + index + 1}</td>
                     <td><div className="ovl-vehicle-cell"><VehicleThumb inUse={vehicle.activeCheckIn} /><div className="ovl-vehicle-main"><div className="ml-cell-main ovl-vehicle-plate">{vehicle.plate}</div></div></div></td>
                     <td>{vehicle.vendor}</td>
-                    <td><div className="ovl-due-type-cell"><strong>{vehicleDocumentTitle(doc)}</strong><span>{doc.type}</span></div></td>
+                    <td><div className="ovl-due-type-cell"><strong>{doc.type}</strong></div></td>
                     <td>{fmtDate(doc.startDate)}</td>
                     <td><ExpiryCell iso={doc.expireDate} /></td>
                     <td><ReminderBadges reminders={doc.reminders} /></td>
