@@ -404,12 +404,15 @@ function VehicleDueDates({
   dateFilterCount,
   hasClearableFilters,
   onView,
-  onEdit,
   onDelete,
+  onDocumentsChange,
+  onToast,
+  tier,
 }) {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [dueMenuId, setDueMenuId] = useState(null);
+  const [editTarget, setEditTarget] = useState(null);
   const rows = useMemo(() => flattenVehicleDueDates(vehicles).filter(({ vehicle, doc }) => {
     const q = query.trim().toLowerCase();
     if (q) {
@@ -434,10 +437,17 @@ function VehicleDueDates({
         open={dueMenuId === rowId}
         onToggle={(next) => setDueMenuId(next ? rowId : null)}
         onView={() => { setDueMenuId(null); onView(vehicle, doc); }}
-        onEdit={() => { setDueMenuId(null); onEdit(vehicle, doc); }}
+        onEdit={() => { setDueMenuId(null); setEditTarget({ vehicle, doc }); }}
         onDelete={() => { setDueMenuId(null); onDelete(vehicle, doc); }}
       />
     );
+  }
+  function saveDueDocument(doc) {
+    if (!editTarget) return;
+    const documents = (editTarget.vehicle.documents || makeVehicleDocuments(editTarget.vehicle)).map((item) => item.id === doc.id ? doc : item);
+    onDocumentsChange(editTarget.vehicle.id, documents);
+    setEditTarget(null);
+    onToast("Document changes saved.");
   }
 
   return (
@@ -502,6 +512,7 @@ function VehicleDueDates({
         </div>
       </section>
       <Pager page={page} perPage={perPage} total={rows.length} onPage={setPage} onPerPage={setPerPage} />
+      {editTarget && <VehicleDocumentModal initial={editTarget.doc} tier={tier} onClose={() => setEditTarget(null)} onSave={saveDueDocument} onUpgrade={() => onToast("Upgrade options would open here.")} />}
     </>
   );
 }
@@ -1230,10 +1241,6 @@ function App() {
     openView(vehicle, { tab: "documents", documentId: doc.id });
   }
 
-  function openDueDateEdit(vehicle, doc) {
-    openEdit(vehicle, { tab: "documents", documentId: doc.id });
-  }
-
   function closeForm() {
     setMode("list");
     setEditingVehicle(null);
@@ -1566,8 +1573,10 @@ function App() {
               dateFilterCount={dateFilterCount}
               hasClearableFilters={hasClearableFilters}
               onView={openDueDateView}
-              onEdit={openDueDateEdit}
               onDelete={() => pushToast("warn", "Delete is shown for parity only. Open the vehicle Documents tab to delete this document with confirmation.")}
+              onDocumentsChange={updateVehicleDocuments}
+              onToast={(message) => pushToast("ok", message)}
+              tier={reminderTier}
             />
           ) : (
           <>
