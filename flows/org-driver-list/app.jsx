@@ -82,7 +82,6 @@ const DRIVER_DUE_RANGES = [
   { value: "8-30", label: "8-30 days" },
   { value: "31-60", label: "31-60 days" },
   { value: "61-90", label: "61-90 days" },
-  { value: "future", label: "More than 90 days" },
 ];
 
 function DriverList({ drivers, onNavigate, onDelete }) {

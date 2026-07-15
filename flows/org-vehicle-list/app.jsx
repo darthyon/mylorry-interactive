@@ -54,7 +54,6 @@ const DUE_RANGE_OPTIONS = [
   { value: "8-30", label: "8-30 days" },
   { value: "31-60", label: "31-60 days" },
   { value: "61-90", label: "61-90 days" },
-  { value: "future", label: "More than 90 days" },
 ];
 
 const VEHICLE_CATEGORIES = ["Lorry", "Van", "Bus", "Truck", "MPV", "Sedan"];
