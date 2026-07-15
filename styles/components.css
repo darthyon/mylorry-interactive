@@ -61,6 +61,36 @@
   font-weight: 400;
 }
 
+.odr-expiry,
+.ovl-expiry {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.2;
+  min-width: 106px;
+}
+.odr-expiry .odr-expiry-date,
+.ovl-expiry .ovl-expiry-date {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--fg-primary);
+}
+.odr-expiry .odr-expiry-meta,
+.ovl-expiry .ovl-expiry-meta {
+  font-size: 11px;
+  color: var(--fg-secondary);
+}
+.odr-expiry.danger .odr-expiry-meta,
+.ovl-expiry.danger .ovl-expiry-meta { color: #b64b43; }
+.odr-expiry.warn .odr-expiry-meta,
+.ovl-expiry.warn .ovl-expiry-meta { color: #c4842a; }
+.odr-expiry.good .odr-expiry-meta,
+.ovl-expiry.good .ovl-expiry-meta { color: #397051; }
+.odr-expiry.empty .odr-expiry-date,
+.odr-expiry.empty .odr-expiry-meta,
+.ovl-expiry.empty .ovl-expiry-date,
+.ovl-expiry.empty .ovl-expiry-meta { color: var(--fg-disabled); }
+
 /* Commission status */
 .ml-badge.comm-activated   { background: var(--green-50); color: var(--green-600); }
 .ml-badge.comm-pending-ob  { background: #FFF8E1;         color: #F57F17;          }
