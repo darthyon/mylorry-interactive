@@ -501,8 +501,11 @@ const STATUS_BADGE_META = {
   mod_included: { label:"Included", cls:"mod-included" },
   mod_limited:  { label:"Limited",  cls:"mod-limited"  },
   mod_locked:   { label:"Locked",   cls:"mod-locked"   },
-  // Document expiry status (MyAdmin dashboard) — "expired" reuses the
-  // comm-expired vocab entry above.
+  // Document expiry status (driver / vehicle document cards & tables)
+  doc_active:   { label:"Active",   cls:"doc-active"   },
+  doc_due_soon: { label:"Due soon", cls:"doc-due-soon" },
+  doc_expired:  { label:"Expired",  cls:"doc-expired"  },
+  // MyAdmin dashboard legacy aliases (kept for backward compat)
   due_soon:             { label:"Due soon",              cls:"quota-at-risk"    },
   // Checklist endorsement status (MyAdmin dashboard)
   pending_endorsement:  { label:"Pending endorsement",   cls:"quota-at-risk"    },

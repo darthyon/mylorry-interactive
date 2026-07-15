@@ -25,6 +25,11 @@
 .ml-badge.pending  { background: var(--amber-50);  color: var(--amber-600); }
 .ml-badge.new      { background: #EDEEF7;         color: var(--navy-800);  }
 
+/* Document expiry status (driver / vehicle documents) */
+.ml-badge.doc-active   { background: var(--green-50); color: var(--green-600); }
+.ml-badge.doc-due-soon { background: var(--amber-50); color: var(--amber-600); }
+.ml-badge.doc-expired  { background: #FFF0F0;         color: var(--red-400);   }
+
 /* Commission status */
 .ml-badge.comm-activated   { background: var(--green-50); color: var(--green-600); }
 .ml-badge.comm-pending-ob  { background: #FFF8E1;         color: #F57F17;          }
