@@ -53,6 +53,10 @@
   color: var(--fg-tertiary);
 }
 
+.odr-list-table td:nth-child(6) {
+  font-variant-numeric: normal;
+}
+
 /* Commission status */
 .ml-badge.comm-activated   { background: var(--green-50); color: var(--green-600); }
 .ml-badge.comm-pending-ob  { background: #FFF8E1;         color: #F57F17;          }
