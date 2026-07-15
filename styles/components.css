@@ -80,6 +80,12 @@
   font-size: 11px;
   color: var(--fg-secondary);
 }
+.odr-expiry.danger .odr-expiry-date,
+.odr-expiry.warn .odr-expiry-date,
+.odr-expiry.good .odr-expiry-date,
+.ovl-expiry.danger .ovl-expiry-date,
+.ovl-expiry.warn .ovl-expiry-date,
+.ovl-expiry.good .ovl-expiry-date { color: var(--fg-primary); }
 .odr-expiry.danger .odr-expiry-meta,
 .ovl-expiry.danger .ovl-expiry-meta { color: #b64b43; }
 .odr-expiry.warn .odr-expiry-meta,
