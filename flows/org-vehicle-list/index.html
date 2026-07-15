@@ -222,9 +222,12 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .ovl-time-left.warn{color:#c4842a}
 .ovl-time-left.good{color:#397051}
 .ovl-time-left.empty{color:var(--fg-tertiary)}
-.ml-badge.doc-active{background:#effaf4;color:#397051}
-.ml-badge.doc-due-soon{background:#fff8e1;color:#b16c00}
-.ml-badge.doc-expired{background:#fff0ef;color:#b64b43}
+.ovl-doc-row .ml-badge.doc-active{background:#effaf4;color:#397051 !important}
+.ovl-doc-row .ml-badge.doc-due-soon{background:#fff8e1;color:#b16c00 !important}
+.ovl-doc-row .ml-badge.doc-expired{background:#fff0ef;color:#b64b43 !important}
+.ovl-due-table .ml-badge.doc-active{background:#effaf4;color:#397051 !important}
+.ovl-due-table .ml-badge.doc-due-soon{background:#fff8e1;color:#b16c00 !important}
+.ovl-due-table .ml-badge.doc-expired{background:#fff0ef;color:#b64b43 !important}
 .ml-tooltip-wrap{position:relative;display:inline-flex;align-items:center}
 .ml-tooltip-wrap:hover .ml-tooltip,.ml-tooltip-wrap:focus-within .ml-tooltip{opacity:1}
 .ml-tooltip{position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#322F35;color:#fff;font-size:12px;line-height:1.5;padding:8px 11px;border-radius:4px;width:max-content;min-width:120px;pointer-events:none;z-index:50;opacity:0;transition:opacity .15s;text-align:left;white-space:nowrap}
