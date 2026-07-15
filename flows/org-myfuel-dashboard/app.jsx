@@ -116,7 +116,7 @@ function RailMenu({ className = "", itemClass = "", onItemClick }) {
       {RAIL_ITEMS.map((r) => (
         <a key={r.label} href={r.active ? "../org-dashboard/index.html" : undefined}
            className={itemClass + (r.active ? " active" : "")} title={r.label} onClick={onItemClick}>
-          <img className="mfd-rail-item-icon" src={"/public/" + r.icon + ".svg"} alt="" width={20} height={20} />
+          <img className="mfd-rail-item-icon" src={"../../public/" + r.icon + ".svg"} alt="" width={20} height={20} />
           <span>{r.label}</span>
         </a>
       ))}
@@ -158,7 +158,7 @@ function Rail({ mobileOpen, onClose }) {
               {expanded && <span>Sign Out</span>}
             </a>
             <button type="button" className="mfd-rail-item mfd-rail-lang">
-              <img className="mfd-rail-item-icon" src="/public/ic-language.svg" alt="" width={20} height={20} />
+              <img className="mfd-rail-item-icon" src="../../public/ic-language.svg" alt="" width={20} height={20} />
               {expanded && <span>English</span>}
             </button>
           </div>
@@ -327,76 +327,124 @@ function BalanceSummary({ empty }) {
     return () => { el.removeEventListener("touchstart", onStart); el.removeEventListener("touchend", onEnd); };
   }, [multi, wallets.length]);
 
-  return (
-    <div className={"mfd-kpi mfd-balance" + tone} ref={cardRef}>
-      {multi && (
-        <button className="mfd-bal-warrow mfd-bal-wl" onClick={() => go(-1)} aria-label="Previous wallet">
-          <Icon name="chevron_left" size={16} color="#1a3a25" />
-        </button>
-      )}
-      {multi && (
-        <button className="mfd-bal-warrow mfd-bal-wr" onClick={() => go(1)} aria-label="Next wallet">
-          <Icon name="chevron_right" size={16} color="#1a3a25" />
-        </button>
-      )}
-      <div className="mfd-balance-top">
-        <div className="mfd-balance-wname-wrap">
-          <button className="mfd-balance-wname" onClick={() => multi && setPickerOpen((v) => !v)}
-            aria-haspopup={multi ? "true" : undefined} style={!multi ? { cursor: "default" } : {}}>
-            <WalletLogo wallet={b} size={14} />
-            <span className="mfd-balance-wname-label">{b.accNo}</span>
-            {multi && <Icon name="expand_more" size={13} color="rgba(255,255,255,.65)"
-              style={{ flexShrink: 0, transition: "transform .15s", transform: pickerOpen ? "rotate(180deg)" : "rotate(0deg)" }} />}
-          </button>
-          {pickerOpen && (
-            <WalletPicker wallets={wallets} selectedId={b.id}
-              onSelect={(i) => { setIdx(i); try { localStorage.setItem("mfd_wallet_" + D.org.id, i); } catch {} setPickerOpen(false); }}
-              onClose={() => setPickerOpen(false)} />
-          )}
-        </div>
-        <span className="mfd-balance-updated">Last updated<br />{D.org.lastUpdated}</span>
-      </div>
-      <div className="mfd-balance-sublabel-row">
-        <span className="mfd-balance-sublabel">Balance</span>
-        {forced && (
-          <span className="mfd-tooltip-wrap" tabIndex={forced === "critical" ? 0 : undefined}>
-            <StatusBadge status={forced === "critical" ? "critical_balance" : "low_balance"}
-              prefix={<Icon name="warning" size={11} color="#BE2F2C" />} />
-            {forced === "critical" && (
-              <span className="mfd-tooltip">Balance critically low — top up now to avoid service disruption.</span>
-            )}
-          </span>
-        )}
-      </div>
-      <div className="mfd-balance-row">
-        <div className="mfd-balance-value">{empty ? "RM 0.00" : RM(b.amount)}</div>
-        <button className="mfd-balance-addcredit">Add credit</button>
-      </div>
+  // Shared band renderer (desktop card + each mobile card)
+  function UsageBand({ wallet }) {
+    return (
       <div className="mfd-balance-band">
         <div className="mfd-balance-cell">
           <div className="mfd-balance-cell-l">Current month usage</div>
-          <div className="mfd-balance-cell-v">{empty ? "RM 0.00" : RM(b.currentUsage)}</div>
-          <div className="mfd-balance-cell-s">{empty ? "0.00 L" : L(b.currentUsageLitres)}</div>
+          <div className="mfd-balance-cell-v">{empty ? "RM 0.00" : RM(wallet.currentUsage)}</div>
+          <div className="mfd-balance-cell-s">{empty ? "0.00 L" : L(wallet.currentUsageLitres)}</div>
         </div>
         <div className="mfd-balance-cell">
           <div className="mfd-balance-cell-l">Previous month usage</div>
-          <div className="mfd-balance-cell-v">{empty ? "RM 0.00" : RM(b.lastMonthUsage)}</div>
-          <div className="mfd-balance-cell-s">{empty ? "0.00 L" : L(b.lastMonthUsageLitres)}</div>
+          <div className="mfd-balance-cell-v">{empty ? "RM 0.00" : RM(wallet.lastMonthUsage)}</div>
+          <div className="mfd-balance-cell-s">{empty ? "0.00 L" : L(wallet.lastMonthUsageLitres)}</div>
         </div>
         <div className="mfd-balance-cell mfd-balance-cell-est">
           <div className="mfd-balance-cell-l">Est. remaining</div>
-          <div className="mfd-balance-cell-v">{empty ? "—" : `${b.daysRemaining} days`}</div>
+          <div className="mfd-balance-cell-v">{empty ? "—" : `${wallet.daysRemaining} days`}</div>
         </div>
       </div>
-      {multi && (
-        <div className="mfd-balance-dots" role="tablist" aria-label="Wallet position">
-          {wallets.map((wallet, i) => (
-            <button key={wallet.id} role="tab" aria-selected={i === idx} aria-label={wallet.name}
-              className={"mfd-balance-dot" + (i === idx ? " active" : "")}
-              onClick={() => { setIdx(i); try { localStorage.setItem("mfd_wallet_" + D.org.id, i); } catch {} }} />
-          ))}
+    );
+  }
+
+  return (
+    <div className={"mfd-kpi mfd-balance" + tone} ref={cardRef}>
+
+      {/* ── Desktop: single card, hover arrows ── */}
+      <div className="mfd-bal-desktop">
+        {multi && (
+          <button className="mfd-bal-warrow mfd-bal-wl" onClick={() => go(-1)} aria-label="Previous wallet">
+            <Icon name="chevron_left" size={16} color="#1a3a25" />
+          </button>
+        )}
+        {multi && (
+          <button className="mfd-bal-warrow mfd-bal-wr" onClick={() => go(1)} aria-label="Next wallet">
+            <Icon name="chevron_right" size={16} color="#1a3a25" />
+          </button>
+        )}
+        <div className="mfd-balance-top">
+          <div className="mfd-balance-wname-wrap">
+            <button className="mfd-balance-wname" onClick={() => multi && setPickerOpen((v) => !v)}
+              aria-haspopup={multi ? "true" : undefined} style={!multi ? { cursor: "default" } : {}}>
+              <WalletLogo wallet={b} size={14} />
+              <span className="mfd-balance-wname-label">{b.accNo}</span>
+              {multi && <Icon name="expand_more" size={13} color="rgba(255,255,255,.65)"
+                style={{ flexShrink: 0, transition: "transform .15s", transform: pickerOpen ? "rotate(180deg)" : "rotate(0deg)" }} />}
+            </button>
+            {pickerOpen && (
+              <WalletPicker wallets={wallets} selectedId={b.id}
+                onSelect={(i) => { setIdx(i); try { localStorage.setItem("mfd_wallet_" + D.org.id, i); } catch {} setPickerOpen(false); }}
+                onClose={() => setPickerOpen(false)} />
+            )}
+          </div>
+          <span className="mfd-balance-updated">Last updated<br />{D.org.lastUpdated}</span>
         </div>
-      )}
+        <div className="mfd-balance-sublabel-row">
+          <span className="mfd-balance-sublabel">Balance</span>
+          {forced && (
+            <span className="mfd-tooltip-wrap" tabIndex={forced === "critical" ? 0 : undefined}>
+              <StatusBadge status={forced === "critical" ? "critical_balance" : "low_balance"}
+                prefix={<Icon name="warning" size={11} color="#BE2F2C" />} />
+              {forced === "critical" && (
+                <span className="mfd-tooltip">Balance critically low — top up now to avoid service disruption.</span>
+              )}
+            </span>
+          )}
+        </div>
+        <div className="mfd-balance-row">
+          <div className="mfd-balance-value">{empty ? "RM 0.00" : RM(b.amount)}</div>
+          <button className="mfd-balance-addcredit">Add credit</button>
+        </div>
+        <UsageBand wallet={b} />
+        {multi && (
+          <div className="mfd-balance-dots" role="tablist" aria-label="Wallet position">
+            {wallets.map((wallet, i) => (
+              <button key={wallet.id} role="tab" aria-selected={i === idx} aria-label={wallet.name}
+                className={"mfd-balance-dot" + (i === idx ? " active" : "")}
+                onClick={() => { setIdx(i); try { localStorage.setItem("mfd_wallet_" + D.org.id, i); } catch {} }} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Mobile: horizontal snap scroll, each wallet its own card
+           (same pattern as org-dashboard od-bal-mobile) ── */}
+      <div className="mfd-bal-mobile">
+        <div className="mfd-bal-mscroll">
+          {wallets.map((wl) => {
+            const wlTone = empty ? "" : balanceTone(wl.daysRemaining);
+            const wlForced = wlTone === " red" ? "critical" : wlTone === " amber" ? "low" : null;
+            return (
+              <div key={wl.id} className={"mfd-bal-mcard" + wlTone}>
+                <div className="mfd-balance-top">
+                  <span className="mfd-bal-mcard-name">
+                    <WalletLogo wallet={wl} size={13} />
+                    <span>{wl.accNo}</span>
+                  </span>
+                  <span className="mfd-balance-updated">Last updated<br />{D.org.lastUpdated}</span>
+                </div>
+                <div className="mfd-balance-sublabel-row">
+                  <span className="mfd-balance-sublabel">Balance</span>
+                  {wlForced && (
+                    <span className="mfd-tooltip-wrap" tabIndex={wlForced === "critical" ? 0 : undefined}>
+                      <StatusBadge status={wlForced === "critical" ? "critical_balance" : "low_balance"}
+                        prefix={<Icon name="warning" size={11} color="#BE2F2C" />} />
+                      {wlForced === "critical" && (
+                        <span className="mfd-tooltip">Balance critically low — top up now to avoid service disruption.</span>
+                      )}
+                    </span>
+                  )}
+                </div>
+                <div className="mfd-balance-value">{empty ? "RM 0.00" : RM(wl.amount)}</div>
+                <UsageBand wallet={wl} />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
     </div>
   );
 }
@@ -604,13 +652,12 @@ function SubsidyQuotaCombinedCard({ empty, quotaState, subsidy, subsidies, subsi
       return false;
     }
   });
-  const [vehicleOpen, setVehicleOpen] = useState(() => {
-    try {
-      return window.innerWidth > 680;
-    } catch {
-      return true;
-    }
-  });
+  // Toggle button + collapsed state only ever apply on mobile (see the
+  // isMobileViewport branch below and the .is-collapsed condition further
+  // down) — desktop always renders the full list regardless of this value.
+  // Default closed unconditionally so the accordion never opens on first
+  // mobile paint.
+  const [vehicleOpen, setVehicleOpen] = useState(false);
   const [expandedVehicle, setExpandedVehicle] = useState(null);
   const pageSize = 5;
   const vehRows = aggregateQuotaByVehicle()
@@ -894,7 +941,36 @@ const RANGE_LABEL = { threeMonth: "Last 3 months", sixMonth: "Last 6 months", tw
 function FuelUsageTrend({ empty, range }) {
   const [metric, setMetric] = useState("litres");
   const [hover, setHover] = useState(null);
+  const [tipPos, setTipPos] = useState(null); // {x, y} relative to .mfd-plotwrap
+  const plotRef = useRef(null);
+  const plotWrapRef = useRef(null);
   const rangeLabel = RANGE_LABEL[range] || "Last 6 months";
+
+  // .mfd-plot scrolls horizontally (overflow-x:auto ≤680px), which per the
+  // CSS spec also forces overflow-y to compute as auto — so a tooltip
+  // living inside .mfd-plot gets clipped the moment it needs to render
+  // above a tall bar, regardless of how it's positioned (fixed, absolute,
+  // even plain in-flow). Rendering it as a sibling of .mfd-plot instead,
+  // inside .mfd-plotwrap (one level up, no scroll, no clip), sidesteps
+  // that entirely. Position is computed from .mfd-bar-stack — the child
+  // actually sized to the bar's real height via inline `height: pct%`,
+  // not .mfd-bar-col, which is a full-height (100% of the plot) tap
+  // target and would put the tooltip at the top of the chart every time.
+  function showTip(i, barColEl) {
+    const stack = barColEl.querySelector(".mfd-bar-stack") || barColEl;
+    const bar = stack.getBoundingClientRect();
+    const wrap = plotWrapRef.current.getBoundingClientRect();
+    setTipPos({ x: bar.left + bar.width / 2 - wrap.left, y: bar.top - wrap.top });
+    setHover(i);
+  }
+
+  useEffect(() => {
+    const el = plotRef.current;
+    if (!el) return;
+    const onScroll = () => setHover(null);
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
 
   if (empty) {
     return (
@@ -935,26 +1011,20 @@ function FuelUsageTrend({ empty, range }) {
       </div>
 
       <div className="mfd-chart-axislbl">{metric === "amount" ? "Amount (RM)" : "Fuel (litres)"}</div>
-      <div className="mfd-plotwrap">
+      <div className="mfd-plotwrap" ref={plotWrapRef}>
         <div className="mfd-yaxis">{tickVals.map((v) => <span key={v}>{v >= 1000 ? (v / 1000).toFixed(1) + "K" : v}</span>)}</div>
-        <div className="mfd-plot">
+        <div className="mfd-plot" ref={plotRef}>
           <div className="mfd-bars">
             {labels.map((label, i) => (
               <div key={label} className="mfd-bar-col"
-                onMouseEnter={() => setHover(i)}
-                onMouseLeave={() => setHover(null)}>
+                onMouseEnter={(e) => showTip(i, e.currentTarget)}
+                onMouseLeave={() => setHover(null)}
+                onPointerDown={(e) => {
+                  if (e.pointerType !== "touch") return;
+                  if (hover === i) { setHover(null); return; }
+                  showTip(i, e.currentTarget);
+                }}>
                 <div className="mfd-bar-group">
-                  {hover === i && (
-                    <div className="mfd-bar-tip">
-                      <div className="mfd-bar-tip-period">{label}</div>
-                      {series.map((s) => (
-                        <div key={s.key} className="mfd-bar-tip-row">
-                          <span className="mfd-bar-tip-dot" style={{ background: s.color }} />
-                          <span>{s.label}: <strong>{metric === "amount" ? RM0(s.values[i]) : L0(s.values[i])}</strong></span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                   <div className={"mfd-bar-track" + (hover === i ? " active" : "")}>
                     <div className="mfd-bar-stack" style={{ height: (totals[i] / max * 100) + "%" }}>
                       <div className="mfd-bar-seg" style={{ height: totals[i] ? (series[0].values[i] / totals[i] * 100) + "%" : "0%", background: series[0].color }} />
@@ -969,6 +1039,29 @@ function FuelUsageTrend({ empty, range }) {
             {labels.map((l) => <span key={l} className="mfd-xlbl">{l}</span>)}
           </div>
         </div>
+        {hover != null && tipPos && (
+          <div className="mfd-bar-tip" style={{
+            position: "absolute",
+            left: Math.min(Math.max(tipPos.x, 98), (plotWrapRef.current?.clientWidth || 300) - 98),
+            top: tipPos.y,
+            // The base .mfd-bar-tip class sets bottom:100% for its original
+            // in-flow-relative-to-bar layout. Left uncleared here, having
+            // both top and bottom non-auto forces the box's height to be
+            // computed from the top/bottom gap instead of its content —
+            // collapsing it to a sliver. Must explicitly reset to auto.
+            bottom: "auto",
+            transform: "translate(-50%, calc(-100% - 8px))",
+            zIndex: 6,
+          }}>
+            <div className="mfd-bar-tip-period">{labels[hover]}</div>
+            {series.map((s) => (
+              <div key={s.key} className="mfd-bar-tip-row">
+                <span className="mfd-bar-tip-dot" style={{ background: s.color }} />
+                <span>{s.label}: <strong>{metric === "amount" ? RM0(s.values[hover]) : L0(s.values[hover])}</strong></span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="mfd-legend">

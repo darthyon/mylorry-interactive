@@ -12,7 +12,6 @@ const D = window.ORG_DASH;
 /* ── Helpers ───────────────────────────────────────────────────── */
 const TIER_RANK = { free: 0, lite: 1, premium: 2, enterprise: 3 };
 const rank = (t) => TIER_RANK[t] ?? 0;
-const Wallet = (n) => "$" + Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const RM = (n) => "RM " + Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const RM0 = (n) => "RM " + Number(n).toLocaleString("en-US");
 const L = (n) => Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " L";
@@ -80,8 +79,8 @@ function WalletPicker({ wallets, selectedId, onSelect, onClose }) {
           onClick={() => onSelect(i)} role="menuitem">
           <span className="od-wallet-item-check">{w.id === selectedId && <Icon name="check" size={14} />}</span>
           <span className="od-wallet-item-logo"><WalletLogo wallet={w} size={14} /></span>
-          <span className="od-wallet-item-name">{w.name}</span>
-          <span className="od-wallet-item-bal">{Wallet(w.amount)}</span>
+          <span className="od-wallet-item-name">{w.accNo}</span>
+          <span className="od-wallet-item-bal">{RM(w.amount)}</span>
           {w.status === "low" && <span className="od-wallet-item-tag low">Low</span>}
           {w.status === "critical" && <span className="od-wallet-item-tag critical">Critical</span>}
         </button>
@@ -186,7 +185,7 @@ function BalanceCard({ empty, scenario = "normal", cardsFrozen = false }) {
             <button className="od-bal-wname" onClick={() => multi && setPickerOpen(v => !v)}
               aria-haspopup={multi ? "true" : undefined} style={!multi ? { cursor: "default" } : {}}>
               <WalletLogo wallet={w} size={14} />
-              <span className="od-bal-wname-label">{w.name}</span>
+              <span className="od-bal-wname-label">{w.accNo}</span>
               {multi && <Icon name="expand_more" size={13} color="rgba(255,255,255,.65)"
                 style={{ flexShrink: 0, transition: "transform .15s", transform: pickerOpen ? "rotate(180deg)" : "rotate(0deg)" }} />}
             </button>
@@ -219,7 +218,7 @@ function BalanceCard({ empty, scenario = "normal", cardsFrozen = false }) {
                 </span>
               )}
             </div>
-            <div className="od-bal-value">{empty ? "$0.00" : Wallet(w.amount)}</div>
+            <div className="od-bal-value">{empty ? "RM 0.00" : RM(w.amount)}</div>
           </div>
           <button className="od-bal-addcredit">Add credit</button>
         </div>
@@ -247,7 +246,7 @@ function BalanceCard({ empty, scenario = "normal", cardsFrozen = false }) {
                 <div className="od-bal-top">
                   <span className="od-bal-mcard-name">
                     <WalletLogo wallet={wl} size={13} />
-                    <span>{wl.name}</span>
+                    <span>{wl.accNo}</span>
                   </span>
                   <span className="od-bal-updated">Last updated<br />{D.org.lastUpdated}</span>
                 </div>
@@ -270,7 +269,7 @@ function BalanceCard({ empty, scenario = "normal", cardsFrozen = false }) {
                     </span>
                   )}
                 </div>
-                <div className="od-bal-value">{empty ? "$0.00" : Wallet(wl.amount)}</div>
+                <div className="od-bal-value">{empty ? "RM 0.00" : RM(wl.amount)}</div>
                 <UsageBand wallet={wl} />
               </div>
             );

@@ -135,6 +135,10 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-bal-wl{left:8px;}
 .mfd-bal-wr{right:8px;}
 
+/* — Desktop/mobile split (mirrors od-bal-desktop / od-bal-mobile) — */
+.mfd-bal-desktop{display:block;}
+.mfd-bal-mobile{display:none;}
+
 .mfd-balance-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
 .mfd-balance-wname-wrap{position:relative;}
 .mfd-balance-wname{display:inline-flex;align-items:center;gap:5px;min-width:0;background:transparent;border:none;border-radius:5px;
@@ -285,7 +289,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 /* Vertical bar chart */
 .mfd-trend-card{min-height:100%;}
 .mfd-chart-axislbl{font-size:11px;color:var(--fg-tertiary);margin-bottom:8px;}
-.mfd-plotwrap{display:flex;gap:8px;min-height:230px;}
+.mfd-plotwrap{position:relative;display:flex;gap:8px;min-height:230px;}
 .mfd-yaxis{display:flex;flex-direction:column;justify-content:space-between;height:200px;width:36px;font-size:10px;color:var(--fg-tertiary);text-align:right;padding-bottom:1px;}
 .mfd-plot{flex:1;min-width:0;display:flex;flex-direction:column;}
 .mfd-bars{position:relative;display:flex;align-items:flex-end;gap:12px;height:200px;padding:0 4px;border-bottom:1px solid var(--border-medium);
@@ -298,7 +302,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .mfd-bar-stack{width:100%;display:flex;flex-direction:column-reverse;border-radius:4px 4px 0 0;overflow:hidden;transition:height .3s,filter .15s;}
 .mfd-bar-col:hover .mfd-bar-stack{filter:brightness(.97);}
 .mfd-bar-seg{width:100%;}
-.mfd-bar-tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) translateY(-8px);background:#fff;padding:9px 13px;border:1px solid var(--border-light);border-radius:8px;z-index:5;pointer-events:none;box-shadow:0 6px 16px rgba(0,0,0,.12);text-align:left;min-width:150px;}
+.mfd-bar-tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) translateY(-8px);background:#fff;padding:9px 13px;border:1px solid var(--border-medium);border-radius:8px;z-index:5;pointer-events:none;box-shadow:0 2px 4px rgba(20,29,24,.06),0 10px 28px rgba(20,29,24,.18);text-align:left;min-width:150px;}
 .mfd-bar-tip-period{font-size:11px;font-weight:500;color:var(--fg-tertiary);margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--border-light);}
 .mfd-bar-tip-row{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--fg-primary);padding:2px 0;white-space:nowrap;}
 .mfd-bar-tip-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
@@ -461,7 +465,9 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 }
 @media (max-width:680px){
   .mfd-shell{grid-template-columns:1fr;}
-  .mfd-rail{display:none;}
+  /* Hide the wrap, not just the rail — the wrap is the grid item (sticky,
+     100vh); leaving it in flow inserts a full empty viewport above content. */
+  .mfd-rail-wrap{display:none;}
   .mfd-hamburger{display:inline-flex;width:36px;height:36px;border-radius:50%;border:1px solid var(--border-light);background:#fff;
     align-items:center;justify-content:center;cursor:pointer;color:var(--fg-secondary);padding:0;flex-shrink:0;}
   .mfd-hamburger:hover{background:var(--bg-muted);}
@@ -483,6 +489,28 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .mfd-pagehead{flex-direction:column;gap:12px;margin-bottom:0;}
   .mfd-pulse{display:contents;}
   .mfd-balance{order:1;}
+  /* Balance → horizontal wallet swiper (same pattern as od-bal-mscroll). */
+  .mfd-balance{padding:0;overflow:visible;background:none !important;border:none;box-shadow:none !important;border-radius:0 !important;}
+  .mfd-bal-desktop{display:none;}
+  .mfd-bal-mobile{display:block;}
+  .mfd-bal-mscroll{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:10px;padding:0 2px 2px;scroll-padding-inline:2px;}
+  .mfd-bal-mscroll::-webkit-scrollbar{display:none;}
+  .mfd-bal-mcard{flex-shrink:0;width:91%;scroll-snap-align:start;padding:14px 16px;border-radius:14px;color:#fff;background:var(--gradient-balance-green);}
+  .mfd-bal-mcard.amber{background:var(--gradient-balance-amber);}
+  .mfd-bal-mcard.red{background:var(--gradient-balance-red);}
+  .mfd-bal-mcard-name{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:#fff;}
+  .mfd-balance-value{font-size:30px;}
+  /* Usage band: same fix as org-dashboard od-bal-band — 3 equal columns
+     wrap mid-value on mobile. Stack rows: label left, value+sub right. */
+  .mfd-balance-band{flex-direction:column;}
+  /* Same fix as org-dashboard od-bal-cell — Est. remaining is one line,
+     the other two rows are two lines; pin all three to equal height. */
+  .mfd-balance-cell{display:grid;grid-template-columns:1fr auto;column-gap:12px;align-items:center;align-content:center;min-height:52px;padding:8px 12px;}
+  .mfd-balance-cell+.mfd-balance-cell{border-left:0;border-top:1px solid rgba(0,0,0,.16);}
+  .mfd-balance-cell-est{flex:none;}
+  .mfd-balance-cell-l{grid-column:1;grid-row:1/3;align-self:center;white-space:nowrap;}
+  .mfd-balance-cell-v{grid-column:2;grid-row:1;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;margin-top:0;}
+  .mfd-balance-cell-s{grid-column:2;grid-row:2;text-align:right;white-space:nowrap;}
   .mfd-statscroll{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:12px;order:2;margin:0;padding:0 2px 2px;scroll-padding-inline:2px;}
   .mfd-statscroll::-webkit-scrollbar{display:none;}
   .mfd-statscroll>*{flex-shrink:0;width:86%;scroll-snap-align:start;}
@@ -522,11 +550,16 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .mfd-bottom-left{display:contents;}
   .mfd-bottom-right{display:contents;}
   .mfd-trend-row{order:4;margin-top:0;}
-  .mfd-trend-card{overflow:hidden;}
+  /* No overflow:hidden here — .mfd-plot already clips its own scrolling
+     bars via overflow-x:auto, and a card-level clip would also cut off
+     the bar tooltip whenever it needs to render above a tall bar. */
   .mfd-cardhead-actions .ml-seg{width:100%;max-width:220px;}
   .mfd-cardhead-actions .ml-seg-btn{flex:1;min-width:0;font-size:12px;padding:8px 10px;white-space:nowrap;}
   .mfd-stations-card{order:5;height:auto!important;overflow:visible;}
   .mfd-activity{order:6;margin-top:0;}
+  /* Activity tabs scroll sideways; labels never wrap to two lines. */
+  .mfd-activity-nav .ml-tab,.mfd-tabs .ml-tab{white-space:nowrap;flex-shrink:0;}
+  .mfd-activity-nav::-webkit-scrollbar{display:none;}
   .mfd-shell .ml-statcard{padding:12px;}
   .mfd-shell .ml-statcard-ico{width:32px;height:32px;border-radius:9px;}
   .mfd-shell .ml-statcard-count{font-size:22px;}
@@ -553,11 +586,17 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .mfd-vehicle-footer{gap:12px;}
   .mfd-vehicle-footer-bottom{width:100%;}
   .mfd-yaxis{width:26px;height:160px;font-size:9px;}
+  /* Chart scrolls sideways: fixed y-axis, each bar a fixed-width slot,
+     one single-line label per bar. Tap tooltip is positioned via inline
+     `position:fixed` (computed from the bar's screen rect in JS) so it
+     escapes this container's clipping instead of being hidden by it. */
+  .mfd-plot{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .mfd-plot::-webkit-scrollbar{display:none;}
   .mfd-bars{height:160px;gap:8px;background-image:repeating-linear-gradient(to top,transparent,transparent 31.8px,var(--border-light) 31.8px,var(--border-light) 32px);}
+  .mfd-bar-col{flex:0 0 42px;}
   .mfd-bar-track{max-width:18px;}
-  .mfd-plot{overflow:hidden;}
-  .mfd-xaxis{gap:4px 0;padding:8px 0 0;flex-wrap:wrap;}
-  .mfd-xlbl{flex:0 0 25%;font-size:8px;line-height:1.15;white-space:normal;overflow:visible;text-overflow:unset;}
+  .mfd-xaxis{gap:8px;padding:8px 4px 0;}
+  .mfd-xlbl{flex:0 0 42px;font-size:9px;line-height:1.2;white-space:nowrap;}
   .mfd-updated{display:none;}
   .mfd-org-name{max-width:160px;}
   .mfd-bal-warrow{display:none;}
@@ -566,10 +605,10 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 </head>
 <body>
 <div id="root"></div>
-<script src="../../shared/shared-shell.js?v=20260708z"></script>
+<script src="../../shared/shared-shell.js?v=20260715a"></script>
 <script src="../../shared/tweaks-panel.js?v=20260708zz"></script>
-<script src="data.js?v=20260630d"></script>
-<script src="app.js?v=20260630d"></script>
+<script src="data.js?v=20260715j"></script>
+<script src="app.js?v=20260715j"></script>
 <script>
   document.addEventListener('keydown', function(e){
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'e') {

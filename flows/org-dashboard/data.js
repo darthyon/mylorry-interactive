@@ -23,6 +23,7 @@ window.ORG_DASH = {
     {
       id: "petron",
       name: "Petron wallet",
+      accNo: "CK-PTN-001",
       logo: "petron",
       amount: 12450.80,
       daysRemaining: 18,
@@ -35,6 +36,7 @@ window.ORG_DASH = {
     {
       id: "petronas",
       name: "Petronas wallet",
+      accNo: "CK-PTNS-001",
       logo: "petronas",
       amount: 3110.30,
       daysRemaining: 5,
@@ -47,6 +49,7 @@ window.ORG_DASH = {
     {
       id: "shell",
       name: "Shell wallet",
+      accNo: "CK-SHL-001",
       logo: "shell",
       amount: 1100.00,
       daysRemaining: 3,

@@ -89,7 +89,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .od-kpi-balance{padding:0;overflow:visible;background:none !important;border:none;box-shadow:none !important;border-radius:0 !important;}
   .od-bal-desktop{display:none;}
   .od-bal-mobile{display:block;}
-  .od-bal-mscroll{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:10px;padding:0 16px;}
+  .od-bal-mscroll{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:10px;margin:0 -14px;padding:0 14px;scroll-padding-inline:14px;}
   .od-bal-mscroll::-webkit-scrollbar{display:none;}
   .od-bal-mcard{flex-shrink:0;width:91%;scroll-snap-align:start;padding:14px 16px;border-radius:14px;color:#fff;background:var(--gradient-balance-green);}
   .od-bal-mcard.amber{background:var(--gradient-balance-amber);}
@@ -415,7 +415,8 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .od-pulse{display:contents;}
   .od-kpi-balance{order:1;}
   .od-modrail-card{order:2;}
-  .od-statscroll{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:12px;padding:0 16px 2px;scroll-padding-inline:16px;order:3;}
+  /* Bleed to screen edge; first card aligns with content padding (14px). */
+  .od-statscroll{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:12px;margin:0 -14px;padding:0 14px 2px;scroll-padding-inline:14px;order:3;}
   .od-statscroll::-webkit-scrollbar{display:none;}
   .od-statscroll>*{flex-shrink:0;width:86%;max-width:340px;scroll-snap-align:start;}
   .od-row{order:4;}
@@ -445,7 +446,6 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .od-shell .ml-statcard-band{margin:10px -12px -12px;padding:10px 12px;gap:12px;}
   .od-shell .ml-statcard-n{font-size:15px;}
   .od-shell .ml-statcard-l{font-size:10px;margin-top:2px;}
-  .od-trip-hero{grid-template-columns:1fr;gap:10px;}
   .od-trip-metric{padding:12px;gap:6px;}
   .od-trip-metric-ico{width:28px;height:28px;border-radius:6px;}
   .od-trip-metric-n{font-size:20px;}
@@ -487,15 +487,36 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .od-content{display:flex;flex-direction:column;gap:16px;padding:16px 14px 96px;}  /* room for floating nav */
   .od-updated{display:none;}
   .od-org-name{max-width:160px;}
+  /* Usage band: 3 equal columns is too narrow on mobile ("RM 1,963.68"
+     wraps mid-number). Switch to stacked rows — label left, value+sub
+     right, single line each — so the full card width is available per
+     value instead of a third of it. Placed in this later block (not the
+     earlier ≤640px balance block) so it comes after the unconditional
+     .od-bal-cell base rule in source order and actually wins the cascade. */
+  .od-bal-band{flex-direction:column;}
+  /* min-height + align-content: Est. remaining has only one line (no
+     sub-value) while the other two rows have two — without a shared
+     minimum every row would size to its own content and the band would
+     look lopsided. This pins all three rows to the same height. */
+  .od-bal-cell{display:grid;grid-template-columns:1fr auto;column-gap:12px;align-items:center;align-content:center;min-height:52px;padding:8px 12px;}
+  .od-bal-cell+.od-bal-cell{border-left:0;border-top:1px solid rgba(0,0,0,.16);}
+  .od-bal-cell-est{flex:none;}
+  .od-bal-cell-l{grid-column:1;grid-row:1/3;align-self:center;white-space:nowrap;}
+  .od-bal-cell-v{grid-column:2;grid-row:1;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;margin-top:0;}
+  .od-bal-cell-s{grid-column:2;grid-row:2;text-align:right;white-space:nowrap;}
+}
+@media (max-width:360px){
+  /* Only stack trip metrics when two-up genuinely can't fit. */
+  .od-trip-hero{grid-template-columns:1fr;}
 }
 </style>
 </head>
 <body>
 <div id="root"></div>
-<script src="../../shared/shared-shell.js?v=20260708z"></script>
+<script src="../../shared/shared-shell.js?v=20260715a"></script>
 <script src="../../shared/tweaks-panel.js?v=20260708zz"></script>
-<script src="data.js?v=20260709g"></script>
-<script src="app.js?v=20260709g"></script>
+<script src="data.js?v=20260715a"></script>
+<script src="app.js?v=20260715a"></script>
 <script>
   document.addEventListener('keydown', function(e){
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'e') {

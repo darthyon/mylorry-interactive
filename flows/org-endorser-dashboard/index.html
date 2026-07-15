@@ -119,17 +119,42 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .ed-midgrid{grid-template-columns:1fr;}
   .ed-queue-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
-@media (max-width:640px){
-  .ed-shell{grid-template-columns:64px 1fr;}
-  .ed-kpi-row{grid-template-columns:1fr;}
+@media (max-width:680px){
+  /* Left rail → floating bottom nav (same pattern as org-dashboard). */
+  .ed-shell{grid-template-columns:1fr;}
+  .ed-rail{position:fixed;left:50%;top:auto;bottom:16px;transform:translateX(-50%);z-index:60;
+    width:auto;height:auto;flex-direction:row;gap:4px;padding:6px;
+    background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+    border:1px solid var(--border-light);border-radius:var(--radius-pill);box-shadow:0 8px 28px rgba(0,0,0,.16);overflow:visible;}
+  .ed-rail-logo{display:none;}
+  .ed-rail-item{min-height:auto;width:auto;flex-direction:row;gap:6px;padding:9px 14px;border-radius:var(--radius-pill);}
+  .ed-rail-item span:not(.msr){font-size:11px;}
+  .ed-rail-item:not(.active) span:not(.msr){display:none;}
+  .ed-rail-item.active{background:#fff;color:var(--green-600);}
+  .ed-content{padding:16px 14px 96px;}  /* room for floating nav */
+  .ed-pagetitle{font-size:16px;}
+  .ed-pagehead{flex-direction:column;align-items:stretch;}
+  .ed-banner{flex-wrap:wrap;gap:10px 14px;padding:10px 14px;}
+  .ed-banner-div{display:none;}
+  /* KPI cards → horizontal snap scroller (same pattern as od-statscroll). */
+  .ed-kpi-row{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+    gap:12px;margin:0 -14px 16px;padding:0 14px 2px;scroll-padding-inline:14px;}
+  .ed-kpi-row::-webkit-scrollbar{display:none;}
+  .ed-kpi-row>*{flex-shrink:0;width:86%;max-width:340px;scroll-snap-align:start;}
+  /* Queue tabs scroll horizontally; labels never wrap. */
+  .ed-queue .ml-tabs{overflow-x:auto;flex-wrap:nowrap;margin:0 -14px 20px;padding:0 14px;}
+  .ed-queue .ml-tabs::-webkit-scrollbar{display:none;}
+  .ed-queue .ml-tab{white-space:nowrap;flex-shrink:0;}
   .ed-queue-grid{grid-template-columns:1fr;}
-  .ed-content{padding:16px 14px 40px;}
+  .ed-sec-title{font-size:14px;}
+  .ed-bars{gap:8px;}
+  .ed-bar-track{max-width:20px;}
 }
 </style>
 </head>
 <body>
 <div id="root"></div>
-<script src="../../shared/shared-shell.js?v=14"></script>
+<script src="../../shared/shared-shell.js?v=20260715a"></script>
 <script src="data.js?v=14"></script>
 <script src="app.js?v=14"></script>
 </body>
