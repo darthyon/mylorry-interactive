@@ -502,11 +502,18 @@ const STATUS_BADGE_META = {
   mod_limited:  { label:"Limited",  cls:"mod-limited"  },
   mod_locked:   { label:"Locked",   cls:"mod-locked"   },
   // Document expiry status (driver / vehicle document cards & tables)
-  doc_active:   { label:"Active",   cls:"doc-active"   },
-  doc_due_soon: { label:"Due soon", cls:"doc-due-soon" },
-  doc_expired:  { label:"Expired",  cls:"doc-expired"  },
+  doc_active:   { label:"Active",     cls:"doc-active"   },
+  doc_expired:  { label:"Expired",    cls:"doc-expired"  },
+  // Range-specific due-soon buckets (direct label instead of generic "Due soon")
+  doc_0_7:      { label:"0-7 days",   cls:"doc-due-soon" },
+  doc_8_30:     { label:"8-30 days",  cls:"doc-due-soon" },
+  doc_31_60:    { label:"31-60 days", cls:"doc-due-soon" },
+  doc_61_90:    { label:"61-90 days", cls:"doc-due-soon" },
+  doc_future:   { label:"> 90 days",  cls:"doc-active"   },
+  // Backward-compat generic due soon (still used by some callers)
+  doc_due_soon: { label:"Due soon",   cls:"doc-due-soon" },
   // MyAdmin dashboard legacy aliases (kept for backward compat)
-  due_soon:             { label:"Due soon",              cls:"quota-at-risk"    },
+  due_soon:             { label:"Due soon",              cls:"doc-due-soon"     },
   // Checklist endorsement status (MyAdmin dashboard)
   pending_endorsement:  { label:"Pending endorsement",   cls:"quota-at-risk"    },
   endorsed:             { label:"Endorsed",              cls:"acct-active"      },
