@@ -37,11 +37,11 @@ const SCENARIO_LABEL = {
 const REMINDER_LIMITS = { free: 1, lite: 3, premium: Infinity };
 
 const DOC_FIELDS = [
-  { key: "roadTax", type: "Road Tax", label: "Road Tax", startRequired: false, expiryRequired: true, defaultReminder: 30 },
+  { key: "roadTax", type: "Road Tax", label: "Road Tax", startRequired: true, expiryRequired: true, defaultReminder: 30 },
   { key: "insurance", type: "Insurance", label: "Insurance", startRequired: true, expiryRequired: true, defaultReminder: 30 },
   { key: "puspakom", type: "Puspakom Service", label: "Puspakom Service", startRequired: true, expiryRequired: true, defaultReminder: 60 },
-  { key: "permit", type: "Truck Permit", label: "Truck Permit", startRequired: false, expiryRequired: true, defaultReminder: 30 },
-  { key: "others", type: "Others", label: "Others", startRequired: false, expiryRequired: true, defaultReminder: 30, other: true },
+  { key: "permit", type: "Truck Permit", label: "Truck Permit", startRequired: true, expiryRequired: true, defaultReminder: 30 },
+  { key: "others", type: "Others", label: "Others", startRequired: true, expiryRequired: true, defaultReminder: 30, other: true },
 ];
 const VEHICLE_LIST_TABS = [
   { key: "list", label: "Vehicle List" },
@@ -211,12 +211,21 @@ function remindersForTier(reminders = [], tier) {
   return Number.isFinite(limit) ? reminders.slice(0, limit) : reminders;
 }
 
+function issuedDateForVehicleDocument(expireDate, field) {
+  if (!expireDate) return "";
+  const issued = new Date(`${expireDate}T00:00:00`);
+  const months = field.key === "puspakom" ? 6 : 12;
+  issued.setMonth(issued.getMonth() - months);
+  issued.setDate(issued.getDate() + 1);
+  return issued.toISOString().slice(0, 10);
+}
+
 function makeVehicleDocuments(vehicle) {
   if (Array.isArray(vehicle.documents)) return vehicle.documents;
-  return DOC_FIELDS.map((field) => ({
+  return DOC_FIELDS.filter((field) => !field.other).map((field) => ({
     id: `${vehicle.id}-${field.key}`,
     type: field.type,
-    startDate: "",
+    startDate: issuedDateForVehicleDocument(vehicle[field.key], field),
     expireDate: vehicle[field.key] || "",
     reminders: [field.defaultReminder, "", ""],
     files: [],
