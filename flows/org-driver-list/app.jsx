@@ -302,7 +302,7 @@ function DocumentModal({ initial, tier, mode = "edit", onClose, onSave, onUpgrad
     const firstReminder = initialReminders.find((value) => Number(value) > 0) || 30;
     return { ...initial, reminders: initialReminders.length ? initialReminders : [firstReminder], files: [...(initial.files || [])] };
   });
-  const [errors, setErrors] = useState({}); const rule = DOC_RULES[form.type]; const isOther = form.type === "Others"; const showReminders = Boolean(form.expireDate);
+  const [errors, setErrors] = useState({}); const rule = DOC_RULES[form.type]; const isOther = form.type === "Others"; const showReminders = true;
   const reminderLimit = reminderLimitForTier(tier);
   const reachedReminderLimit = Number.isFinite(reminderLimit) && form.reminders.length >= reminderLimit;
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));

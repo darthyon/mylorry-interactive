@@ -1110,7 +1110,7 @@ function VehicleDocumentModal({ initial, tier, onClose, onSave, onUpgrade }) {
   const reminderLimit = reminderLimitForTier(tier);
   const reachedReminderLimit = Number.isFinite(reminderLimit) && form.reminders.length >= reminderLimit;
   const isOther = form.type === "Others";
-  const showReminders = Boolean(form.expireDate);
+  const showReminders = true;
   function update(key, value) { setForm((current) => ({ ...current, [key]: value })); }
   function updateReminder(index, value) {
     setForm((current) => ({ ...current, reminders: current.reminders.map((item, i) => i === index ? (value === "" ? "" : Number(value)) : item) }));
