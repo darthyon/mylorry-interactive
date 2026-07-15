@@ -381,20 +381,12 @@ function VehicleDueDates({
   setDueDateType,
   dueRange,
   setDueRange,
-  startDate,
-  setStartDate,
-  endDate,
-  setEndDate,
   filterOpen,
   toggleFilterPanel,
   pendingDueDateType,
   setPendingDueDateType,
   pendingDueRange,
   setPendingDueRange,
-  pendingStartDate,
-  setPendingStartDate,
-  pendingEndDate,
-  setPendingEndDate,
   applyPendingFilters,
   resetFilters,
   dateFilterCount,
@@ -420,11 +412,8 @@ function VehicleDueDates({
     const field = DOC_FIELDS.find((item) => item.type === doc.type);
     if (dueDateType !== "all" && field?.key !== dueDateType) return false;
     if (dueRange !== "all" && dueRangeKey(daysUntil(doc.expireDate)) !== dueRange) return false;
-    const due = new Date(`${doc.expireDate}T00:00:00`);
-    if (startDate && due < new Date(`${startDate}T00:00:00`)) return false;
-    if (endDate && due > new Date(`${endDate}T23:59:59`)) return false;
     return true;
-  }), [vehicles, query, scope, dueDateType, dueRange, startDate, endDate]);
+  }), [vehicles, query, scope, dueDateType, dueRange]);
   const pageData = useMemo(() => rows.slice((page - 1) * perPage, page * perPage), [rows, page, perPage]);
   useEffect(() => { const totalPages = Math.max(1, Math.ceil(rows.length / perPage)); if (page > totalPages) setPage(totalPages); }, [rows.length, page, perPage]);
   function renderDueMenu(vehicle, doc, rowId) {
@@ -456,7 +445,7 @@ function VehicleDueDates({
             {hasClearableFilters && <button className="ovl-clear" type="button" onClick={resetFilters}><Icon name="ink_eraser" size={15} /> Clear filters</button>}
           </div>
         </div>
-        {filterOpen && <div className="hac-filter-panel ovl-filter-panel"><div className="hac-filter-grid ovl-filter-grid"><div className="hac-filter-field"><label>Due Date Type</label><div className="hac-select-wrap"><SelectMenu className="hac-select" value={pendingDueDateType} options={D.dueDateTypes} onChange={setPendingDueDateType} ariaLabel="Due date type" /></div></div><div className="hac-filter-field"><label>Expired by</label><div className="hac-select-wrap"><SelectMenu className="hac-select" value={pendingDueRange} options={DUE_RANGE_OPTIONS} onChange={setPendingDueRange} ariaLabel="Expired by" /></div></div><div className="hac-filter-field"><label>Start Date</label><div className="hac-date-range-field"><Icon name="event" size={16} color="var(--fg-tertiary)" /><input className="hac-date-range-input" type="date" value={pendingStartDate} onChange={(e) => setPendingStartDate(e.target.value)} /></div></div><div className="hac-filter-field"><label>End Date</label><div className="hac-date-range-field"><Icon name="event" size={16} color="var(--fg-tertiary)" /><input className="hac-date-range-input" type="date" value={pendingEndDate} onChange={(e) => setPendingEndDate(e.target.value)} /></div></div></div><div className="hac-filter-actions"><button className="hac-filter-apply" type="button" onClick={() => { applyPendingFilters(); setPage(1); }}>Apply Filters</button><button className="hac-filter-reset" type="button" onClick={() => { resetFilters(); setPage(1); }}>Reset All</button></div></div>}
+        {filterOpen && <div className="hac-filter-panel ovl-filter-panel"><div className="hac-filter-grid ovl-filter-grid"><div className="hac-filter-field"><label>Due Date Type</label><div className="hac-select-wrap"><SelectMenu className="hac-select" value={pendingDueDateType} options={D.dueDateTypes} onChange={setPendingDueDateType} ariaLabel="Due date type" /></div></div><div className="hac-filter-field"><label>Expired by</label><div className="hac-select-wrap"><SelectMenu className="hac-select" value={pendingDueRange} options={DUE_RANGE_OPTIONS} onChange={setPendingDueRange} ariaLabel="Expired by" /></div></div></div><div className="hac-filter-actions"><button className="hac-filter-apply" type="button" onClick={() => { applyPendingFilters(); setPage(1); }}>Apply Filters</button><button className="hac-filter-reset" type="button" onClick={() => { resetFilters(); setPage(1); }}>Reset All</button></div></div>}
       </section>
       <div className="hac-count">{rows.length} due date{rows.length === 1 ? "" : "s"}</div>
       <section className="ovl-table-section">
@@ -1169,14 +1158,10 @@ function App() {
   const [scope, setScope] = useState("vehicle");
   const [dueDateType, setDueDateType] = useState("all");
   const [dueRange, setDueRange] = useState("all");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
   const [managedOnly, setManagedOnly] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [pendingDueDateType, setPendingDueDateType] = useState("all");
   const [pendingDueRange, setPendingDueRange] = useState("all");
-  const [pendingStartDate, setPendingStartDate] = useState("");
-  const [pendingEndDate, setPendingEndDate] = useState("");
   const [expandedId, setExpandedId] = useState(null);
   const [menuId, setMenuId] = useState(null);
   const [mobileMenuId, setMobileMenuId] = useState(null);
@@ -1248,8 +1233,8 @@ function App() {
   const filters = { query, scope, dueDateType: "all", startDate: "", endDate: "", managedOnly };
   const filtered = useMemo(() => applyFilters(vehicles, filters), [vehicles, query, scope, managedOnly]);
   const pageData = useMemo(() => filtered.slice((page - 1) * perPage, page * perPage), [filtered, page, perPage]);
-  const hasClearableFilters = !!query || dueDateType !== "all" || dueRange !== "all" || !!startDate || !!endDate;
-  const dateFilterCount = (dueDateType !== "all" ? 1 : 0) + (dueRange !== "all" ? 1 : 0) + (!!startDate ? 1 : 0) + (!!endDate ? 1 : 0);
+  const hasClearableFilters = !!query || dueDateType !== "all" || dueRange !== "all";
+  const dateFilterCount = (dueDateType !== "all" ? 1 : 0) + (dueRange !== "all" ? 1 : 0);
 
   useEffect(() => {
     const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
@@ -1261,12 +1246,8 @@ function App() {
     setScope("vehicle");
     setDueDateType("all");
     setDueRange("all");
-    setStartDate("");
-    setEndDate("");
     setPendingDueDateType("all");
     setPendingDueRange("all");
-    setPendingStartDate("");
-    setPendingEndDate("");
     setPage(1);
   }
 
@@ -1274,8 +1255,6 @@ function App() {
     if (!filterOpen) {
       setPendingDueDateType(dueDateType);
       setPendingDueRange(dueRange);
-      setPendingStartDate(startDate);
-      setPendingEndDate(endDate);
     }
     setFilterOpen((current) => !current);
   }
@@ -1283,8 +1262,6 @@ function App() {
   function applyPendingFilters() {
     setDueDateType(pendingDueDateType);
     setDueRange(pendingDueRange);
-    setStartDate(pendingStartDate);
-    setEndDate(pendingEndDate);
     setPage(1);
     setFilterOpen(false);
   }
@@ -1558,20 +1535,12 @@ function App() {
               setDueDateType={setDueDateType}
               dueRange={dueRange}
               setDueRange={setDueRange}
-              startDate={startDate}
-              setStartDate={setStartDate}
-              endDate={endDate}
-              setEndDate={setEndDate}
               filterOpen={filterOpen}
               toggleFilterPanel={toggleFilterPanel}
               pendingDueDateType={pendingDueDateType}
               setPendingDueDateType={setPendingDueDateType}
               pendingDueRange={pendingDueRange}
               setPendingDueRange={setPendingDueRange}
-              pendingStartDate={pendingStartDate}
-              setPendingStartDate={setPendingStartDate}
-              pendingEndDate={pendingEndDate}
-              setPendingEndDate={setPendingEndDate}
               applyPendingFilters={applyPendingFilters}
               resetFilters={resetFilters}
               dateFilterCount={dateFilterCount}
