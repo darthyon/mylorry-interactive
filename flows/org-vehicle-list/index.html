@@ -222,6 +222,16 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .ovl-time-left.warn{color:#c4842a}
 .ovl-time-left.good{color:#397051}
 .ovl-time-left.empty{color:var(--fg-tertiary)}
+.ovl-doc-row .ml-badge.doc-active{background:#effaf4;color:#397051 !important}
+.ovl-doc-row .ml-badge.doc-due-soon{background:#fff8e1;color:#b16c00 !important}
+.ovl-doc-row .ml-badge.doc-expired{background:#fff0ef;color:#b64b43 !important}
+.ovl-due-table .ml-badge.doc-active{background:#effaf4;color:#397051 !important}
+.ovl-due-table .ml-badge.doc-due-soon{background:#fff8e1;color:#b16c00 !important}
+.ovl-due-table .ml-badge.doc-expired{background:#fff0ef;color:#b64b43 !important}
+.ml-tooltip-wrap{position:relative;display:inline-flex;align-items:center}
+.ml-tooltip-wrap:hover .ml-tooltip,.ml-tooltip-wrap:focus-within .ml-tooltip{opacity:1}
+.ml-tooltip{position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#322F35;color:#fff !important;font-size:12px;line-height:1;padding:4px 8px;border-radius:4px;width:max-content;pointer-events:none;z-index:50;opacity:0;transition:opacity .15s;text-align:center;white-space:nowrap}
+.ml-tooltip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#322F35}
 .ovl-doc-description-block{padding:2px 12px 10px;}
 .ovl-doc-description-label{display:block;margin-bottom:4px;font-size:11px;font-weight:600;color:var(--fg-secondary);}
 .ovl-doc-description-text{margin:0;color:var(--fg-primary);font-size:12px;line-height:1.45;white-space:normal;}
@@ -352,7 +362,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 <script src="../../shared/shared-shell.js?v=20260715a"></script>
 <script src="../../shared/tweaks-panel.js?v=20260709v"></script>
 <script src="data.js?v=20260709v2"></script>
-<script src="app.js?v=20260709v8"></script>
+<script src="app.js?v=20260715a"></script>
 <script>
   document.addEventListener('keydown', function(e){
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'e') {
