@@ -76,6 +76,15 @@ mount("acctStatus", <>
   <AccountStatusBadge status="terminated" />
 </>);
 
+mount("docStatus", <>
+  <StatusBadge status="doc_expired" />
+  <StatusBadge status="doc_0_7" />
+  <StatusBadge status="doc_8_30" />
+  <StatusBadge status="doc_31_60" />
+  <StatusBadge status="doc_61_90" />
+  <StatusBadge status="doc_future" />
+</>);
+
 mount("tripStatus", <>
   <StatusBadge status="trip_completed" />
   <StatusBadge status="trip_ongoing" />
