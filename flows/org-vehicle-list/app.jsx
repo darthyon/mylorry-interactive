@@ -34,7 +34,7 @@ const SCENARIO_LABEL = {
   "free": "4 — Free (0 MV)",
   "enterprise": "5 — Enterprise",
 };
-const REMINDER_LIMITS = { free: 1, lite: 3, premium: 3 };
+const REMINDER_LIMITS = { free: 1, lite: 3, premium: Infinity };
 
 const DOC_FIELDS = [
   { key: "roadTax", type: "Road Tax", label: "Road Tax", startRequired: false, expiryRequired: true, defaultReminder: 30 },

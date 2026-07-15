@@ -241,7 +241,7 @@ function PersonalDetails({ driver, setDriver, readOnly, errors, creating }) {
 
 const DOC_TYPES = ["GDL License", "Medical Report", "Driver Port Pass", "Vehicle Port Pass", "Others"];
 const DOC_RULES = { "GDL License": { issued: true, expiry: true }, "Medical Report": { issued: true, expiry: true }, "Driver Port Pass": { issued: false, expiry: true }, "Vehicle Port Pass": { issued: false, expiry: true }, Others: { issued: false, expiry: true, other: true } };
-const REMINDER_LIMITS = { free: 1, lite: 3, premium: 3 };
+const REMINDER_LIMITS = { free: 1, lite: 3, premium: Infinity };
 const fileThumbnail = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='160'%3E%3Crect width='240' height='160' fill='%23d8e7dd'/%3E%3Cpath d='M0 125 70 62l42 42 28-25 100 81H0z' fill='%2387b99a'/%3E%3Ccircle cx='178' cy='45' r='17' fill='%23f4d889'/%3E%3C/svg%3E";
 function fmtDocDate(value) { if (!value) return "—"; return new Date(`${value}T00:00:00`).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }); }
 function documentStatus(doc) { if (!doc.expireDate) return "Active"; return new Date(`${doc.expireDate}T23:59:59`) < new Date() ? "Expired" : "Active"; }
