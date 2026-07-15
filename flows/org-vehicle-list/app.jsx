@@ -117,7 +117,8 @@ function fmtDate(iso) {
 function daysUntil(iso) {
   if (!iso) return null;
   const target = new Date(iso + "T00:00:00");
-  const now = new Date("2026-07-09T00:00:00");
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
   return Math.round((target - now) / 86400000);
 }
 
@@ -439,6 +440,7 @@ function VehicleDueDates({
         onView={() => { setDueMenuId(null); onView(vehicle, doc); }}
         onEdit={() => { setDueMenuId(null); setEditTarget({ vehicle, doc }); }}
         onDelete={() => { setDueMenuId(null); onDelete(vehicle, doc); }}
+        showDelete={false}
       />
     );
   }
@@ -483,7 +485,7 @@ function VehicleDueDates({
                     <td className="ovl-index">{(page - 1) * perPage + index + 1}</td>
                     <td><div className="ovl-vehicle-cell"><VehicleThumb inUse={vehicle.activeCheckIn} /><div className="ovl-vehicle-main"><div className="ml-cell-main ovl-vehicle-plate">{vehicle.plate}</div></div></div></td>
                     <td>{vehicle.vendor}</td>
-                    <td><div className="ovl-due-type-cell"><strong>{vehicleDocumentTitle(doc)}</strong><span>{doc.type}</span></div></td>
+                    <td><div className="ovl-due-type-cell"><span>{doc.type}</span>{doc.type === "Others" && doc.title && <span>{doc.title}</span>}</div></td>
                     <td>{fmtDate(doc.startDate)}</td>
                     <td><ExpiryCell iso={doc.expireDate} /></td>
                     <td><ReminderBadges reminders={doc.reminders} /></td>
@@ -517,7 +519,7 @@ function VehicleDueDates({
   );
 }
 
-function VehicleRowMenu({ open, onToggle, onView, onEdit, onDelete }) {
+function VehicleRowMenu({ open, onToggle, onView, onEdit, onDelete, showDelete = true }) {
   const btnRef = useRef(null);
   const dropRef = useRef(null);
   const [pos, setPos] = useState({ top: 0, left: 0 });
@@ -563,9 +565,9 @@ function VehicleRowMenu({ open, onToggle, onView, onEdit, onDelete }) {
           <button className="hac-drop-item" type="button" onClick={onEdit}>
             <Icon name="edit" size={15} /> Edit
           </button>
-          <button className="hac-drop-item danger" type="button" onClick={onDelete}>
+          {showDelete && <button className="hac-drop-item danger" type="button" onClick={onDelete}>
             <Icon name="delete" size={15} /> Delete
-          </button>
+          </button>}
         </div>,
         document.body
       )}
@@ -1109,7 +1111,7 @@ function VehicleDocumentModal({ initial, tier, onClose, onSave, onUpgrade }) {
   const reminderLimit = reminderLimitForTier(tier);
   const reachedReminderLimit = Number.isFinite(reminderLimit) && form.reminders.length >= reminderLimit;
   const isOther = form.type === "Others";
-  const showReminders = Boolean(form.expireDate);
+  const showReminders = true;
   function update(key, value) { setForm((current) => ({ ...current, [key]: value })); }
   function updateReminder(index, value) {
     setForm((current) => ({ ...current, reminders: current.reminders.map((item, i) => i === index ? (value === "" ? "" : Number(value)) : item) }));
@@ -1684,6 +1686,7 @@ function App() {
                               onView={() => { openView(vehicle); setMenuId(null); }}
                               onEdit={() => { openEdit(vehicle); setMenuId(null); }}
                               onDelete={() => { setMenuId(null); pushToast("warn", "Delete is shown for parity only. No prototype deletion was performed."); }}
+                              showDelete={false}
                             />
                           </td>
                         </tr>
@@ -1730,6 +1733,7 @@ function App() {
                         onView={() => { openView(vehicle); setMobileMenuId(null); }}
                         onEdit={() => { openEdit(vehicle); setMobileMenuId(null); }}
                         onDelete={() => { setMobileMenuId(null); pushToast("warn", "Delete is shown for parity only. No prototype deletion was performed."); }}
+                        showDelete={false}
                       />
                     </div>
                     {expanded && <ExpandableVehicleDriversRow vehicle={vehicle} />}

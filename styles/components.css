@@ -32,6 +32,71 @@
 .ml-badge.ml-badge.doc-due-soon { background: var(--amber-50); color: var(--amber-600); }
 .ml-badge.ml-badge.doc-expired  { background: #FFF0F0;         color: var(--red-400);   }
 
+/* Expiry text in document cards must outrank the generic metadata value rule. */
+.odr-doc-meta .odr-time-left.danger,
+.ovl-doc-meta .ovl-time-left.danger { color: #b64b43; }
+.odr-doc-meta .odr-time-left.warn,
+.ovl-doc-meta .ovl-time-left.warn { color: #c4842a; }
+.odr-doc-meta .odr-time-left.good,
+.ovl-doc-meta .ovl-time-left.good { color: #397051; }
+.odr-doc-meta .odr-time-left.empty,
+.ovl-doc-meta .ovl-time-left.empty { color: var(--fg-tertiary); }
+
+.odr-due-type-cell span:first-child,
+.ovl-due-type-cell span:first-child {
+  font-size: 13px;
+  color: var(--fg-primary);
+}
+.odr-due-type-cell span + span,
+.ovl-due-type-cell span + span {
+  font-size: 11px;
+  color: var(--fg-tertiary);
+}
+
+.odr-table-card .ml-table {
+  font-variant-numeric: normal !important;
+}
+
+.odr-name-wrap strong {
+  font-weight: 400;
+}
+
+.odr-expiry,
+.ovl-expiry {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.2;
+  min-width: 106px;
+}
+.odr-expiry .odr-expiry-date,
+.ovl-expiry .ovl-expiry-date {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--fg-primary);
+}
+.odr-expiry .odr-expiry-meta,
+.ovl-expiry .ovl-expiry-meta {
+  font-size: 11px;
+  color: var(--fg-secondary);
+}
+.odr-expiry.danger .odr-expiry-date,
+.odr-expiry.warn .odr-expiry-date,
+.odr-expiry.good .odr-expiry-date,
+.ovl-expiry.danger .ovl-expiry-date,
+.ovl-expiry.warn .ovl-expiry-date,
+.ovl-expiry.good .ovl-expiry-date { color: var(--fg-primary); }
+.odr-expiry.danger .odr-expiry-meta,
+.ovl-expiry.danger .ovl-expiry-meta { color: #b64b43; }
+.odr-expiry.warn .odr-expiry-meta,
+.ovl-expiry.warn .ovl-expiry-meta { color: #c4842a; }
+.odr-expiry.good .odr-expiry-meta,
+.ovl-expiry.good .ovl-expiry-meta { color: #397051; }
+.odr-expiry.empty .odr-expiry-date,
+.odr-expiry.empty .odr-expiry-meta,
+.ovl-expiry.empty .ovl-expiry-date,
+.ovl-expiry.empty .ovl-expiry-meta { color: var(--fg-disabled); }
+
 /* Commission status */
 .ml-badge.comm-activated   { background: var(--green-50); color: var(--green-600); }
 .ml-badge.comm-pending-ob  { background: #FFF8E1;         color: #F57F17;          }
