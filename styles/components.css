@@ -32,6 +32,16 @@
 .ml-badge.ml-badge.doc-due-soon { background: var(--amber-50); color: var(--amber-600); }
 .ml-badge.ml-badge.doc-expired  { background: #FFF0F0;         color: var(--red-400);   }
 
+/* Expiry text in document cards must outrank the generic metadata value rule. */
+.odr-doc-meta .odr-time-left.danger,
+.ovl-doc-meta .ovl-time-left.danger { color: #b64b43; }
+.odr-doc-meta .odr-time-left.warn,
+.ovl-doc-meta .ovl-time-left.warn { color: #c4842a; }
+.odr-doc-meta .odr-time-left.good,
+.ovl-doc-meta .ovl-time-left.good { color: #397051; }
+.odr-doc-meta .odr-time-left.empty,
+.ovl-doc-meta .ovl-time-left.empty { color: var(--fg-tertiary); }
+
 /* Commission status */
 .ml-badge.comm-activated   { background: var(--green-50); color: var(--green-600); }
 .ml-badge.comm-pending-ob  { background: #FFF8E1;         color: #F57F17;          }
