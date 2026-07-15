@@ -674,7 +674,9 @@ function LockSection({ locked = false, tier = "premium", cta = "Upgrade plan", n
 }
 
 /* ─── Petron provider logo mark ─────────────────────────────── */
-const PETRON_LOGO_SRC = "/flows/fleet-card/petron.png";
+// Inlined as data URI so it renders regardless of serving root
+// (file://, GitHub Pages subpath, etc.). Source: flows/fleet-card/petron.png
+const PETRON_LOGO_SRC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAATCAYAAACZZ43PAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAAA0FJREFUeAF9lFtom2UYx3/v9705tGm+tsnsbGxmWrvMriqbmyDCUHSCQ9gYSEWoIKgDFQ+ggie82Y3g4ULBG1FB7WZBcOqFFo/TiXctqGNra5vGLWu3bmvSHJsvyeuTNDrqDs/Ne+D9/5//838eXvWub/Obo+HBOw539Fb2nZ6wnsxM0VHJklFBbGPI2R7zaXCD+TjUzxmfg17JUUGBUh6Kfx9SR1T0i22mtDttaXbG9nC07Wr6s6cYTf1IvLzMeVpwcOmgwBF/N3dfew9uzaWqhCQ394FlsGrnaaVkfPwxe4Cd546R0D62xYd4KbyFqyiSQ3NSaGIreYqT7xERgro6MDWLZmi5OKFCjKW+Rts+rFKad7q386u/Cwuz+kiWpArze+Jzql6ncfUfQeMgJCWRfHtmjpqyUOUsHzoxAlL1v1HP7IiCLklQh68hWGWssKj9ks1gRMmdhTNShP7fG0O+/obaWgKtDLOeABNOD7aYFHWLPJybXnW9GX5V45uWKHnbs7YEn6qypC0G48OoaoUBN0/yrxHmVPtq+ULoqDLzWrOr7160m7tA4BXWkx4/mzcNN2SNnPiJiblDYlh7o2ZblEXNEvs7B7kp/gCelQwVZTXNF0BO9jdfP8z6wiKJmYNkxbZ5aZtXwBEyfNK6kUejQ5RNFWslLVNxoSTda5a5Mb6PeDbFZGJUJIekGxAlzYFAP4/17JUENsotSKo6UK0xVI+0XkdOHF0S8Kz0uNvkmPEEWRd7UDzxCbCIqbriu+JSoV+J3MLh6c9ICLjPpNkTuYsvO+PYItXUwVw5dFutbG4rLTQOA31DTIsaJSZVL5PxIoLnzs0EZHFfX3erZ7ItiqkUL6rzklHvgscJ43MGNuprdr9BqN+5IiAW8zd3zdkZ9DZ42PRsitS3W9mw9zSV5QTF+eO0dCXQnY+Tn3qLluhTKBnl5ZnnCfY+g7v4M97IDha/e4iOrS9blBaSxO5bID3+iHwS62WQjjL19hOyL5E8+ALGOkYx+QOBnhc5/loMHdpFITlOeMcYpdRvFjpQ4M9X/Zz66n3c/Pd4Q/fT2ddOJTMOPZrC7EfYgSBnx7Zzw35DdupplO3n7C9bJIn7D+TTPwwAYZetAAAAAElFTkSuQmCC";
 
 function PetronLogo({ size = 16 }) {
   return (
