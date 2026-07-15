@@ -48,12 +48,13 @@ const VEHICLE_LIST_TABS = [
   { key: "due", label: "Vehicle Due Dates" },
 ];
 const DUE_RANGE_OPTIONS = [
-  { value: "all", label: "All statuses" },
+  { value: "all", label: "All" },
   { value: "expired", label: "Expired" },
   { value: "0-7", label: "0-7 days" },
   { value: "8-30", label: "8-30 days" },
   { value: "31-60", label: "31-60 days" },
   { value: "61-90", label: "61-90 days" },
+  { value: "future", label: "More than 90 days" },
 ];
 
 const VEHICLE_CATEGORIES = ["Lorry", "Van", "Bus", "Truck", "MPV", "Sedan"];
@@ -456,15 +457,15 @@ function VehicleDueDates({
             {hasClearableFilters && <button className="ovl-clear" type="button" onClick={resetFilters}><Icon name="ink_eraser" size={15} /> Clear filters</button>}
           </div>
         </div>
-        {filterOpen && <div className="hac-filter-panel ovl-filter-panel"><div className="hac-filter-grid ovl-filter-grid"><div className="hac-filter-field"><label>Due Date Type</label><div className="hac-select-wrap"><SelectMenu className="hac-select" value={pendingDueDateType} options={D.dueDateTypes} onChange={setPendingDueDateType} ariaLabel="Due date type" /></div></div><div className="hac-filter-field"><label>Status</label><div className="hac-select-wrap"><SelectMenu className="hac-select" value={pendingDueRange} options={DUE_RANGE_OPTIONS} onChange={setPendingDueRange} ariaLabel="Due date status" /></div></div><div className="hac-filter-field"><label>Start Date</label><div className="hac-date-range-field"><Icon name="event" size={16} color="var(--fg-tertiary)" /><input className="hac-date-range-input" type="date" value={pendingStartDate} onChange={(e) => setPendingStartDate(e.target.value)} /></div></div><div className="hac-filter-field"><label>End Date</label><div className="hac-date-range-field"><Icon name="event" size={16} color="var(--fg-tertiary)" /><input className="hac-date-range-input" type="date" value={pendingEndDate} onChange={(e) => setPendingEndDate(e.target.value)} /></div></div></div><div className="hac-filter-actions"><button className="hac-filter-apply" type="button" onClick={() => { applyPendingFilters(); setPage(1); }}>Apply Filters</button><button className="hac-filter-reset" type="button" onClick={() => { resetFilters(); setPage(1); }}>Reset All</button></div></div>}
+        {filterOpen && <div className="hac-filter-panel ovl-filter-panel"><div className="hac-filter-grid ovl-filter-grid"><div className="hac-filter-field"><label>Due Date Type</label><div className="hac-select-wrap"><SelectMenu className="hac-select" value={pendingDueDateType} options={D.dueDateTypes} onChange={setPendingDueDateType} ariaLabel="Due date type" /></div></div><div className="hac-filter-field"><label>Expired by</label><div className="hac-select-wrap"><SelectMenu className="hac-select" value={pendingDueRange} options={DUE_RANGE_OPTIONS} onChange={setPendingDueRange} ariaLabel="Expired by" /></div></div><div className="hac-filter-field"><label>Start Date</label><div className="hac-date-range-field"><Icon name="event" size={16} color="var(--fg-tertiary)" /><input className="hac-date-range-input" type="date" value={pendingStartDate} onChange={(e) => setPendingStartDate(e.target.value)} /></div></div><div className="hac-filter-field"><label>End Date</label><div className="hac-date-range-field"><Icon name="event" size={16} color="var(--fg-tertiary)" /><input className="hac-date-range-input" type="date" value={pendingEndDate} onChange={(e) => setPendingEndDate(e.target.value)} /></div></div></div><div className="hac-filter-actions"><button className="hac-filter-apply" type="button" onClick={() => { applyPendingFilters(); setPage(1); }}>Apply Filters</button><button className="hac-filter-reset" type="button" onClick={() => { resetFilters(); setPage(1); }}>Reset All</button></div></div>}
       </section>
       <div className="hac-count">{rows.length} due date{rows.length === 1 ? "" : "s"}</div>
       <section className="ovl-table-section">
         <div className="ml-table-wrap ovl-table-wrap">
           <table className="ml-table ovl-table ovl-due-table">
-            <thead><tr><th>No.</th><th>Vehicle</th><th>Vendor</th><th>Type</th><th>Issued Date</th><th>Expiry Date</th><th>Expiry Status</th><th>Reminders</th><th><span className="sr-only">Actions</span></th></tr></thead>
+            <thead><tr><th>No.</th><th>Vehicle</th><th>Vendor</th><th>Type</th><th>Issued Date</th><th>Expiry Date</th><th>Reminders</th><th><span className="sr-only">Actions</span></th></tr></thead>
             <tbody>
-              {!rows.length && <tr><td colSpan="9"><div className="ovl-empty-table">No vehicle due dates match the current filters.</div></td></tr>}
+              {!rows.length && <tr><td colSpan="8"><div className="ovl-empty-table">No vehicle due dates match the current filters.</div></td></tr>}
               {pageData.map(({ vehicle, doc }, index) => {
                 const rowId = `${vehicle.id}-${doc.id}`;
                 return (
@@ -475,7 +476,6 @@ function VehicleDueDates({
                     <td><div className="ovl-due-type-cell"><strong>{vehicleDocumentTitle(doc)}</strong><span>{doc.type}</span></div></td>
                     <td>{fmtDate(doc.startDate)}</td>
                     <td><ExpiryCell iso={doc.expireDate} /></td>
-                    <td><div className="ml-tooltip-wrap" tabIndex={0}><StatusBadge status={documentExpiryStatus(doc.expireDate)} /><span className="ml-tooltip">{expiryRangeLabel(doc.expireDate)}</span></div></td>
                     <td><ReminderBadges reminders={doc.reminders} /></td>
                     <td>{renderDueMenu(vehicle, doc, rowId)}</td>
                   </tr>
