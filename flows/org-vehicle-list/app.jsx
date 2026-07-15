@@ -440,6 +440,7 @@ function VehicleDueDates({
         onView={() => { setDueMenuId(null); onView(vehicle, doc); }}
         onEdit={() => { setDueMenuId(null); setEditTarget({ vehicle, doc }); }}
         onDelete={() => { setDueMenuId(null); onDelete(vehicle, doc); }}
+        showDelete={false}
       />
     );
   }
@@ -518,7 +519,7 @@ function VehicleDueDates({
   );
 }
 
-function VehicleRowMenu({ open, onToggle, onView, onEdit, onDelete }) {
+function VehicleRowMenu({ open, onToggle, onView, onEdit, onDelete, showDelete = true }) {
   const btnRef = useRef(null);
   const dropRef = useRef(null);
   const [pos, setPos] = useState({ top: 0, left: 0 });
@@ -564,9 +565,9 @@ function VehicleRowMenu({ open, onToggle, onView, onEdit, onDelete }) {
           <button className="hac-drop-item" type="button" onClick={onEdit}>
             <Icon name="edit" size={15} /> Edit
           </button>
-          <button className="hac-drop-item danger" type="button" onClick={onDelete}>
+          {showDelete && <button className="hac-drop-item danger" type="button" onClick={onDelete}>
             <Icon name="delete" size={15} /> Delete
-          </button>
+          </button>}
         </div>,
         document.body
       )}
@@ -1685,6 +1686,7 @@ function App() {
                               onView={() => { openView(vehicle); setMenuId(null); }}
                               onEdit={() => { openEdit(vehicle); setMenuId(null); }}
                               onDelete={() => { setMenuId(null); pushToast("warn", "Delete is shown for parity only. No prototype deletion was performed."); }}
+                              showDelete={false}
                             />
                           </td>
                         </tr>
@@ -1731,6 +1733,7 @@ function App() {
                         onView={() => { openView(vehicle); setMobileMenuId(null); }}
                         onEdit={() => { openEdit(vehicle); setMobileMenuId(null); }}
                         onDelete={() => { setMobileMenuId(null); pushToast("warn", "Delete is shown for parity only. No prototype deletion was performed."); }}
+                        showDelete={false}
                       />
                     </div>
                     {expanded && <ExpandableVehicleDriversRow vehicle={vehicle} />}
