@@ -42,6 +42,17 @@
 .odr-doc-meta .odr-time-left.empty,
 .ovl-doc-meta .ovl-time-left.empty { color: var(--fg-tertiary); }
 
+.odr-due-type-cell span:first-child,
+.ovl-due-type-cell span:first-child {
+  font-size: 13px;
+  color: var(--fg-primary);
+}
+.odr-due-type-cell span + span,
+.ovl-due-type-cell span + span {
+  font-size: 11px;
+  color: var(--fg-tertiary);
+}
+
 /* Commission status */
 .ml-badge.comm-activated   { background: var(--green-50); color: var(--green-600); }
 .ml-badge.comm-pending-ob  { background: #FFF8E1;         color: #F57F17;          }
