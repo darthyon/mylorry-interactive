@@ -289,7 +289,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 /* Vertical bar chart */
 .mfd-trend-card{min-height:100%;}
 .mfd-chart-axislbl{font-size:11px;color:var(--fg-tertiary);margin-bottom:8px;}
-.mfd-plotwrap{display:flex;gap:8px;min-height:230px;}
+.mfd-plotwrap{position:relative;display:flex;gap:8px;min-height:230px;}
 .mfd-yaxis{display:flex;flex-direction:column;justify-content:space-between;height:200px;width:36px;font-size:10px;color:var(--fg-tertiary);text-align:right;padding-bottom:1px;}
 .mfd-plot{flex:1;min-width:0;display:flex;flex-direction:column;}
 .mfd-bars{position:relative;display:flex;align-items:flex-end;gap:12px;height:200px;padding:0 4px;border-bottom:1px solid var(--border-medium);
@@ -550,7 +550,9 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
   .mfd-bottom-left{display:contents;}
   .mfd-bottom-right{display:contents;}
   .mfd-trend-row{order:4;margin-top:0;}
-  .mfd-trend-card{overflow:hidden;}
+  /* No overflow:hidden here — .mfd-plot already clips its own scrolling
+     bars via overflow-x:auto, and a card-level clip would also cut off
+     the bar tooltip whenever it needs to render above a tall bar. */
   .mfd-cardhead-actions .ml-seg{width:100%;max-width:220px;}
   .mfd-cardhead-actions .ml-seg-btn{flex:1;min-width:0;font-size:12px;padding:8px 10px;white-space:nowrap;}
   .mfd-stations-card{order:5;height:auto!important;overflow:visible;}
@@ -605,8 +607,8 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 <div id="root"></div>
 <script src="../../shared/shared-shell.js?v=20260715a"></script>
 <script src="../../shared/tweaks-panel.js?v=20260708zz"></script>
-<script src="data.js?v=20260715d"></script>
-<script src="app.js?v=20260715d"></script>
+<script src="data.js?v=20260715j"></script>
+<script src="app.js?v=20260715j"></script>
 <script>
   document.addEventListener('keydown', function(e){
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'e') {

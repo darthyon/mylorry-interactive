@@ -652,13 +652,12 @@ function SubsidyQuotaCombinedCard({ empty, quotaState, subsidy, subsidies, subsi
       return false;
     }
   });
-  const [vehicleOpen, setVehicleOpen] = useState(() => {
-    try {
-      return window.innerWidth > 680;
-    } catch {
-      return true;
-    }
-  });
+  // Toggle button + collapsed state only ever apply on mobile (see the
+  // isMobileViewport branch below and the .is-collapsed condition further
+  // down) — desktop always renders the full list regardless of this value.
+  // Default closed unconditionally so the accordion never opens on first
+  // mobile paint.
+  const [vehicleOpen, setVehicleOpen] = useState(false);
   const [expandedVehicle, setExpandedVehicle] = useState(null);
   const pageSize = 5;
   const vehRows = aggregateQuotaByVehicle()
@@ -942,19 +941,29 @@ const RANGE_LABEL = { threeMonth: "Last 3 months", sixMonth: "Last 6 months", tw
 function FuelUsageTrend({ empty, range }) {
   const [metric, setMetric] = useState("litres");
   const [hover, setHover] = useState(null);
-  const [tipPos, setTipPos] = useState(null); // viewport {x, y} of the hovered/tapped bar
+  const [tipPos, setTipPos] = useState(null); // {x, y} relative to .mfd-plotwrap
   const plotRef = useRef(null);
+  const plotWrapRef = useRef(null);
   const rangeLabel = RANGE_LABEL[range] || "Last 6 months";
 
-  function showTip(i, el) {
-    const r = el.getBoundingClientRect();
-    setTipPos({ x: r.left + r.width / 2, y: r.top });
+  // .mfd-plot scrolls horizontally (overflow-x:auto ≤680px), which per the
+  // CSS spec also forces overflow-y to compute as auto — so a tooltip
+  // living inside .mfd-plot gets clipped the moment it needs to render
+  // above a tall bar, regardless of how it's positioned (fixed, absolute,
+  // even plain in-flow). Rendering it as a sibling of .mfd-plot instead,
+  // inside .mfd-plotwrap (one level up, no scroll, no clip), sidesteps
+  // that entirely. Position is computed from .mfd-bar-stack — the child
+  // actually sized to the bar's real height via inline `height: pct%`,
+  // not .mfd-bar-col, which is a full-height (100% of the plot) tap
+  // target and would put the tooltip at the top of the chart every time.
+  function showTip(i, barColEl) {
+    const stack = barColEl.querySelector(".mfd-bar-stack") || barColEl;
+    const bar = stack.getBoundingClientRect();
+    const wrap = plotWrapRef.current.getBoundingClientRect();
+    setTipPos({ x: bar.left + bar.width / 2 - wrap.left, y: bar.top - wrap.top });
     setHover(i);
   }
 
-  // The plot scrolls horizontally on mobile (see mfd-plot ≤680px) — a
-  // fixed-position tooltip doesn't track that scroll, so drop it on scroll
-  // rather than let it drift away from the bar it points at.
   useEffect(() => {
     const el = plotRef.current;
     if (!el) return;
@@ -1002,7 +1011,7 @@ function FuelUsageTrend({ empty, range }) {
       </div>
 
       <div className="mfd-chart-axislbl">{metric === "amount" ? "Amount (RM)" : "Fuel (litres)"}</div>
-      <div className="mfd-plotwrap">
+      <div className="mfd-plotwrap" ref={plotWrapRef}>
         <div className="mfd-yaxis">{tickVals.map((v) => <span key={v}>{v >= 1000 ? (v / 1000).toFixed(1) + "K" : v}</span>)}</div>
         <div className="mfd-plot" ref={plotRef}>
           <div className="mfd-bars">
@@ -1016,23 +1025,6 @@ function FuelUsageTrend({ empty, range }) {
                   showTip(i, e.currentTarget);
                 }}>
                 <div className="mfd-bar-group">
-                  {hover === i && tipPos && (
-                    <div className="mfd-bar-tip" style={{
-                      position: "fixed",
-                      left: Math.min(Math.max(tipPos.x, 98), window.innerWidth - 98),
-                      top: tipPos.y,
-                      transform: "translate(-50%, calc(-100% - 8px))",
-                      zIndex: 40,
-                    }}>
-                      <div className="mfd-bar-tip-period">{label}</div>
-                      {series.map((s) => (
-                        <div key={s.key} className="mfd-bar-tip-row">
-                          <span className="mfd-bar-tip-dot" style={{ background: s.color }} />
-                          <span>{s.label}: <strong>{metric === "amount" ? RM0(s.values[i]) : L0(s.values[i])}</strong></span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                   <div className={"mfd-bar-track" + (hover === i ? " active" : "")}>
                     <div className="mfd-bar-stack" style={{ height: (totals[i] / max * 100) + "%" }}>
                       <div className="mfd-bar-seg" style={{ height: totals[i] ? (series[0].values[i] / totals[i] * 100) + "%" : "0%", background: series[0].color }} />
@@ -1047,6 +1039,29 @@ function FuelUsageTrend({ empty, range }) {
             {labels.map((l) => <span key={l} className="mfd-xlbl">{l}</span>)}
           </div>
         </div>
+        {hover != null && tipPos && (
+          <div className="mfd-bar-tip" style={{
+            position: "absolute",
+            left: Math.min(Math.max(tipPos.x, 98), (plotWrapRef.current?.clientWidth || 300) - 98),
+            top: tipPos.y,
+            // The base .mfd-bar-tip class sets bottom:100% for its original
+            // in-flow-relative-to-bar layout. Left uncleared here, having
+            // both top and bottom non-auto forces the box's height to be
+            // computed from the top/bottom gap instead of its content —
+            // collapsing it to a sliver. Must explicitly reset to auto.
+            bottom: "auto",
+            transform: "translate(-50%, calc(-100% - 8px))",
+            zIndex: 6,
+          }}>
+            <div className="mfd-bar-tip-period">{labels[hover]}</div>
+            {series.map((s) => (
+              <div key={s.key} className="mfd-bar-tip-row">
+                <span className="mfd-bar-tip-dot" style={{ background: s.color }} />
+                <span>{s.label}: <strong>{metric === "amount" ? RM0(s.values[hover]) : L0(s.values[hover])}</strong></span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="mfd-legend">
