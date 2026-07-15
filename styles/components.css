@@ -53,8 +53,8 @@
   color: var(--fg-tertiary);
 }
 
-.odr-list-table td:nth-child(6) {
-  font-variant-numeric: normal;
+.odr-table-card .ml-table {
+  font-variant-numeric: normal !important;
 }
 
 /* Commission status */
