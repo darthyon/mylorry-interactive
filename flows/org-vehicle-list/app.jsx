@@ -117,7 +117,8 @@ function fmtDate(iso) {
 function daysUntil(iso) {
   if (!iso) return null;
   const target = new Date(iso + "T00:00:00");
-  const now = new Date("2026-07-09T00:00:00");
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
   return Math.round((target - now) / 86400000);
 }
 
