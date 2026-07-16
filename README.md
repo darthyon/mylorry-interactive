@@ -9,8 +9,9 @@ then load that plain `.js` + React from a CDN. Fast, reliable, deploy-anywhere
 static files. (Earlier this transpiled JSX in the browser on every load — that
 froze heavier pages, so it's precompiled now.)
 
-**Golden rule:** edit `.jsx`, run `npm run build`, commit **both** the `.jsx` and
-the generated `.js`.
+**Golden rule:** edit `.jsx`, run `npm run build`, and commit the `.jsx` source.
+Generated `.js` files are build output and are gitignored; `data.js` files are
+hand-written mock data and stay tracked.
 
 ---
 
@@ -20,6 +21,9 @@ the generated `.js`.
 index.html              Home — flow directory, rendered from flows.js
 flows.js                Flow manifest (single source of truth for the home page)
 build.js                Compiles every .jsx → .js (run via `npm run build`)
+AGENTS.md              Codex working guardrails for this repo
+.agents/               Local Codex skills used by this repo
+.githooks/             Optional repo Git hooks
 styles/
   tokens.css            Design tokens (colors, type, radius) — the ONE source
 shared/
@@ -40,8 +44,8 @@ vercel.json             Vercel config (runs npm run build, serves repo root)
 
 Each flow folder holds its own `index.html`, its `.jsx` screens (+ generated
 `.js`), and a local `data.js`. Shared code lives in `shared/` and `styles/`,
-referenced with `../../` paths. **`*.js` next to a `*.jsx` is generated — never
-edit it by hand.**
+referenced with `../../` paths. **`*.js` next to a `*.jsx` is generated and
+gitignored — never edit it by hand.**
 
 ---
 
@@ -125,14 +129,36 @@ no build needed for tokens (it's plain CSS). Keep the `--font` alias and the
 
 ---
 
+## Agent tooling
+
+Repo-specific Codex rules live in [`AGENTS.md`](AGENTS.md). They mirror the
+static-prototype constraints from [`CLAUDE.md`](CLAUDE.md) and add Codex-specific
+expectations for shared UI, tests, and browser/tool usage.
+
+The local design guidance skill lives at
+[`./.agents/skills/taste-skill/SKILL.md`](.agents/skills/taste-skill/SKILL.md).
+It is intentionally scoped to frontend taste/design work; product dashboard and
+data-table flows should still follow the repo’s existing shared component rules.
+
+Optional Git hooks live in [`.githooks/`](.githooks). To enable them locally:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+The current pre-push hook runs `gitleaks` when installed. If `gitleaks` is not
+installed, it warns and lets the push continue.
+
+---
+
 ## Deploy
 
-Vercel, static, no build on Vercel (`vercel.json` → `outputDirectory: "."`). The
-compiled `.js` is committed, so Vercel just serves files.
+Vercel serves the repo root as static output. `vercel.json` runs
+`npm run build` first, then serves `outputDirectory: "."`.
 
 ```bash
 npm run build   # make sure .js is current
-git add -A      # commit .jsx AND generated .js
+git add -A      # commit .jsx, data.js, HTML/CSS/docs; generated .js is ignored
 git commit -m "…"
 git push        # Vercel auto-deploys the branch
 ```
