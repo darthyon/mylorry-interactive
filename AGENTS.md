@@ -27,6 +27,18 @@ build rules. This file adds Codex-specific implementation requirements.
   its shared CSS to `styles/components.css`, and add a visible state to the
   design-system showcase.
 
+## Git / PR workflow
+
+- Use `playground` as the working branch for small UI changes.
+- Do not create feature branches unless explicitly requested.
+- PRs should normally be opened from `playground` to `main`.
+- When asked to create or update a PR, commit the scoped changes on
+  `playground`, push `playground`, then open or update the `playground` to
+  `main` PR.
+- If `gh auth` fails, stop and report the exact `gh auth status` output. Do not
+  fall back to creating branches through the GitHub connector unless explicitly
+  requested.
+
 ## Testing
 
 - Write tests in Playwright (E2E) + Vitest (unit).

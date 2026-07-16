@@ -97,15 +97,15 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .ovl-managed.blank{width:18px;height:18px;}
 .ovl-weight{font-variant-numeric:tabular-nums;}
 .ovl-expiry{display:flex;flex-direction:column;gap:3px;line-height:1.2;min-width:106px;}
-.ovl-expiry-date{font-weight:600;font-size:12.5px;}
+.ovl-expiry-date{font-weight:600;font-size:12.5px;color:var(--fg-primary);}
 .ovl-expiry-meta{font-size:11px;color:var(--fg-tertiary);}
 .ovl-doc-status{display:inline-flex;align-items:center;width:max-content;padding:3px 6px;border-radius:4px;font-size:10px;font-weight:700;line-height:1;}
 .ovl-doc-status.active{background:#EFFAF4;color:#397051;}
 .ovl-doc-status.expired{background:#FFF0EF;color:#B64B43;}
 .ovl-doc-status.empty{background:#F1F2F3;color:var(--fg-tertiary);}
-.ovl-expiry.good .ovl-expiry-date{color:#416D52;}
-.ovl-expiry.warn .ovl-expiry-date{color:#A56710;}
-.ovl-expiry.danger .ovl-expiry-date{color:#BE2F2C;}
+.ovl-expiry.good .ovl-expiry-meta{color:#416D52;}
+.ovl-expiry.warn .ovl-expiry-meta{color:#A56710;}
+.ovl-expiry.danger .ovl-expiry-meta{color:#BE2F2C;}
 .ovl-expiry.empty .ovl-expiry-date,.ovl-expiry.empty .ovl-expiry-meta{color:var(--fg-disabled);}
 .ovl-menu-btn{padding:6px;border-radius:6px;}
 .ovl-drop{min-width:198px;}
