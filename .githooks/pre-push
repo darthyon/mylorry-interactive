@@ -1,0 +1,13 @@
+#!/bin/bash
+# Blocks push if gitleaks finds secrets in outgoing commits.
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "WARNING: gitleaks not installed (brew install gitleaks) — push NOT scanned for secrets." >&2
+  exit 0
+fi
+if ! gitleaks git --no-banner --redact --log-opts="--all --not --remotes" . ; then
+  echo "" >&2
+  echo "PUSH BLOCKED: potential secrets found in outgoing commits." >&2
+  echo "Remove them and rewrite history before pushing. Bypass only if certain: git push --no-verify" >&2
+  exit 1
+fi
+exit 0
