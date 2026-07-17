@@ -551,7 +551,10 @@ function AccountStatusBadge({ status = "active", prefix }) {
 // `total: true` adds the bordered "final total" row styling.
 // trigger: optional custom trigger content — defaults to a small icon-only
 // button (xs) so it can sit inline on the same row as a label.
-function CalcPopover({ title = "Calculation summary", rows, triggerLabel = "View calculation", align = "left", icon = "calculate" }) {
+// trigger — optional custom clickable node replacing the default "View
+// calculation" button (e.g. make an existing number the click target
+// instead of adding a separate visible affordance). Omit for the default.
+function CalcPopover({ title = "Calculation summary", rows, triggerLabel = "View calculation", align = "left", icon = "calculate", trigger }) {
   const [open, setOpen] = React.useState(false);
   const popRef = React.useRef(null);
 
@@ -566,9 +569,13 @@ function CalcPopover({ title = "Calculation summary", rows, triggerLabel = "View
 
   return (
     <span className="ml-calc-wrap">
-      <button type="button" className="ml-calc-trigger-btn" onClick={() => setOpen((v) => !v)}>
-        <Icon name={icon} size={13} /> {triggerLabel}
-      </button>
+      {trigger
+        ? <span className="ml-calc-trigger-custom" onClick={() => setOpen((v) => !v)}>{trigger}</span>
+        : (
+          <button type="button" className="ml-calc-trigger-btn" onClick={() => setOpen((v) => !v)}>
+            <Icon name={icon} size={13} /> {triggerLabel}
+          </button>
+        )}
       <span className="ml-calc-pop-wrap">
         {open && (
           <div className={"ml-calc-pop" + (align === "right" ? " align-right" : "")} ref={popRef}>

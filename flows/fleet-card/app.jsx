@@ -1,4 +1,5 @@
 const { useState, useEffect, useRef, useCallback } = React;
+const { CalcPopover } = window.SharedShell;
 
 /* ── Icon helper ───────────────────────────────────────────────── */
 function Icon({ name, size = 20, fill = 0, style }) {
@@ -13,19 +14,22 @@ function Icon({ name, size = 20, fill = 0, style }) {
 
 /* ── Data ──────────────────────────────────────────────────────── */
 const ROWS = [
-  { id:1,  owner:'Tesla',      acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sr:300, sm:900,   su:320, st:'Active'   },
-  { id:2,  owner:'Wayne Ent.', acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sr:300, sm:900,   su:320, st:'Active'   },
-  { id:3,  owner:'Cyberdyne',  acc:'ORG59-SPA-MEMBER', bal:-158.40, card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sr:null, sm:null, su:null, st:'Active'   },
-  { id:4,  owner:'Globex',     acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sr:300, sm:900,   su:320, st:'Active'   },
-  { id:5,  owner:'Oscorp',     acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sr:300, sm:900,   su:320, st:'Active'   },
-  { id:6,  owner:'Acme Corp',  acc:'ORG59-SPA-MEMBER', bal:0,       card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:501, dm:501,   du:0,   dL:0,    mr:20001, mm:20001, mu:0,   mL:0,    sr:300, sm:900,   su:320, st:'Active'   },
-  { id:7,  owner:'LexCorp',    acc:'ORG59-SPA-MEMBER', bal:-258.58, card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:500, dm:500,   du:0,   dL:0,    mr:1600,  mm:15000, mu:320, mL:12.5, sr:300, sm:900,   su:320, st:'Inactive' },
-  { id:8,  owner:'Initech',    acc:'ORG59-SPA-MEMBER', bal:-258.58, card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:500, dm:500,   du:0,   dL:0,    mr:1600,  mm:15000, mu:320, mL:12.5, sr:300, sm:900,   su:320, st:'Inactive' },
-  { id:9,  owner:'Stark Ind.', acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sr:300, sm:900,   su:320, st:'Active'   },
-  { id:10, owner:'Umbrella',   acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sr:300, sm:900,   su:320, st:'Active'   },
+  { id:1,  owner:'Tesla',      acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sm:900,     su:320,     sEst:365.4,   st:'Active'   },
+  { id:2,  owner:'Wayne Ent.', acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sm:900,     su:320,     sEst:320,     st:'Active'   },
+  { id:3,  owner:'Cyberdyne',  acc:'ORG59-SPA-MEMBER', bal:-158.40, card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sm:null,    su:null,    sEst:null,    st:'Active'   },
+  { id:4,  owner:'Globex',     acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sm:900,     su:320,     sEst:410.8,   st:'Active'   },
+  { id:5,  owner:'Oscorp',     acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sm:900,     su:320,     sEst:320,     st:'Active'   },
+  { id:6,  owner:'Acme Corp',  acc:'ORG59-SPA-MEMBER', bal:0,       card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:501, dm:501,   du:0,   dL:0,    mr:20001, mm:20001, mu:0,   mL:0,    sm:1250000, su:812345.6, sEst:998450.25, st:'Active'   },
+  { id:7,  owner:'LexCorp',    acc:'ORG59-SPA-MEMBER', bal:-258.58, card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:500, dm:500,   du:0,   dL:0,    mr:1600,  mm:15000, mu:320, mL:12.5, sm:900,     su:320,     sEst:320,     st:'Inactive' },
+  { id:8,  owner:'Initech',    acc:'ORG59-SPA-MEMBER', bal:-258.58, card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:500, dm:500,   du:0,   dL:0,    mr:1600,  mm:15000, mu:320, mL:12.5, sm:900,     su:320,     sEst:320,     st:'Inactive' },
+  { id:9,  owner:'Stark Ind.', acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sm:900,     su:320,     sEst:320,     st:'Active'   },
+  { id:10, owner:'Umbrella',   acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sm:900,     su:320,     sEst:320,     st:'Active'   },
 ];
 const N  = n => n.toLocaleString();
 const N1 = n => n.toLocaleString(undefined, { minimumFractionDigits: n % 1 ? 1 : 0, maximumFractionDigits: 1 });
+// Compact display for inline cell numbers (10,500 -> 10.5K). Full precision
+// stays in the CalcPopover breakdown — only the at-a-glance figures compact.
+const NC = n => new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(n);
 
 /* ── TopBar ────────────────────────────────────────────────────── */
 function TopBar() {
@@ -151,19 +155,73 @@ function ProgressCell({ rem, max, used, liters, unit = 'RM', status, pending, fa
   }
   const pct = Math.min(100, (rem / max) * 100);
   const isRed = status === 'Inactive';
-  return (
+  const rows = [
+    { label: 'Limit',     value: `RM ${N(max)}` },
+    { label: 'Used',      value: `RM ${N(used)}` },
+    { label: 'Remaining', value: `RM ${N(rem)}`, total: true, tone: 'green' },
+  ];
+  if (liters != null) rows.splice(2, 0, { label: 'Fuel volume', value: `${N1(liters)} L` });
+  const trigger = (
     <div className="prog-cell">
       <div className="prog-row">
         <div className="prog-track">
           <div className={`prog-fill ${isRed ? 'pf-r' : 'pf-g'}`} style={{width: pct + '%'}}></div>
         </div>
-        <span className="prog-num">{N(rem)}<span>/{N(max)}</span></span>
+        <span className="prog-num">{NC(rem)}<span>/{NC(max)}</span></span>
       </div>
       <span className="prog-used">
-        {unit === 'RM' ? `RM ${N(used)}` : `${N(used)} L used`}{liters != null && ` · ${N1(liters)} L used`}
+        {unit === 'RM' ? `RM ${NC(used)}` : `${NC(used)} L used`}{liters != null && ` · ${N1(liters)} L used`}
       </span>
     </div>
   );
+  return <CalcPopover title="Usage breakdown" rows={rows} trigger={trigger} />;
+}
+
+/* ── Subsidy Quota Cell ────────────────────────────────────────── */
+// Confirmed usage settles hours after the trip; the live number shown to
+// the fleet is an estimate until then. Bar shows confirmed (solid) with
+// the estimate extending past it (lighter) so a settlement bump is visible
+// before it happens, instead of the number just jumping later.
+function SubsidyProgressCell({ max, used, estUsed, pending, failed, utype }) {
+  if (utype === 'limit' && failed) {
+    return <span className="fail-lbl">Update failed</span>;
+  }
+  if (utype === 'limit' && pending) {
+    return (
+      <div className="pend-cell">
+        <div className="skel skel-w"></div>
+        <span className="pend-lbl">Pending update</span>
+      </div>
+    );
+  }
+  if (max == null) {
+    return <span className="na-lbl">N/A</span>;
+  }
+  const usedPct = Math.min(100, (used / max) * 100);
+  const estPct  = Math.min(100, (estUsed / max) * 100);
+  const rows = [
+    { label: 'Max quota',              value: `${N(max)} L` },
+    { label: 'Confirmed used',         value: `${N(used)} L` },
+    { label: 'Estimated used',         value: `${N(estUsed)} L` },
+    { label: 'Pending settlement',     value: `${N(estUsed - used)} L` },
+    { label: 'Remaining (confirmed)',  value: `${N(max - used)} L`, total: true, tone: 'green' },
+  ];
+  const trigger = (
+    <div className="prog-cell">
+      <div className="prog-row">
+        <div className="prog-track">
+          <div className="prog-fill prog-fill-est" style={{width: estPct + '%'}}></div>
+          <div className="prog-fill pf-g" style={{width: usedPct + '%'}}></div>
+        </div>
+        <span className="prog-num">{NC(used)}<span>/{NC(max)}</span></span>
+      </div>
+      <span className="prog-used">
+        {NC(used)} L used <span className="prog-used-sep">·</span>
+        <span className="prog-used-est"><span className="prog-used-dot"></span>Est. {NC(estUsed)} L used</span>
+      </span>
+    </div>
+  );
+  return <CalcPopover title="Subsidy quota breakdown" rows={rows} trigger={trigger} align="right" />;
 }
 
 /* ── Status Cell ───────────────────────────────────────────────── */
@@ -453,9 +511,9 @@ function App() {
                   <th>Card No.</th>
                   <th>Vehicle No.</th>
                   <th>Tag</th>
-                  <th style={{minWidth:155}}>Daily Limit (RM)</th>
-                  <th style={{minWidth:180}}>Monthly Limit (RM)</th>
-                  <th style={{minWidth:155}}>Subsidy Quota (Ltr)</th>
+                  <th style={{minWidth:190}}>Daily Limit (RM)</th>
+                  <th style={{minWidth:190}}>Monthly Limit (RM)</th>
+                  <th style={{minWidth:190}}>Subsidy Quota (Ltr)</th>
                   <th style={{minWidth:120}}>Status</th>
                   <th className="c-act"></th>
                 </tr>
@@ -504,9 +562,9 @@ function App() {
                         />
                       </td>
                       <td>
-                        <ProgressCell
-                          rem={row.sr} max={row.sm} used={row.su} unit="Ltr"
-                          status={undefined} pending={isPend} failed={isFail} utype={utype}
+                        <SubsidyProgressCell
+                          max={row.sm} used={row.su} estUsed={row.sEst}
+                          pending={isPend} failed={isFail} utype={utype}
                         />
                       </td>
                       <td>

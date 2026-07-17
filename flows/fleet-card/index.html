@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fleet Card — Bulk Actions</title>
 <link rel="stylesheet" href="../../styles/tokens.css">
+<link rel="stylesheet" href="../../styles/components.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
@@ -16,6 +17,7 @@ html,body{height:100%;margin:0;padding:0;}
 *,*::before,*::after{box-sizing:border-box;}
 body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);background:#fff;overflow:hidden;}
 .ms{font-family:'Material Symbols Rounded';font-style:normal;font-weight:400;font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20;line-height:1;vertical-align:middle;user-select:none;display:inline-flex;align-items:center;}
+.msr{font-family:'Material Symbols Rounded';font-style:normal;line-height:1;display:inline-flex;align-items:center;}
 
 /* ── Shell ──────────────────────────────────────────────────── */
 .shell{display:grid;grid-template-columns:69px 1fr;grid-template-rows:71px 1fr;height:100vh;}
@@ -100,11 +102,11 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 
 /* ── Table ───────────────────────────────────────────────────── */
 .tbl-wrap{border:1px solid var(--border-medium);border-radius:6px;overflow-x:auto;}
-.tbl{width:100%;min-width:960px;border-collapse:separate;border-spacing:0;}
+.tbl{width:100%;min-width:1180px;border-collapse:separate;border-spacing:0;}
 .tbl th{background:var(--bg-muted);font-size:13px;font-weight:600;color:var(--fg-primary);text-align:left;padding:13px 12px;border-bottom:1px solid var(--border-medium);white-space:nowrap;}
 .tbl th:first-child{border-radius:6px 0 0 0;}
 .tbl th:last-child{border-radius:0 6px 0 0;text-align:center;}
-.tbl td{font-size:13px;padding:10px 12px;border-bottom:1px solid var(--border-light);vertical-align:middle;color:var(--fg-primary);}
+.tbl td{font-size:13px;padding:10px 12px;border-bottom:1px solid var(--border-light);vertical-align:middle;color:var(--fg-primary);white-space:nowrap;}
 .tbl tbody tr:last-child td{border-bottom:none;}
 .tbl tbody tr{transition:background 0.08s;}
 .tbl tbody tr:hover{background:#fafafa;}
@@ -112,7 +114,10 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .c-chk{width:42px;text-align:center !important;}
 .c-chk input[type=checkbox]{width:15px;height:15px;accent-color:var(--green-500);cursor:pointer;}
 .c-no{width:40px;color:var(--fg-secondary);font-weight:500;}
-.c-act{width:40px;text-align:center !important;}
+.c-act{width:40px;text-align:center !important;position:sticky;right:0;background:#fff;z-index:2;box-shadow:-8px 0 12px rgba(17,24,39,.04);}
+.tbl th.c-act{z-index:3;background:var(--bg-muted);}
+.tbl tbody tr:hover .c-act{background:#fafafa;}
+.tbl tbody tr.row-sel .c-act{background:var(--green-50);}
 
 /* ── In-table elements ───────────────────────────────────────── */
 .prov-wrap{display:flex;align-items:center;gap:7px;}
@@ -123,18 +128,22 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .card-sub{font-size:11px;color:var(--fg-tertiary);margin-top:1px;}
 
 /* progress */
-.prog-cell{display:flex;flex-direction:column;gap:4px;min-width:130px;}
+.prog-cell{display:flex;flex-direction:column;gap:4px;min-width:170px;}
 .prog-row{display:flex;align-items:center;gap:7px;}
-.prog-track{flex:1;height:7px;background:#E9E9E9;border-radius:4px;overflow:hidden;}
-.prog-fill{height:100%;border-radius:4px;}
+.prog-track{position:relative;flex:1;height:7px;background:#E9E9E9;border-radius:4px;overflow:hidden;}
+.prog-fill{position:absolute;top:0;left:0;height:100%;border-radius:4px;}
 .pf-g{background:var(--green-500);}
 .pf-r{background:var(--red-400);}
+.prog-fill-est{background:var(--amber-500);}
 .prog-num{font-size:12px;font-weight:600;white-space:nowrap;}
 .prog-num span{font-weight:400;color:var(--fg-secondary);}
-.prog-used{font-size:11px;color:var(--fg-secondary);}
+.prog-used{font-size:11px;color:var(--fg-secondary);display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.prog-used-sep{color:var(--fg-tertiary);}
+.prog-used-est{color:var(--fg-tertiary);display:inline-flex;align-items:center;gap:4px;}
+.prog-used-dot{width:6px;height:6px;border-radius:50%;background:var(--amber-500);flex-shrink:0;}
 
 /* pending / failed cells */
-.pend-cell{display:flex;flex-direction:column;gap:5px;min-width:130px;}
+.pend-cell{display:flex;flex-direction:column;gap:5px;min-width:170px;}
 .skel{height:7px;border-radius:4px;background:#E8E8E8;}
 .skel-w{width:100%;}
 .skel-n{width:55%;}
@@ -197,8 +206,9 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 </head>
 <body>
 <div id="root"></div>
+<script src="../../shared/shared-shell.js?v=20260717"></script>
 <script src="../../shared/tweaks-panel.js?v=20260708zz"></script>
-<script src="app.js?v=20260614"></script>
+<script src="app.js?v=20260717"></script>
 <script>
   document.addEventListener('keydown', function(e) {
     // Cmd/Ctrl + Shift + E toggles the tweaks panel
