@@ -56,6 +56,11 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .sb-logout>.ms{color:rgb(213,95,90);}
 .sb-btn-col{position:absolute;right:-14px;top:34px;width:28px;height:28px;border-radius:8px;background:#fff;border:1px solid rgb(246,246,246);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:5;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
 .sb-btn-col .ms{font-size:14px;color:#333;}
+.topbar-logo-link{display:block;margin-left:88px;}
+.topbar-hamburger{display:none;background:none;border:none;cursor:pointer;padding:6px;margin-right:6px;border-radius:6px;align-items:center;justify-content:center;}
+.topbar-hamburger:hover{background:rgba(255,255,255,0.15);}
+.sb-mobile-close{display:none;position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;padding:4px;border-radius:6px;color:var(--fg-tertiary);align-items:center;justify-content:center;z-index:2;}
+.sb-backdrop{display:none;}
 
 /* ── Content ─────────────────────────────────────────────────── */
 .content{grid-column:2;grid-row:2;overflow-y:auto;background:#fff;}
@@ -109,6 +114,35 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .btn-3dot{background:none;border:none;cursor:pointer;padding:4px;border-radius:4px;color:var(--fg-tertiary);display:flex;align-items:center;}
 .btn-3dot:hover{background:#e5e5e8;color:var(--fg-primary);}
 
+/* ── Mobile drawer (sidebar collapses to hamburger + slide-in drawer) ──
+   Kept at the end of the stylesheet on purpose: a media-query rule only
+   wins a same-specificity conflict when it comes AFTER the unconditional
+   rule it's overriding, in source order — not just because its condition
+   matches. */
+@media(max-width:640px){
+  .shell{grid-template-columns:1fr;}
+  .content{grid-column:1;}
+  .topbar-hamburger{display:flex;}
+  .topbar-logo-link{margin-left:8px;}
+  .sidebar{position:fixed;inset:0 auto 0 0;width:260px;pointer-events:none;z-index:110;}
+  .sidebar .sb-card{width:100%;height:100%;border-radius:0;transform:translateX(-100%);transition:transform .22s ease;pointer-events:auto;position:relative;}
+  .sidebar.sb-open{pointer-events:auto;}
+  .sidebar.sb-open .sb-card{transform:translateX(0);}
+  .sb-mobile-close{display:flex;}
+  .sb-btn-col{display:none;}
+  .sb-backdrop{display:block;position:fixed;inset:0;background:rgba(16,25,21,.4);z-index:105;}
+
+  /* Rail items get room to lay out horizontally (icon + label) instead of
+     the icon-stack built for the 69px desktop rail. */
+  .sb-ava-wrap,.sb-div,.sb-ovl,.sb-nav,.sb-sub-panel,.sb-sub{width:100%;}
+  .sb-nav{flex-direction:row;justify-content:flex-start;gap:10px;width:100%;padding:10px 12px;}
+  .sb-nav>span:not(.ms){font-size:13px;}
+  .sb-ovl{text-align:left;padding:10px 12px 4px;}
+  .sb-sub-panel{width:100%;margin:2px 0;}
+  .sb-sub{flex-direction:row;justify-content:flex-start;gap:10px;width:100%;padding:9px 12px;}
+  .sb-sub span:not(.ms){font-size:13px;}
+  .sb-chev{position:static;margin-left:auto;}
+}
 </style>
 </head>
 <body>

@@ -297,7 +297,6 @@
    second flow (org-subscription-profile) can reuse the same look instead of
    a hover tooltip, which can't hold a multi-row breakdown. */
 .ml-calc-wrap { position: relative; display: inline-flex; align-items: center; }
-.ml-calc-pop-wrap { position: relative; }
 .ml-btn-calc { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; }
 /* Small soft-green button — same family as .ml-btn-soft, scaled down so it
    fits a card corner instead of a full-size action row. */
@@ -307,11 +306,13 @@
    target instead of adding a separate visible button. */
 .ml-calc-trigger-custom { display: block; cursor: pointer; border-radius: 6px; margin: -4px; padding: 4px; transition: background .1s; }
 .ml-calc-trigger-custom:hover { background: var(--bg-muted); }
-.ml-calc-pop { position: absolute; left: 0; top: 0; z-index: 15; width: min(320px, calc(100vw - 72px)); background: #fff; border: 1px solid var(--border-light); border-radius: 14px; box-shadow: 0 10px 30px rgba(12,19,30,.12); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
-.ml-calc-pop.align-right { left: auto; right: 0; }
+/* Portal-rendered + viewport-clamped (position set via JS, see CalcPopover)
+   so it never overflows the screen — same technique as .ml-reminder-pop. */
+.ml-calc-pop { position: fixed; z-index: 250; background: #fff; border: 1px solid var(--border-light); border-radius: 14px; box-shadow: 0 10px 30px rgba(12,19,30,.12); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
 .ml-calc-pop-title { font-size: 13px; font-weight: 700; color: var(--fg-primary); }
-.ml-calc-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; font-size: 12px; color: var(--fg-secondary); }
-.ml-calc-row b { font-size: 13px; color: var(--fg-primary); white-space: nowrap; }
+.ml-calc-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; font-size: 12px; color: var(--fg-primary); }
+.ml-calc-row b { font-size: 13px; font-weight: 600; color: var(--fg-primary); white-space: nowrap; }
+.ml-calc-row-note { font-size: 10.5px; font-weight: 400; color: var(--fg-tertiary); }
 .ml-calc-row-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
 .ml-calc-row-stack span { font-size: 11px; color: var(--fg-tertiary); text-align: right; }
 .ml-calc-row-total { padding-top: 10px; border-top: 1px solid var(--border-light); }

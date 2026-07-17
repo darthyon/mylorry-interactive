@@ -1,4 +1,4 @@
-const { useState } = React;
+const { useState, useEffect, useRef } = React;
 const { Pager } = window.SharedShell;
 
 /* ── Icon helper ───────────────────────────────────────────────── */
@@ -28,10 +28,13 @@ const ROWS = [
 const N = n => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /* ── TopBar ────────────────────────────────────────────────────── */
-function TopBar() {
+function TopBar({ onMenuClick }) {
   return (
     <header className="topbar">
-      <a href="../../index.html" title="Back to prototype library" style={{display:'block', marginLeft:88}}>
+      <button type="button" className="topbar-hamburger" onClick={onMenuClick} aria-label="Open menu">
+        <Icon name="menu" size={22} style={{color:'#fff'}} />
+      </button>
+      <a href="../../index.html" title="Back to prototype library" className="topbar-logo-link">
         <img src="img_logo_white.svg" height="27" alt="MyLorry" style={{display:'block'}} />
       </a>
     </header>
@@ -53,10 +56,22 @@ const MYFUEL_SUBS = [
   {icon:'analytics',          label:'Usage Report'},
 ];
 
-function Sidebar() {
+function Sidebar({ mobileOpen, onClose }) {
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
+    function onKey(e) { if (e.key === 'Escape') onClose(); }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [mobileOpen, onClose]);
+
   return (
-    <nav className="sidebar">
+    <>
+      {mobileOpen && <div className="sb-backdrop" onClick={onClose} role="presentation"></div>}
+      <nav className={`sidebar${mobileOpen ? ' sb-open' : ''}`}>
       <div className="sb-card">
+        <button type="button" className="sb-mobile-close" onClick={onClose} aria-label="Close menu">
+          <Icon name="close" size={18} />
+        </button>
         {/* Avatar + host badge */}
         <div className="sb-ava-wrap">
           <div className="sb-ava"><Icon name="person" size={18} style={{color:'rgb(148,168,178)'}} /></div>
@@ -129,7 +144,8 @@ function Sidebar() {
       <div className="sb-btn-col">
         <Icon name="chevron_right" size={14} />
       </div>
-    </nav>
+      </nav>
+    </>
   );
 }
 
@@ -157,11 +173,12 @@ function App() {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
     <div className="shell">
-      <TopBar />
-      <Sidebar />
+      <TopBar onMenuClick={() => setMobileNavOpen(true)} />
+      <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
 
       <main className="content" data-screen-label="Transaction">
         <div className="inner">

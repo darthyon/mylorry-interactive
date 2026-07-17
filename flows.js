@@ -205,7 +205,6 @@ window.FLOWS = {
             { label: "Update states", note: "Real-time saving, success and error states per card." },
           ],
         },
-        { id: "host-myfuel-dashboard",   name: "MyFuel — Dashboard",          status: "planned" },
         {
           id: "host-myfuel-transaction",
           name: "MyFuel — Transaction",

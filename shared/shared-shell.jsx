@@ -556,39 +556,61 @@ function AccountStatusBadge({ status = "active", prefix }) {
 // instead of adding a separate visible affordance). Omit for the default.
 function CalcPopover({ title = "Calculation summary", rows, triggerLabel = "View calculation", align = "left", icon = "calculate", trigger }) {
   const [open, setOpen] = React.useState(false);
+  const [pos, setPos] = React.useState({ top: 0, left: 0, width: 320 });
+  const triggerRef = React.useRef(null);
   const popRef = React.useRef(null);
 
   React.useEffect(() => {
     if (!open) return undefined;
-    const onDown = (e) => {
-      if (popRef.current && !popRef.current.contains(e.target)) setOpen(false);
+    const close = (e) => {
+      if (!triggerRef.current?.contains(e.target) && !popRef.current?.contains(e.target)) setOpen(false);
     };
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
+    const dismiss = () => setOpen(false);
+    document.addEventListener("mousedown", close);
+    window.addEventListener("scroll", dismiss, true);
+    window.addEventListener("resize", dismiss);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      window.removeEventListener("scroll", dismiss, true);
+      window.removeEventListener("resize", dismiss);
+    };
   }, [open]);
+
+  // Portal + fixed positioning, clamped to the viewport (same technique as
+  // ReminderSummary's .ml-reminder-pop) — a plain absolute popover can
+  // overflow the screen edge on narrow layouts (e.g. a mobile card).
+  function toggle() {
+    if (!open && triggerRef.current) {
+      const r = triggerRef.current.getBoundingClientRect();
+      const width = Math.min(320, window.innerWidth - 24);
+      const anchorLeft = align === "right" ? r.right - width : r.left;
+      const left = Math.max(12, Math.min(anchorLeft, window.innerWidth - width - 12));
+      setPos({ top: r.top, left, width });
+    }
+    setOpen((v) => !v);
+  }
 
   return (
     <span className="ml-calc-wrap">
       {trigger
-        ? <span className="ml-calc-trigger-custom" onClick={() => setOpen((v) => !v)}>{trigger}</span>
+        ? <span className="ml-calc-trigger-custom" ref={triggerRef} onClick={toggle}>{trigger}</span>
         : (
-          <button type="button" className="ml-calc-trigger-btn" onClick={() => setOpen((v) => !v)}>
+          <button type="button" className="ml-calc-trigger-btn" ref={triggerRef} onClick={toggle}>
             <Icon name={icon} size={13} /> {triggerLabel}
           </button>
         )}
-      <span className="ml-calc-pop-wrap">
-        {open && (
-          <div className={"ml-calc-pop" + (align === "right" ? " align-right" : "")} ref={popRef}>
-            <div className="ml-calc-pop-title">{title}</div>
-            {rows.map((r, i) => (
-              <div key={i} className={"ml-calc-row" + (r.total ? " ml-calc-row-total" : "")}>
-                <span>{r.label}</span>
-                <b style={r.tone === "green" ? { color: "var(--green-600)" } : undefined}>{r.value}</b>
-              </div>
-            ))}
-          </div>
-        )}
-      </span>
+      {open && ReactDOM.createPortal(
+        <div className="ml-calc-pop" ref={popRef} style={{ top: pos.top, left: pos.left, width: pos.width }}>
+          <div className="ml-calc-pop-title">{title}</div>
+          {rows.map((r, i) => (
+            <div key={i} className={"ml-calc-row" + (r.total ? " ml-calc-row-total" : "")}>
+              <span>{r.label}</span>
+              <b style={r.tone === "green" ? { color: "var(--green-600)" } : r.tone === "amber" ? { color: "var(--amber-600)" } : undefined}>{r.value}</b>
+            </div>
+          ))}
+        </div>,
+        document.body
+      )}
     </span>
   );
 }
