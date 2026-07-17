@@ -56,9 +56,9 @@ window.MYADMIN_DASH = {
       checkIn: "9 Jun 2026 · 7:48 AM", checkOut: "9 Jun 2026 · 8:14 AM",
       startMileage: 82130, endMileage: 82156,
       items: [
-        { label: "Pre-trip vehicle walkaround", status: "passed" },
-        { label: "Brake and tyre condition", status: "passed" },
-        { label: "Driver fit-to-drive declaration", status: "passed" },
+        { label: "Daily Vehicle Checklist", status: "passed" },
+        { label: "Daily Vehicle Maintenance", status: "passed" },
+        { label: "Daily Driver Checklist", status: "passed" },
       ],
     },
     {
@@ -66,9 +66,9 @@ window.MYADMIN_DASH = {
       checkIn: "9 Jun 2026 · 6:12 AM", checkOut: "9 Jun 2026 · 7:52 AM",
       startMileage: 71904, endMileage: 71946,
       items: [
-        { label: "Pre-trip vehicle walkaround", status: "passed" },
-        { label: "Brake and tyre condition", status: "warning" },
-        { label: "Driver fit-to-drive declaration", status: "passed" },
+        { label: "Daily Vehicle Checklist", status: "passed" },
+        { label: "Daily Vehicle Maintenance", status: "warning" },
+        { label: "Daily Driver Checklist", status: "passed" },
       ],
     },
     {
@@ -77,9 +77,9 @@ window.MYADMIN_DASH = {
       startMileage: 64020, endMileage: 64061,
       decision: "endorsed",
       items: [
-        { label: "Post-trip defect reporting", status: "passed" },
-        { label: "Fuel and toll reconciliation", status: "passed" },
-        { label: "Driver incident declaration", status: "passed" },
+        { label: "Daily Vehicle Checklist", status: "passed" },
+        { label: "Daily Vehicle Maintenance", status: "passed" },
+        { label: "Daily Driver Checklist", status: "passed" },
       ],
     },
     {
@@ -88,9 +88,9 @@ window.MYADMIN_DASH = {
       startMileage: 55420, endMileage: 55488,
       decision: "endorsed",
       items: [
-        { label: "Pre-trip vehicle walkaround", status: "passed" },
-        { label: "Cargo securement check", status: "passed" },
-        { label: "Driver fit-to-drive declaration", status: "passed" },
+        { label: "Daily Vehicle Checklist", status: "passed" },
+        { label: "Daily Vehicle Maintenance", status: "passed" },
+        { label: "Daily Driver Checklist", status: "passed" },
       ],
     },
   ],

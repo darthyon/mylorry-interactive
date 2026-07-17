@@ -13,18 +13,19 @@ function Icon({ name, size = 20, fill = 0, style }) {
 
 /* ── Data ──────────────────────────────────────────────────────── */
 const ROWS = [
-  { id:1,  owner:'Tesla',      acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, mr:1600,  mm:15000, mu:320, sr:300, sm:900,   su:320, st:'Active'   },
-  { id:2,  owner:'Wayne Ent.', acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, mr:1600,  mm:15000, mu:320, sr:300, sm:900,   su:320, st:'Active'   },
-  { id:3,  owner:'Cyberdyne',  acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, mr:1600,  mm:15000, mu:320, sr:null, sm:null, su:null, st:'Active'   },
-  { id:4,  owner:'Globex',     acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, mr:1600,  mm:15000, mu:320, sr:300, sm:900,   su:320, st:'Active'   },
-  { id:5,  owner:'Oscorp',     acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, mr:1600,  mm:15000, mu:320, sr:300, sm:900,   su:320, st:'Active'   },
-  { id:6,  owner:'Acme Corp',  acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:501, dm:501,   du:0,   mr:20001, mm:20001, mu:0,   sr:300, sm:900,   su:320, st:'Active'   },
-  { id:7,  owner:'LexCorp',    acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:500, dm:500,   du:0,   mr:1600,  mm:15000, mu:320, sr:300, sm:900,   su:320, st:'Inactive' },
-  { id:8,  owner:'Initech',    acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:500, dm:500,   du:0,   mr:1600,  mm:15000, mu:320, sr:300, sm:900,   su:320, st:'Inactive' },
-  { id:9,  owner:'Stark Ind.', acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, mr:1600,  mm:15000, mu:320, sr:300, sm:900,   su:320, st:'Active'   },
-  { id:10, owner:'Umbrella',   acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, mr:1600,  mm:15000, mu:320, sr:300, sm:900,   su:320, st:'Active'   },
+  { id:1,  owner:'Tesla',      acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sr:300, sm:900,   su:320, st:'Active'   },
+  { id:2,  owner:'Wayne Ent.', acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sr:300, sm:900,   su:320, st:'Active'   },
+  { id:3,  owner:'Cyberdyne',  acc:'ORG59-SPA-MEMBER', bal:-158.40, card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sr:null, sm:null, su:null, st:'Active'   },
+  { id:4,  owner:'Globex',     acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sr:300, sm:900,   su:320, st:'Active'   },
+  { id:5,  owner:'Oscorp',     acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sr:300, sm:900,   su:320, st:'Active'   },
+  { id:6,  owner:'Acme Corp',  acc:'ORG59-SPA-MEMBER', bal:0,       card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:501, dm:501,   du:0,   dL:0,    mr:20001, mm:20001, mu:0,   mL:0,    sr:300, sm:900,   su:320, st:'Active'   },
+  { id:7,  owner:'LexCorp',    acc:'ORG59-SPA-MEMBER', bal:-258.58, card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:500, dm:500,   du:0,   dL:0,    mr:1600,  mm:15000, mu:320, mL:12.5, sr:300, sm:900,   su:320, st:'Inactive' },
+  { id:8,  owner:'Initech',    acc:'ORG59-SPA-MEMBER', bal:-258.58, card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:500, dm:500,   du:0,   dL:0,    mr:1600,  mm:15000, mu:320, mL:12.5, sr:300, sm:900,   su:320, st:'Inactive' },
+  { id:9,  owner:'Stark Ind.', acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sr:300, sm:900,   su:320, st:'Active'   },
+  { id:10, owner:'Umbrella',   acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:1600,  mm:15000, mu:320, mL:12.5, sr:300, sm:900,   su:320, st:'Active'   },
 ];
-const N = n => n.toLocaleString();
+const N  = n => n.toLocaleString();
+const N1 = n => n.toLocaleString(undefined, { minimumFractionDigits: n % 1 ? 1 : 0, maximumFractionDigits: 1 });
 
 /* ── TopBar ────────────────────────────────────────────────────── */
 function TopBar() {
@@ -130,7 +131,7 @@ function Sidebar() {
 }
 
 /* ── Progress Cell ─────────────────────────────────────────────── */
-function ProgressCell({ rem, max, used, status, pending, failed, utype }) {
+function ProgressCell({ rem, max, used, liters, unit = 'RM', status, pending, failed, utype }) {
   if (utype === 'limit' && failed) {
     return <span className="fail-lbl">Update failed</span>;
   }
@@ -155,7 +156,9 @@ function ProgressCell({ rem, max, used, status, pending, failed, utype }) {
         </div>
         <span className="prog-num">{N(rem)}<span>/{N(max)}</span></span>
       </div>
-      <span className="prog-used">{N(used)} Used</span>
+      <span className="prog-used">
+        {unit === 'RM' ? `RM ${N(used)}` : `${N(used)} L used`}{liters != null && ` · ${N1(liters)} L used`}
+      </span>
     </div>
   );
 }
@@ -447,9 +450,9 @@ function App() {
                   <th>Card No.</th>
                   <th>Vehicle No.</th>
                   <th>Tag</th>
-                  <th style={{minWidth:155}}>Daily Limit</th>
-                  <th style={{minWidth:180}}>Monthly Limit</th>
-                  <th style={{minWidth:155}}>Subsidy Quota</th>
+                  <th style={{minWidth:155}}>Daily Limit (RM)</th>
+                  <th style={{minWidth:180}}>Monthly Limit (RM)</th>
+                  <th style={{minWidth:155}}>Subsidy Quota (Ltr)</th>
                   <th style={{minWidth:120}}>Status</th>
                   <th className="c-act"></th>
                 </tr>
@@ -471,7 +474,12 @@ function App() {
                           <div className="prov-icon">
                             <img src="petron.png" width="20" height="24" style={{objectFit:'contain',display:'block'}} alt="Petron" />
                           </div>
-                          <span style={{fontSize:12}}>{row.acc}</span>
+                          <div>
+                            <div style={{fontSize:12}}>{row.acc}</div>
+                            <div className={`prov-bal${row.bal < 0 ? ' prov-bal-neg' : ''}`}>
+                              RM {row.bal < 0 ? '-' : ''}{Math.abs(row.bal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td>
@@ -482,19 +490,19 @@ function App() {
                       <td>{row.tag}</td>
                       <td>
                         <ProgressCell
-                          rem={row.dr} max={row.dm} used={row.du}
+                          rem={row.dr} max={row.dm} used={row.du} liters={row.dL}
                           status={row.st} pending={isPend} failed={isFail} utype={utype}
                         />
                       </td>
                       <td>
                         <ProgressCell
-                          rem={row.mr} max={row.mm} used={row.mu}
+                          rem={row.mr} max={row.mm} used={row.mu} liters={row.mL}
                           status={row.st} pending={isPend} failed={isFail} utype={utype}
                         />
                       </td>
                       <td>
                         <ProgressCell
-                          rem={row.sr} max={row.sm} used={row.su}
+                          rem={row.sr} max={row.sm} used={row.su} unit="Ltr"
                           status={undefined} pending={isPend} failed={isFail} utype={utype}
                         />
                       </td>

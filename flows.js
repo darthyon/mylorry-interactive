@@ -206,7 +206,16 @@ window.FLOWS = {
           ],
         },
         { id: "host-myfuel-dashboard",   name: "MyFuel — Dashboard",          status: "planned" },
-        { id: "host-myfuel-transaction", name: "MyFuel — Transaction",        status: "planned" },
+        {
+          id: "host-myfuel-transaction",
+          name: "MyFuel — Transaction",
+          status: "ready",
+          route: "flows/host-myfuel-transaction/index.html",
+          desc: "Org-scoped fuel transaction log — provider acc, card, subsidy status, amount, volume, station.",
+          screens: [
+            { label: "Transaction list", note: "Org search/filter, txn count, per-row subsidy state (calculating / no subsidy / amount), fuel-type + volume, Download/Upload Excel." },
+          ],
+        },
         { id: "host-myfuel-rebate",      name: "MyFuel — Rebate",             status: "planned" },
         { id: "host-myfuel-subsidy",     name: "MyFuel — Subsidy",            status: "planned" },
         { id: "host-myfuel-topup",       name: "MyFuel — Top-Up",             status: "planned" },
