@@ -227,7 +227,7 @@ function SubsidyProgressCell({ max, used, estUsed, pending, failed, utype }) {
     { label: 'Max quota',      value: `${N(max)} L` },
     { label: 'Confirmed used', value: `${N(used)} L` },
     { label: 'Estimated used', value: `${N(estUsed)} L`, tone: 'amber' },
-    { label: <>Remaining <span className="ml-calc-row-note">(confirmed and estimated)</span></>, value: `${N(max - (used + estUsed))} L`, total: true, tone: 'green' },
+    { label: <>Remaining <span className="ml-calc-row-note">(deducted from estimated)</span></>, value: `${N(max - estUsed)} L`, total: true, tone: 'green' },
   ];
   const trigger = (
     <div className="prog-cell">
@@ -238,10 +238,7 @@ function SubsidyProgressCell({ max, used, estUsed, pending, failed, utype }) {
         </div>
         <span className="prog-num">{N(used)}<span>/{N(max)}</span></span>
       </div>
-      <span className="prog-used">
-        {N(used)} L used <span className="prog-used-sep">·</span>
-        <span className="prog-used-est"><span className="prog-used-dot"></span>Est. {N(estUsed)} L used</span>
-      </span>
+      <span className="prog-used">{N(used)} L used</span>
     </div>
   );
   return <CalcPopover title="Subsidy quota breakdown" rows={rows} trigger={trigger} align="right" />;
