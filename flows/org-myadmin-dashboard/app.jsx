@@ -123,10 +123,6 @@ function FleetSummary({ onFilter }) {
             <div className="ml-statcard-n gray">{f.vehicles.unused}</div>
             <div className="ml-statcard-l">unused</div>
           </div>
-          <div className="ml-statcard-cell">
-            <div className="ml-statcard-n red">{f.vehicles.inactive}</div>
-            <div className="ml-statcard-l">inactive</div>
-          </div>
         </div>
       </div>
 
@@ -426,7 +422,7 @@ function ChecklistEndorsementGrid() {
   return (
     <>
       <div className="mad-activity-grid">
-        {D.checklists.map((r) => <ChecklistCard key={`${r.plate}-${r.checkIn}`} row={r} />)}
+        {D.checklists.map((r) => <ChecklistCard key={`${r.plate}-${r.checkIn}`} row={r} showCheckInOut={false} />)}
       </div>
       <div className="ed-queue-footer"><a className="ml-btn-text-blue" href="#">View all checklist submissions<Icon name="chevron_right" size={16} /></a></div>
     </>
@@ -464,11 +460,6 @@ function CheckInOutGrid() {
                 <div className="od-cl-col-val">{r.odometer}</div>
                 <div className="od-cl-col-sub">{r.latLng}</div>
               </div>
-            </div>
-            <div className="od-cl-divider" />
-            <div className={"od-cl-decision " + (r.status === "active" ? "od-cl-decision-good" : "mad-check-card-decision-neutral")}>
-              <Icon name={r.status === "active" ? "schedule" : "check_circle"} size={16} />
-              {r.status === "active" ? "Awaiting latest trip sync" : "Trip record synced"}
             </div>
           </article>
         ))}

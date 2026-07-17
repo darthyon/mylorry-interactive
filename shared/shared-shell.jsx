@@ -950,12 +950,15 @@ function ConfirmBulkModal({ driver, action, count, onCancel, onConfirm }) {
   );
 }
 
-function ChecklistCard({ row }) {
+function ChecklistCard({ row, showCheckInOut = true }) {
   const [open, setOpen] = React.useState(false);
   const [pending, setPending] = React.useState(null); // null | "endorse" | "reject"
   const [decision, setDecision] = React.useState(row.decision || null); // null | "endorsed" | "rejected"
   const warnCount = row.items.filter((i) => i.status === "warning").length;
   const allGood = warnCount === 0;
+  const VISIBLE_COUNT = 3;
+  const hasMore = row.items.length > VISIBLE_COUNT;
+  const visibleItems = open ? row.items : row.items.slice(0, VISIBLE_COUNT);
   return (
     <article className="od-preview-card od-checklist-card">
       {pending && (
@@ -975,20 +978,24 @@ function ChecklistCard({ row }) {
         </div>
       </div>
       <div className="od-cl-divider" />
-      <div className="od-cl-checkinout">
-        <div className="od-cl-col">
-          <div className="od-cl-col-label"><Icon name="login" size={14} color="var(--green-600)" />Check-in</div>
-          <div className="od-cl-col-val">{row.checkIn}</div>
-          <div className="od-cl-col-sub">Start: {Number(row.startMileage).toLocaleString("en-US")} km</div>
-        </div>
-        <div className="od-cl-col">
-          <div className="od-cl-col-label"><Icon name="logout" size={14} color="var(--red-400)" />Check-out</div>
-          <div className="od-cl-col-val">{row.checkOut}</div>
-          <div className="od-cl-col-sub">End: {Number(row.endMileage).toLocaleString("en-US")} km</div>
-        </div>
-      </div>
-      <div className="od-cl-divider" />
-      <button type="button" className="od-cl-clhead" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+      {showCheckInOut && (
+        <>
+          <div className="od-cl-checkinout">
+            <div className="od-cl-col">
+              <div className="od-cl-col-label"><Icon name="login" size={14} color="var(--green-600)" />Check-in</div>
+              <div className="od-cl-col-val">{row.checkIn}</div>
+              <div className="od-cl-col-sub">Start: {Number(row.startMileage).toLocaleString("en-US")} km</div>
+            </div>
+            <div className="od-cl-col">
+              <div className="od-cl-col-label"><Icon name="logout" size={14} color="var(--red-400)" />Check-out</div>
+              <div className="od-cl-col-val">{row.checkOut}</div>
+              <div className="od-cl-col-sub">End: {Number(row.endMileage).toLocaleString("en-US")} km</div>
+            </div>
+          </div>
+          <div className="od-cl-divider" />
+        </>
+      )}
+      <div className="od-cl-clhead">
         <span className="od-cl-clhead-title">Checklists</span>
         <span className="od-cl-clhead-right">
           {!decision && (
@@ -997,31 +1004,34 @@ function ChecklistCard({ row }) {
             </span>
           )}
           {row.overdue && <span className="ml-badge acct-suspended">Overdue</span>}
-          <Icon name={open ? "expand_less" : "expand_more"} size={18} />
         </span>
-      </button>
-      {open && (
-        <div className="od-cl-items">
-          {row.items.map((it, i) => {
-            const status = decision === "endorsed" ? "passed" : decision === "rejected" ? "rejected" : it.status;
-            return (
-              <div className="od-cl-item" key={i}>
-                <div className="od-cl-item-left">
-                  <Icon name="fact_check" size={20} color="var(--fg-tertiary)" />
-                  <span>{it.label}</span>
-                </div>
-                <div className="od-cl-item-right">
-                  <Icon
-                    name={status === "passed" ? "check_circle" : status === "rejected" ? "cancel" : "error"}
-                    size={19}
-                    color={status === "passed" ? "var(--green-600)" : "var(--red-400)"}
-                  />
-                  <Icon name="chevron_right" size={16} color="var(--fg-tertiary)" />
-                </div>
+      </div>
+      <div className="od-cl-items">
+        {visibleItems.map((it, i) => {
+          const status = decision === "endorsed" ? "passed" : decision === "rejected" ? "rejected" : it.status;
+          return (
+            <div className="od-cl-item" key={i}>
+              <div className="od-cl-item-left">
+                <Icon name="fact_check" size={20} color="var(--fg-tertiary)" />
+                <span>{it.label}</span>
               </div>
-            );
-          })}
-        </div>
+              <div className="od-cl-item-right">
+                <Icon
+                  name={status === "passed" ? "check_circle" : status === "rejected" ? "cancel" : "error"}
+                  size={19}
+                  color={status === "passed" ? "var(--green-600)" : "var(--red-400)"}
+                />
+                <Icon name="chevron_right" size={16} color="var(--fg-tertiary)" />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {hasMore && (
+        <button type="button" className="od-cl-more" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+          {open ? "Show less" : `View ${row.items.length - VISIBLE_COUNT} more`}
+          <Icon name={open ? "expand_less" : "expand_more"} size={17} />
+        </button>
       )}
       {decision ? (
         <div className={"od-cl-decision " + (decision === "endorsed" ? "od-cl-decision-good" : "od-cl-decision-bad")}>
