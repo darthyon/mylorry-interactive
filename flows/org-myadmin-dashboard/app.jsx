@@ -434,7 +434,7 @@ function CheckInOutGrid() {
     <>
       <div className="mad-activity-grid mad-activity-grid--compact">
         {D.checkInOut.map((r) => (
-          <article key={`${r.vehicle}-${r.time}`} className="od-preview-card od-checklist-card mad-check-card">
+          <article key={`${r.vehicle}-${r.driver}`} className="od-preview-card od-checklist-card mad-check-card">
             <div className="od-cl-header">
               <img className="od-cl-avatar" src={`https://i.pravatar.cc/64?u=${encodeURIComponent(r.vehicle)}`} alt={r.driver} />
               <div className="od-cl-meta">
@@ -445,20 +445,25 @@ function CheckInOutGrid() {
             <div className="od-cl-divider" />
             <div className="od-cl-checkinout mad-check-card-body">
               <div className="od-cl-col">
-                <div className="od-cl-col-label">
-                  <Icon name={r.event === "check_in" ? "login" : "logout"} size={14} color={r.event === "check_in" ? "var(--green-600)" : "var(--red-400)"} />
-                  {r.event === "check_in" ? "Check-in" : "Check-out"}
-                </div>
-                <div className="od-cl-col-val">{r.time}</div>
-                <div className="od-cl-col-sub">{r.location}</div>
+                <div className="od-cl-col-label"><Icon name="login" size={14} color="var(--green-600)" />Check-in</div>
+                <div className="od-cl-col-val">{r.checkIn.time}</div>
+                <div className="od-cl-col-sub">{r.checkIn.location}</div>
+                <div className="od-cl-col-sub">{r.checkIn.odometer}</div>
               </div>
               <div className="od-cl-col">
-                <div className="od-cl-col-label">
-                  <Icon name="pin_drop" size={14} color="var(--fg-tertiary)" />
-                  Mileage
-                </div>
-                <div className="od-cl-col-val">{r.odometer}</div>
-                <div className="od-cl-col-sub">{r.latLng}</div>
+                <div className="od-cl-col-label"><Icon name="logout" size={14} color="var(--red-400)" />Check-out</div>
+                {r.checkOut ? (
+                  <>
+                    <div className="od-cl-col-val">{r.checkOut.time}</div>
+                    <div className="od-cl-col-sub">{r.checkOut.location}</div>
+                    <div className="od-cl-col-sub">{r.checkOut.odometer}</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="od-cl-col-val od-cl-col-pending">—</div>
+                    <div className="od-cl-col-sub">Not yet checked out</div>
+                  </>
+                )}
               </div>
             </div>
           </article>

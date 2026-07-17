@@ -95,10 +95,28 @@ window.MYADMIN_DASH = {
     },
   ],
 
+  // checkInOut: one card per trip, pairing check-in with check-out.
+  // checkOut is null for trips still in progress (checked in, not out yet).
   checkInOut: [
-    { vehicle: "STG0234", driver: "Ahmad Razali",  event: "check_in",  time: "9 Jun, 7:48 AM", odometer: "82,130 km",  status: "active",    location: "PJ Hub Sentral",       latLng: "3.1073° N, 101.6067° E" },
-    { vehicle: "WQM1190", driver: "Mohd Fadzli",   event: "check_out", time: "9 Jun, 6:12 AM", odometer: "71,904 km",  status: "completed", location: "Shah Alam Depot",       latLng: "3.0733° N, 101.5185° E" },
-    { vehicle: "JKM4521", driver: "Zainal Abidin", event: "check_in",  time: "8 Jun, 5:44 PM",  odometer: "64,020 km",  status: "active",    location: "Port Klang Yard",       latLng: "2.9997° N, 101.3925° E" },
-    { vehicle: "BCA8831", driver: "Kamal Hassan",  event: "check_out", time: "8 Jun, 3:45 PM",  odometer: "55,488 km",  status: "completed", location: "KLIA Cargo Terminal",   latLng: "2.7456° N, 101.7099° E" },
+    {
+      vehicle: "STG0234", driver: "Ahmad Razali", status: "active",
+      checkIn: { time: "9 Jun, 7:48 AM", location: "PJ Hub Sentral", odometer: "82,130 km" },
+      checkOut: null,
+    },
+    {
+      vehicle: "WQM1190", driver: "Mohd Fadzli", status: "completed",
+      checkIn: { time: "9 Jun, 5:40 AM", location: "Shah Alam Depot", odometer: "71,860 km" },
+      checkOut: { time: "9 Jun, 6:12 AM", location: "Shah Alam Depot", odometer: "71,904 km" },
+    },
+    {
+      vehicle: "JKM4521", driver: "Zainal Abidin", status: "active",
+      checkIn: { time: "8 Jun, 5:44 PM", location: "Port Klang Yard", odometer: "64,020 km" },
+      checkOut: null,
+    },
+    {
+      vehicle: "BCA8831", driver: "Kamal Hassan", status: "completed",
+      checkIn: { time: "8 Jun, 3:10 PM", location: "KLIA Cargo Terminal", odometer: "55,420 km" },
+      checkOut: { time: "8 Jun, 3:45 PM", location: "KLIA Cargo Terminal", odometer: "55,488 km" },
+    },
   ],
 };
