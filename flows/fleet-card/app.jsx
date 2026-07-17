@@ -1,4 +1,5 @@
 const { useState, useEffect, useRef, useCallback } = React;
+const { CalcPopover } = window.SharedShell;
 
 /* ── Icon helper ───────────────────────────────────────────────── */
 function Icon({ name, size = 20, fill = 0, style }) {
@@ -12,25 +13,37 @@ function Icon({ name, size = 20, fill = 0, style }) {
 }
 
 /* ── Data ──────────────────────────────────────────────────────── */
+const FUEL_SETS = {
+  all:      ['95','97','100','diesel-max','diesel'],
+  diesel:   ['diesel-max','diesel'],
+  petrol:   ['95','97','100'],
+  standard: ['95','diesel'],
+};
 const ROWS = [
-  { id:1,  owner:'Tesla',      acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, mr:1600,  mm:15000, mu:320, sr:300, sm:900,   su:320, st:'Active'   },
-  { id:2,  owner:'Wayne Ent.', acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, mr:1600,  mm:15000, mu:320, sr:300, sm:900,   su:320, st:'Active'   },
-  { id:3,  owner:'Cyberdyne',  acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, mr:1600,  mm:15000, mu:320, sr:null, sm:null, su:null, st:'Active'   },
-  { id:4,  owner:'Globex',     acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, mr:1600,  mm:15000, mu:320, sr:300, sm:900,   su:320, st:'Active'   },
-  { id:5,  owner:'Oscorp',     acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, mr:1600,  mm:15000, mu:320, sr:300, sm:900,   su:320, st:'Active'   },
-  { id:6,  owner:'Acme Corp',  acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:501, dm:501,   du:0,   mr:20001, mm:20001, mu:0,   sr:300, sm:900,   su:320, st:'Active'   },
-  { id:7,  owner:'LexCorp',    acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:500, dm:500,   du:0,   mr:1600,  mm:15000, mu:320, sr:300, sm:900,   su:320, st:'Inactive' },
-  { id:8,  owner:'Initech',    acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:500, dm:500,   du:0,   mr:1600,  mm:15000, mu:320, sr:300, sm:900,   su:320, st:'Inactive' },
-  { id:9,  owner:'Stark Ind.', acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, mr:1600,  mm:15000, mu:320, sr:300, sm:900,   su:320, st:'Active'   },
-  { id:10, owner:'Umbrella',   acc:'ORG59-SPA-MEMBER', card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, mr:1600,  mm:15000, mu:320, sr:300, sm:900,   su:320, st:'Active'   },
+  { id:1,  owner:'Tesla',      org:'Org 15', acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:180, dm:500,   du:320, dL:12.5, mr:6640,  mm:15000, mu:8360, mL:326.6, sm:900,     su:320,     sEst:365.4,   st:'Active',   fuels: FUEL_SETS.all },
+  { id:2,  owner:'Wayne Ent.', org:'Org 3',  acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:255, dm:500,   du:245, dL:9.6,  mr:8520,  mm:15000, mu:6480, mL:253.1, sm:900,     su:320,     sEst:320,     st:'Active',   fuels: FUEL_SETS.diesel },
+  { id:3,  owner:'Cyberdyne',  org:'Org 22', acc:'ORG59-SPA-MEMBER', bal:-158.40, card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:90,  dm:500,   du:410, dL:16.0, mr:4250,  mm:15000, mu:10750, mL:419.9, sm:null,    su:null,    sEst:null,    st:'Active',   fuels: FUEL_SETS.petrol },
+  { id:4,  owner:'Globex',     org:'Org 8',  acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:350, dm:500,   du:150, dL:5.9,  mr:10800, mm:15000, mu:4200, mL:164.1, sm:900,     su:320,     sEst:410.8,   st:'Active',   fuels: FUEL_SETS.all },
+  { id:5,  owner:'Oscorp',     org:'Org 15', acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:205, dm:500,   du:295, dL:11.5, mr:7100,  mm:15000, mu:7900, mL:308.6, sm:900,     su:320,     sEst:320,     st:'Active',   fuels: FUEL_SETS.standard },
+  { id:6,  owner:'Acme Corp',  org:'Org 41', acc:'ORG59-SPA-MEMBER', bal:0,       card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:501, dm:501,   du:0,   dL:0,    mr:20001, mm:20001, mu:0,   mL:0,    sm:5000,    su:3120.5,   sEst:3480.75,   st:'Active', fuels: FUEL_SETS.all },
+  { id:7,  owner:'LexCorp',    org:'Org 6',  acc:'ORG59-SPA-MEMBER', bal:-258.58, card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:500, dm:500,   du:0,   dL:0,    mr:8900,  mm:15000, mu:6100, mL:238.3, sm:900,     su:320,     sEst:320,     st:'Inactive', fuels: FUEL_SETS.diesel },
+  { id:8,  owner:'Initech',    org:'Org 6',  acc:'ORG59-SPA-MEMBER', bal:-258.58, card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:500, dm:500,   du:0,   dL:0,    mr:11050, mm:15000, mu:3950, mL:154.3, sm:900,     su:320,     sEst:320,     st:'Inactive', fuels: FUEL_SETS.petrol },
+  { id:9,  owner:'Stark Ind.', org:'Org 19', acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:160, dm:500,   du:340, dL:13.3, mr:5800,  mm:15000, mu:9200, mL:359.4, sm:900,     su:320,     sEst:320,     st:'Active',   fuels: FUEL_SETS.all },
+  { id:10, owner:'Umbrella',   org:'Org 15', acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:240, dm:500,   du:260, dL:10.2, mr:7850,  mm:15000, mu:7150, mL:279.3, sm:900,     su:320,     sEst:320,     st:'Active',   fuels: FUEL_SETS.standard },
 ];
-const N = n => n.toLocaleString();
+const N  = n => n.toLocaleString();
+const NRM = n => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /* ── TopBar ────────────────────────────────────────────────────── */
-function TopBar() {
+function TopBar({ onMenuClick }) {
   return (
     <header className="topbar">
-      <img src="img_logo_white.svg" height="27" alt="MyLorry" style={{display:'block', marginLeft:88}} />
+      <button type="button" className="topbar-hamburger" onClick={onMenuClick} aria-label="Open menu">
+        <Icon name="menu" size={22} style={{color:'#fff'}} />
+      </button>
+      <a href="../../index.html" title="Back to prototype library" className="topbar-logo-link">
+        <img src="img_logo_white.svg" height="27" alt="MyLorry" style={{display:'block'}} />
+      </a>
     </header>
   );
 }
@@ -38,8 +51,8 @@ function TopBar() {
 /* ── Sidebar ───────────────────────────────────────────────────── */
 const MYFUEL_SUBS = [
   {icon:'grid_view',          label:'Dashboard'},
-  {icon:'credit_card',        label:'Fleet Card'},
-  {icon:'receipt_long',       label:'Transaction'},
+  {icon:'credit_card',        label:'Fleet Card',  href:'../fleet-card/index.html'},
+  {icon:'receipt_long',       label:'Transaction', href:'../host-myfuel-transaction/index.html'},
   {icon:'redeem',             label:'Rebate'},
   {icon:'volunteer_activism', label:'Subsidy'},
   {icon:'bar_chart',          label:'Usage History'},
@@ -50,10 +63,24 @@ const MYFUEL_SUBS = [
   {icon:'analytics',          label:'Usage Report'},
 ];
 
-function Sidebar() {
+function Sidebar({ mobileOpen, onClose }) {
+  const cardRef = useRef(null);
+
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
+    function onKey(e) { if (e.key === 'Escape') onClose(); }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [mobileOpen, onClose]);
+
   return (
-    <nav className="sidebar">
-      <div className="sb-card">
+    <>
+      {mobileOpen && <div className="sb-backdrop" onClick={onClose} role="presentation"></div>}
+      <nav className={`sidebar${mobileOpen ? ' sb-open' : ''}`}>
+      <div className="sb-card" ref={cardRef}>
+        <button type="button" className="sb-mobile-close" onClick={onClose} aria-label="Close menu">
+          <Icon name="close" size={18} />
+        </button>
         {/* Avatar + host badge */}
         <div className="sb-ava-wrap">
           <div className="sb-ava"><Icon name="person" size={18} style={{color:'rgb(148,168,178)'}} /></div>
@@ -94,12 +121,13 @@ function Sidebar() {
 
         {/* MyFuel sub-items */}
         <div className="sb-sub-panel">
-          {MYFUEL_SUBS.map(({icon, label}) => (
-            <div key={label} className={`sb-sub${label === 'Fleet Card' ? ' sb-sub-act' : ''}`}>
-              <Icon name={icon} size={18} />
-              <span>{label}</span>
-            </div>
-          ))}
+          {MYFUEL_SUBS.map(({icon, label, href}) => {
+            const cls = `sb-sub${label === 'Fleet Card' ? ' sb-sub-act' : ''}`;
+            const content = <><Icon name={icon} size={18} /><span>{label}</span></>;
+            return href
+              ? <a key={label} className={cls} href={href}>{content}</a>
+              : <div key={label} className={cls}>{content}</div>;
+          })}
         </div>
 
         {/* MyAdmin */}
@@ -125,12 +153,13 @@ function Sidebar() {
       <div className="sb-btn-col">
         <Icon name="chevron_right" size={14} />
       </div>
-    </nav>
+      </nav>
+    </>
   );
 }
 
 /* ── Progress Cell ─────────────────────────────────────────────── */
-function ProgressCell({ rem, max, used, status, pending, failed, utype }) {
+function ProgressCell({ rem, max, used, liters, unit = 'RM', status, pending, failed, utype }) {
   if (utype === 'limit' && failed) {
     return <span className="fail-lbl">Update failed</span>;
   }
@@ -147,17 +176,72 @@ function ProgressCell({ rem, max, used, status, pending, failed, utype }) {
   }
   const pct = Math.min(100, (rem / max) * 100);
   const isRed = status === 'Inactive';
-  return (
+  const rows = [
+    { label: 'Limit',     value: `RM ${NRM(max)}` },
+    { label: 'Used',      value: `RM ${NRM(used)}` },
+    { label: 'Remaining', value: `RM ${NRM(rem)}`, total: true, tone: 'green' },
+  ];
+  if (liters != null) rows.splice(2, 0, { label: 'Fuel volume', value: `${N(Math.round(liters))} L` });
+  const trigger = (
     <div className="prog-cell">
       <div className="prog-row">
         <div className="prog-track">
           <div className={`prog-fill ${isRed ? 'pf-r' : 'pf-g'}`} style={{width: pct + '%'}}></div>
         </div>
-        <span className="prog-num">{N(rem)}<span>/{N(max)}</span></span>
+        <span className="prog-num">{unit === 'RM' ? NRM(rem) : N(rem)}<span>/{unit === 'RM' ? NRM(max) : N(max)}</span></span>
       </div>
-      <span className="prog-used">{N(used)} Used</span>
+      <span className="prog-used">
+        {unit === 'RM' ? `RM ${NRM(used)}` : `${N(used)} L used`}{liters != null && ` · ${N(Math.round(liters))} L used`}
+      </span>
     </div>
   );
+  return <CalcPopover title="Usage breakdown" rows={rows} trigger={trigger} />;
+}
+
+/* ── Subsidy Quota Cell ────────────────────────────────────────── */
+// Confirmed usage settles hours after the trip; the live number shown to
+// the fleet is an estimate until then. Bar shows confirmed (solid) with
+// the estimate extending past it (lighter) so a settlement bump is visible
+// before it happens, instead of the number just jumping later.
+function SubsidyProgressCell({ max, used, estUsed, pending, failed, utype }) {
+  if (utype === 'limit' && failed) {
+    return <span className="fail-lbl">Update failed</span>;
+  }
+  if (utype === 'limit' && pending) {
+    return (
+      <div className="pend-cell">
+        <div className="skel skel-w"></div>
+        <span className="pend-lbl">Pending update</span>
+      </div>
+    );
+  }
+  if (max == null) {
+    return <span className="na-lbl">N/A</span>;
+  }
+  max = Math.round(max);
+  used = Math.round(used);
+  estUsed = Math.round(estUsed);
+  const usedPct = Math.min(100, (used / max) * 100);
+  const estPct  = Math.min(100, (estUsed / max) * 100);
+  const rows = [
+    { label: 'Max quota',      value: `${N(max)} L` },
+    { label: 'Confirmed used', value: `${N(used)} L` },
+    { label: 'Estimated used', value: `${N(estUsed)} L`, tone: 'amber' },
+    { label: <>Remaining <span className="ml-calc-row-note">(deducted from estimated)</span></>, value: `${N(max - estUsed)} L`, total: true, tone: 'green' },
+  ];
+  const trigger = (
+    <div className="prog-cell">
+      <div className="prog-row">
+        <div className="prog-track">
+          <div className="prog-fill prog-fill-est" style={{width: estPct + '%'}}></div>
+          <div className="prog-fill pf-g" style={{width: usedPct + '%'}}></div>
+        </div>
+        <span className="prog-num">{N(used)}<span>/{N(max)}</span></span>
+      </div>
+      <span className="prog-used">{N(used)} L used</span>
+    </div>
+  );
+  return <CalcPopover title="Subsidy quota breakdown" rows={rows} trigger={trigger} align="right" />;
 }
 
 /* ── Status Cell ───────────────────────────────────────────────── */
@@ -165,6 +249,81 @@ function StatusCell({ status, pending, failed, utype }) {
   if (utype === 'status' && failed)  return <span className="fail-status">Update failed</span>;
   if (utype === 'status' && pending) return <span className="pill pill-p">Pending update</span>;
   return <span className={`pill ${status === 'Active' ? 'pill-a' : 'pill-i'}`}>{status}</span>;
+}
+
+/* ── Mobile Card ───────────────────────────────────────────────── */
+const FUEL_LABELS = {
+  '95': { top: '95', bottom: 'RON' },
+  '97': { top: '97', bottom: 'RON' },
+  '100': { top: '100', bottom: 'RON' },
+  'diesel-max': { top: 'DIESEL', bottom: 'MAX', wide: true },
+  'diesel': { top: 'DIESEL', bottom: null, wide: true },
+};
+function FleetCardMobile({ row, pending, failed, utype }) {
+  return (
+    <article className="fc-card">
+      <div className="fc-card-top">
+        <div className="fc-card-head">
+          <img src="petron.png" className="fc-card-logo" alt="Petron" />
+          <StatusCell status={row.st} pending={pending} failed={failed} utype={utype} />
+          <button className="btn-3dot"><Icon name="more_horiz" size={17} /></button>
+        </div>
+        <div className="fc-card-wave-wrap">
+          {/* Exact wave asset from Figma (MyLorry 2.0, node 2873:7025) */}
+          <svg className="fc-card-wave" preserveAspectRatio="none" viewBox="0 0 366 66" fill="none">
+            <path d="M366 66C231.677 10.6745 66.0322 7.00976 0 12.0931V3.58154C150.229 -11.1719 306.596 23.2055 366 42.2385V66Z" fill={`url(#fcWaveGrad${row.id})`} />
+            <defs>
+              <linearGradient id={`fcWaveGrad${row.id}`} x1="0" y1="33" x2="366" y2="33" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#273573" />
+                <stop offset="0.495" stopColor="#3555A5" />
+                <stop offset="0.97" stopColor="#283877" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div className="fc-card-numwrap">
+          <div className="card-num fc-card-num">{row.card}</div>
+          <div className="fc-card-tags">
+            <span className="fc-card-veh">{row.veh}</span>
+            <span className="fc-card-pin">Pin: {row.pin}</span>
+          </div>
+        </div>
+      </div>
+      <div className="fc-card-div"></div>
+      <div className="fc-card-limits">
+        <div>
+          <div className="fc-card-label">Daily Limit:</div>
+          <ProgressCell rem={row.dr} max={row.dm} used={row.du} liters={row.dL} status={row.st} pending={pending} failed={failed} utype={utype} />
+        </div>
+        <div>
+          <div className="fc-card-label">Monthly Limit:</div>
+          <ProgressCell rem={row.mr} max={row.mm} used={row.mu} liters={row.mL} status={row.st} pending={pending} failed={failed} utype={utype} />
+        </div>
+        <div>
+          <div className="fc-card-label">Subsidy Quota (Ltr):</div>
+          <SubsidyProgressCell max={row.sm} used={row.su} estUsed={row.sEst} pending={pending} failed={failed} utype={utype} />
+        </div>
+      </div>
+      <div className="fc-card-div"></div>
+      <div className="fc-card-foot">
+        <span className="fc-card-org">{row.org}</span>
+        <span className={`fc-card-bal${row.bal < 0 ? ' fc-card-bal-neg' : ''}`}>
+          Balance: RM {row.bal < 0 ? '-' : ''}{Math.abs(row.bal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </span>
+      </div>
+      <div className="fc-card-fuels">
+        {row.fuels.map(f => {
+          const meta = FUEL_LABELS[f];
+          return (
+            <div key={f} className={`fc-fuel${meta.wide ? ' fc-fuel-wide' : ''}`}>
+              <span className="fc-fuel-top">{meta.top}</span>
+              {meta.bottom && <span className="fc-fuel-bottom">{meta.bottom}</span>}
+            </div>
+          );
+        })}
+      </div>
+    </article>
+  );
 }
 
 /* ── Status Strip ──────────────────────────────────────────────── */
@@ -285,6 +444,7 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 /* ── App ───────────────────────────────────────────────────────── */
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [sel, setSel]         = useState(new Set([3,4,5]));
   const [modal, setModal]     = useState(null);   // 'status' | 'limit'
   const [strip, setStrip]     = useState(null);   // 'updating'|'queued'|'delayed'|'success'|'partial'|'failure'
@@ -365,8 +525,8 @@ function App() {
 
   return (
     <div className="shell">
-      <TopBar />
-      <Sidebar />
+      <TopBar onMenuClick={() => setMobileNavOpen(true)} />
+      <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
 
       <main className="content" data-screen-label="Fleet Card">
         <div className="inner">
@@ -428,8 +588,8 @@ function App() {
             />
           )}
 
-          {/* Table */}
-          <div className="tbl-wrap">
+          {/* Table (desktop) */}
+          <div className="tbl-wrap fc-desktop-only">
             <table className="tbl">
               <thead>
                 <tr>
@@ -447,9 +607,9 @@ function App() {
                   <th>Card No.</th>
                   <th>Vehicle No.</th>
                   <th>Tag</th>
-                  <th style={{minWidth:155}}>Daily Limit</th>
-                  <th style={{minWidth:180}}>Monthly Limit</th>
-                  <th style={{minWidth:155}}>Subsidy Quota</th>
+                  <th style={{minWidth:190}}>Daily Limit (RM)</th>
+                  <th style={{minWidth:190}}>Monthly Limit (RM)</th>
+                  <th style={{minWidth:190}}>Subsidy Quota (Ltr)</th>
                   <th style={{minWidth:120}}>Status</th>
                   <th className="c-act"></th>
                 </tr>
@@ -471,7 +631,12 @@ function App() {
                           <div className="prov-icon">
                             <img src="petron.png" width="20" height="24" style={{objectFit:'contain',display:'block'}} alt="Petron" />
                           </div>
-                          <span style={{fontSize:12}}>{row.acc}</span>
+                          <div>
+                            <div style={{fontSize:12}}>{row.acc}</div>
+                            <div className={`prov-bal${row.bal < 0 ? ' prov-bal-neg' : ''}`}>
+                              RM {row.bal < 0 ? '-' : ''}{Math.abs(row.bal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td>
@@ -482,20 +647,20 @@ function App() {
                       <td>{row.tag}</td>
                       <td>
                         <ProgressCell
-                          rem={row.dr} max={row.dm} used={row.du}
+                          rem={row.dr} max={row.dm} used={row.du} liters={row.dL}
                           status={row.st} pending={isPend} failed={isFail} utype={utype}
                         />
                       </td>
                       <td>
                         <ProgressCell
-                          rem={row.mr} max={row.mm} used={row.mu}
+                          rem={row.mr} max={row.mm} used={row.mu} liters={row.mL}
                           status={row.st} pending={isPend} failed={isFail} utype={utype}
                         />
                       </td>
                       <td>
-                        <ProgressCell
-                          rem={row.sr} max={row.sm} used={row.su}
-                          status={undefined} pending={isPend} failed={isFail} utype={utype}
+                        <SubsidyProgressCell
+                          max={row.sm} used={row.su} estUsed={row.sEst}
+                          pending={isPend} failed={isFail} utype={utype}
                         />
                       </td>
                       <td>
@@ -509,6 +674,20 @@ function App() {
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Cards (mobile) */}
+          <div className="fc-mobile-list">
+            {ROWS.map(row => {
+              const isPend = pending.has(row.id);
+              const isFail = failed.has(row.id);
+              return (
+                <FleetCardMobile
+                  key={row.id} row={row}
+                  pending={isPend} failed={isFail} utype={utype}
+                />
+              );
+            })}
           </div>
 
           {/* Pagination */}
