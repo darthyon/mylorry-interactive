@@ -31,7 +31,9 @@ const N = n => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFr
 function TopBar() {
   return (
     <header className="topbar">
-      <img src="img_logo_white.svg" height="27" alt="MyLorry" style={{display:'block', marginLeft:88}} />
+      <a href="../../index.html" title="Back to prototype library" style={{display:'block', marginLeft:88}}>
+        <img src="img_logo_white.svg" height="27" alt="MyLorry" style={{display:'block'}} />
+      </a>
     </header>
   );
 }
@@ -39,8 +41,8 @@ function TopBar() {
 /* ── Sidebar ───────────────────────────────────────────────────── */
 const MYFUEL_SUBS = [
   {icon:'grid_view',          label:'Dashboard'},
-  {icon:'credit_card',        label:'Fleet Card'},
-  {icon:'receipt_long',       label:'Transaction'},
+  {icon:'credit_card',        label:'Fleet Card',  href:'../fleet-card/index.html'},
+  {icon:'receipt_long',       label:'Transaction', href:'../host-myfuel-transaction/index.html'},
   {icon:'redeem',             label:'Rebate'},
   {icon:'volunteer_activism', label:'Subsidy'},
   {icon:'bar_chart',          label:'Usage History'},
@@ -95,12 +97,13 @@ function Sidebar() {
 
         {/* MyFuel sub-items */}
         <div className="sb-sub-panel">
-          {MYFUEL_SUBS.map(({icon, label}) => (
-            <div key={label} className={`sb-sub${label === 'Transaction' ? ' sb-sub-act' : ''}`}>
-              <Icon name={icon} size={18} />
-              <span>{label}</span>
-            </div>
-          ))}
+          {MYFUEL_SUBS.map(({icon, label, href}) => {
+            const cls = `sb-sub${label === 'Transaction' ? ' sb-sub-act' : ''}`;
+            const content = <><Icon name={icon} size={18} /><span>{label}</span></>;
+            return href
+              ? <a key={label} className={cls} href={href}>{content}</a>
+              : <div key={label} className={cls}>{content}</div>;
+          })}
         </div>
 
         {/* MyAdmin */}
