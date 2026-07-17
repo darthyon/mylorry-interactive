@@ -1,7 +1,7 @@
 {
 
 const { useEffect, useMemo, useRef, useState } = React;
-const { Icon, OrgSwitcher: BaseOrgSwitcher, SelectMenu, Pager, HacModal, HacFileUpload, StatusBadge } = window.SharedShell;
+const { Icon, OrgSwitcher: BaseOrgSwitcher, SelectMenu, Pager, HacModal, HacFileUpload, StatusBadge, MobileListCard, ReminderSummary } = window.SharedShell;
 const { useTweaks, TweaksPanel, TweakSection, TweakSelect, TweakToggle } = window;
 const D = window.ORG_VEHICLE_LIST;
 
@@ -203,12 +203,6 @@ function formatReminderList(reminders = []) {
   return values.length ? values.map((value) => `${value} days before expiry date`).join(", ") : "—";
 }
 
-function ReminderBadges({ reminders = [] }) {
-  const values = reminders.map(Number).filter((value) => Number.isFinite(value) && value > 0);
-  if (!values.length) return "—";
-  return <div className="ovl-reminder-badges">{values.map((value, index) => <span className="ovl-reminder-badge" key={`${value}-${index}`}>{value} days</span>)}</div>;
-}
-
 function reminderLimitForTier(tier) { return REMINDER_LIMITS[tier] || Infinity; }
 function remindersForTier(reminders = [], tier) {
   const limit = reminderLimitForTier(tier);
@@ -365,13 +359,17 @@ function applyFilters(rows, filters) {
   });
 }
 
-function ManagedIcon({ managed }) {
-  if (!managed) return <span className="ovl-managed blank" aria-hidden="true" />;
-  return (
+function ManagedIcon({ managed, label }) {
+  if (!managed) {
+    if (!label) return <span className="ovl-managed blank" aria-hidden="true" />;
+    return <span className="ovl-managed-label unmanaged"><Icon name="radio_button_unchecked" size={16} color="var(--fg-tertiary)" />Unmanaged</span>;
+  }
+  if (!label) return (
     <span className="ovl-managed" title="Managed vehicle">
       <Icon name="check_circle" size={18} fill={1} color="var(--green-600)" />
     </span>
   );
+  return <span className="ovl-managed-label"><Icon name="check_circle" size={16} fill={1} color="var(--green-600)" />Managed</span>;
 }
 
 function ExpiryCell({ iso }) {
@@ -488,7 +486,7 @@ function VehicleDueDates({
                     <td><div className="ovl-due-type-cell"><span>{doc.type}</span>{doc.type === "Others" && doc.title && <span>{doc.title}</span>}</div></td>
                     <td>{fmtDate(doc.startDate)}</td>
                     <td><ExpiryCell iso={doc.expireDate} /></td>
-                    <td><ReminderBadges reminders={doc.reminders} /></td>
+                    <td><ReminderSummary reminders={doc.reminders} /></td>
                     <td>{renderDueMenu(vehicle, doc, rowId)}</td>
                   </tr>
                 );
@@ -499,15 +497,26 @@ function VehicleDueDates({
         <div className="ovl-mobile-list">
           {pageData.map(({ vehicle, doc }) => {
             const rowId = `mobile-${vehicle.id}-${doc.id}`;
+            const tone = documentTone(doc.expireDate);
             return (
-              <div key={`${vehicle.id}-${doc.id}`} className="ovl-mobile-card">
-                <div className="ovl-mobile-head">
-                  <div className="ovl-vehicle-cell"><VehicleThumb inUse={vehicle.activeCheckIn} /><div className="ovl-vehicle-main"><div className="ovl-vehicle-plate">{vehicle.plate}</div><div className="ovl-due-sub">{vehicleDocumentTitle(doc)}</div></div></div>
-                  <div className="ovl-mobile-head-actions">{vehicleDocumentStatus(doc)}{renderDueMenu(vehicle, doc, rowId)}</div>
+              <MobileListCard key={`${vehicle.id}-${doc.id}`}
+                leading={<VehicleThumb inUse={vehicle.activeCheckIn} />}
+                title={vehicle.plate}
+                subtitle={<span className="ml-plain-subtitle">{vehicleDocumentTitle(doc)}</span>}
+                status={vehicleDocumentStatus(doc)}
+                menu={renderDueMenu(vehicle, doc, rowId)}
+              >
+                <div className="ml-due-fields">
+                  <div className="ml-due-grid">
+                    <div className="ml-due-item"><span>Issued date</span><strong>{fmtDate(doc.startDate)}</strong></div>
+                    <div className="ml-due-item align-right"><span>Expiry date</span><strong>{fmtDate(doc.expireDate)}</strong></div>
+                  </div>
+                  <div className="ml-due-grid">
+                    <div className="ml-due-item"><span>Time left</span><strong className={`ml-due-value ${tone}`}>{expiryMeta(doc.expireDate)}</strong></div>
+                    <div className="ml-due-item align-right"><span>Reminders</span><strong><ReminderSummary reminders={doc.reminders} /></strong></div>
+                  </div>
                 </div>
-                <div className="ovl-mobile-urgent"><ExpiryCell iso={doc.expireDate} /></div>
-                <div className="ovl-mobile-meta"><span className="ovl-mobile-chip">{doc.type}</span>{vehicle.vendor && <span className="ovl-mobile-chip">{vehicle.vendor}</span>}<ReminderBadges reminders={doc.reminders} /></div>
-              </div>
+              </MobileListCard>
             );
           })}
           {!rows.length && <div className="ovl-mobile-card"><div className="ovl-empty-table">No vehicle due dates match the current filters.</div></div>}
@@ -602,6 +611,23 @@ function ExpandableVehicleDriversRow({ vehicle }) {
       )}
     </div>
   );
+}
+
+function AssignedDriversModal({ vehicle, onClose }) {
+  const [query, setQuery] = useState("");
+  const drivers = vehicle.drivers.filter((driver) => `${driver.name} ${driver.driverId}`.toLowerCase().includes(query.trim().toLowerCase()));
+  return <HacModal title="Assigned drivers" onClose={onClose} footer={<button className="hac-modal-cancel" type="button" onClick={onClose}>Close</button>}>
+    <div className="ovl-driver-modal-search">
+      <Icon name="search" size={17} color="var(--fg-tertiary)" />
+      <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search drivers" aria-label="Search assigned drivers" />
+    </div>
+    <div className="ovl-driver-modal-list">
+      {!drivers.length ? <div className="ovl-driver-modal-empty">{vehicle.drivers.length ? "No drivers match your search." : "No drivers assigned."}</div> : drivers.map((driver) => <div className="ovl-driver-modal-row" key={driver.driverId}>
+        <div className="ovl-driver-avatar">{initials(driver.name)}</div>
+        <div className="ovl-driver-main"><div className="ovl-driver-name">{driver.name}</div><div className="ovl-driver-meta">{driver.driverId}</div></div>
+      </div>)}
+    </div>
+  </HacModal>;
 }
 
 function DriverListPanel({ vehicle, onToggleAccessibleToAll, onOpenPicker, onRemoveDriver }) {
@@ -1079,15 +1105,6 @@ function VehicleDocumentMenu({ onEdit, onDelete }) {
   return <div className="ovl-doc-menu"><button type="button" aria-label="Document actions" aria-expanded={open} onClick={() => setOpen((value) => !value)}><Icon name="more_horiz" size={19} /></button>{open && <div className="ovl-doc-menu-pop"><button type="button" onClick={() => { setOpen(false); onEdit(); }}><Icon name="edit" size={15} />Edit</button><button className="danger" type="button" onClick={() => { setOpen(false); onDelete(); }}><Icon name="delete" size={15} />Delete</button></div>}</div>;
 }
 
-function VehicleReminderSummary({ reminders = [] }) {
-  const values = reminders.map(Number).filter((value) => Number.isFinite(value) && value > 0);
-  const [open, setOpen] = useState(false);
-  if (!values.length) return "—";
-  const nearest = Math.min(...values);
-  if (values.length === 1) return `${nearest} days before`;
-  return <>{nearest} days before <span className="ovl-reminder-summary"><button className="ovl-reminder-trigger" type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)}>+{values.length - 1} more<Icon name="expand_more" size={14} /></button>{open && <span className="ovl-reminder-pop" role="dialog" aria-label="Reminder schedule"><span className="ovl-reminder-pop-title">Reminder schedule</span>{values.map((value, index) => <span className="ovl-reminder-pop-row" key={`${value}-${index}`}><span>Reminder {index + 1}</span><span>{value} days before expiry date</span></span>)}</span>}</span></>;
-}
-
 function VehicleDocumentDescription({ description }) {
   const [expanded, setExpanded] = useState(false);
   const text = description || "No description";
@@ -1162,7 +1179,7 @@ function VehicleDocumentCard({ doc, editable, tier, onEdit, onDelete, onPreview 
     setHistoryLimit(5);
     setHistoryModal(true);
   }
-  return <article className="ovl-doc-row"><div className="ovl-doc-top"><div className="ovl-doc-type-wrap"><div className="ovl-doc-type">{isOther ? (doc.title || "Others") : doc.type}</div></div><div className="ovl-doc-top-spacer" />{doc.files?.[0]?.uploadedDate && <div className="ovl-doc-upload-info">Updated {doc.files[0].uploadedDate}</div>}{editable && <VehicleDocumentMenu onEdit={onEdit} onDelete={onDelete} />}</div><div className="ovl-doc-meta-row"><div className="ovl-doc-meta"><span>Issued date</span><span>{fmtDate(doc.startDate)}</span></div><div className="ovl-doc-meta"><span>Expiry date</span><span>{fmtDate(doc.expireDate)}</span></div><div className="ovl-doc-meta"><span>Time left</span><span className={`ovl-time-left ${expiryTone(doc.expireDate)}`}>{expiryMeta(doc.expireDate)}</span></div><div className="ovl-doc-meta"><span>Reminders</span><span>{doc.expireDate ? <VehicleReminderSummary reminders={visibleReminders} /> : "—"}</span></div></div>{isOther && <VehicleDocumentDescription description={doc.description} />}<VehicleDocumentFiles files={doc.files || []} onPreview={onPreview} />{history.length ? <><button className="ovl-doc-history" type="button" onClick={openHistory}>View history ({history.length})<Icon name="chevron_right" size={17} /></button>{historyModal && <HacModal title={`Document History — ${isOther ? (doc.title || "Others") : doc.type}`} onClose={() => setHistoryModal(false)} className="ovl-history-modal"><div className="ovl-history-modal-body">{history.slice(0, historyLimit).map((record) => <VehicleHistoryRow key={record.id} record={{ ...record, type: doc.type }} />)}{historyLimit < history.length && <button className="ml-btn-soft ovl-history-load" type="button" onClick={() => setHistoryLimit((value) => value + 5)}>Load more</button>}</div></HacModal>}</> : <div className="ovl-doc-no-history">No historical data</div>}</article>;
+  return <article className="ovl-doc-row"><div className="ovl-doc-top"><div className="ovl-doc-type-wrap"><div className="ovl-doc-type">{isOther ? (doc.title || "Others") : doc.type}</div></div><div className="ovl-doc-top-spacer" />{doc.files?.[0]?.uploadedDate && <div className="ovl-doc-upload-info">Updated {doc.files[0].uploadedDate}</div>}{editable && <VehicleDocumentMenu onEdit={onEdit} onDelete={onDelete} />}</div><div className="ovl-doc-meta-row"><div className="ovl-doc-meta"><span>Issued date</span><span>{fmtDate(doc.startDate)}</span></div><div className="ovl-doc-meta"><span>Expiry date</span><span>{fmtDate(doc.expireDate)}</span></div><div className="ovl-doc-meta"><span>Time left</span><span className={`ovl-time-left ${expiryTone(doc.expireDate)}`}>{expiryMeta(doc.expireDate)}</span></div><div className="ovl-doc-meta"><span>Reminders</span><span>{doc.expireDate ? <ReminderSummary reminders={visibleReminders} /> : "—"}</span></div></div>{isOther && <VehicleDocumentDescription description={doc.description} />}<VehicleDocumentFiles files={doc.files || []} onPreview={onPreview} />{history.length ? <><button className="ovl-doc-history" type="button" onClick={openHistory}>View history ({history.length})<Icon name="chevron_right" size={17} /></button>{historyModal && <HacModal title={`Document History — ${isOther ? (doc.title || "Others") : doc.type}`} onClose={() => setHistoryModal(false)} className="ovl-history-modal"><div className="ovl-history-modal-body">{history.slice(0, historyLimit).map((record) => <VehicleHistoryRow key={record.id} record={{ ...record, type: doc.type }} />)}{historyLimit < history.length && <button className="ml-btn-soft ovl-history-load" type="button" onClick={() => setHistoryLimit((value) => value + 5)}>Load more</button>}</div></HacModal>}</> : <div className="ovl-doc-no-history">No historical data</div>}</article>;
 }
 
 function VehicleRemindersTab({ vehicle, documents, editable, tier, onChange, onToast }) {
@@ -1175,7 +1192,7 @@ function VehicleRemindersTab({ vehicle, documents, editable, tier, onChange, onT
   function removeDocument() { if (!deleteTarget) return; onChange(documents.filter((item) => item.id !== deleteTarget.id)); onToast(`${deleteTarget.type} deleted.`); setDeleteTarget(null); }
   function newDocument() { const field = DOC_FIELDS[0]; return { id: null, type: field.type, startDate: "", expireDate: "", reminders: [field.defaultReminder, "", ""], files: [], history: [] }; }
   function renderGroup(title, items) { if (!items.length) return null; return <section className="ovl-doc-section" key={title}><div className="ovl-doc-section-head"><span className="ovl-doc-section-title">{title}</span><span className="ovl-doc-section-count">{items.length}</span></div><div className="ovl-doc-list">{items.map((doc) => <VehicleDocumentCard key={doc.id} doc={doc} editable={editable} tier={tier} onEdit={() => setModal(doc)} onDelete={() => setDeleteTarget(doc)} onPreview={setPreview} />)}</div></section>; }
-  const addBtn = editable && <button className="ml-btn-soft ovl-doc-add" type="button" onClick={() => setModal(newDocument())}><Icon name="add" size={16} color="var(--green-600)" />Add document</button>;
+  const addBtn = editable && <button className="ml-btn-soft ovl-doc-add" type="button" onClick={() => setModal(newDocument())}><Icon name="add" size={16} color="var(--green-600)" />Add<span className="ovl-doc-add-full"> document</span></button>;
   return <section className="ml-card ovl-documents-panel">{documents.length ? <><div className="ovl-doc-toolbar"><h2 className="ovl-doc-heading">Uploaded Documents</h2>{addBtn}</div><div className="ovl-doc-groups">{renderGroup("Document Types", typedDocuments)}{renderGroup("Other Documents", otherDocuments)}</div></> : <div className="ovl-doc-empty"><Icon name="folder_open" size={30} color="var(--fg-tertiary)" /><h3>No documents added yet.</h3><p>Add this vehicle's documents to track due dates and reminders.</p>{addBtn}</div>}{modal && <VehicleDocumentModal initial={modal} tier={tier} onClose={() => setModal(null)} onSave={saveDocument} onUpgrade={() => onToast("Upgrade options would open here.")} />}{preview && <VehicleFilePreview file={preview} onClose={() => setPreview(null)} />}{deleteTarget && <HacModal title="Delete document?" onClose={() => setDeleteTarget(null)} footer={<><button className="hac-modal-cancel" type="button" onClick={() => setDeleteTarget(null)}>Cancel</button><button className="hac-modal-save ovl-delete-action" type="button" onClick={removeDocument}>Delete document</button></>}><p className="ovl-delete-copy">{deleteTarget.type} and its current files will be removed from this vehicle. Historical records are retained in the prototype history model.</p></HacModal>}</section>;
 }
 
@@ -1196,6 +1213,7 @@ function App() {
   const [pendingDueDateType, setPendingDueDateType] = useState("all");
   const [pendingDueRange, setPendingDueRange] = useState("all");
   const [expandedId, setExpandedId] = useState(null);
+  const [mobileDriversVehicle, setMobileDriversVehicle] = useState(null);
   const [menuId, setMenuId] = useState(null);
   const [mobileMenuId, setMobileMenuId] = useState(null);
   const [mode, setMode] = useState("list");
@@ -1706,38 +1724,22 @@ function App() {
 
             <div className="ovl-mobile-list">
               {pageData.map((vehicle) => {
-                const expanded = expandedId === vehicle.id;
                 return (
-                  <div key={vehicle.id} className="ovl-mobile-card">
-                    <div className="ovl-mobile-head">
-                      <div className="ovl-vehicle-cell">
-                        <VehicleThumb inUse={vehicle.activeCheckIn} />
-                        <div className="ovl-vehicle-main">
-                          <div className="ovl-vehicle-plate">{vehicle.plate}</div>
-                        </div>
-                      </div>
-                      <ManagedIcon managed={vehicle.managed} />
+                  <MobileListCard key={vehicle.id} className="ovl-vehicle-mobile-card"
+                    leading={<VehicleThumb inUse={vehicle.activeCheckIn} />}
+                    title={vehicle.plate}
+                    subtitle={vehicle.category}
+                    status={<ManagedIcon managed={vehicle.managed} label />}
+                    menu={<VehicleRowMenu open={mobileMenuId === vehicle.id} onToggle={(next) => setMobileMenuId(next ? vehicle.id : null)} onView={() => { openView(vehicle); setMobileMenuId(null); }} onEdit={() => { openEdit(vehicle); setMobileMenuId(null); }} onDelete={() => { setMobileMenuId(null); pushToast("warn", "Delete is shown for parity only. No prototype deletion was performed."); }} showDelete={false} />}
+                    meta={<span className={vehicle.vendor ? "" : "ovl-vendor-empty"}>{vehicle.vendor || "No vendor"}</span>}
+                    footer={<button className="ovl-mobile-expand" type="button" onClick={() => setMobileDriversVehicle(vehicle)}><span>View {vehicle.drivers.length} assigned driver{vehicle.drivers.length === 1 ? "" : "s"}</span><Icon name="chevron_right" size={16} /></button>}
+                  >
+                    <div className="ovl-vehicle-weights">
+                      <div><span>BTM</span><strong>{vehicle.btm.toLocaleString()} kg</strong></div>
+                      <div><span>BDM</span><strong>{vehicle.bdm.toLocaleString()} kg</strong></div>
+                      <div><span>Capacity</span><strong>{vehicle.capacity.toLocaleString()} kg</strong></div>
                     </div>
-                    <div className="ovl-mobile-meta">
-                      <span className="ovl-mobile-chip">{vehicle.category}</span>
-                      <span className="ovl-mobile-chip">{vehicle.vendor}</span>
-                    </div>
-                    <div className="ovl-mobile-actions">
-                      <button className="ovl-mobile-expand" type="button" onClick={() => setExpandedId(expanded ? null : vehicle.id)}>
-                        <Icon name={expanded ? "expand_less" : "expand_more"} size={15} />
-                        {expanded ? "Hide drivers" : "Show drivers"}
-                      </button>
-                      <VehicleRowMenu
-                        open={mobileMenuId === vehicle.id}
-                        onToggle={(next) => setMobileMenuId(next ? vehicle.id : null)}
-                        onView={() => { openView(vehicle); setMobileMenuId(null); }}
-                        onEdit={() => { openEdit(vehicle); setMobileMenuId(null); }}
-                        onDelete={() => { setMobileMenuId(null); pushToast("warn", "Delete is shown for parity only. No prototype deletion was performed."); }}
-                        showDelete={false}
-                      />
-                    </div>
-                    {expanded && <ExpandableVehicleDriversRow vehicle={vehicle} />}
-                  </div>
+                  </MobileListCard>
                 );
               })}
               {!filtered.length && <div className="ovl-mobile-card"><div className="ovl-empty-table">No vehicles match the current filters.</div></div>}
@@ -1751,6 +1753,8 @@ function App() {
           )}
         </div>
       </main>
+
+      {mobileDriversVehicle && <AssignedDriversModal vehicle={mobileDriversVehicle} onClose={() => setMobileDriversVehicle(null)} />}
 
       <TweaksPanel>
         <TweakSection title="Vehicle states">

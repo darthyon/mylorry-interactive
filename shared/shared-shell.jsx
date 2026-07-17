@@ -793,6 +793,82 @@ function HistoryCard({ icon, prefix, title, subtitle, status, action, meta, onCl
   );
 }
 
+// Reminder field value: nearest reminder as plain text, with a "+N more"
+// trigger that opens a fixed-position (viewport-clamped) schedule popover.
+// Same shape as the Documents tab's reminder field, reused everywhere a
+// reminders column/field shows up instead of forking chips or plain text.
+function ReminderSummary({ reminders = [] }) {
+  const values = reminders.map(Number).filter((value) => Number.isFinite(value) && value > 0);
+  const triggerRef = React.useRef(null);
+  const popRef = React.useRef(null);
+  const [open, setOpen] = React.useState(false);
+  const [pos, setPos] = React.useState({ top: 0, left: 0 });
+
+  React.useEffect(() => {
+    if (!open) return undefined;
+    const close = (e) => { if (!triggerRef.current?.contains(e.target) && !popRef.current?.contains(e.target)) setOpen(false); };
+    const dismiss = () => setOpen(false);
+    document.addEventListener("mousedown", close);
+    window.addEventListener("scroll", dismiss, true);
+    window.addEventListener("resize", dismiss);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      window.removeEventListener("scroll", dismiss, true);
+      window.removeEventListener("resize", dismiss);
+    };
+  }, [open]);
+
+  if (!values.length) return "—";
+  const nearest = Math.min(...values);
+  if (values.length === 1) return <span>{nearest} days before</span>;
+
+  function toggle() {
+    if (!open && triggerRef.current) {
+      const r = triggerRef.current.getBoundingClientRect();
+      const popWidth = 210;
+      const left = Math.max(12, Math.min(r.left, window.innerWidth - popWidth - 12));
+      setPos({ top: r.bottom + 6, left });
+    }
+    setOpen((v) => !v);
+  }
+
+  return (
+    <span className="ml-reminder-summary">
+      {nearest} days before{" "}
+      <button ref={triggerRef} className="ml-reminder-trigger" type="button" aria-expanded={open} onClick={toggle}>
+        +{values.length - 1} more<Icon name="expand_more" size={14} />
+      </button>
+      {open && ReactDOM.createPortal(
+        <span ref={popRef} className="ml-reminder-pop" role="dialog" aria-label="Reminder schedule" style={{ top: pos.top, left: pos.left }}>
+          <span className="ml-reminder-pop-title">Reminder schedule</span>
+          {values.map((value, index) => <span className="ml-reminder-pop-row" key={`${value}-${index}`}><span>Reminder {index + 1}</span><span>{value} days before expiry date</span></span>)}
+        </span>,
+        document.body
+      )}
+    </span>
+  );
+}
+
+// Shared shell for table-to-card mobile conversions. The body and optional
+// footer remain freeform so each variant can keep task-specific content.
+function MobileListCard({ leading, title, subtitle, status, menu, meta, footer, children, className = "" }) {
+  return <article className={`ml-mobile-list-card${children ? " has-body" : ""}${footer ? " has-footer" : ""}${className ? ` ${className}` : ""}`}>
+    <header className="ml-mobile-list-card-head">
+      <div className="ml-mobile-list-card-identity">
+        {leading && <div className="ml-mobile-list-card-leading">{leading}</div>}
+        <div className="ml-mobile-list-card-copy">
+          <div className="ml-mobile-list-card-title">{title}</div>
+          {subtitle && <div className="ml-mobile-list-card-subtitle">{subtitle}</div>}
+        </div>
+      </div>
+      {(status || menu) && <div className="ml-mobile-list-card-actions">{status}{menu}</div>}
+    </header>
+    {meta && <div className="ml-mobile-list-card-meta">{meta}</div>}
+    {children && <div className="ml-mobile-list-card-body">{children}</div>}
+    {footer && <footer className="ml-mobile-list-card-footer">{footer}</footer>}
+  </article>;
+}
+
 /* ─── Checklist Card + bulk confirm modal ───────────────────────
    Safety Checklist submission card: driver/vehicle header, check-in/
    check-out + mileage, expandable checklist items, inline Reject All /
@@ -930,7 +1006,7 @@ window.SharedShell = {
   Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu, Segmented,
   Pill, CurrencyPill, SummaryCard, CountCard, KpiTierChip,
   StatusBadge, AccountStatusBadge, KPIProgress, KPIProgressMeta,
-  LockSection, PetronLogo, HistoryCard, FeatureTabShell, OrgSwitcher, SelectMenu,
+  LockSection, PetronLogo, HistoryCard, MobileListCard, ReminderSummary, FeatureTabShell, OrgSwitcher, SelectMenu,
   CalcPopover, ChecklistCard, ConfirmBulkModal, Modal, HacModal, HacFileUpload,
 };
 window.KPIProgressMeta = KPIProgressMeta;
