@@ -6,7 +6,10 @@
 // when emptyData is on. Reuses window.SharedShell.LockSection for all gates.
 
 const { useState, useEffect, useRef } = React;
-const { Icon, LockSection, CountCard, PetronLogo, StatusBadge, OrgSwitcher, ChecklistCard } = window.SharedShell;
+const {
+  Icon, LockSection, CountCard, PetronLogo, StatusBadge, OrgSwitcher, ChecklistCard,
+  MobileListCard, ReminderSummary, fmtExpiryDate, expiryTone, expiryRelativeText, documentExpiryStatus,
+} = window.SharedShell;
 const D = window.ORG_DASH;
 
 /* ── Helpers ───────────────────────────────────────────────────── */
@@ -773,11 +776,40 @@ function ActionPreviewCard({ row, tab }) {
   );
 }
 
+// Vehicle/Driver Due Dates preview cards — same labeled field grid (Issued
+// date/Expiry date/Time left/Reminders) as the MyAdmin document reminder
+// cards in org-vehicle-list / org-driver-list, so the dashboard preview
+// reads as the same module rather than a generic activity feed row.
+function DueDocumentPreviewCard({ row, kind }) {
+  const tone = expiryTone(row.expireDate);
+  return (
+    <MobileListCard
+      leading={kind === "vehicle"
+        ? <div className="od-doc-thumb"><Icon name="local_shipping" size={18} color="var(--fg-secondary)" /></div>
+        : <img className="od-doc-avatar" src={`https://i.pravatar.cc/64?u=${encodeURIComponent(row.name)}`} alt="" />}
+      title={kind === "vehicle" ? row.plate : row.name}
+      subtitle={<span className="ml-plain-subtitle">{row.docType}</span>}
+      status={<StatusBadge status={documentExpiryStatus(row.expireDate)} />}
+    >
+      <div className="ml-due-fields">
+        <div className="ml-due-grid">
+          <div className="ml-due-item"><span>Issued date</span><strong>{fmtExpiryDate(row.issuedDate)}</strong></div>
+          <div className="ml-due-item align-right"><span>Expiry date</span><strong>{fmtExpiryDate(row.expireDate)}</strong></div>
+        </div>
+        <div className="ml-due-grid">
+          <div className="ml-due-item"><span>Time left</span><strong className={`ml-due-value ${tone}`}>{expiryRelativeText(row.expireDate)}</strong></div>
+          <div className="ml-due-item align-right"><span>Reminders</span><strong><ReminderSummary reminders={row.reminders} /></strong></div>
+        </div>
+      </div>
+    </MobileListCard>
+  );
+}
+
 function ActionPreview({ tier, empty, tab, setTab }) {
   const TABS = [
     { value: "fuel",       label: "Fuel TXNs",       viewAll: "See all fuel transactions", rows: D.preview.fuel,       locked: false, requiredTier: null       },
-    { value: "due",        label: "Due Dates",       viewAll: "See all due dates",         rows: D.preview.due,        locked: false, requiredTier: null       },
-    { value: "documents",  label: "Documents",       viewAll: "See all documents",         rows: D.preview.documents,  locked: false, requiredTier: null       },
+    { value: "due",        label: "Vehicle Due Dates", viewAll: "See all vehicle due dates", rows: D.preview.due,        locked: false, requiredTier: null       },
+    { value: "documents",  label: "Driver Due Dates",  viewAll: "See all driver due dates",  rows: D.preview.documents,  locked: false, requiredTier: null       },
     { value: "checklists", label: "Safety Checklist", viewAll: "See all safety checklists", rows: D.preview.checklists, locked: false, requiredTier: null       },
     { value: "trips",      label: "Trips",           viewAll: "See all trips",             rows: D.preview.trips,      locked: false, requiredTier: null       },
   ];
@@ -814,6 +846,10 @@ function ActionPreview({ tier, empty, tab, setTab }) {
               ? <FuelPreviewCard key={i} row={r} />
               : active.value === "checklists"
               ? <ChecklistCard key={i} row={r} />
+              : active.value === "due"
+              ? <DueDocumentPreviewCard key={i} row={r} kind="vehicle" />
+              : active.value === "documents"
+              ? <DueDocumentPreviewCard key={i} row={r} kind="driver" />
               : <ActionPreviewCard key={i} row={r} tab={active.value} />
             )}
           </div>

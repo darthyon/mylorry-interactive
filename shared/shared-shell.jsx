@@ -793,6 +793,50 @@ function HistoryCard({ icon, prefix, title, subtitle, status, action, meta, onCl
   );
 }
 
+// Expiry date helpers: shared by any flow that renders a document/reminder
+// due-date field (issued/expiry date formatting, relative "N days left" text,
+// and the danger/warn/good tone used to color it).
+function fmtExpiryDate(iso) {
+  if (!iso) return "—";
+  const d = new Date(`${iso}T00:00:00`);
+  if (isNaN(d)) return "—";
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+function daysUntilExpiry(iso) {
+  if (!iso) return null;
+  const target = new Date(`${iso}T00:00:00`);
+  if (isNaN(target)) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((target - today) / 86400000);
+}
+function expiryTone(iso) {
+  const days = daysUntilExpiry(iso);
+  if (days == null) return "empty";
+  if (days < 7) return "danger";
+  if (days <= 30) return "warn";
+  return "good";
+}
+function expiryRelativeText(iso) {
+  const days = daysUntilExpiry(iso);
+  if (days == null) return "—";
+  if (days < 0) return `${Math.abs(days)} days overdue`;
+  if (days === 0) return "Due today";
+  if (days === 1) return "1 day left";
+  return `${days} days left`;
+}
+// Maps to STATUS_BADGE_META's doc_* keys (Active/Expired/0-7 days/8-30 days/...).
+function documentExpiryStatus(iso) {
+  const days = daysUntilExpiry(iso);
+  if (days == null) return "doc_active";
+  if (days < 0) return "doc_expired";
+  if (days <= 7) return "doc_0_7";
+  if (days <= 30) return "doc_8_30";
+  if (days <= 60) return "doc_31_60";
+  if (days <= 90) return "doc_61_90";
+  return "doc_future";
+}
+
 // Reminder field value: nearest reminder as plain text, with a "+N more"
 // trigger that opens a fixed-position (viewport-clamped) schedule popover.
 // Same shape as the Documents tab's reminder field, reused everywhere a
@@ -1006,7 +1050,9 @@ window.SharedShell = {
   Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu, Segmented,
   Pill, CurrencyPill, SummaryCard, CountCard, KpiTierChip,
   StatusBadge, AccountStatusBadge, KPIProgress, KPIProgressMeta,
-  LockSection, PetronLogo, HistoryCard, MobileListCard, ReminderSummary, FeatureTabShell, OrgSwitcher, SelectMenu,
+  LockSection, PetronLogo, HistoryCard, MobileListCard, ReminderSummary,
+  fmtExpiryDate, daysUntilExpiry, expiryTone, expiryRelativeText, documentExpiryStatus,
+  FeatureTabShell, OrgSwitcher, SelectMenu,
   CalcPopover, ChecklistCard, ConfirmBulkModal, Modal, HacModal, HacFileUpload,
 };
 window.KPIProgressMeta = KPIProgressMeta;

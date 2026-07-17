@@ -119,8 +119,8 @@ window.ORG_DASH = {
 
   /* ── Action Needed (triage strip) ───────────────────────────── */
   actionNeeded: [
-    { key: "vehicles",   icon: "calendar_today", label: "Vehicle reminders", supporting: "overdue",        count: 2, tone: "red",   tab: "due"       },
-    { key: "documents",  icon: "badge",          label: "Driver documents",  supporting: "expiring soon",  count: 4, tone: "amber", tab: "documents" },
+    { key: "vehicles",   icon: "calendar_today", label: "Vehicle Documents", supporting: "overdue",        count: 2, tone: "red",   tab: "due"       },
+    { key: "documents",  icon: "badge",          label: "Driver Documents",  supporting: "expiring soon",  count: 4, tone: "amber", tab: "documents" },
     { key: "checklists", icon: "fact_check",     label: "Safety checklist", supporting: "need endorsement", count: 0, tone: "green", tab: "checklists"},
     { key: "trips",      icon: "local_shipping", label: "Paused Trips",      supporting: "need attention",  count: 3, tone: "amber", tab: "trips"     },
   ],
@@ -171,21 +171,25 @@ window.ORG_DASH = {
         subsidy: "RM 310.45", subsidyUsed: 310.45, subsidyLimit: 500,
       },
     ],
+    // Vehicle Due Dates — real vehicle document expiries only (matches the
+    // Documents tab taxonomy in org-vehicle-list: Road Tax, Insurance,
+    // Puspakom Service, Truck Permit). Maintenance-only items (oil change,
+    // tyre rotation) and misplaced driver rows were dropped — they don't
+    // fit the Issued/Expiry/Reminders shape this module uses everywhere else.
     due: [
-      { date: "9 Jun 2026, 08:15 AM", item: "VANB791 · NISSAN NV200",  cat: "Maintenance Due", catTone: "amber", detail: "Engine Oil Change · Due in 2 days",   amount: "—" },
-      { date: "8 Jun 2026, 06:30 PM", item: "WXX1234 · HINO 300",      cat: "Inspection Due",  catTone: "amber", detail: "Roadtax Expiry · Due in 5 days",       amount: "—" },
-      { date: "8 Jun 2026, 03:22 PM", item: "DRV0045 · Ahmad Razif",   cat: "License Expiry",  catTone: "red",   detail: "GDL Expiry · Due in 7 days",           amount: "—" },
-      { date: "7 Jun 2026, 10:00 AM", item: "STG0848 · ISUZU ELF",     cat: "Maintenance Due", catTone: "amber", detail: "Tyre Rotation · Due in 10 days",       amount: "—" },
-      { date: "6 Jun 2026, 02:00 PM", item: "DRV0034 · Mohd Fadzli",   cat: "License Expiry",  catTone: "amber", detail: "PSV Licence · Expiring in 14 days",    amount: "—" },
-      { date: "5 Jun 2026, 09:00 AM", item: "STG2190 · HINO RANGER",   cat: "Inspection Due",  catTone: "amber", detail: "PUSPAKOM Inspection · Due in 18 days", amount: "—" },
+      { plate: "VANB791", docType: "Insurance",       issuedDate: "2025-07-19", expireDate: "2026-07-19", reminders: [30, 14, 7] },
+      { plate: "WXX1234", docType: "Road Tax",         issuedDate: "2025-07-22", expireDate: "2026-07-22", reminders: [30, 14, 7] },
+      { plate: "STG0848", docType: "Truck Permit",     issuedDate: "2025-07-27", expireDate: "2026-07-27", reminders: [30] },
+      { plate: "STG2190", docType: "Puspakom Service", issuedDate: "2026-02-04", expireDate: "2026-08-04", reminders: [60, 30, 7] },
     ],
+    // Driver Due Dates — driver document expiries.
     documents: [
-      { date: "9 Jun 2026, 08:00 AM", item: "DRV0045 · Ahmad Razif",    cat: "GDL Expiry",      catTone: "red",   detail: "GDL · Expires in 7 days",          amount: "—" },
-      { date: "8 Jun 2026, 06:00 PM", item: "DRV0034 · Mohd Fadzli",    cat: "Medical Due",     catTone: "amber", detail: "Medical Report · Due in 12 days",   amount: "—" },
-      { date: "7 Jun 2026, 03:00 PM", item: "DRV0078 · Zulkifli Hamid", cat: "Passport Expiry", catTone: "amber", detail: "Passport · Expires in 21 days",     amount: "—" },
-      { date: "6 Jun 2026, 09:00 AM", item: "DRV0021 · Karim Abdullah", cat: "Port Pass",       catTone: "amber", detail: "Port Pass · Expires in 28 days",    amount: "—" },
-      { date: "5 Jun 2026, 11:00 AM", item: "DRV0056 · Hafiz Sulaiman", cat: "PSV Licence",     catTone: "amber", detail: "PSV Licence · Expires in 32 days",  amount: "—" },
-      { date: "4 Jun 2026, 04:00 PM", item: "DRV0012 · Roslan Ibrahim", cat: "Medical Due",     catTone: "amber", detail: "Medical Report · Due in 45 days",   amount: "—" },
+      { name: "Ahmad Razif",   docType: "GDL License",   issuedDate: "2024-07-24", expireDate: "2026-07-24", reminders: [30, 14, 7] },
+      { name: "Mohd Fadzli",   docType: "Medical Report", issuedDate: "2025-07-29", expireDate: "2026-07-29", reminders: [30] },
+      { name: "Zulkifli Hamid", docType: "Passport",      issuedDate: "2021-08-07", expireDate: "2026-08-07", reminders: [30] },
+      { name: "Karim Abdullah", docType: "Port Pass",     issuedDate: "2025-08-14", expireDate: "2026-08-14", reminders: [30] },
+      { name: "Hafiz Sulaiman", docType: "PSV Licence",   issuedDate: "2024-08-18", expireDate: "2026-08-18", reminders: [30, 14] },
+      { name: "Roslan Ibrahim", docType: "Medical Report", issuedDate: "2025-08-31", expireDate: "2026-08-31", reminders: [30] },
     ],
     checklists: [
       {
