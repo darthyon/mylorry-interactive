@@ -885,7 +885,6 @@ function VehicleViewSections({ form, nextManagedCount, scope }) {
       <div className="ml-card ovl-form-card">
         <div className="hac-sec-header">
           <div>Vehicle details</div>
-          <div className="ovl-sec-sub">Photo, core identity, and classification for this vehicle.</div>
         </div>
         <div className="hac-form-grid3 ovl-details-grid ovl-form-body">
           <div className="ovl-details-photo-cell ovl-view-photo">
@@ -913,7 +912,6 @@ function VehicleViewSections({ form, nextManagedCount, scope }) {
       <div className="ml-card ovl-form-card">
         <div className="hac-sec-header">
           <div>Vehicle specifications</div>
-          <div className="ovl-sec-sub">Build attributes, weight, and capacity information used for operations and compliance.</div>
         </div>
         <div className="hac-form-grid3 ovl-form-body">
           <ViewField label="Feature" value={form.feature} />
@@ -941,7 +939,6 @@ function VehicleFormSections({ form, update, overCap, nextManagedCount, scope, o
       <div className="ml-card ovl-form-card">
         <div className="hac-sec-header">
           <div>Vehicle details</div>
-          <div className="ovl-sec-sub">Photo, core identity, and classification for this vehicle.</div>
         </div>
         <div className="hac-form-grid3 ovl-details-grid ovl-form-body">
           <div className="ovl-details-photo-cell">
@@ -1017,7 +1014,6 @@ function VehicleFormSections({ form, update, overCap, nextManagedCount, scope, o
       <div className="ml-card ovl-form-card">
         <div className="hac-sec-header">
           <div>Vehicle specifications</div>
-          <div className="ovl-sec-sub">Build attributes, weight, and capacity information used for operations and compliance.</div>
         </div>
         <div className="hac-form-grid3 ovl-form-body">
           <div className="hac-fg">
