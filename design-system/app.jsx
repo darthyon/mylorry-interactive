@@ -1,4 +1,4 @@
-const { Badge, StatusBadge, AccountStatusBadge, LockSection, CountCard, HistoryCard, HacModal, HacFileUpload, SelectMenu } = window.SharedShell;
+const { Icon, Badge, StatusBadge, AccountStatusBadge, LockSection, CountCard, HistoryCard, MobileListCard, HacModal, HacFileUpload, SelectMenu } = window.SharedShell;
 
 /* ── Token swatches (read straight from tokens.css via getComputedStyle) ── */
 const COLOR_TOKENS = [
@@ -135,6 +135,50 @@ mount("countCards", <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
       actionLabel="View paused trips" onClick={() => {}} />
   </div>
 </div>);
+
+function mlInitials(name = "") {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join("") || "?";
+}
+const mlKebab = <button type="button" aria-label="More actions" style={{ border: 0, background: "transparent", padding: 4, color: "var(--fg-secondary)" }}><Icon name="more_horiz" size={18} /></button>;
+const mlAvatar = (name) => <div style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--green-50)", color: "var(--green-700)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>{mlInitials(name)}</div>;
+const mlThumb = <div style={{ width: 38, height: 38, borderRadius: 11, background: "var(--bg-muted)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }} title="Not in-use" aria-label="Not in-use"><Icon name="local_shipping" size={18} color="var(--fg-secondary)" /></div>;
+const mlFacts2 = (a, b) => <div style={{ display: "flex", gap: 8, flexWrap: "wrap", fontSize: 12, fontWeight: 600, color: "var(--fg-secondary)" }}><span style={{ color: "var(--green-700)" }}>{a}</span><span>{b}</span></div>;
+const mlFacts3 = (label1, val1, label2, val2, label3, val3) => (
+  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }}>
+    {[[label1, val1], [label2, val2], [label3, val3]].map(([label, value]) => (
+      <div key={label} style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 11, color: "var(--fg-tertiary)" }}>{label}</div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--fg-primary)", marginTop: 2 }}>{value}</div>
+      </div>
+    ))}
+  </div>
+);
+const mlManaged = (managed) => managed
+  ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--green-700)" }}><Icon name="check_circle" size={16} fill={1} />Managed</span>
+  : <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--fg-tertiary)" }}><Icon name="radio_button_unchecked" size={16} />Unmanaged</span>;
+const mlVendor = (vendor) => <span style={{ fontSize: 12, fontWeight: 600, color: vendor ? "var(--fg-secondary)" : "var(--fg-tertiary)" }}>{vendor || "No vendor"}</span>;
+
+mount("mobileListCardDemo", (
+  <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
+    <div style={{ width: 340 }}>
+      <MobileListCard
+        leading={mlAvatar("Hafiz Rahman")}
+        title="Hafiz Rahman" subtitle="DRV-022"
+        status={<StatusBadge status="active" />} menu={mlKebab}
+        meta={mlVendor("Swift Logistics")}
+      >{mlFacts2("+60 12-345 6789", "IC No. 900101-14-5678")}</MobileListCard>
+    </div>
+    <div style={{ width: 340 }}>
+      <MobileListCard
+        leading={mlThumb}
+        title="VLT8421" subtitle="Lorry"
+        status={mlManaged(true)} menu={mlKebab}
+        meta={mlVendor(null)}
+        footer={<><span /><button type="button" style={{ border: 0, background: "transparent", padding: 0, color: "var(--green-700)", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><Icon name="groups" size={15} />View 3 assigned drivers</button></>}
+      >{mlFacts3("BTM", "7,600 kg", "BDM", "18,000 kg", "Capacity", "10,400 kg")}</MobileListCard>
+    </div>
+  </div>
+));
 
 /* ── LockSection ── */
 const lockDemo = (

@@ -215,9 +215,56 @@
 .ml-history-card-cell { font-size: 13px; color: var(--fg-secondary); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ml-history-card-cell strong { font-weight: 600; color: var(--fg-primary); }
 
-/* Tabs — roomy (host) */
-.ml-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border-light); margin-bottom: 20px; }
-.ml-tab  { display: inline-flex; align-items: center; gap: 7px; padding: 10px 16px; border: none; background: none; cursor: pointer; font-family: var(--font); font-size: 14px; font-weight: 600; color: var(--fg-secondary); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .12s; }
+/* Mobile List Card: identity/status/menu are fixed in the header. The footer
+   is optional; consumers supply only the custom body and footer they need. */
+.ml-mobile-list-card { border:1px solid var(--border-light); border-radius:10px; background:#fff; overflow:hidden; }
+.ml-mobile-list-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:13px 14px 0; }
+.ml-mobile-list-card.has-footer:not(.has-body) .ml-mobile-list-card-head { padding-bottom:14px; }
+.ml-mobile-list-card-identity { display:flex; align-items:flex-start; gap:10px; flex:1; min-width:0; }
+.ml-mobile-list-card-leading { flex-shrink:0; }
+.ml-mobile-list-card-copy { flex:1; min-width:0; }
+.ml-mobile-list-card-title { font-size:13px; font-weight:700; color:var(--fg-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ml-mobile-list-card-subtitle { margin-top:3px; font-size:11px; color:var(--fg-tertiary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ml-mobile-list-card-subtitle .ml-plain-subtitle { font-size:13px; font-weight:500; color:var(--fg-primary); }
+.ml-mobile-list-card-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.ml-mobile-list-card-meta { padding:6px 14px 0; font-size:12px; font-weight:400; color:var(--fg-secondary); }
+.ml-mobile-list-card-body { padding:12px 14px 13px; }
+.ml-mobile-list-card-footer { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; border-top:1px solid var(--border-light); background:var(--bg-subtle); font-size:11px; color:var(--fg-secondary); }
+
+/* Due-date fields: label-above-value grid, 2 per row (Issued/Expiry, then
+   Time left/Reminders) — mirrors the Documents tab's DocumentRow meta-row.
+   Shared by vehicle/driver due-date mobile cards. */
+.ml-due-fields { display:flex; flex-direction:column; gap:12px; }
+.ml-due-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.ml-due-item { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.ml-due-item.align-right { align-items:flex-end; text-align:right; }
+.ml-due-item > span:first-child { font-size:11px; color:var(--fg-tertiary); }
+.ml-due-item strong { font-size:12px; font-weight:600; color:var(--fg-primary); }
+.ml-due-value.danger { color:#b64b43; }
+.ml-due-value.warn { color:#c4842a; }
+.ml-due-value.good { color:#397051; }
+
+/* Reminder summary: nearest reminder as text, "+N more" opens a fixed-position
+   (viewport-clamped) schedule popover via portal — never gets clipped by a
+   card/table's overflow. Shared by doc cards, due-date tables and cards. */
+.ml-reminder-summary { display:inline-flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.ml-reminder-trigger { display:inline-flex; align-items:center; gap:2px; border:0; background:transparent; color:var(--teal-600); font:600 12px var(--font-sans); padding:0; cursor:pointer; }
+.ml-reminder-trigger:hover { text-decoration:underline; }
+.ml-reminder-trigger .msr { color:var(--teal-600); }
+.ml-reminder-pop { position:fixed; z-index:250; display:flex; flex-direction:column; gap:6px; min-width:190px; max-width:calc(100vw - 24px); padding:10px; background:#fff; border:1px solid var(--border-light); border-radius:7px; box-shadow:var(--shadow-md); }
+.ml-reminder-pop-title { padding-bottom:4px; border-bottom:1px solid var(--border-light); font-size:11px; font-weight:700; color:var(--fg-primary); white-space:nowrap; }
+.ml-reminder-pop-row { display:flex; justify-content:space-between; gap:14px; font-size:12px; white-space:nowrap; }
+.ml-reminder-pop-row span:first-child { color:var(--fg-secondary); }
+.ml-reminder-pop-row span:last-child { color:var(--fg-primary); font-weight:600; }
+.ml-due-reminders > span:first-child { flex-shrink:0; }
+.ml-due-value.warn { color:#c4842a; }
+.ml-due-value.good { color:#397051; }
+
+/* Tabs — roomy (host). Scrolls horizontally instead of wrapping when tabs
+   don't fit (narrow/mobile viewports). */
+.ml-tabs { display: flex; flex-wrap: nowrap; gap: 6px; border-bottom: 1px solid var(--border-light); margin-bottom: 20px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.ml-tabs::-webkit-scrollbar { display: none; }
+.ml-tab  { display: inline-flex; align-items: center; gap: 7px; padding: 10px 16px; border: none; background: none; cursor: pointer; font-family: var(--font); font-size: 14px; font-weight: 600; color: var(--fg-secondary); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .12s; flex-shrink: 0; white-space: nowrap; }
 
 /* Segmented switch — compact pill toggle for view-of-same-data (e.g. By Month / By SP) */
 .ml-seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 9999px; background: var(--bg-muted); }
@@ -640,8 +687,9 @@
 .od-cl-col{flex:1;min-width:0;}
 .od-cl-col-label{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--fg-tertiary);}
 .od-cl-col-val{font-size:12.5px;font-weight:500;color:var(--fg-primary);margin-top:4px;}
+.od-cl-col-val.od-cl-col-pending{color:var(--fg-tertiary);font-weight:400;}
 .od-cl-col-sub{font-size:11px;color:var(--fg-tertiary);margin-top:2px;}
-.od-cl-clhead{appearance:none;border:none;background:none;width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;font-family:var(--font-sans);}
+.od-cl-clhead{width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;}
 .od-cl-clhead-title{font-size:13.5px;font-weight:600;color:var(--fg-primary);}
 .od-cl-clhead-right{display:flex;align-items:center;gap:8px;color:var(--fg-tertiary);}
 .od-cl-items{display:flex;flex-direction:column;}
@@ -649,6 +697,8 @@
 .od-cl-item-left{display:flex;align-items:center;gap:10px;font-size:12.5px;font-weight:500;color:var(--fg-primary);min-width:0;}
 .od-cl-item-left span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .od-cl-item-right{display:flex;align-items:center;gap:6px;}
+.od-cl-more{appearance:none;width:100%;display:flex;align-items:center;justify-content:space-between;gap:5px;border:0;border-top:1px solid var(--border-light);background:#fcfcfc;color:var(--green-600);font:600 12px var(--font-sans);padding:10px 16px;cursor:pointer;text-align:left;}
+.od-cl-more:hover{background:var(--green-50);}
 .od-cl-actions{display:flex;gap:10px;padding:14px 16px;border-top:1px solid var(--border-light);}
 .od-cl-actions .ml-btn-outline,.od-cl-actions .ml-btn-primary{flex:1;justify-content:center;}
 .od-cl-decision{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;font-weight:600;padding:14px 16px;border-top:1px solid var(--border-light);min-height:63px;box-sizing:border-box;}

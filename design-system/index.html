@@ -72,6 +72,16 @@ table.ml-table{border:1px solid var(--border-medium);border-radius:6px;overflow:
 
 .note{font-size:12px;color:var(--fg-tertiary);margin-top:10px;}
 code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:var(--bg-muted);padding:1px 5px;border-radius:3px;}
+
+/* ── Existing mobile implementation comparison ───────────────── */
+.mobile-source-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start;}
+.mobile-source{min-width:0;}
+.mobile-source-title{font-size:13px;font-weight:700;color:var(--fg-primary);margin-bottom:4px;}
+.mobile-source-copy{font-size:11px;color:var(--fg-tertiary);margin-bottom:10px;}
+.mobile-source-frame{width:100%;max-width:390px;height:560px;border:1px solid var(--border-medium);border-radius:18px;background:var(--bg-subtle);overflow:hidden;}
+.mobile-source-frame iframe{display:block;width:100%;height:100%;border:0;background:#fff;}
+@media(max-width:760px){.mobile-source-grid{grid-template-columns:1fr;}}
+@media(max-width:640px){.wrap{padding:32px 16px 72px;}.mobile-source-frame{max-width:none;height:580px;}}
 </style>
 </head>
 <body>
@@ -221,6 +231,9 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;back
   <!-- Cards -->
   <section class="sec" id="cards">
     <div class="sec-h">Cards</div>
+    <div class="lbl">Mobile list card - <code>MobileListCard</code></div>
+    <div class="row" id="mobileListCardDemo" style="align-items:stretch;"></div>
+    <p class="note">Shared card shell for mobile list conversions. Identity, status, and kebab actions belong in the header. <code>meta</code> is an optional line under the header for a single field like vendor (shows an explicit empty state, e.g. "No vendor", rather than being omitted). Body and footer stay freeform per variant.</p>
     <div class="lbl">HistoryCard — top-up / rebate / activity history</div>
     <div class="row" id="historyCards" style="gap:14px;flex-wrap:wrap;align-items:stretch;"></div>
     <p class="note">Shared list-item card with icon, title, subtitle, status/action, and a field grid. Use for Top-Up History, Rebate History, and similar activity lists.</p>
@@ -236,6 +249,29 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;back
         <div class="card-val">RM 2,347.00</div>
       </div>
     </div>
+  </section>
+
+  <!-- Existing mobile implementations -->
+  <section class="sec" id="mobile-list-patterns">
+    <div class="sec-h">Existing mobile implementations</div>
+    <div class="mobile-source-grid">
+      <div class="mobile-source">
+        <div class="mobile-source-title">MyAdmin - Driver</div>
+        <div class="mobile-source-copy">Live flow at a mobile viewport. Its list swaps the desktop table for local DriverMobileCard markup.</div>
+        <div class="mobile-source-frame"><iframe src="../flows/org-driver-list/index.html" title="Driver mobile implementation" loading="lazy"></iframe></div>
+      </div>
+      <div class="mobile-source">
+        <div class="mobile-source-title">MyAdmin - Vehicle</div>
+        <div class="mobile-source-copy">Live flow at a mobile viewport. Its list swaps the desktop table for local vehicle cards with driver expansion.</div>
+        <div class="mobile-source-frame"><iframe src="../flows/org-vehicle-list/index.html" title="Vehicle mobile implementation" loading="lazy"></iframe></div>
+      </div>
+      <div class="mobile-source">
+        <div class="mobile-source-title">MyFuel - Activity</div>
+        <div class="mobile-source-copy">Live mobile flow. The activity view uses the existing shared <code>HistoryCard</code> alongside its transaction-specific cards.</div>
+        <div class="mobile-source-frame"><iframe src="../flows/org-myfuel-dashboard/index.html" title="MyFuel mobile implementation" loading="lazy"></iframe></div>
+      </div>
+    </div>
+    <p class="note">These are embedded flow pages, not recreated Design System demos. Compare their actual current behavior here before deciding what to consolidate into shared components.</p>
   </section>
 
   <!-- Table -->

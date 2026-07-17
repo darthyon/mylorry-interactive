@@ -793,6 +793,126 @@ function HistoryCard({ icon, prefix, title, subtitle, status, action, meta, onCl
   );
 }
 
+// Expiry date helpers: shared by any flow that renders a document/reminder
+// due-date field (issued/expiry date formatting, relative "N days left" text,
+// and the danger/warn/good tone used to color it).
+function fmtExpiryDate(iso) {
+  if (!iso) return "—";
+  const d = new Date(`${iso}T00:00:00`);
+  if (isNaN(d)) return "—";
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+function daysUntilExpiry(iso) {
+  if (!iso) return null;
+  const target = new Date(`${iso}T00:00:00`);
+  if (isNaN(target)) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((target - today) / 86400000);
+}
+function expiryTone(iso) {
+  const days = daysUntilExpiry(iso);
+  if (days == null) return "empty";
+  if (days < 7) return "danger";
+  if (days <= 30) return "warn";
+  return "good";
+}
+function expiryRelativeText(iso) {
+  const days = daysUntilExpiry(iso);
+  if (days == null) return "—";
+  if (days < 0) return `${Math.abs(days)} days overdue`;
+  if (days === 0) return "Due today";
+  if (days === 1) return "1 day left";
+  return `${days} days left`;
+}
+// Maps to STATUS_BADGE_META's doc_* keys (Active/Expired/0-7 days/8-30 days/...).
+function documentExpiryStatus(iso) {
+  const days = daysUntilExpiry(iso);
+  if (days == null) return "doc_active";
+  if (days < 0) return "doc_expired";
+  if (days <= 7) return "doc_0_7";
+  if (days <= 30) return "doc_8_30";
+  if (days <= 60) return "doc_31_60";
+  if (days <= 90) return "doc_61_90";
+  return "doc_future";
+}
+
+// Reminder field value: nearest reminder as plain text, with a "+N more"
+// trigger that opens a fixed-position (viewport-clamped) schedule popover.
+// Same shape as the Documents tab's reminder field, reused everywhere a
+// reminders column/field shows up instead of forking chips or plain text.
+function ReminderSummary({ reminders = [] }) {
+  const values = reminders.map(Number).filter((value) => Number.isFinite(value) && value > 0);
+  const triggerRef = React.useRef(null);
+  const popRef = React.useRef(null);
+  const [open, setOpen] = React.useState(false);
+  const [pos, setPos] = React.useState({ top: 0, left: 0 });
+
+  React.useEffect(() => {
+    if (!open) return undefined;
+    const close = (e) => { if (!triggerRef.current?.contains(e.target) && !popRef.current?.contains(e.target)) setOpen(false); };
+    const dismiss = () => setOpen(false);
+    document.addEventListener("mousedown", close);
+    window.addEventListener("scroll", dismiss, true);
+    window.addEventListener("resize", dismiss);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      window.removeEventListener("scroll", dismiss, true);
+      window.removeEventListener("resize", dismiss);
+    };
+  }, [open]);
+
+  if (!values.length) return "—";
+  const nearest = Math.min(...values);
+  if (values.length === 1) return <span>{nearest} days before</span>;
+
+  function toggle() {
+    if (!open && triggerRef.current) {
+      const r = triggerRef.current.getBoundingClientRect();
+      const popWidth = 210;
+      const left = Math.max(12, Math.min(r.left, window.innerWidth - popWidth - 12));
+      setPos({ top: r.bottom + 6, left });
+    }
+    setOpen((v) => !v);
+  }
+
+  return (
+    <span className="ml-reminder-summary">
+      {nearest} days before{" "}
+      <button ref={triggerRef} className="ml-reminder-trigger" type="button" aria-expanded={open} onClick={toggle}>
+        +{values.length - 1} more<Icon name="expand_more" size={14} />
+      </button>
+      {open && ReactDOM.createPortal(
+        <span ref={popRef} className="ml-reminder-pop" role="dialog" aria-label="Reminder schedule" style={{ top: pos.top, left: pos.left }}>
+          <span className="ml-reminder-pop-title">Reminder schedule</span>
+          {values.map((value, index) => <span className="ml-reminder-pop-row" key={`${value}-${index}`}><span>Reminder {index + 1}</span><span>{value} days before expiry date</span></span>)}
+        </span>,
+        document.body
+      )}
+    </span>
+  );
+}
+
+// Shared shell for table-to-card mobile conversions. The body and optional
+// footer remain freeform so each variant can keep task-specific content.
+function MobileListCard({ leading, title, subtitle, status, menu, meta, footer, children, className = "" }) {
+  return <article className={`ml-mobile-list-card${children ? " has-body" : ""}${footer ? " has-footer" : ""}${className ? ` ${className}` : ""}`}>
+    <header className="ml-mobile-list-card-head">
+      <div className="ml-mobile-list-card-identity">
+        {leading && <div className="ml-mobile-list-card-leading">{leading}</div>}
+        <div className="ml-mobile-list-card-copy">
+          <div className="ml-mobile-list-card-title">{title}</div>
+          {subtitle && <div className="ml-mobile-list-card-subtitle">{subtitle}</div>}
+        </div>
+      </div>
+      {(status || menu) && <div className="ml-mobile-list-card-actions">{status}{menu}</div>}
+    </header>
+    {meta && <div className="ml-mobile-list-card-meta">{meta}</div>}
+    {children && <div className="ml-mobile-list-card-body">{children}</div>}
+    {footer && <footer className="ml-mobile-list-card-footer">{footer}</footer>}
+  </article>;
+}
+
 /* ─── Checklist Card + bulk confirm modal ───────────────────────
    Safety Checklist submission card: driver/vehicle header, check-in/
    check-out + mileage, expandable checklist items, inline Reject All /
@@ -830,12 +950,15 @@ function ConfirmBulkModal({ driver, action, count, onCancel, onConfirm }) {
   );
 }
 
-function ChecklistCard({ row }) {
+function ChecklistCard({ row, showCheckInOut = true }) {
   const [open, setOpen] = React.useState(false);
   const [pending, setPending] = React.useState(null); // null | "endorse" | "reject"
   const [decision, setDecision] = React.useState(row.decision || null); // null | "endorsed" | "rejected"
   const warnCount = row.items.filter((i) => i.status === "warning").length;
   const allGood = warnCount === 0;
+  const VISIBLE_COUNT = 3;
+  const hasMore = row.items.length > VISIBLE_COUNT;
+  const visibleItems = open ? row.items : row.items.slice(0, VISIBLE_COUNT);
   return (
     <article className="od-preview-card od-checklist-card">
       {pending && (
@@ -855,20 +978,24 @@ function ChecklistCard({ row }) {
         </div>
       </div>
       <div className="od-cl-divider" />
-      <div className="od-cl-checkinout">
-        <div className="od-cl-col">
-          <div className="od-cl-col-label"><Icon name="login" size={14} color="var(--green-600)" />Check-in</div>
-          <div className="od-cl-col-val">{row.checkIn}</div>
-          <div className="od-cl-col-sub">Start: {Number(row.startMileage).toLocaleString("en-US")} km</div>
-        </div>
-        <div className="od-cl-col">
-          <div className="od-cl-col-label"><Icon name="logout" size={14} color="var(--red-400)" />Check-out</div>
-          <div className="od-cl-col-val">{row.checkOut}</div>
-          <div className="od-cl-col-sub">End: {Number(row.endMileage).toLocaleString("en-US")} km</div>
-        </div>
-      </div>
-      <div className="od-cl-divider" />
-      <button type="button" className="od-cl-clhead" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+      {showCheckInOut && (
+        <>
+          <div className="od-cl-checkinout">
+            <div className="od-cl-col">
+              <div className="od-cl-col-label"><Icon name="login" size={14} color="var(--green-600)" />Check-in</div>
+              <div className="od-cl-col-val">{row.checkIn}</div>
+              <div className="od-cl-col-sub">Start: {Number(row.startMileage).toLocaleString("en-US")} km</div>
+            </div>
+            <div className="od-cl-col">
+              <div className="od-cl-col-label"><Icon name="logout" size={14} color="var(--red-400)" />Check-out</div>
+              <div className="od-cl-col-val">{row.checkOut}</div>
+              <div className="od-cl-col-sub">End: {Number(row.endMileage).toLocaleString("en-US")} km</div>
+            </div>
+          </div>
+          <div className="od-cl-divider" />
+        </>
+      )}
+      <div className="od-cl-clhead">
         <span className="od-cl-clhead-title">Checklists</span>
         <span className="od-cl-clhead-right">
           {!decision && (
@@ -877,31 +1004,34 @@ function ChecklistCard({ row }) {
             </span>
           )}
           {row.overdue && <span className="ml-badge acct-suspended">Overdue</span>}
-          <Icon name={open ? "expand_less" : "expand_more"} size={18} />
         </span>
-      </button>
-      {open && (
-        <div className="od-cl-items">
-          {row.items.map((it, i) => {
-            const status = decision === "endorsed" ? "passed" : decision === "rejected" ? "rejected" : it.status;
-            return (
-              <div className="od-cl-item" key={i}>
-                <div className="od-cl-item-left">
-                  <Icon name="fact_check" size={20} color="var(--fg-tertiary)" />
-                  <span>{it.label}</span>
-                </div>
-                <div className="od-cl-item-right">
-                  <Icon
-                    name={status === "passed" ? "check_circle" : status === "rejected" ? "cancel" : "error"}
-                    size={19}
-                    color={status === "passed" ? "var(--green-600)" : "var(--red-400)"}
-                  />
-                  <Icon name="chevron_right" size={16} color="var(--fg-tertiary)" />
-                </div>
+      </div>
+      <div className="od-cl-items">
+        {visibleItems.map((it, i) => {
+          const status = decision === "endorsed" ? "passed" : decision === "rejected" ? "rejected" : it.status;
+          return (
+            <div className="od-cl-item" key={i}>
+              <div className="od-cl-item-left">
+                <Icon name="fact_check" size={20} color="var(--fg-tertiary)" />
+                <span>{it.label}</span>
               </div>
-            );
-          })}
-        </div>
+              <div className="od-cl-item-right">
+                <Icon
+                  name={status === "passed" ? "check_circle" : status === "rejected" ? "cancel" : "error"}
+                  size={19}
+                  color={status === "passed" ? "var(--green-600)" : "var(--red-400)"}
+                />
+                <Icon name="chevron_right" size={16} color="var(--fg-tertiary)" />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {hasMore && (
+        <button type="button" className="od-cl-more" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+          {open ? "Show less" : `View ${row.items.length - VISIBLE_COUNT} more`}
+          <Icon name={open ? "expand_less" : "expand_more"} size={17} />
+        </button>
       )}
       {decision ? (
         <div className={"od-cl-decision " + (decision === "endorsed" ? "od-cl-decision-good" : "od-cl-decision-bad")}>
@@ -930,7 +1060,9 @@ window.SharedShell = {
   Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu, Segmented,
   Pill, CurrencyPill, SummaryCard, CountCard, KpiTierChip,
   StatusBadge, AccountStatusBadge, KPIProgress, KPIProgressMeta,
-  LockSection, PetronLogo, HistoryCard, FeatureTabShell, OrgSwitcher, SelectMenu,
+  LockSection, PetronLogo, HistoryCard, MobileListCard, ReminderSummary,
+  fmtExpiryDate, daysUntilExpiry, expiryTone, expiryRelativeText, documentExpiryStatus,
+  FeatureTabShell, OrgSwitcher, SelectMenu,
   CalcPopover, ChecklistCard, ConfirmBulkModal, Modal, HacModal, HacFileUpload,
 };
 window.KPIProgressMeta = KPIProgressMeta;
