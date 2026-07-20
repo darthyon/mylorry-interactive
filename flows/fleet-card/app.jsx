@@ -289,7 +289,7 @@ function FleetCardMobile({ row, pending, failed, utype }) {
           </div>
         </div>
       </div>
-      <div className="fc-card-div"></div>
+      <div className="fc-card-div fc-card-div-top"></div>
       <div className="fc-card-limits">
         <div>
           <div className="fc-card-label">Daily Limit:</div>
