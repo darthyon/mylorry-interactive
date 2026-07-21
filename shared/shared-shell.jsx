@@ -531,6 +531,8 @@ const STATUS_BADGE_META = {
   veh_in_progress: { label:"In Progress",            cls:"trip-ongoing" },
   veh_idle:        { label:"Idle",                   cls:"veh-idle"     },
   veh_assigned:    { label:"Assigned – Not Started", cls:"trip-pending" },
+  // Emergency contact designation (driver detail)
+  primary:         { label:"Primary",                cls:"acct-active"  },
 };
 function StatusBadge({ status, prefix, label, fallback = "activated" }) {
   const m = STATUS_BADGE_META[status] || STATUS_BADGE_META[fallback] || { label: status, cls: "" };
