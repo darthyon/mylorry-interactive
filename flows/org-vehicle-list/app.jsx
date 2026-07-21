@@ -819,11 +819,10 @@ function Rail() {
   );
 }
 
-function VehiclePageHead({ mode, vehicle, onBack, onEdit }) {
+function VehiclePageHead({ mode, vehicle, onBack }) {
   const isCreate = mode === "create";
-  const isView = mode === "view";
-  const title = isCreate ? "Create vehicle" : isView ? (vehicle?.plate || "Vehicle") : `Edit ${vehicle?.plate || "vehicle"}`;
-  const crumbLabel = isCreate ? "Create" : isView ? "View" : "Edit";
+  const title = isCreate ? "Create vehicle" : (vehicle?.plate || "Vehicle");
+  const crumbLabel = isCreate ? "Create" : "View";
   return (
     <div className="ml-page-head ovl-pagehead">
       <div>
@@ -834,11 +833,6 @@ function VehiclePageHead({ mode, vehicle, onBack, onEdit }) {
         </div>
         <h1 className="ml-h1 ovl-title" style={{ margin: "10px 0 18px" }}>{title}</h1>
       </div>
-      {isView && (
-        <button className="ml-btn-outline" type="button" onClick={onEdit}>
-          <Icon name="edit" size={16} /> Edit vehicle
-        </button>
-      )}
     </div>
   );
 }
@@ -872,7 +866,7 @@ function ViewField({ label, value }) {
   );
 }
 
-function VehicleViewSections({ form, nextManagedCount, scope }) {
+function VehicleViewSections({ form, nextManagedCount, scope, onEdit }) {
   const remainingSlots = Number.isFinite(scope.limit) ? Math.max(scope.limit - nextManagedCount, 0) : Infinity;
   const slotsLabel = !Number.isFinite(scope.limit)
     ? "Unlimited managed vehicle slots"
@@ -883,8 +877,9 @@ function VehicleViewSections({ form, nextManagedCount, scope }) {
   return (
     <div className="ovl-form">
       <div className="ml-card ovl-form-card">
-        <div className="hac-sec-header">
+        <div className="hac-sec-header ovl-tab-head">
           <div>Vehicle details</div>
+          {onEdit && <button className="ml-btn-outline ovl-tab-edit" type="button" onClick={onEdit}><Icon name="edit" size={16} /> Edit</button>}
         </div>
         <div className="hac-form-grid3 ovl-details-grid ovl-form-body">
           <div className="ovl-details-photo-cell ovl-view-photo">
@@ -1215,6 +1210,7 @@ function App() {
   const [mode, setMode] = useState("list");
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [editTab, setEditTab] = useState("details");
+  const [detailsEditing, setDetailsEditing] = useState(false);
   const [form, setForm] = useState(() => makeEmptyForm());
   const [driverPickerOpen, setDriverPickerOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
@@ -1240,16 +1236,15 @@ function App() {
   }
 
   function openEdit(vehicle, options = {}) {
-    setEditingVehicle(vehicle);
-    setForm(makeFormFromVehicle(vehicle));
-    setEditTab(options.tab === "documents" ? "reminders" : "details");
-    setMode("edit");
+    openView(vehicle, options);
+    if (options.tab !== "documents") setDetailsEditing(true);
   }
 
   function openView(vehicle, options = {}) {
     setEditingVehicle(vehicle);
     setForm(makeFormFromVehicle(vehicle));
     setEditTab(options.tab === "documents" ? "reminders" : "details");
+    setDetailsEditing(false);
     setMode("view");
   }
 
@@ -1260,6 +1255,12 @@ function App() {
   function closeForm() {
     setMode("list");
     setEditingVehicle(null);
+    setDetailsEditing(false);
+  }
+  function cancelDetailsEdit() {
+    const base = currentEditingVehicle || editingVehicle;
+    if (base) setForm(makeFormFromVehicle(base));
+    setDetailsEditing(false);
   }
 
   function pushToast(tone, message) {
@@ -1403,7 +1404,7 @@ function App() {
   function handleSubmit(e) {
     e.preventDefault();
 
-    if (mode === "edit") {
+    if (detailsEditing) {
       const current = vehicles.find((item) => item.id === editingVehicle.id);
       if (!current) return;
       if (!form.managed && current.managed && current.activeCheckIn) {
@@ -1432,7 +1433,7 @@ function App() {
           documents: form.documents || makeVehicleDocuments(current),
         };
       }));
-      closeForm();
+      setDetailsEditing(false);
       pushToast("ok", form.managed
         ? "Vehicle updated. Managed status remains active and Driver tab is available."
         : "Vehicle updated. Driver tab remains locked until the vehicle is managed.");
@@ -1486,22 +1487,22 @@ function App() {
         <div className="ovl-content">
           {mode !== "list" ? (
             <>
-              <VehiclePageHead mode={mode} vehicle={editingVehicle} onBack={closeForm} onEdit={() => setMode("edit")} />
-              {(mode === "edit" || mode === "view") && (
+              <VehiclePageHead mode={mode} vehicle={editingVehicle} onBack={closeForm} />
+              {mode === "view" && (
                 <div className="ml-tabs ovl-tabs-row">
                   {VEHICLE_EDIT_TABS.map((tab) => (
                     <button
                       key={tab.key}
                       type="button"
                       className={"ml-tab" + (editTab === tab.key ? " active" : "")}
-                      onClick={() => setEditTab(tab.key)}
+                      onClick={() => { setEditTab(tab.key); setDetailsEditing(false); }}
                     >
                       {tab.label}
                     </button>
                   ))}
                 </div>
               )}
-              {mode === "create" || (mode === "edit" && editTab === "details") ? (
+              {mode === "create" || (editTab === "details" && detailsEditing) ? (
                 <>
                   <VehicleFormSections
                     form={form}
@@ -1513,12 +1514,12 @@ function App() {
                     onToggleManaged={handleToggleManaged}
                   />
                   <VehicleFormEditBar
-                    mode={mode}
-                    onCancel={mode === "edit" && currentEditingVehicle ? () => openView(currentEditingVehicle) : closeForm}
+                    mode={mode === "create" ? "create" : "edit"}
+                    onCancel={mode === "create" ? closeForm : cancelDetailsEdit}
                   />
                 </>
-              ) : mode === "view" && editTab === "details" ? (
-                <VehicleViewSections form={form} nextManagedCount={nextManagedCount} scope={scenario} />
+              ) : editTab === "details" ? (
+                <VehicleViewSections form={form} nextManagedCount={nextManagedCount} scope={scenario} onEdit={() => setDetailsEditing(true)} />
               ) : editTab === "reminders" && currentEditingVehicle ? (
                 <VehicleRemindersTab
                   vehicle={currentEditingVehicle}
