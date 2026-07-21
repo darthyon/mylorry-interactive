@@ -863,7 +863,7 @@ function Rail() {
 function VehiclePageHead({ mode, vehicle, onBack }) {
   const isCreate = mode === "create";
   const title = isCreate ? "Create vehicle" : (vehicle?.plate || "Vehicle");
-  const crumbLabel = isCreate ? "Create" : "View";
+  const crumbLabel = isCreate ? "Create" : (vehicle?.plate || "Vehicle");
   return (
     <div className="ml-page-head ovl-pagehead">
       <div>
