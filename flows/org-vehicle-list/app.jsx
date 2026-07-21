@@ -231,6 +231,13 @@ function makeVehicleDocuments(vehicle) {
   }));
 }
 
+const VEHICLE_FORMS = [
+  { key: "daily-vehicle-checklist", label: "Daily Vehicle Checklist", enabled: true, allDefault: false },
+  { key: "daily-vehicle-maintenance", label: "Daily Vehicle Maintenance", enabled: false, allDefault: false },
+  { key: "daily-driver-checklist", label: "Daily Driver Checklist", enabled: true, allDefault: false },
+];
+function makeVehicleForms(vehicle) { return (vehicle?.forms || VEHICLE_FORMS).map((form) => ({ ...form })); }
+
 function makeEmptyForm() {
   return {
     plate: "",
@@ -630,6 +637,40 @@ function AssignedDriversModal({ vehicle, onClose }) {
   </HacModal>;
 }
 
+function VehicleFormsTab({ forms, onChange, onToast }) {
+  function toggleEnabled(key) {
+    onChange(forms.map((form) => form.key === key ? { ...form, enabled: !form.enabled } : form));
+    const form = forms.find((item) => item.key === key);
+    onToast(`${form.label} ${form.enabled ? "disabled" : "enabled"}.`);
+  }
+  function toggleDefault(key) {
+    onChange(forms.map((form) => form.key === key ? { ...form, allDefault: !form.allDefault } : form));
+  }
+  return (
+    <section className="ml-card ovl-form-card ovl-forms-card">
+      <div className="hac-sec-header"><div>Forms</div></div>
+      <div className="ovl-form-body ovl-forms-grid">
+        {forms.map((form) => (
+          <div className="ovl-form-toggle-card" key={form.key}>
+            <div className="ovl-form-toggle-head">
+              <span className="ovl-form-toggle-name">{form.label}</span>
+              <div className="ovl-switch-inline">
+                <button type="button" className={`ovl-switch-btn${form.enabled ? " on" : ""}`} aria-pressed={form.enabled} aria-label={`${form.enabled ? "Disable" : "Enable"} ${form.label}`} onClick={() => toggleEnabled(form.key)} />
+                <span className="ovl-form-toggle-state">{form.enabled ? "Enabled" : "Disabled"}</span>
+              </div>
+            </div>
+            <label className={`ovl-form-default${form.enabled ? "" : " disabled"}`}>
+              <input type="checkbox" checked={form.allDefault} disabled={!form.enabled} onChange={() => toggleDefault(form.key)} />
+              Set All as Default
+              <span className="ml-tooltip-wrap"><Icon name="info" size={15} color="var(--fg-tertiary)" /><span className="ml-tooltip">Auto-selects a default answer for every question in this form.</span></span>
+            </label>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function DriverListPanel({ vehicle, onToggleAccessibleToAll, onOpenPicker, onRemoveDriver }) {
   const count = vehicle.drivers.length;
   const empty = vehicle.accessibleToAll || count === 0;
@@ -819,11 +860,10 @@ function Rail() {
   );
 }
 
-function VehiclePageHead({ mode, vehicle, onBack, onEdit }) {
+function VehiclePageHead({ mode, vehicle, onBack, editing }) {
   const isCreate = mode === "create";
-  const isView = mode === "view";
-  const title = isCreate ? "Create vehicle" : isView ? (vehicle?.plate || "Vehicle") : `Edit ${vehicle?.plate || "vehicle"}`;
-  const crumbLabel = isCreate ? "Create" : isView ? "View" : "Edit";
+  const title = isCreate ? "Create vehicle" : (vehicle?.plate || "Vehicle");
+  const crumbLabel = isCreate ? "Create" : editing ? "Edit details" : "View details";
   return (
     <div className="ml-page-head ovl-pagehead">
       <div>
@@ -834,11 +874,6 @@ function VehiclePageHead({ mode, vehicle, onBack, onEdit }) {
         </div>
         <h1 className="ml-h1 ovl-title" style={{ margin: "10px 0 18px" }}>{title}</h1>
       </div>
-      {isView && (
-        <button className="ml-btn-outline" type="button" onClick={onEdit}>
-          <Icon name="edit" size={16} /> Edit vehicle
-        </button>
-      )}
     </div>
   );
 }
@@ -872,7 +907,7 @@ function ViewField({ label, value }) {
   );
 }
 
-function VehicleViewSections({ form, nextManagedCount, scope }) {
+function VehicleViewSections({ form, nextManagedCount, scope, onEdit }) {
   const remainingSlots = Number.isFinite(scope.limit) ? Math.max(scope.limit - nextManagedCount, 0) : Infinity;
   const slotsLabel = !Number.isFinite(scope.limit)
     ? "Unlimited managed vehicle slots"
@@ -883,9 +918,9 @@ function VehicleViewSections({ form, nextManagedCount, scope }) {
   return (
     <div className="ovl-form">
       <div className="ml-card ovl-form-card">
-        <div className="hac-sec-header">
+        <div className="hac-sec-header ovl-tab-head">
           <div>Vehicle details</div>
-          <div className="ovl-sec-sub">Photo, core identity, and classification for this vehicle.</div>
+          {onEdit && <button className="ml-btn-outline ovl-tab-edit" type="button" onClick={onEdit}><Icon name="edit" size={16} /> Edit</button>}
         </div>
         <div className="hac-form-grid3 ovl-details-grid ovl-form-body">
           <div className="ovl-details-photo-cell ovl-view-photo">
@@ -913,7 +948,6 @@ function VehicleViewSections({ form, nextManagedCount, scope }) {
       <div className="ml-card ovl-form-card">
         <div className="hac-sec-header">
           <div>Vehicle specifications</div>
-          <div className="ovl-sec-sub">Build attributes, weight, and capacity information used for operations and compliance.</div>
         </div>
         <div className="hac-form-grid3 ovl-form-body">
           <ViewField label="Feature" value={form.feature} />
@@ -941,7 +975,6 @@ function VehicleFormSections({ form, update, overCap, nextManagedCount, scope, o
       <div className="ml-card ovl-form-card">
         <div className="hac-sec-header">
           <div>Vehicle details</div>
-          <div className="ovl-sec-sub">Photo, core identity, and classification for this vehicle.</div>
         </div>
         <div className="hac-form-grid3 ovl-details-grid ovl-form-body">
           <div className="ovl-details-photo-cell">
@@ -1017,7 +1050,6 @@ function VehicleFormSections({ form, update, overCap, nextManagedCount, scope, o
       <div className="ml-card ovl-form-card">
         <div className="hac-sec-header">
           <div>Vehicle specifications</div>
-          <div className="ovl-sec-sub">Build attributes, weight, and capacity information used for operations and compliance.</div>
         </div>
         <div className="hac-form-grid3 ovl-form-body">
           <div className="hac-fg">
@@ -1075,12 +1107,12 @@ function VehicleDocumentUpload({ files, onFiles }) {
   function removeFile(id) {
     onFiles(currentFiles.filter((file) => file.id !== id));
   }
-  return <><HacFileUpload multiple accept="image/jpeg,image/png,image/webp,application/pdf" onFiles={addFiles} description={<><span>Click to upload</span> or drag and drop</>} hint="Images or PDF, up to 5 files" />{currentFiles.length > 0 && <div className="ovl-upload-files">{currentFiles.map((file) => <div className="ovl-upload-file" key={file.id}>{file.kind === "image" ? <img src={file.url} alt="" /> : <span className="ovl-upload-pdf"><Icon name="picture_as_pdf" size={22} color="#bd4f48" /></span>}<span className="ovl-upload-file-name">{file.name}</span><button type="button" className="ovl-upload-remove" aria-label={`Remove ${file.name}`} onClick={() => removeFile(file.id)}><Icon name="close" size={16} /></button></div>)}</div>}<span className="ovl-file-limit">{currentFiles.length} of 5 files</span></>;
+  return <><HacFileUpload multiple accept="image/jpeg,image/png,image/webp,application/pdf" onFiles={addFiles} description={<><span>Click to upload</span> or drag and drop</>} hint="Images or PDF, up to 5 files" />{currentFiles.length > 0 && <div className="ovl-upload-files">{currentFiles.map((file) => <div className="ovl-upload-file" key={file.id}>{file.kind === "image" ? <img src={file.url} alt="" /> : <span className="ovl-upload-pdf"><Icon name="picture_as_pdf" size={22} color="#bd4f48" /></span>}<button type="button" className="ovl-upload-remove" aria-label="Remove attachment" onClick={() => removeFile(file.id)}><Icon name="close" size={16} /></button></div>)}</div>}<span className="ovl-file-limit">{currentFiles.length} of 5 files</span></>;
 }
 
 function VehicleFilePreview({ file, onClose }) {
   return <HacModal title="File preview" onClose={onClose} className="ovl-preview-hac-modal" footer={<><button className="ml-btn-soft" type="button"><Icon name="download" size={15} color="var(--green-600)" />Download</button><button className="hac-modal-cancel" type="button" onClick={onClose}>Close</button></>}>
-    <div className="ovl-preview-body">{file.kind === "image" ? <div className="ovl-preview-image"><img src={file.url} alt={file.name} /></div> : <div className="ovl-preview-placeholder"><Icon name="picture_as_pdf" size={48} color="#bd4f48" /><span>PDF preview is not available in this prototype.</span></div>}<div className="ovl-preview-name">{file.name}</div><div className="ovl-preview-date">Updated {file.uploadedDate || "—"}</div></div>
+    <div className="ovl-preview-body">{file.kind === "image" ? <div className="ovl-preview-image"><img src={file.url} alt="" /></div> : <div className="ovl-preview-placeholder"><Icon name="picture_as_pdf" size={48} color="#bd4f48" /><span>PDF preview is not available in this prototype.</span></div>}<div className="ovl-preview-name">{file.name}</div><div className="ovl-preview-date">Updated {file.uploadedDate || "—"}</div></div>
   </HacModal>;
 }
 
@@ -1089,7 +1121,7 @@ function fileCountLabel(files = []) {
 }
 
 function VehicleFileLink({ file, onPreview }) {
-  return <button className="ovl-file-link" type="button" onClick={() => onPreview(file)}>{file.kind === "image" ? <img src={file.url} alt="" /> : <Icon name="picture_as_pdf" size={27} color="#bd4f48" />}<span>{file.name}</span></button>;
+  return <button className="ovl-file-link ovl-file-thumb" type="button" aria-label="Open attachment" onClick={() => onPreview(file)}>{file.kind === "image" ? <img src={file.url} alt="" /> : <span className="ovl-file-thumb-pdf"><Icon name="picture_as_pdf" size={20} color="#bd4f48" /></span>}</button>;
 }
 
 function VehicleDocumentFiles({ files = [], onPreview }) {
@@ -1179,7 +1211,7 @@ function VehicleDocumentCard({ doc, editable, tier, onEdit, onDelete, onPreview 
     setHistoryLimit(5);
     setHistoryModal(true);
   }
-  return <article className="ovl-doc-row"><div className="ovl-doc-top"><div className="ovl-doc-type-wrap"><div className="ovl-doc-type">{isOther ? (doc.title || "Others") : doc.type}</div></div><div className="ovl-doc-top-spacer" />{doc.files?.[0]?.uploadedDate && <div className="ovl-doc-upload-info">Updated {doc.files[0].uploadedDate}</div>}{editable && <VehicleDocumentMenu onEdit={onEdit} onDelete={onDelete} />}</div><div className="ovl-doc-meta-row"><div className="ovl-doc-meta"><span>Issued date</span><span>{fmtDate(doc.startDate)}</span></div><div className="ovl-doc-meta"><span>Expiry date</span><span>{fmtDate(doc.expireDate)}</span></div><div className="ovl-doc-meta"><span>Time left</span><span className={`ovl-time-left ${expiryTone(doc.expireDate)}`}>{expiryMeta(doc.expireDate)}</span></div><div className="ovl-doc-meta"><span>Reminders</span><span>{doc.expireDate ? <ReminderSummary reminders={visibleReminders} /> : "—"}</span></div></div>{isOther && <VehicleDocumentDescription description={doc.description} />}<VehicleDocumentFiles files={doc.files || []} onPreview={onPreview} />{history.length ? <><button className="ovl-doc-history" type="button" onClick={openHistory}>View history ({history.length})<Icon name="chevron_right" size={17} /></button>{historyModal && <HacModal title={`Document History — ${isOther ? (doc.title || "Others") : doc.type}`} onClose={() => setHistoryModal(false)} className="ovl-history-modal"><div className="ovl-history-modal-body">{history.slice(0, historyLimit).map((record) => <VehicleHistoryRow key={record.id} record={{ ...record, type: doc.type }} />)}{historyLimit < history.length && <button className="ml-btn-soft ovl-history-load" type="button" onClick={() => setHistoryLimit((value) => value + 5)}>Load more</button>}</div></HacModal>}</> : <div className="ovl-doc-no-history">No historical data</div>}</article>;
+  return <article className="ovl-doc-row"><div className="ovl-doc-top"><div className="ovl-doc-type-wrap"><div className="ovl-doc-type">{isOther ? (doc.title || "Others") : doc.type}</div></div><div className="ovl-doc-top-spacer" />{doc.files?.[0]?.uploadedDate && <div className="ovl-doc-upload-info">Updated {doc.files[0].uploadedDate}</div>}{editable && <VehicleDocumentMenu onEdit={onEdit} onDelete={onDelete} />}</div><div className="ovl-doc-meta-row"><div className="ovl-doc-meta"><span>Issued date</span><span>{fmtDate(doc.startDate)}</span></div><div className="ovl-doc-meta"><span>Expiry date</span><span>{fmtDate(doc.expireDate)}</span></div><div className="ovl-doc-meta"><span>Time left</span><span className={`ovl-time-left ${expiryTone(doc.expireDate)}`}>{expiryMeta(doc.expireDate)}</span></div><div className="ovl-doc-meta"><span>Reminders</span><span>{doc.expireDate ? <ReminderSummary reminders={visibleReminders} /> : "—"}</span></div></div>{isOther && <VehicleDocumentDescription description={doc.description} />}<VehicleDocumentFiles files={doc.files || []} onPreview={onPreview} />{history.length ? <><button className="ovl-doc-history" type="button" onClick={openHistory}>View history<Icon name="chevron_right" size={17} /></button>{historyModal && <HacModal title={`Document History — ${isOther ? (doc.title || "Others") : doc.type}`} onClose={() => setHistoryModal(false)} className="ovl-history-modal"><div className="ovl-history-modal-body">{history.slice(0, historyLimit).map((record) => <VehicleHistoryRow key={record.id} record={{ ...record, type: doc.type }} />)}{historyLimit < history.length && <button className="ml-btn-soft ovl-history-load" type="button" onClick={() => setHistoryLimit((value) => value + 5)}>Load more</button>}</div></HacModal>}</> : <div className="ovl-doc-no-history">No historical data</div>}</article>;
 }
 
 function VehicleRemindersTab({ vehicle, documents, editable, tier, onChange, onToast }) {
@@ -1219,6 +1251,7 @@ function App() {
   const [mode, setMode] = useState("list");
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [editTab, setEditTab] = useState("details");
+  const [detailsEditing, setDetailsEditing] = useState(false);
   const [form, setForm] = useState(() => makeEmptyForm());
   const [driverPickerOpen, setDriverPickerOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
@@ -1244,16 +1277,15 @@ function App() {
   }
 
   function openEdit(vehicle, options = {}) {
-    setEditingVehicle(vehicle);
-    setForm(makeFormFromVehicle(vehicle));
-    setEditTab(options.tab === "documents" ? "reminders" : "details");
-    setMode("edit");
+    openView(vehicle, options);
+    if (options.tab !== "documents") setDetailsEditing(true);
   }
 
   function openView(vehicle, options = {}) {
     setEditingVehicle(vehicle);
     setForm(makeFormFromVehicle(vehicle));
     setEditTab(options.tab === "documents" ? "reminders" : "details");
+    setDetailsEditing(false);
     setMode("view");
   }
 
@@ -1264,6 +1296,12 @@ function App() {
   function closeForm() {
     setMode("list");
     setEditingVehicle(null);
+    setDetailsEditing(false);
+  }
+  function cancelDetailsEdit() {
+    const base = currentEditingVehicle || editingVehicle;
+    if (base) setForm(makeFormFromVehicle(base));
+    setDetailsEditing(false);
   }
 
   function pushToast(tone, message) {
@@ -1391,6 +1429,10 @@ function App() {
     setVehicles((current) => current.map((item) => item.id === vehicleId ? { ...item, drivers: item.drivers.filter((driver) => driver.driverId !== driverId) } : item));
   }
 
+  function updateVehicleForms(vehicleId, forms) {
+    setVehicles((current) => current.map((item) => item.id === vehicleId ? { ...item, forms } : item));
+  }
+
   function updateVehicleDocuments(vehicleId, documents) {
     setVehicles((current) => current.map((item) => {
       if (item.id !== vehicleId) return item;
@@ -1407,7 +1449,7 @@ function App() {
   function handleSubmit(e) {
     e.preventDefault();
 
-    if (mode === "edit") {
+    if (detailsEditing) {
       const current = vehicles.find((item) => item.id === editingVehicle.id);
       if (!current) return;
       if (!form.managed && current.managed && current.activeCheckIn) {
@@ -1436,7 +1478,7 @@ function App() {
           documents: form.documents || makeVehicleDocuments(current),
         };
       }));
-      closeForm();
+      setDetailsEditing(false);
       pushToast("ok", form.managed
         ? "Vehicle updated. Managed status remains active and Driver tab is available."
         : "Vehicle updated. Driver tab remains locked until the vehicle is managed.");
@@ -1490,22 +1532,22 @@ function App() {
         <div className="ovl-content">
           {mode !== "list" ? (
             <>
-              <VehiclePageHead mode={mode} vehicle={editingVehicle} onBack={closeForm} onEdit={() => setMode("edit")} />
-              {(mode === "edit" || mode === "view") && (
+              <VehiclePageHead mode={mode} vehicle={editingVehicle} onBack={closeForm} editing={detailsEditing} />
+              {mode === "view" && (
                 <div className="ml-tabs ovl-tabs-row">
                   {VEHICLE_EDIT_TABS.map((tab) => (
                     <button
                       key={tab.key}
                       type="button"
                       className={"ml-tab" + (editTab === tab.key ? " active" : "")}
-                      onClick={() => setEditTab(tab.key)}
+                      onClick={() => { setEditTab(tab.key); setDetailsEditing(false); }}
                     >
                       {tab.label}
                     </button>
                   ))}
                 </div>
               )}
-              {mode === "create" || (mode === "edit" && editTab === "details") ? (
+              {mode === "create" || (editTab === "details" && detailsEditing) ? (
                 <>
                   <VehicleFormSections
                     form={form}
@@ -1517,12 +1559,12 @@ function App() {
                     onToggleManaged={handleToggleManaged}
                   />
                   <VehicleFormEditBar
-                    mode={mode}
-                    onCancel={mode === "edit" && currentEditingVehicle ? () => openView(currentEditingVehicle) : closeForm}
+                    mode={mode === "create" ? "create" : "edit"}
+                    onCancel={mode === "create" ? closeForm : cancelDetailsEdit}
                   />
                 </>
-              ) : mode === "view" && editTab === "details" ? (
-                <VehicleViewSections form={form} nextManagedCount={nextManagedCount} scope={scenario} />
+              ) : editTab === "details" ? (
+                <VehicleViewSections form={form} nextManagedCount={nextManagedCount} scope={scenario} onEdit={() => setDetailsEditing(true)} />
               ) : editTab === "reminders" && currentEditingVehicle ? (
                 <VehicleRemindersTab
                   vehicle={currentEditingVehicle}
@@ -1530,6 +1572,18 @@ function App() {
                   editable={mode !== "create"}
                   tier={reminderTier}
                   onChange={(documents) => updateVehicleDocuments(currentEditingVehicle.id, documents)}
+                  onToast={(message) => pushToast("ok", message)}
+                />
+              ) : editTab === "forms" && !form.managed ? (
+                <div className="ovl-driver-empty">
+                  <Icon name="lock" size={34} />
+                  <div className="ovl-driver-empty-title">Manage this vehicle</div>
+                  <div className="ovl-driver-empty-sub">Enable managed vehicle to unlock check-in forms and safety checklists.</div>
+                </div>
+              ) : editTab === "forms" && currentEditingVehicle ? (
+                <VehicleFormsTab
+                  forms={makeVehicleForms(currentEditingVehicle)}
+                  onChange={(forms) => updateVehicleForms(currentEditingVehicle.id, forms)}
                   onToast={(message) => pushToast("ok", message)}
                 />
               ) : editTab === "drivers" && !form.managed ? (

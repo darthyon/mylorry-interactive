@@ -444,14 +444,13 @@ function TierItemMenu({ onEdit, onDelete }) {
   );
 }
 
-function Section({ title, sub, right, children }) {
+function Section({ title, right, children }) {
   return (
     <div className="ml-card hsub-card">
       <div className="hac-sec-header">
         <div className="hac-sec-header-row">
           <div>
             <div>{title}</div>
-            {sub && <div className="hsub-sec-sub">{sub}</div>}
           </div>
           {right}
         </div>
@@ -693,7 +692,7 @@ function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onActivate, o
 
 function BasicDetailsSection({ plan, editable, onChange }) {
   return (
-    <Section title="Basic details" sub="Title, description, and position in the plan stack.">
+    <Section title="Basic details">
       {editable ? (
         <>
           <div className="hac-form-grid">
@@ -740,7 +739,7 @@ function PricingSection({ plan, editable, onChange }) {
   const preview = baseMonthlyFee + sampleVehicles * perManagedVehicleFee;
   const previewBreakdown = `${fmtRM(baseMonthlyFee)} base monthly fee + ${sampleVehicles} managed vehicles × ${fmtRM(perManagedVehicleFee)} per managed vehicle`;
   return (
-    <Section title="Pricing" sub="Primary commercial structure for the subscription.">
+    <Section title="Pricing">
       {editable ? (
         <>
           <div className="hsub-price-grid">
@@ -1031,7 +1030,7 @@ function FeatureAccessSection({ plan, editable, onChange }) {
   const tabs = plan.featureModules.map((module) => ({ key: module.key, label: module.label }));
 
   return (
-    <Section title="Feature access" sub="Grouped by module with compact toggles, limits, and depth controls.">
+    <Section title="Feature access">
       <FeatureTabShell tabs={tabs} activeKey={activeModuleKey} onSelect={setActiveModuleKey}>
         {activeModule && (
           <div key={activeModule.key}>

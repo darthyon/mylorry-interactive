@@ -406,14 +406,13 @@ function TabBar({ activeTab, onTab, mode }) {
   );
 }
 
-function SectionCard({ title, sub, children, className = "" }) {
+function SectionCard({ title, children, className = "" }) {
   return (
     <section className={"ml-card hsub-card horg-card" + (className ? " " + className : "")}>
       <div className="hac-sec-header">
         <div className="hac-sec-header-row">
           <div>
             <div>{title}</div>
-            {sub && <div className="horg-sec-sub">{sub}</div>}
           </div>
         </div>
       </div>
@@ -812,7 +811,7 @@ function SubscriptionTab({ org, mode, errors, updatePath }) {
           />
         </>
       ) : editable ? (
-        <SectionCard title="Upcoming Plan" sub="Only one upcoming plan can be scheduled in this prototype.">
+        <SectionCard title="Upcoming Plan">
           <div className="horg-empty-action">
             <span>No upcoming plan scheduled.</span>
             <button className="ml-btn-outline" type="button" onClick={() => updatePath("subscription.upcoming", makeUpcomingFromCurrent(current))}>
@@ -860,7 +859,7 @@ function PartnerAssignmentTab({ org, mode, updatePath }) {
 
   if (!editable) {
     return (
-      <SectionCard title="Partner Assignment" sub="Partner organizations assigned for trip workflows later.">
+      <SectionCard title="Partner Assignment">
         <div className="ml-table-wrap horg-partner-table-wrap">
           <table className="ml-table horg-partner-table readonly">
             <thead>
@@ -887,7 +886,7 @@ function PartnerAssignmentTab({ org, mode, updatePath }) {
   }
 
   return (
-    <SectionCard title="Partner Assignment" sub="Partner organizations can be assigned for trip workflows later.">
+    <SectionCard title="Partner Assignment">
       <div className="horg-partner-toolbar">
         <div className="hac-search-group horg-partner-search">
           <div className="hac-search-bar">
