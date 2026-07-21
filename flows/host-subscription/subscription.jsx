@@ -86,12 +86,14 @@ function makeEmptyPlan(plans) {
     id: `plan-normal-${Date.now()}`,
     name: "",
     description: "",
+    websiteFeatures: [],
     status: "inactive",
     type: "normal",
     protectedPlan: false,
     version: 1,
     recommended: false,
     displayOrder: plans.length + 1,
+    isFree: false,
     pricing: {
       setupFee: 0,
       waiveSetupFee: false,
@@ -708,6 +710,14 @@ function BasicDetailsSection({ plan, editable, onChange }) {
                 onChange={(e) => onChange({ displayOrder: Number(e.target.value || 0) })}
               />
             </Field>
+            <Field label="Free plan">
+              <SwitchField
+                checked={!!plan.isFree}
+                onChange={(value) => onChange({ isFree: value })}
+                label={plan.isFree ? "Enabled" : "Disabled"}
+                ariaLabel="Free plan"
+              />
+            </Field>
           </div>
           <div className="hsub-stack-spacer" />
           <Field label="Description" hint={`${plan.description.length}/500`}>
@@ -719,15 +729,86 @@ function BasicDetailsSection({ plan, editable, onChange }) {
               placeholder="Explain who this plan is for and what makes it different."
             />
           </Field>
+          <div className="hsub-stack-spacer" />
+          <Field label="Website listing" hint="Shown to visitors comparing plans on the website.">
+            <WebsiteFeatureList
+              features={plan.websiteFeatures || []}
+              onChange={(next) => onChange({ websiteFeatures: next })}
+            />
+          </Field>
         </>
       ) : (
         <div className="hac-detail-grid hac-view-grid">
           <ViewField label="Subscription title" value={plan.name} />
           <ViewField label="Display order" value={plan.displayOrder} />
+          <ViewField label="Free plan" value={plan.isFree ? "Yes" : "No"} />
           <ViewField label="Description" value={plan.description || "—"} />
         </div>
       )}
+      {!editable && (
+        <div className="hsub-website-feature-view">
+          <div className="ml-k">Website listing</div>
+          {(plan.websiteFeatures || []).length === 0 ? (
+            <div className="hsub-muted">No website features listed.</div>
+          ) : (
+            <ul className="hsub-website-feature-list-view">
+              {plan.websiteFeatures.map((feature, index) => (
+                <li key={index}>{feature}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </Section>
+  );
+}
+
+function WebsiteFeatureList({ features, onChange }) {
+  const [draft, setDraft] = useState("");
+
+  const addFeature = () => {
+    const value = draft.trim();
+    if (!value) return;
+    onChange([...features, value]);
+    setDraft("");
+  };
+
+  const removeFeature = (index) => {
+    onChange(features.filter((_, featureIndex) => featureIndex !== index));
+  };
+
+  return (
+    <div className="hsub-website-feature-list">
+      <div className="hsub-website-feature-add">
+        <input
+          className="hac-input"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addFeature();
+            }
+          }}
+          placeholder="Add a feature, e.g. Unlimited managed vehicles"
+        />
+        <button type="button" className="hac-add-tier-btn" onClick={addFeature}>
+          <HIcon name="add" size={15} /> Add
+        </button>
+      </div>
+      {features.length > 0 && (
+        <ul className="hsub-website-feature-chips">
+          {features.map((feature, index) => (
+            <li key={index}>
+              <span>{feature}</span>
+              <button type="button" aria-label={`Remove ${feature}`} onClick={() => removeFeature(index)}>
+                <HIcon name="close" size={13} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -1135,7 +1216,7 @@ function ConfigurationView({ plan, editable, onChange }) {
   return (
     <div className="hac-detail-sections">
       <BasicDetailsSection plan={plan} editable={editable} onChange={onChange} />
-      <PricingSection plan={plan} editable={editable} onChange={onChange} />
+      {!plan.isFree && <PricingSection plan={plan} editable={editable} onChange={onChange} />}
       <FeatureAccessSection plan={plan} editable={editable} onChange={onChange} />
     </div>
   );

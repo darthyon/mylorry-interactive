@@ -26,7 +26,7 @@ function TopBar() {
       <button className="ml-burger" aria-label="Menu"><Icon name="menu" size={22} color="#fff" /></button>
       <div className="ml-topbar-brand">
         <a className="ml-logo" href="../../index.html" aria-label="Back to Prototype Library">
-          <img className="ml-logo-img" src="/flows/fleet-card/img_logo_white.svg" alt="MyLorry" />
+          <img className="ml-logo-img" src="../fleet-card/img_logo_white.svg" alt="MyLorry" />
         </a>
       </div>
       <div className="ml-topbar-spacer" />
