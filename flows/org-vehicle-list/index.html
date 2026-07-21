@@ -248,13 +248,16 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .ovl-doc-description-toggle:hover{text-decoration:underline;text-underline-offset:3px;}
 .ovl-doc-description-toggle .msr{color:var(--green-600);}
 .ovl-doc-file-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border-top:1px solid var(--border-light);}
-.ovl-doc-file-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;gap:8px;min-width:0;flex:1;}
+.ovl-doc-file-list{display:flex;align-items:center;gap:8px;min-width:0;flex:1;}
 .ovl-doc-file-empty{font-size:12px;color:var(--fg-tertiary);}
 .ovl-doc-file-count{display:inline-flex;align-items:center;gap:3px;margin-left:auto;font:600 11px var(--font-sans);color:var(--fg-secondary);white-space:nowrap;flex-shrink:0;border:0;background:transparent;padding:0;cursor:pointer;}
 .ovl-doc-file-count:hover{color:var(--fg-primary);text-decoration:underline;text-underline-offset:3px;}
 .ovl-doc-file-count:not(button){cursor:default;}
 .ovl-doc-file-count:not(button):hover{color:var(--fg-secondary);text-decoration:none;}
 .ovl-file-link{display:flex;align-items:center;gap:7px;min-width:0;width:100%;color:var(--fg-secondary);font-size:12px;font-weight:500;background:transparent;border:0;padding:0;text-align:left;cursor:pointer;}
+.ovl-file-thumb{width:40px;height:40px;flex:0 0 auto;overflow:hidden;border:1px solid var(--border-light);border-radius:6px;background:var(--bg-muted);padding:0;}
+.ovl-file-thumb:hover{border-color:var(--green-500);}
+.ovl-file-thumb img,.ovl-file-thumb .ovl-file-thumb-pdf{width:100%;height:100%;border:0;border-radius:0;object-fit:cover;display:flex;align-items:center;justify-content:center;}
 .ovl-file-link:hover{color:var(--fg-primary);text-decoration:underline;}
 .ovl-file-link img,.ovl-file-link .msr{width:38px;height:30px;flex:0 0 auto;object-fit:cover;border-radius:4px;border:1px solid var(--border-light);}
 .ovl-file-link .msr{display:flex;align-items:center;justify-content:center;background:var(--bg-muted);}
@@ -300,9 +303,9 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .ovl-upgrade-alert{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:9px 10px;border:1px solid #E1E9E3;border-radius:6px;background:#F6FBF7;color:var(--fg-secondary);font-size:12px;}
 .ovl-upgrade-alert button{border:0;background:transparent;padding:0;color:var(--green-600);font:700 12px var(--font-sans);cursor:pointer;white-space:nowrap;}
 .ovl-upload-files{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px;}
-.ovl-upload-file{display:flex;align-items:center;gap:8px;min-width:0;padding:7px 8px;border:1px solid var(--border-light);border-radius:5px;background:#fff;font-size:12px;color:var(--fg-secondary);}
+.ovl-upload-file{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;padding:7px 8px;border:1px solid var(--border-light);border-radius:5px;background:#fff;font-size:12px;color:var(--fg-secondary);}
+.ovl-upload-file img{width:30px;height:30px;flex:0 0 auto;border-radius:4px;border:1px solid var(--border-light);object-fit:cover;}
 .ovl-upload-file img,.ovl-upload-pdf{width:30px;height:30px;flex:0 0 auto;border-radius:4px;border:1px solid var(--border-light);object-fit:cover;display:flex;align-items:center;justify-content:center;background:var(--bg-muted);}
-.ovl-upload-file-name{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ovl-upload-remove{display:flex;align-items:center;justify-content:center;width:26px;height:26px;flex:0 0 auto;border:0;border-radius:4px;background:transparent;color:var(--fg-secondary);cursor:pointer;}
 .ovl-upload-remove:hover{background:var(--bg-muted);color:var(--fg-primary);}
 .ovl-file-limit{display:block;margin-top:6px;font-size:11px;color:var(--fg-tertiary);}
@@ -379,7 +382,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 <script src="../../shared/shared-shell.js?v=20260715a"></script>
 <script src="../../shared/tweaks-panel.js?v=20260709v"></script>
 <script src="data.js?v=20260709v2"></script>
-<script src="app.js?v=20260715a"></script>
+<script src="app.js?v=20260721a"></script>
 <script>
   document.addEventListener('keydown', function(e){
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'e') {
