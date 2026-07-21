@@ -3,7 +3,7 @@
 // (⌘⇧E) switches between the 5 required prototype data states — see
 // data.js `scenarios`.
 
-const { Icon, StatusBadge, FeatureTabShell, OrgSwitcher, CalcPopover } = window.SharedShell;
+const { Icon, StatusBadge, FeatureTabShell, OrgSwitcher } = window.SharedShell;
 const { useTweaks, TweaksPanel, TweakSection, TweakSelect } = window;
 const { SUBSCRIPTION_PLANS, calculateCommittedBilling, getBoundValue } = window.SUB;
 const D = window.ORG_PROFILE;
@@ -238,25 +238,9 @@ function PlanStatCard({ s }) {
 
 function BillingStatCard({ s, billing }) {
   const isFree = billing.commitmentMonths == null;
-  const isTrial = s.status === "trial";
-  const rows = [
-    { label: "Base monthly fee", value: `${RM(billing.baseMonthlyFee)} × ${billing.commitmentMonths} months` },
-  ];
-  if (billing.perManagedVehicleFee > 0) {
-    rows.push({
-      label: "Managed vehicles",
-      value: `${s.agreementVehicleCount} × ${RM(billing.perManagedVehicleFee)} × ${billing.commitmentMonths} months`,
-    });
-  }
-  rows.push({ label: "Total", value: RM(billing.totalLumpSum), tone: "green", total: true });
 
   return (
     <div className="osp-stat-card osp-stat-card-relative">
-      {!isFree && !isTrial && (
-        <div className="osp-calc-corner">
-          <CalcPopover title="Calculation summary" rows={rows} align="right" />
-        </div>
-      )}
       <div className="osp-block-title">Current billed amount</div>
       <div className="osp-billing-amount">{RM(billing.totalLumpSum)}</div>
       <div className="osp-billing-row">
@@ -303,7 +287,7 @@ function UpcomingPlanView({ upcoming }) {
         <Icon name="event_upcoming" size={34} />
         <div className="osp-empty-t">No upcoming plan change</div>
         <div className="osp-empty-s">This organisation isn't scheduled for a plan change.</div>
-        <button className="ml-btn-primary">Upgrade plan</button>
+        <button className="ml-btn-primary">Choose plan</button>
       </div>
     );
   }
