@@ -131,6 +131,19 @@ window.FLOWS = {
             { label: "Customer view", note: "Public single-trip tracking page mock — location, trip info, ETA only. Reached via share modal preview." },
           ],
         },
+        {
+          id: "org-mytrip-map",
+          name: "MyTrip — Live Fleet Map (test)",
+          status: "wip",
+          route: "flows/org-mytrip-map/index.html",
+          desc: "Map-first fleet monitoring test surface — a Leaflet map replaces the Gantt for 'where are my trucks now'. Left rail folds trip KPIs + Ongoing/Not started/Completed vehicle selector; checkpoint pin snaps to the last completed waypoint; bottom strip summarises the selected vehicle; right drawer shows the full waypoint timeline. Isolated experiment; the real dashboard + Schedule Gantt are untouched.",
+          screens: [
+            { label: "Fleet Map", note: "Leaflet + OSM. Select a vehicle from the sectioned left rail → map pans to its checkpoint pin, route drawn solid (done) + ghost (pending)." },
+            { label: "Left rail", note: "Trip KPI chips (Completed/Ongoing/Pending/Paused) on top; collapsible Ongoing / Not started / Completed sections listing vehicles with plate · driver · n/m waypoints." },
+            { label: "Summary strip", note: "One-line bottom strip: plate · driver · destination · waypoint progress · ETA. Switches on vehicle select." },
+            { label: "Waypoint drawer", note: "Right slide-over — full vertical waypoint timeline with the live 'here now' pin. Adapts the mfd-drawer pattern." },
+          ],
+        },
       ],
     },
     {
