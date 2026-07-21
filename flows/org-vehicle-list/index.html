@@ -377,6 +377,17 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 }
 .ovl-tab-head{display:flex;align-items:center;justify-content:space-between;gap:12px;}
 .ovl-tab-edit{height:34px;padding:0 14px;font-size:13px;gap:6px;}
+.ovl-forms-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;}
+.ovl-form-toggle-card{display:flex;flex-direction:column;gap:16px;padding:16px;border:1px solid var(--border-light);border-radius:10px;background:#fff;}
+.ovl-form-toggle-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.ovl-form-toggle-name{font-size:14px;font-weight:700;color:var(--fg-primary);line-height:1.3;}
+.ovl-switch-inline{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.ovl-form-toggle-state{font-size:12px;font-weight:600;color:var(--fg-secondary);white-space:nowrap;}
+.ovl-form-default{display:flex;align-items:center;gap:8px;margin-top:auto;font-size:13px;font-weight:600;color:var(--fg-primary);cursor:pointer;}
+.ovl-form-default input{width:16px;height:16px;accent-color:var(--green-500);cursor:pointer;flex-shrink:0;}
+.ovl-form-default.disabled{color:var(--fg-tertiary);cursor:not-allowed;}
+.ovl-form-default.disabled input{cursor:not-allowed;}
+@media (max-width:900px){.ovl-forms-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -384,7 +395,7 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 <script src="../../shared/shared-shell.js?v=20260715a"></script>
 <script src="../../shared/tweaks-panel.js?v=20260709v"></script>
 <script src="data.js?v=20260709v2"></script>
-<script src="app.js?v=20260721a"></script>
+<script src="app.js?v=20260721b"></script>
 <script>
   document.addEventListener('keydown', function(e){
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'e') {

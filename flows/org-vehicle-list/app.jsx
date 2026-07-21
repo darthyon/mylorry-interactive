@@ -231,6 +231,13 @@ function makeVehicleDocuments(vehicle) {
   }));
 }
 
+const VEHICLE_FORMS = [
+  { key: "daily-vehicle-checklist", label: "Daily Vehicle Checklist", enabled: true, allDefault: false },
+  { key: "daily-vehicle-maintenance", label: "Daily Vehicle Maintenance", enabled: false, allDefault: false },
+  { key: "daily-driver-checklist", label: "Daily Driver Checklist", enabled: true, allDefault: false },
+];
+function makeVehicleForms(vehicle) { return (vehicle?.forms || VEHICLE_FORMS).map((form) => ({ ...form })); }
+
 function makeEmptyForm() {
   return {
     plate: "",
@@ -628,6 +635,40 @@ function AssignedDriversModal({ vehicle, onClose }) {
       </div>)}
     </div>
   </HacModal>;
+}
+
+function VehicleFormsTab({ forms, onChange, onToast }) {
+  function toggleEnabled(key) {
+    onChange(forms.map((form) => form.key === key ? { ...form, enabled: !form.enabled } : form));
+    const form = forms.find((item) => item.key === key);
+    onToast(`${form.label} ${form.enabled ? "disabled" : "enabled"}.`);
+  }
+  function toggleDefault(key) {
+    onChange(forms.map((form) => form.key === key ? { ...form, allDefault: !form.allDefault } : form));
+  }
+  return (
+    <section className="ml-card ovl-form-card ovl-forms-card">
+      <div className="hac-sec-header"><div>Forms</div></div>
+      <div className="ovl-form-body ovl-forms-grid">
+        {forms.map((form) => (
+          <div className="ovl-form-toggle-card" key={form.key}>
+            <div className="ovl-form-toggle-head">
+              <span className="ovl-form-toggle-name">{form.label}</span>
+              <div className="ovl-switch-inline">
+                <button type="button" className={`ovl-switch-btn${form.enabled ? " on" : ""}`} aria-pressed={form.enabled} aria-label={`${form.enabled ? "Disable" : "Enable"} ${form.label}`} onClick={() => toggleEnabled(form.key)} />
+                <span className="ovl-form-toggle-state">{form.enabled ? "Enabled" : "Disabled"}</span>
+              </div>
+            </div>
+            <label className={`ovl-form-default${form.enabled ? "" : " disabled"}`}>
+              <input type="checkbox" checked={form.allDefault} disabled={!form.enabled} onChange={() => toggleDefault(form.key)} />
+              Set All as Default
+              <span className="ml-tooltip-wrap"><Icon name="info" size={15} color="var(--fg-tertiary)" /><span className="ml-tooltip">Auto-selects a default answer for every question in this form.</span></span>
+            </label>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 function DriverListPanel({ vehicle, onToggleAccessibleToAll, onOpenPicker, onRemoveDriver }) {
@@ -1388,6 +1429,10 @@ function App() {
     setVehicles((current) => current.map((item) => item.id === vehicleId ? { ...item, drivers: item.drivers.filter((driver) => driver.driverId !== driverId) } : item));
   }
 
+  function updateVehicleForms(vehicleId, forms) {
+    setVehicles((current) => current.map((item) => item.id === vehicleId ? { ...item, forms } : item));
+  }
+
   function updateVehicleDocuments(vehicleId, documents) {
     setVehicles((current) => current.map((item) => {
       if (item.id !== vehicleId) return item;
@@ -1527,6 +1572,18 @@ function App() {
                   editable={mode !== "create"}
                   tier={reminderTier}
                   onChange={(documents) => updateVehicleDocuments(currentEditingVehicle.id, documents)}
+                  onToast={(message) => pushToast("ok", message)}
+                />
+              ) : editTab === "forms" && !form.managed ? (
+                <div className="ovl-driver-empty">
+                  <Icon name="lock" size={34} />
+                  <div className="ovl-driver-empty-title">Manage this vehicle</div>
+                  <div className="ovl-driver-empty-sub">Enable managed vehicle to unlock check-in forms and safety checklists.</div>
+                </div>
+              ) : editTab === "forms" && currentEditingVehicle ? (
+                <VehicleFormsTab
+                  forms={makeVehicleForms(currentEditingVehicle)}
+                  onChange={(forms) => updateVehicleForms(currentEditingVehicle.id, forms)}
                   onToast={(message) => pushToast("ok", message)}
                 />
               ) : editTab === "drivers" && !form.managed ? (
