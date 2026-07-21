@@ -229,7 +229,7 @@ function PlanStatCard({ s }) {
         <div className="osp-plan-date"><Icon name="calendar_today" size={14} color="var(--fg-tertiary)" /> Trial ends {fmtDate(s.trialExpiry)}</div>
       )}
       {s.status === "active" && (
-        <div className="osp-plan-date"><Icon name="calendar_today" size={14} color="var(--fg-tertiary)" /> Next billing date {fmtDate(s.nextBillingDate)}</div>
+        <div className="osp-plan-date"><Icon name="calendar_today" size={14} color="var(--fg-tertiary)" /> End date {fmtDate(s.nextBillingDate)}</div>
       )}
       {showUpgrade && <button className="ml-btn-primary osp-upgrade-btn">Upgrade plan</button>}
     </div>

@@ -19,6 +19,7 @@ const TAB_ITEMS = [
 ];
 
 const PLAN_OPTIONS = PLANS.map((plan) => ({ value: plan.id, label: plan.name }));
+const UPCOMING_PLAN_OPTIONS = PLAN_OPTIONS.filter((option) => option.value !== "plan-free");
 const PAYMENT_METHODS = ["Bank transfer", "Credit card", "Online banking", "Cheque"];
 const STATUS_OPTIONS = ["Active", "Inactive"];
 
@@ -635,7 +636,7 @@ function OrganizationDetailTab({ org, mode, errors, updateOrg, updatePath }) {
   );
 }
 
-function SubscriptionFields({ title, sub, prefix, errors, editable, onChange, onDelete, allowDelete }) {
+function SubscriptionFields({ title, sub, prefix, errors, editable, onChange, onDelete, allowDelete, planOptions = PLAN_OPTIONS }) {
   const plan = planById(sub.planId);
   const isTrial = isTrialSelection(sub);
   const freePlan = plan.id === "plan-free";
@@ -703,7 +704,7 @@ function SubscriptionFields({ title, sub, prefix, errors, editable, onChange, on
       <FormSubsection title="Plan Assignment">
         <div className="hac-form-grid">
           <Field label="Plan Name" required error={errors[`${prefix}PlanId`]}>
-            <SelectMenu className="hac-select" value={sub.planId} options={PLAN_OPTIONS} onChange={setPlan} ariaLabel={`${title} Plan Name`} />
+            <SelectMenu className="hac-select" value={sub.planId} options={planOptions} onChange={setPlan} ariaLabel={`${title} Plan Name`} />
           </Field>
           {plan.type !== "default" && plan.tiers.length > 0 && (
             <Field label="Duration / Tier" required error={errors[`${prefix}TierId`]}>
@@ -808,6 +809,7 @@ function SubscriptionTab({ org, mode, errors, updatePath }) {
             onChange={updateUpcoming}
             allowDelete={editable}
             onDelete={() => updatePath("subscription.upcoming", null)}
+            planOptions={UPCOMING_PLAN_OPTIONS}
           />
         </>
       ) : editable ? (
