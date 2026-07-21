@@ -462,10 +462,22 @@ function Section({ title, right, children }) {
   );
 }
 
-function Field({ label, hint, children }) {
+function Field({ label, hint, info, children }) {
   return (
     <div className="hac-fg">
-      <label className="hac-label">{label}</label>
+      {info ? (
+        <label className="hac-label hsub-label-with-info">
+          <span>{label}</span>
+          <span className="ml-tooltip-wrap hsub-info-wrap" tabIndex={0}>
+            <span className="hsub-info-trigger" aria-label={`${label} help`}>
+              <HIcon name="info" size={14} color="var(--fg-tertiary)" />
+            </span>
+            <span className="ml-tooltip hsub-info-tooltip">{info}</span>
+          </span>
+        </label>
+      ) : (
+        <label className="hac-label">{label}</label>
+      )}
       {children}
       {hint && <span className="hac-field-hint">{hint}</span>}
     </div>
@@ -730,7 +742,7 @@ function BasicDetailsSection({ plan, editable, onChange }) {
             />
           </Field>
           <div className="hsub-stack-spacer" />
-          <Field label="Website listing" hint="Shown to visitors comparing plans on the website.">
+          <Field label="Website listing" info="Shown to visitors comparing plans on the website.">
             <WebsiteFeatureList
               features={plan.websiteFeatures || []}
               onChange={(next) => onChange({ websiteFeatures: next })}
