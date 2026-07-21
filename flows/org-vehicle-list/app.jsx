@@ -860,10 +860,10 @@ function Rail() {
   );
 }
 
-function VehiclePageHead({ mode, vehicle, onBack }) {
+function VehiclePageHead({ mode, vehicle, onBack, editing }) {
   const isCreate = mode === "create";
   const title = isCreate ? "Create vehicle" : (vehicle?.plate || "Vehicle");
-  const crumbLabel = isCreate ? "Create" : (vehicle?.plate || "Vehicle");
+  const crumbLabel = isCreate ? "Create" : editing ? "Edit details" : "View details";
   return (
     <div className="ml-page-head ovl-pagehead">
       <div>
@@ -1532,7 +1532,7 @@ function App() {
         <div className="ovl-content">
           {mode !== "list" ? (
             <>
-              <VehiclePageHead mode={mode} vehicle={editingVehicle} onBack={closeForm} />
+              <VehiclePageHead mode={mode} vehicle={editingVehicle} onBack={closeForm} editing={detailsEditing} />
               {mode === "view" && (
                 <div className="ml-tabs ovl-tabs-row">
                   {VEHICLE_EDIT_TABS.map((tab) => (
