@@ -14,7 +14,7 @@
 
 .ml-badge {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 9px; border-radius: 4px;
+  padding: 3px 9px; border-radius: var(--radius-pill);
   font-size: 11.5px; font-weight: 600; white-space: nowrap;
 }
 
@@ -24,6 +24,8 @@
 .ml-badge.expire   { background: var(--amber-50);  color: var(--amber-600); }
 .ml-badge.pending  { background: var(--amber-50);  color: var(--amber-600); }
 .ml-badge.new      { background: #EDEEF7;         color: var(--navy-800);  }
+.ml-badge.info     { background: #eef6fb;         color: var(--teal-600);  border: 1px solid rgba(0,129,170,.25); }
+.ml-badge.neutral  { background: #f1f2f5;         color: var(--fg-secondary); border: 1px solid var(--border-light); }
 
 /* Document expiry status (driver / vehicle documents).
    Repeat .ml-badge to outrank flow-local metadata selectors such as
@@ -105,8 +107,8 @@
 .ml-badge.comm-expired     { background: #F0F0F2;         color: var(--fg-secondary); }
 
 /* Account status */
-.ml-badge.acct-active          { background: var(--green-50); color: var(--green-600);    }
-.ml-badge.acct-inactive        { background: #F0F0F2;         color: var(--fg-secondary); }
+.ml-badge.acct-active          { background: var(--green-50); color: var(--green-600);    border: 1px solid var(--green-500); }
+.ml-badge.acct-inactive        { background: #F0F0F2;         color: var(--fg-secondary); border: 1px solid var(--border-medium); }
 .ml-badge.acct-suspended       { background: var(--amber-50); color: var(--amber-600);    }
 .ml-badge.acct-pending-term    { background: var(--amber-50); color: var(--amber-600);    }
 .ml-badge.acct-terminated      { background: #FFF0F0;         color: var(--red-400);      }
@@ -174,6 +176,12 @@
 .ml-table tbody tr:hover { background: var(--bg-hover); }
 .ml-table th { background: var(--bg-muted); font-size: 12.5px; font-weight: 600; color: var(--fg-primary); text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border-medium); white-space: nowrap; }
 .ml-toast { position: absolute; right: 0; top: calc(100% + 6px); background: #fff; border: 1px solid var(--border-light); border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 14px; font-size: 13px; display: flex; align-items: center; gap: 7px; white-space: nowrap; z-index: 40; }
+.ml-toast-stack { position: fixed; top: 80px; right: 18px; z-index: 120; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.ml-toast-item { pointer-events: auto; display: flex; align-items: center; gap: 10px; background: var(--green-50); color: var(--green-600); border: 1px solid var(--green-500); border-radius: 14px; padding: 12px 14px; box-shadow: 0 16px 30px rgba(0,0,0,.22); font-size: 13px; line-height: 1.4; max-width: 340px; animation: ml-toast-in .25s ease; }
+.ml-toast-item.neutral { background: #F0F0F2; color: var(--fg-secondary); border: 1px solid var(--border-medium); box-shadow: 0 16px 30px rgba(0,0,0,.1); }
+.ml-toast-item.warn { background: #FFF6E8; color: #8A5A00; border: 1px solid var(--amber-500); box-shadow: 0 16px 30px rgba(0,0,0,.1); }
+.ml-toast-item.err { background: #FFF0F0; color: var(--red-400); border: 1px solid var(--red-400); }
+@keyframes ml-toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 .ml-tooltip-wrap { position: relative; display: inline-flex; align-items: center; }
 .ml-tooltip-wrap:hover .ml-tooltip,
 .ml-tooltip-wrap:focus-within .ml-tooltip { opacity: 1; }
@@ -433,6 +441,8 @@
 .hac-form-actions { display: flex; gap: 12px; margin-top: 18px; justify-content: flex-end; }
 .hac-cancel-btn { padding: 11px 24px; border: 1px solid var(--border-medium); background: #fff; border-radius: var(--radius-xs); font-family: var(--font); font-size: 14px; font-weight: 600; color: var(--fg-primary); cursor: pointer; white-space: nowrap; }
 .hac-cancel-btn:hover { background: var(--bg-muted); }
+.hac-draft-btn { padding: 11px 24px; border: 1px solid var(--green-500); background: #fff; border-radius: var(--radius-xs); font-family: var(--font); font-size: 14px; font-weight: 600; color: var(--green-600); cursor: pointer; white-space: nowrap; }
+.hac-draft-btn:hover { background: var(--green-50); }
 .hac-save-btn { padding: 11px 24px; border: none; background: var(--green-500); border-radius: var(--radius-xs); font-family: var(--font); font-size: 14px; font-weight: 700; color: #fff; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
 .hac-save-btn:hover { background: var(--green-600); }
 .hac-edit-bar { position: fixed; bottom: 0; left: 69px; right: 0; background: #fff; border-top: 1px solid var(--border-light); padding: 14px 28px; display: flex; justify-content: flex-end; gap: 12px; z-index: 20; box-shadow: 0 -4px 16px rgba(0,0,0,.08); }

@@ -1,5 +1,5 @@
 const { useEffect, useMemo, useState, useRef } = React;
-const { FeatureTabShell, SelectMenu } = window.SharedShell;
+const { FeatureTabShell, SelectMenu, useToast, StatusBadge } = window.SharedShell;
 
 const {
   SUBSCRIPTION_PLANS,
@@ -95,10 +95,6 @@ function makeEmptyPlan(plans) {
     displayOrder: plans.length + 1,
     isFree: false,
     pricing: {
-      setupFee: 0,
-      waiveSetupFee: false,
-      baseMonthlyFee: 0,
-      perManagedVehicleFee: 0,
       commitmentOptions: [],
     },
     limits: {
@@ -121,26 +117,79 @@ function makeEmptyPlan(plans) {
   });
 }
 
-function MetaBadge({ tone = "neutral", children }) {
-  return <span className={`hsub-badge ${tone}`}>{children}</span>;
-}
-
-function StatusPill({ status }) {
+function StatusDropdown({ status, onChange, disabled }) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef(null);
+  const dropRef = useRef(null);
   const label = STATUS_OPTIONS.find((item) => item.value === status)?.label || status;
-  const tone = status === "active" ? "success" : "danger";
-  return <MetaBadge tone={tone}>{label}</MetaBadge>;
+  const DROP_W = 140;
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => {
+      if (btnRef.current && btnRef.current.contains(e.target)) return;
+      if (dropRef.current && dropRef.current.contains(e.target)) return;
+      setOpen(false);
+    };
+    const dismiss = () => setOpen(false);
+    document.addEventListener("mousedown", close);
+    window.addEventListener("scroll", dismiss, true);
+    window.addEventListener("resize", dismiss);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      window.removeEventListener("scroll", dismiss, true);
+      window.removeEventListener("resize", dismiss);
+    };
+  }, [open]);
+
+  const toggle = (e) => {
+    e.stopPropagation();
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      const top = r.bottom + 4;
+      const left = Math.min(r.left, window.innerWidth - DROP_W - 12);
+      btnRef.current._dropdownPos = { top, left };
+    }
+    setOpen((v) => !v);
+  };
+
+  if (disabled) return <StatusBadge status={status} fallback="active" />;
+
+  return (
+    <div className="hsub-status-dropdown">
+      <button className={`hsub-status-trigger ml-badge ${status === "active" ? "acct-active" : "acct-inactive"}`} ref={btnRef} onClick={toggle} aria-label="Change status">
+        {label}
+        <HIcon name="expand_more" size={14} />
+      </button>
+      {open && ReactDOM.createPortal(
+        <div className="hac-drop-fixed hsub-status-drop" ref={dropRef} style={btnRef.current?._dropdownPos || {}} onClick={(e) => e.stopPropagation()}>
+          {STATUS_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              className={`hac-drop-item${option.value === status ? " active" : ""}`}
+              onClick={() => { setOpen(false); onChange(option.value); }}
+            >
+              <span className={`hsub-status-dot ${option.value === "active" ? "success" : "inactive"}`} />
+              {option.label}
+            </button>
+          ))}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
 }
 
 function TypePill({ type }) {
   if (type === "default") {
     return (
-      <MetaBadge tone="info">
+      <span className="ml-badge info">
         <HIcon name="lock" size={12} />
         Default
-      </MetaBadge>
+      </span>
     );
   }
-  return <MetaBadge tone="neutral">Normal</MetaBadge>;
+  return <span className="ml-badge neutral">Normal</span>;
 }
 
 function getPlanTypeDisplay(plan) {
@@ -284,18 +333,6 @@ function FeatureSummary({ plan }) {
           )}
         </>
       )}
-    </div>
-  );
-}
-
-function ActionBanner({ flash, onDismiss }) {
-  if (!flash) return null;
-  return (
-    <div className={`hsub-alert ${flash.tone || "info"}`}>
-      <div>{flash.message}</div>
-      <button className="ml-icon-btn" onClick={onDismiss} aria-label="Dismiss message">
-        <HIcon name="close" size={18} />
-      </button>
     </div>
   );
 }
@@ -647,8 +684,8 @@ function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onActivate, o
           <tbody>
             {pageData.map((plan, index) => {
               const isDefaultPlan = plan.type === "default";
-              const canActivate = !isDefaultPlan && plan.status === "inactive";
-              const canDeactivate = !isDefaultPlan && plan.status === "active";
+              const canActivate = plan.status === "inactive";
+              const canDeactivate = plan.status === "active";
               const canDelete = !isDefaultPlan && plan.status === "inactive";
               const deleteReason = isDefaultPlan
                 ? "Default plans cannot be deleted."
@@ -665,7 +702,15 @@ function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onActivate, o
                   <td><FeatureSummary plan={plan} /></td>
                   <td><TypePill type={typeDisplay} /></td>
                   <td className="ml-mono">v{plan.version}</td>
-                  <td><StatusPill status={plan.status} /></td>
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <StatusDropdown
+                      status={plan.status}
+                      onChange={(next) => {
+                        if (next === "active") onActivate(plan.id);
+                        else onDeactivate(plan.id);
+                      }}
+                    />
+                  </td>
                   <td className="ml-mono">{fmtDate(plan.createdAt)}</td>
                   <td onClick={(e) => e.stopPropagation()}>
                     <EllipsisMenu
@@ -720,51 +765,66 @@ function BasicDetailsSection({ plan, editable, onChange }) {
             </Field>
           </div>
           <div className="hsub-stack-spacer" />
-          <Field label="Description" hint={`${plan.description.length}/500`}>
-            <textarea
-              className="hac-input hsub-textarea"
-              maxLength="500"
-              value={plan.description}
-              onChange={(e) => onChange({ description: e.target.value })}
-              placeholder="Explain who this plan is for and what makes it different."
-            />
-          </Field>
+          <div className="hac-form-grid">
+            <div className="hsub-grid-span2">
+              <Field label="Description" hint={`${plan.description.length}/500`}>
+                <textarea
+                  className="hac-input hsub-textarea"
+                  maxLength="500"
+                  value={plan.description}
+                  onChange={(e) => onChange({ description: e.target.value })}
+                  placeholder="Explain who this plan is for and what makes it different."
+                />
+              </Field>
+            </div>
+          </div>
           <div className="hsub-stack-spacer" />
-          <Field label="Website listing" hint="Shown to visitors comparing plans on the website.">
-            <WebsiteFeatureList
-              features={plan.websiteFeatures || []}
-              onChange={(next) => onChange({ websiteFeatures: next })}
-            />
-          </Field>
+          <div className="hac-form-grid">
+            <div className="hsub-grid-span2">
+              <Field label="Feature listing" hint="Shown to visitors comparing plans on the website.">
+                <FeatureListing
+                  features={plan.websiteFeatures || []}
+                  onChange={(next) => onChange({ websiteFeatures: next })}
+                />
+              </Field>
+            </div>
+          </div>
         </>
       ) : (
-        <div className="hac-detail-grid hac-view-grid">
-          <ViewField label="Subscription title" value={plan.name} />
-          <ViewField label="Display order" value={plan.displayOrder} />
-          <ViewField label="Free plan" value={plan.isFree ? "Yes" : "No"} />
-          <ViewField label="Description" value={plan.description || "—"} />
-        </div>
-      )}
-      {!editable && (
-        <div className="hsub-website-feature-view">
-          <div className="ml-k">Website listing</div>
-          {(plan.websiteFeatures || []).length === 0 ? (
-            <div className="hsub-muted">No website features listed.</div>
-          ) : (
-            <ul className="hsub-website-feature-list-view">
-              {plan.websiteFeatures.map((feature, index) => (
-                <li key={index}>{feature}</li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <>
+          <div className="hac-detail-grid hac-view-grid">
+            <ViewField label="Subscription title" value={plan.name} />
+            <ViewField label="Display order" value={plan.displayOrder} />
+            <ViewField label="Free plan" value={plan.isFree ? "Yes" : "No"} />
+          </div>
+          <div className="hsub-stack-spacer" />
+          <div className="hac-detail-grid hac-view-grid">
+            <div className="hsub-grid-span2">
+              <ViewField label="Description" value={plan.description || "—"} />
+            </div>
+          </div>
+          <div className="hsub-stack-spacer" />
+          <div className="hsub-website-feature-view">
+            <div className="ml-k">Feature listing</div>
+            {(plan.websiteFeatures || []).length === 0 ? (
+              <div className="hsub-muted">No features listed.</div>
+            ) : (
+              <ul className="hsub-website-feature-list-view">
+                {plan.websiteFeatures.map((feature, index) => (
+                  <li key={index}>{feature}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </>
       )}
     </Section>
   );
 }
 
-function WebsiteFeatureList({ features, onChange }) {
+function FeatureListing({ features, onChange }) {
   const [draft, setDraft] = useState("");
+  const [dragIndex, setDragIndex] = useState(null);
 
   const addFeature = () => {
     const value = draft.trim();
@@ -777,8 +837,27 @@ function WebsiteFeatureList({ features, onChange }) {
     onChange(features.filter((_, featureIndex) => featureIndex !== index));
   };
 
+  const onDragStart = (index) => (e) => {
+    setDragIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const onDragOver = (index) => (e) => {
+    e.preventDefault();
+    if (dragIndex == null || dragIndex === index) return;
+    const next = [...features];
+    const [item] = next.splice(dragIndex, 1);
+    next.splice(index, 0, item);
+    setDragIndex(index);
+    onChange(next);
+  };
+
+  const onDragEnd = () => {
+    setDragIndex(null);
+  };
+
   return (
-    <div className="hsub-website-feature-list">
+    <div className="hsub-feature-list">
       <div className="hsub-website-feature-add">
         <input
           className="hac-input"
@@ -797,12 +876,22 @@ function WebsiteFeatureList({ features, onChange }) {
         </button>
       </div>
       {features.length > 0 && (
-        <ul className="hsub-website-feature-chips">
+        <ul className="hsub-feature-rows">
           {features.map((feature, index) => (
-            <li key={index}>
-              <span>{feature}</span>
+            <li
+              key={`${feature}-${index}`}
+              className={`hsub-feature-row${dragIndex === index ? " dragging" : ""}`}
+              draggable
+              onDragStart={onDragStart(index)}
+              onDragOver={onDragOver(index)}
+              onDragEnd={onDragEnd}
+            >
+              <span className="hsub-feature-drag">
+                <HIcon name="drag_indicator" size={16} color="var(--fg-tertiary)" />
+              </span>
+              <span className="hsub-feature-label">{feature}</span>
               <button type="button" aria-label={`Remove ${feature}`} onClick={() => removeFeature(index)}>
-                <HIcon name="close" size={13} />
+                <HIcon name="close" size={14} />
               </button>
             </li>
           ))}
@@ -813,72 +902,12 @@ function WebsiteFeatureList({ features, onChange }) {
 }
 
 function PricingSection({ plan, editable, onChange }) {
-  const setupFee = Number(plan.pricing.setupFee || 0);
-  const baseMonthlyFee = Number(plan.pricing.baseMonthlyFee || 0);
-  const perManagedVehicleFee = Number(plan.pricing.perManagedVehicleFee || 0);
-  const sampleVehicles = Number(plan.usageSummary.sampleVehicles || 0);
-  const preview = baseMonthlyFee + sampleVehicles * perManagedVehicleFee;
-  const previewBreakdown = `${fmtRM(baseMonthlyFee)} base monthly fee + ${sampleVehicles} managed vehicles × ${fmtRM(perManagedVehicleFee)} per managed vehicle`;
   return (
     <Section title="Pricing">
       {editable ? (
-        <>
-          <div className="hsub-price-grid">
-            <div className="hsub-price-card">
-              <Field label="Setup fee" hint="Charged once when the org starts on this plan.">
-                <input
-                  className="hac-input"
-                  type="number"
-                  min="0"
-                  value={plan.pricing.setupFee}
-                  onChange={(e) => onChange({ pricing: { ...plan.pricing, setupFee: Number(e.target.value || 0) } })}
-                />
-              </Field>
-
-            </div>
-            <div className="hsub-price-card">
-              <Field label="Base monthly fee" hint="Charged once per organization, per month.">
-                <input
-                  className="hac-input"
-                  type="number"
-                  min="0"
-                  value={plan.pricing.baseMonthlyFee}
-                  onChange={(e) => onChange({ pricing: { ...plan.pricing, baseMonthlyFee: Number(e.target.value || 0) } })}
-                />
-              </Field>
-            </div>
-            <div className="hsub-price-card">
-              <Field label="Per managed vehicle fee" hint="Charged for each active managed vehicle.">
-                <input
-                  className="hac-input"
-                  type="number"
-                  min="0"
-                  value={plan.pricing.perManagedVehicleFee}
-                  onChange={(e) => onChange({ pricing: { ...plan.pricing, perManagedVehicleFee: Number(e.target.value || 0) } })}
-                />
-              </Field>
-            </div>
-          </div>
-          <div className="hsub-billing-preview">
-            <strong>Estimated monthly billing</strong>
-            <span>{fmtRM(baseMonthlyFee)} + {sampleVehicles} managed vehicles × {fmtRM(perManagedVehicleFee)} = <b>{fmtRM(preview)}</b></span>
-          </div>
-          <EditableSubscriptionTiers plan={plan} onChange={onChange} title="Pricing tiers" />
-        </>
+        <EditableSubscriptionTiers plan={plan} onChange={onChange} title="Pricing tiers" />
       ) : (
-        <>
-          <div className="hac-detail-grid hac-view-grid">
-            <ViewField label="Setup fee" value={fmtRM(setupFee)} />
-            <ViewField label="Base monthly fee" value={fmtRM(baseMonthlyFee)} />
-            <ViewField label="Per managed vehicle fee" value={fmtRM(perManagedVehicleFee)} />
-            <ViewField
-              label="Estimated monthly billing"
-              value={fmtRM(preview)}
-              info={previewBreakdown}
-            />
-          </div>
-          <ReadOnlySubscriptionTiers plan={plan} title="Pricing tiers" />
-        </>
+        <ReadOnlySubscriptionTiers plan={plan} title="Pricing tiers" />
       )}
     </Section>
   );
@@ -888,6 +917,8 @@ function SubscriptionTierModal({ tier, onClose, onSave }) {
   const isEdit = !!tier;
   const [durationMonths, setDurationMonths] = useState(String(tier?.durationMonths || TIER_DURATION_OPTIONS[0]));
   const [amount, setAmount] = useState(String(tier?.amount ?? ""));
+  const [setupFee, setSetupFee] = useState(String(tier?.setupFee ?? ""));
+  const [perManagedVehicleFee, setPerManagedVehicleFee] = useState(String(tier?.perManagedVehicleFee ?? ""));
   const [isTrial, setIsTrial] = useState(!!tier?.isTrial);
   const canSave = durationMonths.trim() !== "" && amount.trim() !== "";
 
@@ -897,6 +928,8 @@ function SubscriptionTierModal({ tier, onClose, onSave }) {
       id: tier?.id || `tier-${Date.now()}`,
       durationMonths: Number(durationMonths),
       amount: Number(amount),
+      setupFee: setupFee === "" ? 0 : Number(setupFee),
+      perManagedVehicleFee: perManagedVehicleFee === "" ? 0 : Number(perManagedVehicleFee),
       isTrial,
     });
     onClose();
@@ -931,7 +964,7 @@ function SubscriptionTierModal({ tier, onClose, onSave }) {
       </div>
       <div className="hac-field-hint" style={{ marginBottom: 18 }}>Choose how long this pricing tier applies.</div>
 
-      <div className="hac-fg">
+      <div className="hac-fg" style={{ marginBottom: 14 }}>
         <label className="hac-label req" style={{ fontSize: 14 }}>Amount*</label>
         <input
           className="hac-input"
@@ -941,6 +974,32 @@ function SubscriptionTierModal({ tier, onClose, onSave }) {
           placeholder="Enter tier amount"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
+        />
+      </div>
+
+      <div className="hac-fg" style={{ marginBottom: 14 }}>
+        <label className="hac-label" style={{ fontSize: 14 }}>Monthly setup fee</label>
+        <input
+          className="hac-input"
+          type="number"
+          min="0"
+          step="0.01"
+          placeholder="Enter monthly setup fee"
+          value={setupFee}
+          onChange={(e) => setSetupFee(e.target.value)}
+        />
+      </div>
+
+      <div className="hac-fg">
+        <label className="hac-label" style={{ fontSize: 14 }}>Monthly managed vehicle fee</label>
+        <input
+          className="hac-input"
+          type="number"
+          min="0"
+          step="0.01"
+          placeholder="Enter monthly managed vehicle fee"
+          value={perManagedVehicleFee}
+          onChange={(e) => setPerManagedVehicleFee(e.target.value)}
         />
       </div>
     </Modal>
@@ -968,45 +1027,55 @@ function EditableSubscriptionTiers({ plan, onChange, title = null }) {
 
   return (
     <div>
-      <div className="hsub-tier-toolbar">
+      <div className="hsub-tier-head">
         {title && <div className="hsub-inline-section-head hsub-inline-section-head-tight">{title}</div>}
         <button className="hac-add-tier-btn" onClick={() => setModal({ editIndex: null })}>
           <HIcon name="add" size={15} /> Add Tier
         </button>
       </div>
 
-      {tiers.length === 0 ? (
-        <div className="hac-tier-empty">
-          <span><HIcon name="error" size={15} /> Tier 1</span>
-          Add at least one tier for this subscription plan.
-        </div>
-      ) : (
-        <div className="hsub-tier-stack is-edit">
-          {tiers.map((tier, index) => (
-            <div className="hsub-tier-stack-card" key={tier.id || index}>
-              <div className="hsub-tier-stack-id">
-                <div className="hsub-tier-item-label">
-                  <HIcon name="stacked_bar_chart" size={16} color="var(--navy-800)" />
-                  Tier {index + 1}
-                  {tier.isTrial && <span className="hsub-badge warning">Trial</span>}
+      <div className={`hsub-tier-stack${tiers.length === 0 ? " empty" : ""}`}>
+        {tiers.length === 0 ? (
+          <div className="hac-tier-empty">
+            <span><HIcon name="error" size={15} /> Tier 1</span>
+            Add at least one tier for this subscription plan.
+          </div>
+        ) : (
+          <>
+            {tiers.map((tier, index) => (
+              <div className="hsub-tier-stack-card" key={tier.id || index}>
+                <div className="hsub-tier-stack-id">
+                  <div className="hsub-tier-item-label">
+                    <HIcon name="stacked_bar_chart" size={16} color="var(--navy-800)" />
+                    Tier {index + 1}
+                    {tier.isTrial && <span className="hsub-badge warning">Trial</span>}
+                  </div>
                 </div>
+                <div className="hsub-tier-stack-field">
+                  <span className="ml-k">Duration</span>
+                  <b>{formatTierDuration(tier.durationMonths)}</b>
+                </div>
+                <div className="hsub-tier-stack-field">
+                  <span className="ml-k">Amount</span>
+                  <b>{fmtRM(tier.amount)}</b>
+                </div>
+                <div className="hsub-tier-stack-field">
+                  <span className="ml-k">Setup fee</span>
+                  <b>{fmtRM(tier.setupFee)}</b>
+                </div>
+                <div className="hsub-tier-stack-field">
+                  <span className="ml-k">Per vehicle</span>
+                  <b>{fmtRM(tier.perManagedVehicleFee)}</b>
+                </div>
+                <TierItemMenu
+                  onEdit={() => setModal({ editIndex: index })}
+                  onDelete={() => removeTier(index)}
+                />
               </div>
-              <div className="hsub-tier-stack-field">
-                <span className="ml-k">Duration</span>
-                <b>{formatTierDuration(tier.durationMonths)}</b>
-              </div>
-              <div className="hsub-tier-stack-field">
-                <span className="ml-k">Amount</span>
-                <b>{fmtRM(tier.amount)}</b>
-              </div>
-              <TierItemMenu
-                onEdit={() => setModal({ editIndex: index })}
-                onDelete={() => removeTier(index)}
-              />
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </>
+        )}
+      </div>
 
       {tiers.some((tier) => tier.isTrial) && (
         <div className="hsub-tier-foot">
@@ -1032,32 +1101,43 @@ function EditableSubscriptionTiers({ plan, onChange, title = null }) {
 
 function ReadOnlySubscriptionTiers({ plan, title = null }) {
   const tiers = normalizeCommitmentOptions(plan.pricing.commitmentOptions || []);
-  if (tiers.length === 0) {
-    return <div className="hsub-muted">No tiers configured for this plan.</div>;
-  }
   return (
     <>
       {title && <div className="hsub-inline-section-head">{title}</div>}
-      <div className="hsub-tier-stack">
-        {tiers.map((tier, index) => (
-          <div className="hsub-tier-stack-card" key={tier.id || index}>
-            <div className="hsub-tier-stack-id">
-              <div className="hsub-tier-item-label">
-                <HIcon name="stacked_bar_chart" size={16} color="var(--navy-800)" />
-                Tier {index + 1}
-                {tier.isTrial && <span className="hsub-badge warning">Trial</span>}
+      <div className={`hsub-tier-stack${tiers.length === 0 ? " empty" : ""}`}>
+        {tiers.length === 0 ? (
+          <div className="hsub-muted" style={{ padding: 14 }}>No tiers configured for this plan.</div>
+        ) : (
+          <>
+            {tiers.map((tier, index) => (
+              <div className="hsub-tier-stack-card" key={tier.id || index}>
+                <div className="hsub-tier-stack-id">
+                  <div className="hsub-tier-item-label">
+                    <HIcon name="stacked_bar_chart" size={16} color="var(--navy-800)" />
+                    Tier {index + 1}
+                    {tier.isTrial && <span className="hsub-badge warning">Trial</span>}
+                  </div>
+                </div>
+                <div className="hsub-tier-stack-field">
+                  <span className="ml-k">Duration</span>
+                  <b>{formatTierDuration(tier.durationMonths)}</b>
+                </div>
+                <div className="hsub-tier-stack-field">
+                  <span className="ml-k">Amount</span>
+                  <b>{fmtRM(tier.amount)}</b>
+                </div>
+                <div className="hsub-tier-stack-field">
+                  <span className="ml-k">Setup fee</span>
+                  <b>{fmtRM(tier.setupFee)}</b>
+                </div>
+                <div className="hsub-tier-stack-field">
+                  <span className="ml-k">Per vehicle</span>
+                  <b>{fmtRM(tier.perManagedVehicleFee)}</b>
+                </div>
               </div>
-            </div>
-            <div className="hsub-tier-stack-field">
-              <span className="ml-k">Duration</span>
-              <b>{formatTierDuration(tier.durationMonths)}</b>
-            </div>
-            <div className="hsub-tier-stack-field">
-              <span className="ml-k">Amount</span>
-              <b>{fmtRM(tier.amount)}</b>
-            </div>
-          </div>
-        ))}
+            ))}
+          </>
+        )}
       </div>
       {tiers.some((tier) => tier.isTrial) && (
         <div className="hsub-tier-foot hsub-tier-foot-read">
@@ -1199,11 +1279,7 @@ function FeatureAccessSection({ plan, editable, onChange }) {
                   </div>
                 </div>
               ))}
-              {activeModule.key === "myadmin" && (
-                <div className="hsub-module-note">
-                  Managed vehicle number is set in Organization Management. This plan {managedVehicleCeilingLabel(plan).toLowerCase()}.
-                </div>
-              )}
+
             </div>
           </div>
         )}
@@ -1255,9 +1331,9 @@ function SubscriptionHistoryTable({ plan }) {
                   <tr key={item.id}>
                     <td className="ml-mono">{(page - 1) * perPage + index + 1}</td>
                     <td>
-                      <MetaBadge tone={item.changeType === "create" ? "info" : "neutral"}>
+                      <span className={`ml-badge ${item.changeType === "create" ? "info" : "neutral"}`}>
                         {item.changeType === "create" ? "Create" : "Update"}
-                      </MetaBadge>
+                      </span>
                     </td>
                     <td>{item.changedBy}</td>
                     <td className="ml-mono">{fmtDateTime(item.changeTime)}</td>
@@ -1322,15 +1398,9 @@ function SubscriptionApp() {
   const [mode, setMode] = useState("list");
   const [selectedPlanId, setSelectedPlanId] = useState(null);
   const [draftPlan, setDraftPlan] = useState(null);
-  const [flash, setFlash] = useState(null);
+  const { pushToast, node: toastNode } = useToast();
   const [deletePlanId, setDeletePlanId] = useState(null);
   const [viewTab, setViewTab] = useState("details");
-
-  useEffect(() => {
-    if (!flash) return;
-    const timer = window.setTimeout(() => setFlash(null), 5000);
-    return () => window.clearTimeout(timer);
-  }, [flash]);
 
   const selectedPlan = useMemo(() => plans.find((plan) => plan.id === selectedPlanId) || null, [plans, selectedPlanId]);
   const workingPlan = mode === "create" || mode === "edit" ? draftPlan : selectedPlan;
@@ -1370,20 +1440,20 @@ function SubscriptionApp() {
 
   const saveDraft = () => {
     if (!draftPlan?.name?.trim()) {
-      setFlash({ tone: "danger", message: "Subscription title is required before saving." });
+      pushToast("err", "Subscription title is required before saving.");
       return;
     }
     if (mode === "create") {
       const next = decoratePlan({ ...draftPlan, createdAt: draftPlan.createdAt || "2026-07-07" });
       setPlans((current) => decoratePlans([...current, next]));
-      setFlash({ tone: "success", message: `${draftPlan.name} created successfully.` });
+      pushToast("ok", `${draftPlan.name} created successfully.`);
       setSelectedPlanId(next.id);
       setMode("view");
       setDraftPlan(null);
       return;
     }
     setPlans((current) => decoratePlans(current.map((plan) => plan.id === draftPlan.id ? draftPlan : plan)));
-    setFlash({ tone: "success", message: `${draftPlan.name} saved successfully.` });
+    pushToast("ok", `${draftPlan.name} saved successfully.`);
     setMode("view");
     setDraftPlan(null);
   };
@@ -1392,7 +1462,7 @@ function SubscriptionApp() {
     const plan = plans.find((item) => item.id === planId);
     if (!plan) return;
     if (!canDeletePlan(plan)) {
-      setFlash({ tone: "warning", message: "Delete is only available for inactive non-default plans. Deactivate the plan first." });
+      pushToast("warn", "Delete is only available for inactive non-default plans. Deactivate the plan first.");
       return;
     }
     setDeletePlanId(planId);
@@ -1405,7 +1475,7 @@ function SubscriptionApp() {
       return;
     }
     setPlans((current) => current.filter((item) => item.id !== deletePlanId));
-    setFlash({ tone: "success", message: `${plan.name} deleted.` });
+    pushToast("ok", `${plan.name} deleted.`);
     setDeletePlanId(null);
     openList();
   };
@@ -1413,13 +1483,13 @@ function SubscriptionApp() {
   const deactivatePlan = (planId) => {
     setPlans((current) => decoratePlans(current.map((plan) => plan.id === planId ? { ...plan, status: "inactive" } : plan)));
     const plan = plans.find((item) => item.id === planId);
-    setFlash({ tone: "warning", message: `${plan?.name || "Plan"} set to inactive.` });
+    pushToast("neutral", `${plan?.name || "Plan"} set to inactive.`);
   };
 
   const activatePlan = (planId) => {
     setPlans((current) => decoratePlans(current.map((plan) => plan.id === planId ? { ...plan, status: "active" } : plan)));
     const plan = plans.find((item) => item.id === planId);
-    setFlash({ tone: "success", message: `${plan?.name || "Plan"} set to active.` });
+    pushToast("ok", `${plan?.name || "Plan"} set to active.`);
   };
 
   return (
@@ -1427,7 +1497,7 @@ function SubscriptionApp() {
       <HostTopBar />
       <HostSidebar active="subscription" />
       <main className="ml-main hsub-main">
-        <ActionBanner flash={flash} onDismiss={() => setFlash(null)} />
+        {toastNode}
 
         {mode === "list" && (
           <PlanListView
@@ -1482,7 +1552,8 @@ function SubscriptionApp() {
             {(mode === "create" || mode === "edit") && (
               <div className="hac-edit-bar hsub-edit-bar">
                 <button className="hac-cancel-btn" onClick={mode === "create" ? openList : () => openView(draftPlan.id)}>Cancel</button>
-                <button className="hac-save-btn" onClick={saveDraft}>{mode === "create" ? "Create plan" : "Save"}</button>
+                <button className="hac-draft-btn" onClick={saveDraft}>Save as Draft</button>
+                <button className="hac-save-btn" onClick={saveDraft}>Publish (as Save)</button>
               </div>
             )}
           </>

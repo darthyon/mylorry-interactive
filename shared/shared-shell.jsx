@@ -1086,6 +1086,36 @@ function installNativeSelectEnhancer() {
 
 installNativeSelectEnhancer();
 
+/* ─── Toast ────────────────────────────────────────────────── */
+function useToast() {
+  const [toasts, setToasts] = React.useState([]);
+
+  const pushToast = React.useCallback((tone, message) => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    setToasts((current) => [...current, { id, tone, message }]);
+    window.setTimeout(() => {
+      setToasts((current) => current.filter((t) => t.id !== id));
+    }, 3000);
+  }, []);
+
+  const node = toasts.length > 0 ? (
+    <div className="ml-toast-stack">
+      {toasts.map((toast) => (
+        <div key={toast.id} className={`ml-toast-item ${toast.tone || "success"}`}>
+          <Icon
+            name={toast.tone === "warn" ? "warning" : toast.tone === "err" ? "error" : "check_circle"}
+            size={18}
+            color={toast.tone === "warn" ? "#8A5A00" : toast.tone === "err" ? "var(--red-400)" : toast.tone === "neutral" ? "var(--fg-secondary)" : "var(--green-600)"}
+          />
+          <span>{toast.message}</span>
+        </div>
+      ))}
+    </div>
+  ) : null;
+
+  return { pushToast, node };
+}
+
 /* ─── Export to window ─────────────────────────────────────── */
 window.SharedShell = {
   Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu, Segmented,
@@ -1095,6 +1125,7 @@ window.SharedShell = {
   fmtExpiryDate, daysUntilExpiry, expiryTone, expiryRelativeText, documentExpiryStatus,
   FeatureTabShell, OrgSwitcher, SelectMenu,
   CalcPopover, ChecklistCard, ConfirmBulkModal, Modal, HacModal, HacFileUpload,
+  useToast,
 };
 window.KPIProgressMeta = KPIProgressMeta;
 }
