@@ -13,8 +13,6 @@ const TRIP_STATUS_KEY = {
   completed: "trip_completed", ongoing: "trip_ongoing", pending: "trip_pending",
   paused: "trip_paused", terminated: "trip_terminated",
 };
-const FLEET_STATUS_KEY = { in_progress: "veh_in_progress", idle: "veh_idle", assigned: "veh_assigned" };
-
 const RANGE_OPTIONS = [
   { value: "today", label: "Today" },
   { value: "mtd", label: "Month-to-date" },
@@ -27,6 +25,9 @@ const MYTRIP_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: "dashboard" },
   { key: "trips", label: "Trips", icon: "route" },
   { key: "schedule", label: "Schedule", icon: "calendar_view_day" },
+  // Separate static flow (map-first monitoring test) — external link, not a
+  // state route like the others, so it can't use go().
+  { key: "map", label: "Live Map", icon: "map", href: "../org-mytrip-map/index.html", tag: "TEST" },
 ];
 
 function Rail({ active, go }) {
@@ -47,7 +48,12 @@ function Rail({ active, go }) {
           )}
         </div>
 
-        {MYTRIP_ITEMS.map((item) => (
+        {MYTRIP_ITEMS.map((item) => item.href ? (
+          <a key={item.key} href={item.href} className={`mt-rail-item${item.key === active ? " active" : ""}`}>
+            <Icon name={item.icon} size={20} fill={item.key === active ? 1 : 0} />
+            <span>{item.label}{item.tag && expanded && <span className="mt-rail-tag">{item.tag}</span>}</span>
+          </a>
+        ) : (
           <button key={item.key} type="button"
             className={`mt-rail-item${item.key === active ? " active" : ""}`}
             onClick={() => go({ name: item.key })}>
@@ -119,7 +125,7 @@ function KpiRow({ go }) {
           <CountCard key={k.key} icon={k.icon} count={count} label={k.label} sub={k.sub} tone={k.tone} fill
             attention={k.key === "paused" && count > 0}
             actionLabel={`View ${k.label.toLowerCase()} trips`}
-            onClick={() => go({ name: "trips", tab: "trips", filter: { status: k.key, range: "today" } })} />
+            onClick={() => go({ name: "trips", filter: { status: k.key, range: "today" } })} />
         );
       })}
     </div>
@@ -178,7 +184,7 @@ function TripChartCard({ go }) {
             <button key={r.id} type="button" className="mt-hbar-row"
               onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}
               onClick={() => go({
-                name: "trips", tab: "trips",
+                name: "trips",
                 filter: scope === "vehicle" ? { vehicleId: r.id, range } : { driverId: r.id, range },
               })}>
               <span className="mt-hbar-label">{r.label}</span>
@@ -249,7 +255,7 @@ function PausedCard({ go }) {
       )}
       <div className="mt-card-footer">
         <button type="button" className="ml-btn-text-blue"
-          onClick={() => go({ name: "trips", tab: "trips", filter: { status: "paused", range: "today" } })}>
+          onClick={() => go({ name: "trips", filter: { status: "paused", range: "today" } })}>
           View all paused trips<Icon name="chevron_right" size={16} />
         </button>
       </div>
@@ -379,11 +385,11 @@ function TodayOperationsCard({ go }) {
       <div className="mt-ops-footer">
         <TimelineLegend showNow />
         <div className="mt-ops-links">
-          <button type="button" className="ml-btn-text-blue" onClick={() => go({ name: "trips", tab: "trips", filter: {} })}>
+          <button type="button" className="ml-btn-text-blue" onClick={() => go({ name: "trips", filter: {} })}>
             All trips ({D.trips.length})<Icon name="chevron_right" size={16} />
           </button>
-          <button type="button" className="ml-btn-text-blue" onClick={() => go({ name: "trips", tab: "fleet", filter: {} })}>
-            Fleet status<Icon name="chevron_right" size={16} />
+          <button type="button" className="ml-btn-text-blue" onClick={() => go({ name: "trips", filter: { status: "idle" } })}>
+            Idle vehicles ({idle})<Icon name="chevron_right" size={16} />
           </button>
         </div>
       </div>
@@ -411,11 +417,6 @@ function DashboardView({ go }) {
 }
 
 /* ── Trips page ────────────────────────────────────────────────── */
-const TRIPS_TABS = [
-  { key: "trips", label: "Trips" },
-  { key: "fleet", label: "Fleet Status" },
-];
-
 function FilterChips({ filter, onChange }) {
   const chips = [];
   if (filter.status) chips.push({ key: "status", label: `Status: ${STATUS_LABEL[filter.status] || filter.status}` });
@@ -439,7 +440,7 @@ function FilterChips({ filter, onChange }) {
   );
 }
 
-const STATUS_LABEL = { completed: "Completed", ongoing: "Ongoing", pending: "Pending", paused: "Paused", terminated: "Terminated" };
+const STATUS_LABEL = { completed: "Completed", ongoing: "Ongoing", pending: "Pending", paused: "Paused", terminated: "Terminated", idle: "Idle" };
 
 /* ── Trips toolbar: scoped search + status/date filter panel ──────
    Follows the codebase's established .hac-search-group.scoped / .hac-filter-*
@@ -458,6 +459,7 @@ const TRIPS_STATUS_OPTIONS = [
   { value: "pending", label: "Pending" },
   { value: "paused", label: "Paused" },
   { value: "terminated", label: "Terminated" },
+  { value: "idle", label: "Idle vehicles" },
 ];
 
 function TripsToolbar({ scope, setScope, query, setQuery, filter, onChange }) {
@@ -543,19 +545,32 @@ function TripsToolbar({ scope, setScope, query, setQuery, filter, onChange }) {
   );
 }
 
+// Idle vehicles have no trip record, so they're folded into the Trips table
+// as pseudo-rows rather than living in a separate Fleet Status tab — the two
+// tables were >80% the same columns (Vehicle/Driver/Status), and idle state
+// was the only information the second table added.
+function idleRow(r) {
+  const v = vehicleById(r.vehicleId), d = driverById(r.driverId);
+  return { id: null, vehicleId: r.vehicleId, driverId: r.driverId, from: v.model, to: "Not on a trip", status: "idle" };
+}
+
 function TripsTable({ filter, scope, query, go, onVehicle, onDriver }) {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
-  const rows = useMemo(() => D.trips.filter((t) => {
-    if (filter.status && t.status !== filter.status) return false;
-    if (filter.vehicleId && t.vehicleId !== filter.vehicleId) return false;
-    if (filter.driverId && t.driverId !== filter.driverId) return false;
-    const q = query.trim().toLowerCase();
-    if (!q) return true;
-    if (scope === "tripId") return t.id.toLowerCase().includes(q);
-    if (scope === "vehicle") return vehicleById(t.vehicleId).plate.toLowerCase().includes(q);
-    return driverById(t.driverId).name.toLowerCase().includes(q);
-  }), [filter, scope, query]);
+  const rows = useMemo(() => {
+    const idle = D.fleetStatus.filter((r) => r.status === "idle").map(idleRow);
+    const all = filter.status === "idle" ? idle : filter.status ? D.trips : [...D.trips, ...idle];
+    return all.filter((t) => {
+      if (filter.status && t.status !== filter.status) return false;
+      if (filter.vehicleId && t.vehicleId !== filter.vehicleId) return false;
+      if (filter.driverId && t.driverId !== filter.driverId) return false;
+      const q = query.trim().toLowerCase();
+      if (!q) return true;
+      if (scope === "tripId") return (t.id || "").toLowerCase().includes(q);
+      if (scope === "vehicle") return vehicleById(t.vehicleId).plate.toLowerCase().includes(q);
+      return driverById(t.driverId).name.toLowerCase().includes(q);
+    });
+  }, [filter, scope, query]);
   useEffect(() => { setPage(1); }, [filter, scope, query]);
   const shown = rows.slice((page - 1) * perPage, page * perPage);
 
@@ -572,10 +587,11 @@ function TripsTable({ filter, scope, query, go, onVehicle, onDriver }) {
             )}
             {shown.map((t) => {
               const v = vehicleById(t.vehicleId); const d = driverById(t.driverId);
+              const clickable = !!t.id;
               return (
-                <tr key={t.id} className="mt-table-row"
-                  onClick={() => go({ name: "detail", tripId: t.id, from: { name: "trips", tab: "trips", filter } })}>
-                  <td><b>{t.id}</b></td>
+                <tr key={t.id || `idle-${t.vehicleId}`} className={clickable ? "mt-table-row" : ""}
+                  onClick={clickable ? () => go({ name: "detail", tripId: t.id, from: { name: "trips", filter } }) : undefined}>
+                  <td>{t.id ? <b>{t.id}</b> : <span className="mt-cell-muted">—</span>}</td>
                   <td>
                     <button type="button" className="mt-cell-link"
                       onClick={(e) => { e.stopPropagation(); onVehicle(v.id); }}>{v.plate}</button>
@@ -587,16 +603,18 @@ function TripsTable({ filter, scope, query, go, onVehicle, onDriver }) {
                       {d.name}
                     </button>
                   </td>
-                  <td>{t.from} <span className="mt-cell-muted">→</span> {t.to}</td>
-                  <td><StatusBadge status={TRIP_STATUS_KEY[t.status]} /></td>
+                  <td>{t.status === "idle" ? <span className="mt-cell-muted">Not on a trip</span> : <>{t.from} <span className="mt-cell-muted">→</span> {t.to}</>}</td>
+                  <td><StatusBadge status={t.status === "idle" ? "veh_idle" : TRIP_STATUS_KEY[t.status]} /></td>
                   <td>
-                    {t.status === "pending"
-                      ? <>Departs {t.scheduled}<div className="mt-cell-sub">ETA {t.eta}</div></>
-                      : t.status === "completed"
-                        ? <>{t.started}<div className="mt-cell-sub">Done {t.completedAt}</div></>
-                        : t.status === "terminated"
-                          ? <>{t.started}<div className="mt-cell-sub">Ended {t.terminatedAt}</div></>
-                          : <>{t.started}<div className="mt-cell-sub">ETA {t.eta}</div></>}
+                    {t.status === "idle"
+                      ? <span className="mt-cell-muted">—</span>
+                      : t.status === "pending"
+                        ? <>Departs {t.scheduled}<div className="mt-cell-sub">ETA {t.eta}</div></>
+                        : t.status === "completed"
+                          ? <>{t.started}<div className="mt-cell-sub">Done {t.completedAt}</div></>
+                          : t.status === "terminated"
+                            ? <>{t.started}<div className="mt-cell-sub">Ended {t.terminatedAt}</div></>
+                            : <>{t.started}<div className="mt-cell-sub">ETA {t.eta}</div></>}
                   </td>
                 </tr>
               );
@@ -609,137 +627,12 @@ function TripsTable({ filter, scope, query, go, onVehicle, onDriver }) {
   );
 }
 
-const FLEET_SEARCH_SCOPES = [
-  { value: "vehicle", label: "Vehicle" },
-  { value: "driver", label: "Driver" },
-];
-const FLEET_STATUS_OPTIONS = [
-  { value: "all", label: "All statuses" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "assigned", label: "Assigned" },
-  { value: "idle", label: "Idle" },
-];
-
-function FleetStatusToolbar({ scope, setScope, query, setQuery, status, setStatus }) {
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [pendingStatus, setPendingStatus] = useState(status);
-  const activeCount = status !== "all" ? 1 : 0;
-
-  const toggleFilterPanel = () => {
-    if (!filterOpen) setPendingStatus(status);
-    setFilterOpen((v) => !v);
-  };
-  const applyFilters = () => { setStatus(pendingStatus); setFilterOpen(false); };
-  const resetFilters = () => {
-    setQuery(""); setScope("vehicle"); setStatus("all"); setPendingStatus("all"); setFilterOpen(false);
-  };
-
-  return (
-    <div className="hac-toolbar">
-      <div className="hac-toolbar-left">
-        <div className="hac-search-group scoped">
-          <SelectMenu className="hac-search-scope" value={scope} options={FLEET_SEARCH_SCOPES}
-            onChange={setScope} ariaLabel="Search by" />
-          <div className="hac-search-bar">
-            <Icon name="search" size={17} color="var(--fg-tertiary)" />
-            <input className="hac-search-input" value={query} onChange={(e) => setQuery(e.target.value)}
-              placeholder={`Search by ${FLEET_SEARCH_SCOPES.find((s) => s.value === scope).label.toLowerCase()}`} />
-            {query && (
-              <button type="button" className="hac-search-clear" onClick={() => setQuery("")} aria-label="Clear search">
-                <Icon name="close" size={16} />
-              </button>
-            )}
-          </div>
-        </div>
-        <button type="button" className={"hac-filter-btn" + (activeCount ? " active" : "")} onClick={toggleFilterPanel}>
-          <Icon name="tune" size={18} /> Filter
-          {activeCount > 0 && <span className="hac-filter-badge">{activeCount}</span>}
-        </button>
-      </div>
-      {filterOpen && (
-        <div className="hac-filter-panel" style={{ width: "100%" }}>
-          <div className="hac-filter-grid">
-            <div className="hac-filter-field">
-              <label>Status</label>
-              <div className="hac-select-wrap">
-                <SelectMenu className="hac-select" value={pendingStatus} options={FLEET_STATUS_OPTIONS}
-                  onChange={setPendingStatus} ariaLabel="Status" />
-              </div>
-            </div>
-          </div>
-          <div className="hac-filter-actions">
-            <button type="button" className="hac-filter-apply" onClick={applyFilters}>Apply Filters</button>
-            <button type="button" className="hac-filter-reset" onClick={resetFilters}>Reset All</button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function FleetStatusTable({ go, onVehicle, onDriver }) {
-  const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
-  const [scope, setScope] = useState("vehicle");
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("all");
-
-  const rows = useMemo(() => D.fleetStatus.filter((r) => {
-    if (status !== "all" && r.status !== status) return false;
-    const q = query.trim().toLowerCase();
-    if (!q) return true;
-    if (scope === "vehicle") return vehicleById(r.vehicleId).plate.toLowerCase().includes(q);
-    return driverById(r.driverId).name.toLowerCase().includes(q);
-  }), [scope, query, status]);
-  useEffect(() => { setPage(1); }, [scope, query, status]);
-  const shown = rows.slice((page - 1) * perPage, page * perPage);
-  return (
-    <>
-      <FleetStatusToolbar scope={scope} setScope={setScope} query={query} setQuery={setQuery} status={status} setStatus={setStatus} />
-      <div className="ml-table-wrap">
-        <table className="ml-table">
-          <thead><tr><th>Vehicle</th><th>Driver</th><th>Current status</th><th>Active trip</th></tr></thead>
-          <tbody>
-            {shown.length === 0 && (
-              <tr><td colSpan={4}><div className="mt-empty">No vehicles match this filter.</div></td></tr>
-            )}
-            {shown.map((r) => {
-              const v = vehicleById(r.vehicleId); const d = driverById(r.driverId);
-              const clickable = !!r.tripId;
-              return (
-                <tr key={r.vehicleId} className={clickable ? "mt-table-row" : ""}
-                  onClick={clickable ? () => go({ name: "detail", tripId: r.tripId, from: { name: "trips", tab: "fleet", filter: {} } }) : undefined}>
-                  <td>
-                    <button type="button" className="mt-cell-link"
-                      onClick={(e) => { e.stopPropagation(); onVehicle(v.id); }}>{v.plate}</button>
-                    <div className="mt-cell-sub">{v.model}</div>
-                  </td>
-                  <td>
-                    <button type="button" className="mt-cell-link"
-                      onClick={(e) => { e.stopPropagation(); onDriver(d.id); }}>
-                      {d.name}
-                    </button>
-                  </td>
-                  <td><StatusBadge status={FLEET_STATUS_KEY[r.status]} /></td>
-                  <td>{r.tripId ? <b>{r.tripId}</b> : <span className="mt-cell-muted">—</span>}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      <Pager page={page} perPage={perPage} total={rows.length} onPage={setPage} onPerPage={setPerPage} />
-    </>
-  );
-}
-
-function TripsView({ go, tab, filter, onVehicle, onDriver }) {
+function TripsView({ go, filter, onVehicle, onDriver }) {
   const [scope, setScope] = useState("tripId");
   const [query, setQuery] = useState("");
-  const setTab = (next) => go({ name: "trips", tab: next, filter });
   const setFilter = (next) => {
     const clean = Object.fromEntries(Object.entries(next).filter(([, v]) => v !== undefined));
-    go({ name: "trips", tab, filter: clean });
+    go({ name: "trips", filter: clean });
   };
   return (
     <>
@@ -750,22 +643,9 @@ function TripsView({ go, tab, filter, onVehicle, onDriver }) {
         </div>
         <ExportMenu />
       </div>
-      <div className="ml-tabs">
-        {TRIPS_TABS.map((t) => (
-          <button key={t.key} className={"ml-tab" + (t.key === tab ? " active" : "")} onClick={() => setTab(t.key)}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-      {tab === "trips" ? (
-        <>
-          <TripsToolbar scope={scope} setScope={setScope} query={query} setQuery={setQuery} filter={filter} onChange={setFilter} />
-          <FilterChips filter={filter} onChange={setFilter} />
-          <TripsTable filter={filter} scope={scope} query={query} go={go} onVehicle={onVehicle} onDriver={onDriver} />
-        </>
-      ) : (
-        <FleetStatusTable go={go} onVehicle={onVehicle} onDriver={onDriver} />
-      )}
+      <TripsToolbar scope={scope} setScope={setScope} query={query} setQuery={setQuery} filter={filter} onChange={setFilter} />
+      <FilterChips filter={filter} onChange={setFilter} />
+      <TripsTable filter={filter} scope={scope} query={query} go={go} onVehicle={onVehicle} onDriver={onDriver} />
     </>
   );
 }
@@ -929,7 +809,7 @@ function UpcomingTripsSection({ go, onVehicle, onDriver }) {
       {upcoming.length > shown.length && (
         <div className="mt-card-footer" style={{ justifyContent: "flex-start", paddingTop: 10 }}>
           <button type="button" className="ml-btn-text-blue"
-            onClick={() => go({ name: "trips", tab: "trips", filter: { status: "pending", range: "today" } })}>
+            onClick={() => go({ name: "trips", filter: { status: "pending", range: "today" } })}>
             View all {upcoming.length} pending trips<Icon name="chevron_right" size={16} />
           </button>
         </div>
@@ -1283,7 +1163,7 @@ function App() {
         </div>
         <div className="mt-content">
           {route.name === "dashboard" && <DashboardView go={go} />}
-          {route.name === "trips" && <TripsView go={go} tab={route.tab || "trips"} filter={route.filter || {}} onVehicle={onVehicle} onDriver={onDriver} />}
+          {route.name === "trips" && <TripsView go={go} filter={route.filter || {}} onVehicle={onVehicle} onDriver={onDriver} />}
           {route.name === "schedule" && <ScheduleView go={go} onVehicle={onVehicle} onDriver={onDriver} />}
           {route.name === "detail" && <DetailView tripId={route.tripId} from={route.from} go={go} toast={toast} onVehicle={onVehicle} onDriver={onDriver} />}
         </div>

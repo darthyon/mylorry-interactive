@@ -46,7 +46,6 @@
       summary: "Fleet, drivers, compliance, reminders",
       rows: [
         { key: "vehicle_info", label: "Vehicle Creation", helper: "Allow creation of vehicle records", controlType: "toggle", value: true },
-        { key: "managed_vehicle", label: "Managed Vehicle", helper: "Allow managed vehicle reminders and managed vehicle billing", controlType: "toggle", value: true, bindPath: "visibility.managedVehiclesIncluded" },
         { key: "vehicle_doc_reminder", label: "Vehicle Document Reminder", helper: "Reminder count for vehicle documents", controlType: "number", value: 3, min: 0, toggleable: true, enabled: true },
         { key: "icop", label: "Safety Checklist", helper: "Safety checklist workflows and records", controlType: "toggle", value: true },
         { key: "driver_info", label: "Driver Creation", helper: "Allow creation of driver records", controlType: "toggle", value: true },
@@ -144,16 +143,20 @@
     return paidOptions[0];
   };
 
-  const calculateMonthlyBilling = (plan, vehiclesUsed) =>
-    Number(plan.pricing.baseMonthlyFee || 0) + Number(vehiclesUsed || 0) * Number(plan.pricing.perManagedVehicleFee || 0);
+  const calculateMonthlyBilling = (plan, vehiclesUsed) => {
+    const firstTier = plan.pricing?.commitmentOptions?.[0];
+    const baseMonthlyFee = Number(firstTier?.amount ?? 0);
+    const perManagedVehicleFee = Number(firstTier?.perManagedVehicleFee ?? 0);
+    return baseMonthlyFee + Number(vehiclesUsed || 0) * perManagedVehicleFee;
+  };
 
   const calculateCommittedBilling = (plan, vehiclesUsed, commitmentMonths = null, setupFeeStatus = "") => {
     const commitment = resolveCommitmentOption(plan, commitmentMonths);
     const months = Number(commitment?.durationMonths ?? commitmentMonths ?? 1);
-    const baseMonthlyFee = Number((commitment?.amount ?? plan.pricing.baseMonthlyFee) || 0);
-    const perManagedVehicleFee = Number(plan.pricing.perManagedVehicleFee || 0);
+    const baseMonthlyFee = Number(commitment?.amount ?? 0);
+    const perManagedVehicleFee = Number(commitment?.perManagedVehicleFee ?? 0);
     const monthlySubtotal = baseMonthlyFee + Number(vehiclesUsed || 0) * perManagedVehicleFee;
-    const setupFee = setupFeeStatus === "Waived" ? 0 : Number(plan.pricing.setupFee || 0);
+    const setupFee = setupFeeStatus === "Waived" ? 0 : Number(commitment?.setupFee ?? 0);
     return {
       commitmentMonths: months,
       baseMonthlyFee,
@@ -265,7 +268,7 @@
         baseMonthlyFee: 99,
         perManagedVehicleFee: 12,
         commitmentOptions: [
-          { id: "lite-12", durationMonths: 12, discountedMonthlyPrice: 99 },
+          { id: "lite-12", durationMonths: 12, discountedMonthlyPrice: 99, setupFee: 250, perManagedVehicleFee: 12 },
         ],
       },
       limits: {
@@ -306,8 +309,8 @@
         baseMonthlyFee: 499,
         perManagedVehicleFee: 25,
         commitmentOptions: [
-          { id: "prem-12", durationMonths: 12, discountedMonthlyPrice: 499 },
-          { id: "prem-24", durationMonths: 24, discountedMonthlyPrice: 499 },
+          { id: "prem-12", durationMonths: 12, discountedMonthlyPrice: 499, setupFee: 500, perManagedVehicleFee: 25 },
+          { id: "prem-24", durationMonths: 24, discountedMonthlyPrice: 499, setupFee: 500, perManagedVehicleFee: 25 },
         ],
       },
       limits: {
@@ -346,7 +349,7 @@
         baseMonthlyFee: 999,
         perManagedVehicleFee: 40,
         commitmentOptions: [
-          { id: "ent-24", durationMonths: 24, discountedMonthlyPrice: 999 },
+          { id: "ent-24", durationMonths: 24, discountedMonthlyPrice: 999, setupFee: 1000, perManagedVehicleFee: 40 },
         ],
       },
       limits: {
@@ -385,8 +388,8 @@
         baseMonthlyFee: 79,
         perManagedVehicleFee: 10,
         commitmentOptions: [
-          { id: "camp-trial", durationMonths: 1, discountedMonthlyPrice: 0, isTrial: true },
-          { id: "camp-12", durationMonths: 12, discountedMonthlyPrice: 69 },
+          { id: "camp-trial", durationMonths: 1, discountedMonthlyPrice: 0, isTrial: true, setupFee: 0, perManagedVehicleFee: 10 },
+          { id: "camp-12", durationMonths: 12, discountedMonthlyPrice: 69, setupFee: 0, perManagedVehicleFee: 10 },
         ],
       },
       limits: {
@@ -425,7 +428,7 @@
         baseMonthlyFee: 129,
         perManagedVehicleFee: 18,
         commitmentOptions: [
-          { id: "sea-6", durationMonths: 6, discountedMonthlyPrice: 119 },
+          { id: "sea-6", durationMonths: 6, discountedMonthlyPrice: 119, setupFee: 150, perManagedVehicleFee: 18 },
         ],
       },
       limits: {
