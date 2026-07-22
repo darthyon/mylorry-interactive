@@ -226,8 +226,8 @@ function SubsidyProgressCell({ max, used, estUsed, pending, failed, utype }) {
   const rows = [
     { label: 'Max quota',      value: `${N(max)} L` },
     { label: 'Confirmed used', value: `${N(used)} L` },
-    { label: 'Estimated used', value: `${N(estUsed)} L`, tone: 'amber' },
-    { label: <>Remaining <span className="ml-calc-row-note">(deducted from estimated)</span></>, value: `${N(max - estUsed)} L`, total: true, tone: 'green' },
+    { label: 'Pending calculations', value: `${N(estUsed)} L`, tone: 'amber' },
+    { label: 'Remaining', value: `${N(max - estUsed)} L`, total: true, tone: 'green' },
   ];
   const trigger = (
     <div className="prog-cell">
