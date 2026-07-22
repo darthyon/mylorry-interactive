@@ -481,6 +481,7 @@ const STATUS_BADGE_META = {
   expired:            { label:"Expired",            cls:"comm-expired"     },
   // Generic account status
   active:               { label:"Active",              cls:"acct-active"     },
+  draft:                { label:"Draft",               cls:"draft"           },
   inactive:             { label:"Inactive",            cls:"acct-inactive"   },
   suspended:            { label:"Suspended",           cls:"acct-suspended"  },
   pending_termination:  { label:"Pending Termination", cls:"acct-pending-term" },
