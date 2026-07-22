@@ -990,26 +990,26 @@ function SubscriptionTierModal({ tier, onClose, onSave }) {
       <div className="hac-field-hint" style={{ marginBottom: 18 }}>Choose how long this pricing tier applies.</div>
 
       <div className="hac-fg" style={{ marginBottom: 14 }}>
-        <label className="hac-label req" style={{ fontSize: 14 }}>Amount*</label>
+        <label className="hac-label req" style={{ fontSize: 14 }}>Setup Fee (one-time)*</label>
         <input
           className="hac-input"
           type="number"
           min="0"
           step="0.01"
-          placeholder="Enter tier amount"
+          placeholder="Enter one-time setup fee"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
       </div>
 
       <div className="hac-fg" style={{ marginBottom: 14 }}>
-        <label className="hac-label" style={{ fontSize: 14 }}>Monthly setup fee</label>
+        <label className="hac-label" style={{ fontSize: 14 }}>Monthly Base Fee</label>
         <input
           className="hac-input"
           type="number"
           min="0"
           step="0.01"
-          placeholder="Enter monthly setup fee"
+          placeholder="Enter monthly base fee"
           value={setupFee}
           onChange={(e) => setSetupFee(e.target.value)}
         />
