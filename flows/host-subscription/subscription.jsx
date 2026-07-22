@@ -15,6 +15,7 @@ const {
 
 const STATUS_OPTIONS = [
   { value: "active", label: "Active" },
+  { value: "draft", label: "Draft" },
   { value: "inactive", label: "Inactive" },
 ];
 
@@ -122,6 +123,7 @@ function StatusDropdown({ status, onChange, disabled }) {
   const btnRef = useRef(null);
   const dropRef = useRef(null);
   const label = STATUS_OPTIONS.find((item) => item.value === status)?.label || status;
+  const badgeClass = status === "active" ? "acct-active" : status === "draft" ? "draft" : "acct-inactive";
   const DROP_W = 140;
 
   useEffect(() => {
@@ -157,7 +159,7 @@ function StatusDropdown({ status, onChange, disabled }) {
 
   return (
     <div className="hsub-status-dropdown">
-      <button className={`hsub-status-trigger ml-badge ${status === "active" ? "acct-active" : "acct-inactive"}`} ref={btnRef} onClick={toggle} aria-label="Change status">
+      <button className={`hsub-status-trigger ml-badge ${badgeClass}`} ref={btnRef} onClick={toggle} aria-label="Change status">
         {label}
         <HIcon name="expand_more" size={14} />
       </button>
@@ -169,7 +171,7 @@ function StatusDropdown({ status, onChange, disabled }) {
               className={`hac-drop-item${option.value === status ? " active" : ""}`}
               onClick={() => { setOpen(false); onChange(option.value); }}
             >
-              <span className={`hsub-status-dot ${option.value === "active" ? "success" : "inactive"}`} />
+              <span className={`hsub-status-dot ${option.value === "active" ? "success" : option.value === "draft" ? "draft" : "inactive"}`} />
               {option.label}
             </button>
           ))}
@@ -499,10 +501,22 @@ function Section({ title, right, children }) {
   );
 }
 
-function Field({ label, hint, children }) {
+function Field({ label, hint, info, children }) {
   return (
     <div className="hac-fg">
-      <label className="hac-label">{label}</label>
+      {info ? (
+        <label className="hac-label hsub-label-with-info">
+          <span>{label}</span>
+          <span className="ml-tooltip-wrap hsub-info-wrap" tabIndex={0}>
+            <span className="hsub-info-trigger" aria-label={`${label} help`}>
+              <HIcon name="info" size={14} color="var(--fg-tertiary)" />
+            </span>
+            <span className="ml-tooltip hsub-info-tooltip">{info}</span>
+          </span>
+        </label>
+      ) : (
+        <label className="hac-label">{label}</label>
+      )}
       {children}
       {hint && <span className="hac-field-hint">{hint}</span>}
     </div>
@@ -531,7 +545,7 @@ function ViewField({ label, value, hint, info }) {
   );
 }
 
-function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onActivate, onDeactivate }) {
+function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onStatusChange }) {
   const [q, setQ] = useState("");
   const [scope, setScope] = useState("name");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -684,12 +698,12 @@ function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onActivate, o
           <tbody>
             {pageData.map((plan, index) => {
               const isDefaultPlan = plan.type === "default";
-              const canActivate = plan.status === "inactive";
+              const canActivate = plan.status !== "active";
               const canDeactivate = plan.status === "active";
-              const canDelete = !isDefaultPlan && plan.status === "inactive";
+              const canDelete = !isDefaultPlan && (plan.status === "inactive" || plan.status === "draft");
               const deleteReason = isDefaultPlan
                 ? "Default plans cannot be deleted."
-                : "Deactivate this plan before deleting it.";
+                : "Only inactive or draft plans can be deleted.";
               const typeDisplay = getPlanTypeDisplay(plan);
               return (
                 <tr key={plan.id} onClick={() => onView(plan.id)}>
@@ -705,10 +719,7 @@ function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onActivate, o
                   <td onClick={(e) => e.stopPropagation()}>
                     <StatusDropdown
                       status={plan.status}
-                      onChange={(next) => {
-                        if (next === "active") onActivate(plan.id);
-                        else onDeactivate(plan.id);
-                      }}
+                      onChange={(next) => onStatusChange(plan.id, next)}
                     />
                   </td>
                   <td className="ml-mono">{fmtDate(plan.createdAt)}</td>
@@ -721,8 +732,8 @@ function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onActivate, o
                       onView={() => onView(plan.id)}
                       onEdit={() => onEdit(plan.id)}
                       onDelete={() => onDelete(plan.id)}
-                      onActivate={() => onActivate(plan.id)}
-                      onDeactivate={() => onDeactivate(plan.id)}
+                      onActivate={() => onStatusChange(plan.id, "active")}
+                      onDeactivate={() => onStatusChange(plan.id, "inactive")}
                     />
                   </td>
                 </tr>
@@ -817,6 +828,20 @@ function BasicDetailsSection({ plan, editable, onChange }) {
             )}
           </div>
         </>
+      )}
+      {!editable && (
+        <div className="hsub-website-feature-view">
+          <div className="ml-k">Website listing</div>
+          {(plan.websiteFeatures || []).length === 0 ? (
+            <div className="hsub-muted">No website features listed.</div>
+          ) : (
+            <ul className="hsub-website-feature-list-view">
+              {plan.websiteFeatures.map((feature, index) => (
+                <li key={index}>{feature}</li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
     </Section>
   );
@@ -1436,7 +1461,7 @@ function SubscriptionApp() {
     setDraftPlan(decoratePlan(deepClone(plan)));
   };
 
-  const canDeletePlan = (plan) => plan.type !== "default" && plan.status === "inactive";
+  const canDeletePlan = (plan) => plan.type !== "default" && (plan.status === "inactive" || plan.status === "draft");
 
   const saveDraft = () => {
     if (!draftPlan?.name?.trim()) {
@@ -1462,7 +1487,7 @@ function SubscriptionApp() {
     const plan = plans.find((item) => item.id === planId);
     if (!plan) return;
     if (!canDeletePlan(plan)) {
-      pushToast("warn", "Delete is only available for inactive non-default plans. Deactivate the plan first.");
+      pushToast("warn", "Delete is only available for inactive or draft non-default plans.");
       return;
     }
     setDeletePlanId(planId);
@@ -1480,16 +1505,11 @@ function SubscriptionApp() {
     openList();
   };
 
-  const deactivatePlan = (planId) => {
-    setPlans((current) => decoratePlans(current.map((plan) => plan.id === planId ? { ...plan, status: "inactive" } : plan)));
+  const updatePlanStatus = (planId, nextStatus) => {
+    setPlans((current) => decoratePlans(current.map((plan) => plan.id === planId ? { ...plan, status: nextStatus } : plan)));
     const plan = plans.find((item) => item.id === planId);
-    pushToast("neutral", `${plan?.name || "Plan"} set to inactive.`);
-  };
-
-  const activatePlan = (planId) => {
-    setPlans((current) => decoratePlans(current.map((plan) => plan.id === planId ? { ...plan, status: "active" } : plan)));
-    const plan = plans.find((item) => item.id === planId);
-    pushToast("ok", `${plan?.name || "Plan"} set to active.`);
+    const tone = nextStatus === "active" ? "ok" : nextStatus === "draft" ? "warn" : "neutral";
+    pushToast(tone, `${plan?.name || "Plan"} set to ${nextStatus}.`);
   };
 
   return (
@@ -1506,8 +1526,7 @@ function SubscriptionApp() {
             onView={openView}
             onEdit={openEdit}
             onDelete={removePlan}
-            onActivate={activatePlan}
-            onDeactivate={deactivatePlan}
+            onStatusChange={updatePlanStatus}
           />
         )}
 
