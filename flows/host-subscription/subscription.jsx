@@ -499,10 +499,22 @@ function Section({ title, right, children }) {
   );
 }
 
-function Field({ label, hint, children }) {
+function Field({ label, hint, info, children }) {
   return (
     <div className="hac-fg">
-      <label className="hac-label">{label}</label>
+      {info ? (
+        <label className="hac-label hsub-label-with-info">
+          <span>{label}</span>
+          <span className="ml-tooltip-wrap hsub-info-wrap" tabIndex={0}>
+            <span className="hsub-info-trigger" aria-label={`${label} help`}>
+              <HIcon name="info" size={14} color="var(--fg-tertiary)" />
+            </span>
+            <span className="ml-tooltip hsub-info-tooltip">{info}</span>
+          </span>
+        </label>
+      ) : (
+        <label className="hac-label">{label}</label>
+      )}
       {children}
       {hint && <span className="hac-field-hint">{hint}</span>}
     </div>
@@ -817,6 +829,20 @@ function BasicDetailsSection({ plan, editable, onChange }) {
             )}
           </div>
         </>
+      )}
+      {!editable && (
+        <div className="hsub-website-feature-view">
+          <div className="ml-k">Website listing</div>
+          {(plan.websiteFeatures || []).length === 0 ? (
+            <div className="hsub-muted">No website features listed.</div>
+          ) : (
+            <ul className="hsub-website-feature-list-view">
+              {plan.websiteFeatures.map((feature, index) => (
+                <li key={index}>{feature}</li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
     </Section>
   );
