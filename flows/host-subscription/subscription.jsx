@@ -752,8 +752,8 @@ function BasicDetailsSection({ plan, editable, onChange }) {
   return (
     <Section title="Basic details">
       {editable ? (
-        <>
-          <div className="hac-form-grid">
+        <div className="hac-form-grid">
+          <div className="hsub-grid-span2" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <Field label="Subscription title">
               <input className="hac-input" value={plan.name} onChange={(e) => onChange({ name: e.target.value })} />
             </Field>
@@ -766,6 +766,15 @@ function BasicDetailsSection({ plan, editable, onChange }) {
                 onChange={(e) => onChange({ displayOrder: Number(e.target.value || 0) })}
               />
             </Field>
+            <Field label="Description" hint={`${plan.description.length}/500`}>
+              <textarea
+                className="hac-input hsub-textarea"
+                maxLength="500"
+                value={plan.description}
+                onChange={(e) => onChange({ description: e.target.value })}
+                placeholder="Explain who this plan is for and what makes it different."
+              />
+            </Field>
             <Field label="Free plan">
               <SwitchField
                 checked={!!plan.isFree}
@@ -775,72 +784,40 @@ function BasicDetailsSection({ plan, editable, onChange }) {
               />
             </Field>
           </div>
-          <div className="hsub-stack-spacer" />
-          <div className="hac-form-grid">
-            <div className="hsub-grid-span2">
-              <Field label="Description" hint={`${plan.description.length}/500`}>
-                <textarea
-                  className="hac-input hsub-textarea"
-                  maxLength="500"
-                  value={plan.description}
-                  onChange={(e) => onChange({ description: e.target.value })}
-                  placeholder="Explain who this plan is for and what makes it different."
-                />
-              </Field>
-            </div>
+          <div className="hsub-grid-span2">
+            <Field label="Feature listing" info="Shown to visitors comparing plans on the website.">
+              <FeatureListing
+                features={plan.websiteFeatures || []}
+                onChange={(next) => onChange({ websiteFeatures: next })}
+              />
+            </Field>
           </div>
-          <div className="hsub-stack-spacer" />
-          <div className="hac-form-grid">
-            <div className="hsub-grid-span2">
-              <Field label="Feature listing" hint="Shown to visitors comparing plans on the website.">
-                <FeatureListing
-                  features={plan.websiteFeatures || []}
-                  onChange={(next) => onChange({ websiteFeatures: next })}
-                />
-              </Field>
-            </div>
-          </div>
-        </>
+        </div>
       ) : (
-        <>
-          <div className="hac-detail-grid hac-view-grid">
+        <div className="hac-detail-grid hac-view-grid">
+          <div className="hsub-grid-span2" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <ViewField label="Subscription title" value={plan.name} />
             <ViewField label="Display order" value={plan.displayOrder} />
+            <ViewField label="Description" value={plan.description || "—"} />
             <ViewField label="Free plan" value={plan.isFree ? "Yes" : "No"} />
           </div>
-          <div className="hsub-stack-spacer" />
-          <div className="hac-detail-grid hac-view-grid">
-            <div className="hsub-grid-span2">
-              <ViewField label="Description" value={plan.description || "—"} />
-            </div>
+          <div className="hsub-grid-span2">
+            <ViewField
+              label="Feature listing"
+              info="Shown to visitors comparing plans on the website."
+              value={
+                (plan.websiteFeatures || []).length === 0 ? (
+                  <div className="hsub-muted">No features listed.</div>
+                ) : (
+                  <ul className="hsub-website-feature-list-view">
+                    {plan.websiteFeatures.map((feature, index) => (
+                      <li key={index}>{feature}</li>
+                    ))}
+                  </ul>
+                )
+              }
+            />
           </div>
-          <div className="hsub-stack-spacer" />
-          <div className="hsub-website-feature-view">
-            <div className="ml-k">Feature listing</div>
-            {(plan.websiteFeatures || []).length === 0 ? (
-              <div className="hsub-muted">No features listed.</div>
-            ) : (
-              <ul className="hsub-website-feature-list-view">
-                {plan.websiteFeatures.map((feature, index) => (
-                  <li key={index}>{feature}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </>
-      )}
-      {!editable && (
-        <div className="hsub-website-feature-view">
-          <div className="ml-k">Website listing</div>
-          {(plan.websiteFeatures || []).length === 0 ? (
-            <div className="hsub-muted">No website features listed.</div>
-          ) : (
-            <ul className="hsub-website-feature-list-view">
-              {plan.websiteFeatures.map((feature, index) => (
-                <li key={index}>{feature}</li>
-              ))}
-            </ul>
-          )}
         </div>
       )}
     </Section>
@@ -1081,15 +1058,15 @@ function EditableSubscriptionTiers({ plan, onChange, title = null }) {
                   <b>{formatTierDuration(tier.durationMonths)}</b>
                 </div>
                 <div className="hsub-tier-stack-field">
-                  <span className="ml-k">Amount</span>
+                  <span className="ml-k">Setup Fee (one-time)</span>
                   <b>{fmtRM(tier.amount)}</b>
                 </div>
                 <div className="hsub-tier-stack-field">
-                  <span className="ml-k">Setup fee</span>
+                  <span className="ml-k">Monthly Base Fee</span>
                   <b>{fmtRM(tier.setupFee)}</b>
                 </div>
                 <div className="hsub-tier-stack-field">
-                  <span className="ml-k">Per vehicle</span>
+                  <span className="ml-k">Monthly managed vehicle fee</span>
                   <b>{fmtRM(tier.perManagedVehicleFee)}</b>
                 </div>
                 <TierItemMenu
@@ -1148,15 +1125,15 @@ function ReadOnlySubscriptionTiers({ plan, title = null }) {
                   <b>{formatTierDuration(tier.durationMonths)}</b>
                 </div>
                 <div className="hsub-tier-stack-field">
-                  <span className="ml-k">Amount</span>
+                  <span className="ml-k">Setup Fee (one-time)</span>
                   <b>{fmtRM(tier.amount)}</b>
                 </div>
                 <div className="hsub-tier-stack-field">
-                  <span className="ml-k">Setup fee</span>
+                  <span className="ml-k">Monthly Base Fee</span>
                   <b>{fmtRM(tier.setupFee)}</b>
                 </div>
                 <div className="hsub-tier-stack-field">
-                  <span className="ml-k">Per vehicle</span>
+                  <span className="ml-k">Monthly managed vehicle fee</span>
                   <b>{fmtRM(tier.perManagedVehicleFee)}</b>
                 </div>
               </div>

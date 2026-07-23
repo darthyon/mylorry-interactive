@@ -63,9 +63,7 @@ function buildModules(plan) {
       summary: mod.summary,
       access,
       rows,
-      note: mod.key === "myadmin"
-        ? `Managed vehicle number is set in Organization Management. This plan ${vehicleCeilingCopy(plan).toLowerCase()}.`
-        : null,
+      note: null,
     };
   });
 }
@@ -351,7 +349,15 @@ function SubscriptionSummary({ s }) {
 
       <div className="osp-services-sub">
         <div className="osp-services-title">{servicesTitle}</div>
-        <ServicesTabs modules={serviceModules} />
+        {tab === "upcoming" && !s.upcoming ? (
+          <div className="osp-empty" style={{ padding: "18px 16px" }}>
+            <Icon name="event_upcoming" size={28} />
+            <div className="osp-empty-t">No upcoming services</div>
+            <div className="osp-empty-s">Services will appear here when a plan change is scheduled.</div>
+          </div>
+        ) : (
+          <ServicesTabs modules={serviceModules} />
+        )}
       </div>
     </div>
   );
