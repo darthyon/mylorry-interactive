@@ -210,6 +210,11 @@ b { font-weight: 600; }
 /* Status dropdown (badge + inline menu) */
 .hsub-status-edit-field { display: flex; flex-direction: column; gap: 7px; }
 .hsub-status-edit-field .hac-select { width: 100%; }
+.hsub-status-confirm-modal { width: min(500px, calc(100vw - 28px)); }
+.hsub-status-confirm { text-align: center; padding: 8px 12px 4px; }
+.hsub-status-confirm-icon { width: 36px; height: 36px; border-radius: 50%; background: var(--amber-500); color: #fff; display: inline-flex; align-items: center; justify-content: center; margin: 6px auto 16px; }
+.hsub-status-confirm-heading { font-size: 20px; font-weight: 700; color: var(--fg-primary); line-height: 1.2; }
+.hsub-status-confirm-copy { margin-top: 14px; font-size: 16px; line-height: 1.5; color: var(--fg-primary); max-width: 420px; margin-left: auto; margin-right: auto; }
 
 /* Responsive */
 @media (max-width: 1100px) {

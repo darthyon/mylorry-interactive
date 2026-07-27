@@ -328,6 +328,32 @@ function EditPlanStatusModal({ plan, onClose, onApply }) {
   );
 }
 
+function ConfirmStatusUpdateModal({ plan, onClose, onConfirm }) {
+  return (
+    <HacModal
+      title="Update Subscription"
+      onClose={onClose}
+      className="hsub-status-confirm-modal"
+      footer={
+        <>
+          <button className="hac-modal-cancel" onClick={onClose}>Cancel</button>
+          <button className="hac-modal-save" onClick={onConfirm}>Confirm</button>
+        </>
+      }
+    >
+      <div className="hsub-status-confirm">
+        <div className="hsub-status-confirm-icon">
+          <HIcon name="priority_high" size={28} fill={1} color="#fff" />
+        </div>
+        <div className="hsub-status-confirm-heading">Are you sure?</div>
+        <div className="hsub-status-confirm-copy">
+          Changes will apply to all organizations currently using this plan.
+        </div>
+      </div>
+    </HacModal>
+  );
+}
+
 function SwitchField({ checked, onChange, label, ariaLabel }) {
   return (
     <button
@@ -1363,10 +1389,12 @@ function SubscriptionApp() {
   const [deletePlanId, setDeletePlanId] = useState(null);
   const [viewTab, setViewTab] = useState("details");
   const [statusEditPlanId, setStatusEditPlanId] = useState(null);
+  const [statusConfirmation, setStatusConfirmation] = useState(null);
 
   const selectedPlan = useMemo(() => plans.find((plan) => plan.id === selectedPlanId) || null, [plans, selectedPlanId]);
   const workingPlan = mode === "create" || mode === "edit" ? draftPlan : selectedPlan;
   const statusEditPlan = useMemo(() => plans.find((plan) => plan.id === statusEditPlanId) || null, [plans, statusEditPlanId]);
+  const statusConfirmationPlan = useMemo(() => plans.find((plan) => plan.id === statusConfirmation?.planId) || null, [plans, statusConfirmation]);
 
   const setPlanPatch = (patch) => {
     setDraftPlan((current) => decoratePlan({ ...current, ...patch }));
@@ -1443,12 +1471,18 @@ function SubscriptionApp() {
     openList();
   };
 
-  const applyStatusUpdate = (nextStatus) => {
+  const requestStatusUpdate = (nextStatus) => {
     if (!statusEditPlan) return;
-    const planId = statusEditPlan.id;
     setStatusEditPlanId(null);
+    setStatusConfirmation({ planId: statusEditPlan.id, nextStatus });
+  };
+
+  const applyStatusUpdate = () => {
+    if (!statusConfirmationPlan || !statusConfirmation) return;
+    const { planId, nextStatus } = statusConfirmation;
     setPlans((current) => decoratePlans(current.map((plan) => plan.id === planId ? { ...plan, status: nextStatus } : plan)));
-    pushToast(nextStatus === "active" ? "ok" : "neutral", `${statusEditPlan.name} set to ${nextStatus}.`);
+    pushToast(nextStatus === "active" ? "ok" : "neutral", `${statusConfirmationPlan.name} set to ${nextStatus}.`);
+    setStatusConfirmation(null);
   };
 
   return (
@@ -1549,7 +1583,15 @@ function SubscriptionApp() {
           <EditPlanStatusModal
             plan={statusEditPlan}
             onClose={() => setStatusEditPlanId(null)}
-            onApply={applyStatusUpdate}
+            onApply={requestStatusUpdate}
+          />
+        )}
+
+        {statusConfirmationPlan && (
+          <ConfirmStatusUpdateModal
+            plan={statusConfirmationPlan}
+            onClose={() => setStatusConfirmation(null)}
+            onConfirm={applyStatusUpdate}
           />
         )}
       </main>
