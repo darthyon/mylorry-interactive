@@ -1,5 +1,5 @@
 const { useEffect, useMemo, useState, useRef } = React;
-const { FeatureTabShell, SelectMenu, useToast, StatusBadge } = window.SharedShell;
+const { FeatureTabShell, HacModal, SelectMenu, useToast, StatusBadge } = window.SharedShell;
 
 const {
   SUBSCRIPTION_PLANS,
@@ -18,6 +18,7 @@ const STATUS_OPTIONS = [
   { value: "draft", label: "Draft" },
   { value: "inactive", label: "Inactive" },
 ];
+const EDITABLE_STATUS_OPTIONS = STATUS_OPTIONS.filter((option) => option.value !== "draft");
 
 const TIER_DURATION_OPTIONS = [1, 3, 6, 12, 24];
 
@@ -118,68 +119,10 @@ function makeEmptyPlan(plans) {
   });
 }
 
-function StatusDropdown({ status, onChange, disabled }) {
-  const [open, setOpen] = useState(false);
-  const btnRef = useRef(null);
-  const dropRef = useRef(null);
+function PlanStatus({ status }) {
   const label = STATUS_OPTIONS.find((item) => item.value === status)?.label || status;
   const badgeClass = status === "active" ? "acct-active" : status === "draft" ? "draft" : "acct-inactive";
-  const DROP_W = 140;
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e) => {
-      if (btnRef.current && btnRef.current.contains(e.target)) return;
-      if (dropRef.current && dropRef.current.contains(e.target)) return;
-      setOpen(false);
-    };
-    const dismiss = () => setOpen(false);
-    document.addEventListener("mousedown", close);
-    window.addEventListener("scroll", dismiss, true);
-    window.addEventListener("resize", dismiss);
-    return () => {
-      document.removeEventListener("mousedown", close);
-      window.removeEventListener("scroll", dismiss, true);
-      window.removeEventListener("resize", dismiss);
-    };
-  }, [open]);
-
-  const toggle = (e) => {
-    e.stopPropagation();
-    if (!open && btnRef.current) {
-      const r = btnRef.current.getBoundingClientRect();
-      const top = r.bottom + 4;
-      const left = Math.min(r.left, window.innerWidth - DROP_W - 12);
-      btnRef.current._dropdownPos = { top, left };
-    }
-    setOpen((v) => !v);
-  };
-
-  if (disabled) return <StatusBadge status={status} fallback="active" />;
-
-  return (
-    <div className="hsub-status-dropdown">
-      <button className={`hsub-status-trigger ml-badge ${badgeClass}`} ref={btnRef} onClick={toggle} aria-label="Change status">
-        {label}
-        <HIcon name="expand_more" size={14} />
-      </button>
-      {open && ReactDOM.createPortal(
-        <div className="hac-drop-fixed hsub-status-drop" ref={dropRef} style={btnRef.current?._dropdownPos || {}} onClick={(e) => e.stopPropagation()}>
-          {STATUS_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              className={`hac-drop-item${option.value === status ? " active" : ""}`}
-              onClick={() => { setOpen(false); onChange(option.value); }}
-            >
-              <span className={`hsub-status-dot ${option.value === "active" ? "success" : option.value === "draft" ? "draft" : "inactive"}`} />
-              {option.label}
-            </button>
-          ))}
-        </div>,
-        document.body
-      )}
-    </div>
-  );
+  return <span className={`ml-badge ${badgeClass}`}>{label}</span>;
 }
 
 function TypePill({ type }) {
@@ -356,6 +299,35 @@ function Modal({ title, onClose, children, footer }) {
   );
 }
 
+function EditPlanStatusModal({ plan, onClose, onApply }) {
+  const [status, setStatus] = useState(plan.status);
+
+  return (
+    <HacModal
+      title="Confirm Edit Status"
+      onClose={onClose}
+      footer={
+        <>
+          <button className="hac-modal-cancel" onClick={onClose}>Cancel</button>
+          <button className="hac-modal-save" onClick={() => onApply(status)}>Apply</button>
+        </>
+      }
+    >
+      <div className="hsub-status-edit-field">
+        <label className="hac-label" htmlFor="subscription-plan-status">Status <span className="req">*</span></label>
+        <SelectMenu
+          id="subscription-plan-status"
+          className="hac-select"
+          value={status}
+          options={EDITABLE_STATUS_OPTIONS}
+          onChange={setStatus}
+          ariaLabel="Subscription status"
+        />
+      </div>
+    </HacModal>
+  );
+}
+
 function SwitchField({ checked, onChange, label, ariaLabel }) {
   return (
     <button
@@ -374,7 +346,7 @@ function SwitchField({ checked, onChange, label, ariaLabel }) {
   );
 }
 
-function EllipsisMenu({ onView, onEdit, onDelete, onActivate, onDeactivate, canDelete, deleteReason, canActivate, canDeactivate }) {
+function EllipsisMenu({ onView, onEdit, onEditStatus, onDelete, canDelete, canEditStatus, deleteReason }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
@@ -417,12 +389,7 @@ function EllipsisMenu({ onView, onEdit, onDelete, onActivate, onDeactivate, canD
         <div className="hac-drop-fixed" ref={dropRef} style={{ top: pos.top, left: pos.left }} onClick={(e) => e.stopPropagation()}>
           <button className="hac-drop-item" onClick={() => { setOpen(false); onView(); }}><HIcon name="visibility" size={15} /> View</button>
           <button className="hac-drop-item" onClick={() => { setOpen(false); onEdit(); }}><HIcon name="edit" size={15} /> Edit</button>
-          {canActivate && (
-            <button className="hac-drop-item" onClick={() => { setOpen(false); onActivate(); }}><HIcon name="check_circle" size={15} /> Activate</button>
-          )}
-          {canDeactivate && (
-            <button className="hac-drop-item" onClick={() => { setOpen(false); onDeactivate(); }}><HIcon name="block" size={15} /> Deactivate</button>
-          )}
+          {canEditStatus && <button className="hac-drop-item" onClick={() => { setOpen(false); onEditStatus(); }}><HIcon name="published_with_changes" size={15} /> Edit Status</button>}
           {canDelete ? (
             <button className="hac-drop-item danger" onClick={() => { setOpen(false); onDelete(); }}><HIcon name="delete" size={15} /> Delete</button>
           ) : (
@@ -545,7 +512,7 @@ function ViewField({ label, value, hint, info }) {
   );
 }
 
-function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onStatusChange }) {
+function PlanListView({ plans, onCreate, onView, onEdit, onEditStatus, onDelete }) {
   const [q, setQ] = useState("");
   const [scope, setScope] = useState("name");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -698,8 +665,7 @@ function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onStatusChang
           <tbody>
             {pageData.map((plan, index) => {
               const isDefaultPlan = plan.type === "default";
-              const canActivate = plan.status !== "active";
-              const canDeactivate = plan.status === "active";
+              const canEditStatus = plan.status !== "draft";
               const canDelete = !isDefaultPlan && (plan.status === "inactive" || plan.status === "draft");
               const deleteReason = isDefaultPlan
                 ? "Default plans cannot be deleted."
@@ -716,24 +682,17 @@ function PlanListView({ plans, onCreate, onView, onEdit, onDelete, onStatusChang
                   <td><FeatureSummary plan={plan} /></td>
                   <td><TypePill type={typeDisplay} /></td>
                   <td className="ml-mono">v{plan.version}</td>
-                  <td onClick={(e) => e.stopPropagation()}>
-                    <StatusDropdown
-                      status={plan.status}
-                      onChange={(next) => onStatusChange(plan.id, next)}
-                    />
-                  </td>
+                  <td><PlanStatus status={plan.status} /></td>
                   <td className="ml-mono">{fmtDate(plan.createdAt)}</td>
                   <td onClick={(e) => e.stopPropagation()}>
                     <EllipsisMenu
                       canDelete={canDelete}
                       deleteReason={deleteReason}
-                      canActivate={canActivate}
-                      canDeactivate={canDeactivate}
                       onView={() => onView(plan.id)}
                       onEdit={() => onEdit(plan.id)}
+                      onEditStatus={() => onEditStatus(plan.id)}
                       onDelete={() => onDelete(plan.id)}
-                      onActivate={() => onStatusChange(plan.id, "active")}
-                      onDeactivate={() => onStatusChange(plan.id, "inactive")}
+                      canEditStatus={canEditStatus}
                     />
                   </td>
                 </tr>
@@ -1403,9 +1362,11 @@ function SubscriptionApp() {
   const { pushToast, node: toastNode } = useToast();
   const [deletePlanId, setDeletePlanId] = useState(null);
   const [viewTab, setViewTab] = useState("details");
+  const [statusEditPlanId, setStatusEditPlanId] = useState(null);
 
   const selectedPlan = useMemo(() => plans.find((plan) => plan.id === selectedPlanId) || null, [plans, selectedPlanId]);
   const workingPlan = mode === "create" || mode === "edit" ? draftPlan : selectedPlan;
+  const statusEditPlan = useMemo(() => plans.find((plan) => plan.id === statusEditPlanId) || null, [plans, statusEditPlanId]);
 
   const setPlanPatch = (patch) => {
     setDraftPlan((current) => decoratePlan({ ...current, ...patch }));
@@ -1482,11 +1443,12 @@ function SubscriptionApp() {
     openList();
   };
 
-  const updatePlanStatus = (planId, nextStatus) => {
+  const applyStatusUpdate = (nextStatus) => {
+    if (!statusEditPlan) return;
+    const planId = statusEditPlan.id;
+    setStatusEditPlanId(null);
     setPlans((current) => decoratePlans(current.map((plan) => plan.id === planId ? { ...plan, status: nextStatus } : plan)));
-    const plan = plans.find((item) => item.id === planId);
-    const tone = nextStatus === "active" ? "ok" : nextStatus === "draft" ? "warn" : "neutral";
-    pushToast(tone, `${plan?.name || "Plan"} set to ${nextStatus}.`);
+    pushToast(nextStatus === "active" ? "ok" : "neutral", `${statusEditPlan.name} set to ${nextStatus}.`);
   };
 
   return (
@@ -1502,8 +1464,8 @@ function SubscriptionApp() {
             onCreate={openCreate}
             onView={openView}
             onEdit={openEdit}
+            onEditStatus={setStatusEditPlanId}
             onDelete={removePlan}
-            onStatusChange={updatePlanStatus}
           />
         )}
 
@@ -1582,6 +1544,14 @@ function SubscriptionApp() {
             document.body
           );
         })()}
+
+        {statusEditPlan && (
+          <EditPlanStatusModal
+            plan={statusEditPlan}
+            onClose={() => setStatusEditPlanId(null)}
+            onApply={applyStatusUpdate}
+          />
+        )}
       </main>
     </div>
   );
