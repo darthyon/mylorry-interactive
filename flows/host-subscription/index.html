@@ -208,16 +208,8 @@ b { font-weight: 600; }
 .hsub-edit-bar { left: 69px; box-shadow: 0 -4px 16px rgba(0,0,0,.06); }
 
 /* Status dropdown (badge + inline menu) */
-.hsub-status-dropdown { display: inline-block; position: relative; }
-.hsub-status-trigger { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; border: none; font-family: var(--font); }
-.hsub-status-trigger .msr { font-size: 14px; margin-left: 2px; }
-.hsub-status-drop { min-width: 140px; padding: 6px; }
-.hsub-status-drop .hac-drop-item { display: flex; align-items: center; gap: 8px; }
-.hsub-status-drop .hac-drop-item.active { background: var(--bg-hover); font-weight: 600; }
-.hsub-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.hsub-status-dot.success { background: var(--green-500); }
-.hsub-status-dot.draft { background: var(--amber-500); }
-.hsub-status-dot.inactive { background: #9FA0AB; }
+.hsub-status-edit-field { display: flex; flex-direction: column; gap: 7px; }
+.hsub-status-edit-field .hac-select { width: 100%; }
 
 /* Responsive */
 @media (max-width: 1100px) {

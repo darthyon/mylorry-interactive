@@ -375,7 +375,7 @@
       name: "Campus Shuttle",
       description: "Flexible rollout plan for fixed-route shuttle operations and short trial onboarding.",
       websiteFeatures: [],
-      status: "inactive",
+      status: "draft",
       type: "normal",
       protectedPlan: false,
       version: 1,
