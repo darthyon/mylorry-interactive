@@ -1,4 +1,4 @@
-const { Icon, Badge, StatusBadge, AccountStatusBadge, LockSection, CountCard, HistoryCard, MobileListCard, HacModal, HacFileUpload, SelectMenu } = window.SharedShell;
+const { Icon, Badge, StatusBadge, AccountStatusBadge, LockSection, EmptyState, CountCard, HistoryCard, MobileListCard, HacModal, HacFileUpload, SelectMenu } = window.SharedShell;
 
 /* ── Token swatches (read straight from tokens.css via getComputedStyle) ── */
 const COLOR_TOKENS = [
@@ -189,6 +189,24 @@ const lockDemo = (
   </div>
 );
 mount("lockOpen", <LockSection locked={false}>{lockDemo}</LockSection>);
+
+/* ── EmptyState ── */
+const emptyDemoBox = { width: 300, background: "#fff", border: "1px solid var(--border-light)", borderRadius: 12 };
+mount("emptyStates", <>
+  <div style={emptyDemoBox}>
+    <EmptyState icon="how_to_reg" iconColor="var(--teal-600)"
+      title="All drivers can access this vehicle"
+      sub="Uncheck 'Accessible to all drivers' to reassign drivers" />
+  </div>
+  <div style={emptyDemoBox}>
+    <EmptyState icon="person_off"
+      title="No drivers have access"
+      sub="Search a driver to assign or tick 'Accessible to all drivers'" />
+  </div>
+  <div style={emptyDemoBox}>
+    <EmptyState icon="inbox" title="Nothing here yet" />
+  </div>
+</>);
 
 /* ── HistoryCard ── */
 mount("historyCards", <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 280px))", gap: 14 }}>

@@ -228,6 +228,13 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;back
     <p class="note">Section-level upsell gate. Content stays underneath (blurred, non-interactive); the whole section reads as one locked unit — not an inline "Unlock" button. Reuse for every tier gate; don't fork a per-section lock.</p>
   </section>
 
+  <!-- EmptyState -->
+  <section class="sec" id="emptystate">
+    <div class="sec-h">Empty state — <code>EmptyState</code></div>
+    <div class="row" id="emptyStates" style="gap:14px;flex-wrap:wrap;align-items:stretch;"></div>
+    <p class="note">Centred icon + title + optional sub for "nothing here" and "this state is intentional" panels. Tint the icon (<code>iconColor</code>) only when the state is affirmative, e.g. all-drivers access; leave it neutral for absence. Not a gate — a plan block is <code>LockSection</code>.</p>
+  </section>
+
   <!-- Cards -->
   <section class="sec" id="cards">
     <div class="sec-h">Cards</div>

@@ -423,6 +423,12 @@
 .ml-select-menu-item:hover { background: var(--bg-hover); }
 .ml-select-menu-item.active { background: var(--green-50); color: var(--green-600); font-weight: 600; }
 .ml-select-menu-item:disabled { opacity: .45; cursor: not-allowed; }
+/* searchable SelectMenu — filter box pinned above the options */
+.ml-select-search { display: flex; align-items: center; gap: 7px; padding: 7px 9px; margin-bottom: 4px; border: 1px solid var(--border-medium); border-radius: 8px; }
+.ml-select-search input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; font: 13px var(--font); color: var(--fg-primary); }
+.ml-select-empty { padding: 14px 10px; text-align: center; font-size: 12.5px; color: var(--fg-tertiary); }
+/* chip rendered inside a trigger, e.g. the "Org" mark on the organisation picker */
+.ml-select-chip { display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--green-500); background: #fff; color: var(--green-600); font-size: 11.5px; font-weight: 700; flex-shrink: 0; }
 .hac-check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--fg-primary); cursor: pointer; }
 .hac-check-row input[type="checkbox"] { accent-color: var(--green-500); width: 15px; height: 15px; cursor: pointer; }
 .hac-field-hint { display: block; font-size: 12px; color: var(--fg-tertiary); margin-top: 5px; }
@@ -540,6 +546,12 @@
   display: flex; align-items: center; justify-content: center;
   background: var(--gradient-brand);
 }
+.ml-icon-gradient .msr {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 .ml-lock-badge { font-size: 13.5px; font-weight: 600; color: var(--fg-primary); }
 .ml-lock-note  { font-size: 11.5px; line-height: 1.35; color: var(--fg-secondary); }
 .ml-lock-cta {
@@ -552,6 +564,34 @@
   cursor: pointer;
 }
 .ml-lock-cta:hover { background: #009945; }
+
+/* ── EmptyState (window.SharedShell.EmptyState) ───────────────────
+   Centred icon + title + sub. "Nothing here" and "this state is
+   intentional" panels. Not a gate — use LockSection for plan blocks. */
+.ml-empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 100%; gap: 8px;
+  padding: 34px 16px;
+  text-align: center;
+  color: var(--fg-tertiary);
+}
+.ml-empty-state .msr { color: var(--border-strong, #c7cdcb); }
+.ml-empty-title { font-size: 13px; font-weight: 600; color: var(--fg-secondary); text-align: center; }
+.ml-empty-sub   { font-size: 12px; color: var(--fg-tertiary); max-width: 240px; text-align: center; margin: 0 auto; }
+/* `inline` — icon beside the copy, left aligned. For empty states inside a wide
+   or horizontally scrolling container, where centring would push the content
+   out of view. */
+.ml-empty-state.inline {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 12px; row-gap: 2px;
+  width: auto; justify-items: start; align-items: center;
+  padding: 16px 2px;
+  text-align: left;
+}
+.ml-empty-state.inline .msr { grid-row: 1 / 3; }
+.ml-empty-state.inline .ml-empty-title,
+.ml-empty-state.inline .ml-empty-sub { text-align: left; max-width: none; }
 
 /* ── Org Switcher (window.SharedShell.OrgSwitcher) — GitHub-style
    subtle dropdown trigger. Shared between org-dashboard and the Org

@@ -6,7 +6,6 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const url = require('url');
 
 const PORT = process.env.PORT || 8000;
 const HOST = 'localhost';
@@ -69,8 +68,8 @@ function serveFile(filePath, res) {
 }
 
 const server = http.createServer((req, res) => {
-  // Parse URL and decode pathname
-  const parsedUrl = url.parse(req.url);
+  // Parse URL and decode pathname using the standards-based URL API.
+  const parsedUrl = new URL(req.url, `http://${req.headers.host || HOST}`);
   let pathname = decodeURIComponent(parsedUrl.pathname);
 
   // Security: prevent directory traversal

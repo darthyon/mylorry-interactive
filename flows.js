@@ -73,8 +73,9 @@ window.FLOWS = {
           screens: [
             { label: "Vehicle list", note: "Production-parity columns, managed counter strip, scoped search, due-date filters, and managed-only filter." },
             { label: "Managed enforcement", note: "Toggle on under cap, block at cap, block unmanage during active check-in, and lock Driver tab on unmanaged vehicles." },
-            { label: "Driver expansion", note: "Expandable assigned-driver row on desktop and expandable driver section inside mobile cards." },
-            { label: "Data states", note: "⌘⇧E → Lite (8/10), Lite (at limit), Premium, Free (0 MV)." },
+            { label: "Driver expansion", note: "Expandable assigned-driver row with all-drivers-access state and an Edit driver shortcut into the Drivers tab; same states inside mobile cards." },
+            { label: "QR code", note: "QR Code button on vehicle detail (view + edit) opening a download dialog. Sample code — one asset for every vehicle, not a per-vehicle code." },
+            { label: "Data states", note: "⌘⇧E → Lite (8/10), Lite (at limit — first row unmanaged, red slot chip, blocked toggle), Premium, Free (0 MV)." },
           ],
         },
         {
@@ -226,6 +227,19 @@ window.FLOWS = {
           desc: "Org-scoped fuel transaction log — provider acc, card, subsidy status, amount, volume, station.",
           screens: [
             { label: "Transaction list", note: "Org search/filter, txn count, per-row subsidy state (calculating / no subsidy / amount), fuel-type + volume, Download/Upload Excel." },
+          ],
+        },
+        {
+          id: "host-vehicle-list",
+          name: "MyAdmin — Vehicle (Host)",
+          status: "ready",
+          route: "flows/host-vehicle-list/index.html",
+          desc: "Host-wide vehicle module across every organisation — full parity with the Org Portal plus an Organization selector. No host-wide managed-slot counter; slots scope to each organisation's own plan.",
+          screens: [
+            { label: "Vehicle list", note: "Org column + org filter and search scope, managed-only toggle, expandable driver row with all-drivers-access state and Edit driver shortcut." },
+            { label: "Vehicle due dates", note: "Road tax / insurance / puspakom / permit across all orgs with organisation and vehicle category columns, expiry tone, reminders, and org filter." },
+            { label: "Vehicle detail", note: "View / edit / create with a searchable Organization selector; Forms, Documents, and Drivers tabs identical to the Org Portal." },
+            { label: "Org reassignment", note: "Changing Organization in edit moves the vehicle; managed slots and reminder limits re-scope to the target org's plan (Padu Lite 10, Swift Premium 50, Bintang Lite 4, Metro Enterprise)." },
           ],
         },
         { id: "host-myfuel-rebate",      name: "MyFuel — Rebate",             status: "planned" },
