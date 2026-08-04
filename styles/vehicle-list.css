@@ -1,0 +1,125 @@
+/* ============================================================
+   MyLorry — Vehicle list screens (shared)
+   ------------------------------------------------------------
+   Toolbar, list table, vehicle due-dates table, expanded driver
+   row, and the mobile card list. Shared verbatim by:
+     flows/org-vehicle-list/   (Org Portal)
+     flows/host-vehicle-list/  (Host Portal, + Org column)
+   Keeps the `ovl-` prefix so neither flow's markup had to change.
+
+   Detail/form-only rules (rail, vehicle form, driver panel,
+   documents, toasts) stay inline in the org flow's index.html —
+   the host flow has no detail page.
+   ============================================================ */
+
+/* ── Toolbar ─────────────────────────────────────────────── */
+.ovl-toolbar{padding:0 0 14px;margin-bottom:14px;display:flex;flex-direction:column;gap:12px;}
+.ovl-toolbar .hac-toolbar{margin-bottom:0;}
+.ovl-toolbar-left{min-width:0;flex:1;row-gap:12px;}
+.ovl-toolbar-right{display:flex;align-items:center;justify-content:flex-end;min-width:max-content;white-space:nowrap;}
+.ovl-managed-filter{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 2px;color:var(--fg-primary);cursor:pointer;font-size:13px;font-weight:600;}
+.ovl-managed-filter input{width:15px;height:15px;accent-color:var(--green-500);cursor:pointer;}
+.ovl-managed-filter-text{white-space:nowrap;}
+.ovl-managed-count{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:999px;background:var(--bg-muted);color:var(--fg-secondary);font-size:11.5px;font-weight:700;}
+.ovl-managed-count.danger{background:#FFF0F0;color:#b64b43;}
+.ovl-search-group{width:420px;}
+.ovl-filter-panel{margin-bottom:0;}
+.ovl-filter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;}
+.ovl-filter-wrap{position:relative;display:inline-flex;min-width:0;}
+.ovl-filter-wrap::after{content:"";position:absolute;top:50%;right:12px;width:7px;height:7px;border-right:1.5px solid var(--fg-tertiary);border-bottom:1.5px solid var(--fg-tertiary);transform:translateY(-62%) rotate(45deg);pointer-events:none;}
+.ovl-clear{display:inline-flex;align-items:center;gap:6px;border:none;background:transparent;color:var(--green-700);font:700 12.5px/1 var(--font-sans);cursor:pointer;padding:0;}
+.ovl-clear:hover{text-decoration:underline;}
+
+/* ── List + due-dates tables ─────────────────────────────── */
+.ovl-list-tabs{margin-bottom:16px;}
+.ovl-table-section{padding:0;}
+.ovl-table-wrap{overflow:auto;background:#fff;}
+.ovl-table{min-width:1480px;}
+.ovl-table td:last-child,.ovl-table th:last-child{width:64px;text-align:right;position:sticky;right:0;border-left:1px solid var(--border-medium);}
+.ovl-table td:last-child{background:#fff;}
+.ovl-table th:last-child{background:var(--bg-muted);z-index:2;}
+.ovl-table td:first-child,.ovl-table th:first-child{width:40px;}
+.ovl-due-table{min-width:1120px;}
+.ovl-due-table td{vertical-align:middle;}
+.ovl-due-type-cell{display:flex;flex-direction:column;gap:3px;min-width:170px;}
+.ovl-due-type-cell strong{font-size:13px;color:var(--fg-primary);}
+.ovl-due-type-cell span,.ovl-due-sub{font-size:11px;color:var(--fg-tertiary);}
+.ovl-row{transition:background .12s ease;cursor:pointer;}
+.ovl-row:hover{background:var(--bg-hover);}
+.ovl-index{color:var(--fg-tertiary);font-weight:600;font-variant-numeric:tabular-nums;}
+.ovl-empty-table{padding:28px 18px;text-align:center;color:var(--fg-secondary);}
+
+/* ── Vehicle identity cell ───────────────────────────────── */
+.ovl-vehicle-cell{display:flex;align-items:center;gap:10px;min-width:220px;}
+.ovl-thumb{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--border-light);background:#F4F5F6;color:var(--fg-tertiary);position:relative;}
+.ovl-thumb-icon{width:20px;height:20px;display:block;fill:#8E95A3;}
+.ovl-use-dot{position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;border:2px solid #fff;border-radius:50%;background:#9CA3A5;box-shadow:0 0 0 1px rgba(0,0,0,.05);}
+.ovl-use-dot.in-use{background:var(--green-500);}
+.ovl-vehicle-main{min-width:0;}
+.ovl-vehicle-plate{font-size:13px;}
+.ovl-managed{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;}
+.ovl-managed.blank{width:18px;height:18px;}
+.ovl-managed-label{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--green-700);white-space:nowrap;}
+.ovl-managed-label.unmanaged{color:var(--fg-tertiary);}
+.ovl-weight{font-variant-numeric:tabular-nums;}
+.ovl-vendor-empty{color:var(--fg-tertiary);}
+
+/* ── Expiry + reminder cells ─────────────────────────────── */
+.ovl-expiry{display:flex;flex-direction:column;gap:3px;line-height:1.2;min-width:106px;}
+.ovl-expiry-date{font-weight:600;font-size:12.5px;color:var(--fg-primary);}
+.ovl-expiry-meta{font-size:11px;color:var(--fg-tertiary);}
+.ovl-expiry.good .ovl-expiry-meta{color:#416D52;}
+.ovl-expiry.warn .ovl-expiry-meta{color:#A56710;}
+.ovl-expiry.danger .ovl-expiry-meta{color:#BE2F2C;}
+.ovl-expiry.empty .ovl-expiry-date,.ovl-expiry.empty .ovl-expiry-meta{color:var(--fg-disabled);}
+
+/* ── Row menu ────────────────────────────────────────────── */
+.ovl-menu-btn{padding:6px;border-radius:6px;}
+.ovl-drop{min-width:198px;}
+
+/* ── Expanded driver row ─────────────────────────────────── */
+.ovl-expanded-cell{padding:0 !important;background:#F9FBFA;}
+.ovl-expanded-wrap{padding:10px 18px 12px;background:#F8FBF9;}
+.ovl-expanded-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px;}
+.ovl-expanded-title{font-size:12.5px;font-weight:700;color:var(--fg-primary);}
+.ovl-expanded-edit{height:30px;padding:0 10px;font-size:12px;gap:5px;text-decoration:none;}
+.ovl-expanded-wrap .ml-empty-state.inline{padding:10px 2px 6px;}
+.ovl-driver-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px 8px;max-height:154px;overflow-y:auto;padding-right:2px;}
+.ovl-driver-card{background:#fff;border:1px solid var(--border-light);border-radius:7px;padding:7px 9px;display:flex;align-items:center;justify-content:flex-start;gap:8px;min-width:0;}
+.ovl-driver-avatar{width:24px;height:24px;border-radius:50%;background:var(--green-50);color:var(--green-700);display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;flex-shrink:0;}
+.ovl-driver-main{min-width:0;flex:0 1 auto;text-align:left;}
+.ovl-driver-name{font-size:12px;font-weight:700;color:var(--fg-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ovl-driver-meta{margin-top:1px;font-size:11px;color:var(--fg-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ── Assigned-drivers modal (mobile entry point) ─────────── */
+.ovl-driver-modal-search{display:flex;align-items:center;gap:8px;height:40px;padding:0 10px;border:1px solid var(--border-medium);border-radius:4px;margin-bottom:14px;}
+.ovl-driver-modal-search input{min-width:0;flex:1;border:0;outline:0;background:transparent;color:var(--fg-primary);font:13px var(--font-sans);}
+.ovl-driver-modal-list{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;}
+.ovl-driver-modal-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-light);}
+.ovl-driver-modal-row:last-child{border-bottom:0;}
+.ovl-driver-modal-empty{padding:26px 8px;text-align:center;color:var(--fg-tertiary);font-size:13px;}
+
+/* ── Mobile card list ────────────────────────────────────── */
+.ovl-mobile-list{display:none;}
+.ovl-mobile-card{padding:14px 14px 12px;border:1px solid var(--border-light);border-radius:14px;background:#fff;box-shadow:var(--shadow-card);}
+.ovl-mobile-card + .ovl-mobile-card{margin-top:12px;}
+.ovl-mobile-list>.ml-mobile-list-card + .ml-mobile-list-card{margin-top:12px;}
+.ovl-vehicle-mobile-card .ml-mobile-list-card-subtitle{display:flex;flex-direction:column;gap:2px;}
+.ovl-vehicle-weights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+.ovl-vehicle-weights span{display:block;font-size:11px;color:var(--fg-tertiary);}
+.ovl-vehicle-weights strong{display:block;margin-top:2px;font-size:12px;font-weight:600;color:var(--fg-primary);}
+.ovl-mobile-expand{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;border:none;background:none;padding:0;color:var(--green-700);font:700 12px/1 var(--font-sans);cursor:pointer;}
+
+@media (max-width:1023px){
+  .ovl-toolbar-left{width:100%;}
+  .ovl-toolbar-right{width:100%;justify-content:flex-start;order:-1;}
+  .ovl-managed-filter{height:auto;}
+  .ovl-search-group{width:100%;}
+  .ovl-filter-grid{grid-template-columns:1fr 1fr;}
+  .ovl-table-wrap{display:none;}
+  .ovl-mobile-list{display:block;}
+  .ovl-driver-grid{grid-template-columns:1fr;}
+}
+@media (max-width:640px){
+  .ovl-filter-grid{grid-template-columns:1fr;}
+}

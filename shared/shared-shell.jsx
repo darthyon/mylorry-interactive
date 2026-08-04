@@ -175,10 +175,16 @@ function SelectMenu({
   disabled = false,
   ariaLabel,
   style,
+  // `searchable` adds a filter box inside the menu — for long lists such as the
+  // host's organisation picker. `prefix` renders a chip inside the trigger.
+  searchable = false,
+  searchPlaceholder = "Search",
+  prefix = null,
 }) {
   const normalized = normalizeSelectOptions(options);
   const selected = normalized.find((option) => String(option.value) === String(value)) || normalized[0] || null;
   const [open, setOpen] = React.useState(false);
+  const [query, setQuery] = React.useState("");
   const [pos, setPos] = React.useState({ top: 0, left: 0, minWidth: 0 });
   const triggerRef = React.useRef(null);
   const menuRef = React.useRef(null);
@@ -206,9 +212,14 @@ function SelectMenu({
     if (!open) {
       const r = triggerRef.current.getBoundingClientRect();
       setPos({ top: r.bottom + 6, left: r.left, minWidth: r.width });
+      setQuery("");
     }
     setOpen((v) => !v);
   };
+
+  const visible = searchable && query.trim()
+    ? normalized.filter((option) => String(option.label).toLowerCase().includes(query.trim().toLowerCase()))
+    : normalized;
 
   return (
     <div className={wrapperClassName}>
@@ -223,6 +234,7 @@ function SelectMenu({
         style={style}
         onClick={toggle}
       >
+        {prefix}
         <span className="ml-select-trigger-label">{selected?.label || "Select"}</span>
       </button>
       {open && ReactDOM.createPortal(
@@ -232,7 +244,20 @@ function SelectMenu({
           role="listbox"
           style={{ top: pos.top, left: pos.left, minWidth: pos.minWidth }}
         >
-          {normalized.map((option) => {
+          {searchable && (
+            <div className="ml-select-search">
+              <Icon name="search" size={16} color="var(--fg-tertiary)" />
+              <input
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={searchPlaceholder}
+                aria-label={searchPlaceholder}
+              />
+            </div>
+          )}
+          {searchable && !visible.length && <div className="ml-select-empty">No matches</div>}
+          {visible.map((option) => {
             const active = String(option.value) === String(value);
             return (
               <button
@@ -715,6 +740,21 @@ function LockSection({ locked = false, tier = "premium", cta = "Upgrade plan", n
   );
 }
 
+/* ─── EmptyState ────────────────────────────────────────────── */
+// Centred icon + title + optional sub-copy. Use for "nothing here yet" and
+// "this state is intentional" panels (e.g. all-drivers access). Not a gate —
+// use LockSection when a plan blocks the content.
+function EmptyState({ icon, iconColor, iconSize = 34, title, sub, action, className = "" }) {
+  return (
+    <div className={`ml-empty-state${className ? ` ${className}` : ""}`}>
+      {icon && <Icon name={icon} size={iconSize} color={iconColor} />}
+      {title && <div className="ml-empty-title">{title}</div>}
+      {sub && <div className="ml-empty-sub">{sub}</div>}
+      {action}
+    </div>
+  );
+}
+
 /* ─── Petron provider logo mark ─────────────────────────────── */
 // Inlined as data URI so it renders regardless of serving root
 // (file://, GitHub Pages subpath, etc.). Source: flows/fleet-card/petron.png
@@ -1122,7 +1162,7 @@ window.SharedShell = {
   Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu, Segmented,
   Pill, CurrencyPill, SummaryCard, CountCard, KpiTierChip,
   StatusBadge, AccountStatusBadge, KPIProgress, KPIProgressMeta,
-  LockSection, PetronLogo, HistoryCard, MobileListCard, ReminderSummary,
+  LockSection, EmptyState, PetronLogo, HistoryCard, MobileListCard, ReminderSummary,
   fmtExpiryDate, daysUntilExpiry, expiryTone, expiryRelativeText, documentExpiryStatus,
   FeatureTabShell, OrgSwitcher, SelectMenu,
   CalcPopover, ChecklistCard, ConfirmBulkModal, Modal, HacModal, HacFileUpload,

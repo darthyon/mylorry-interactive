@@ -36,10 +36,10 @@ window.ORG_VEHICLE_LIST = {
       managedIds: ["veh-001", "veh-002", "veh-003", "veh-004", "veh-005", "veh-006", "veh-007", "veh-009"],
     },
     "lite-at-limit": {
-      label: "Lite · 9 / 9",
+      label: "Lite · 10 / 10",
       planName: "Lite",
-      limit: 9,
-      managedIds: ["veh-001", "veh-003", "veh-004", "veh-005", "veh-006", "veh-007", "veh-008", "veh-009", "veh-010"],
+      limit: 10,
+      managedIds: ["veh-001", "veh-002", "veh-003", "veh-004", "veh-005", "veh-006", "veh-007", "veh-008", "veh-009", "veh-010"],
     },
     premium: {
       label: "Premium · 8 / 50",
@@ -121,6 +121,9 @@ window.ORG_VEHICLE_LIST = {
       thumb: "#F2EADF",
       activeCheckIn: false,
       drivers: [],
+      // Open to every driver — shows the "All drivers can access" state in the
+      // expanded row. veh-007 is left as the plain "no drivers" case.
+      accessibleToAll: true,
     },
     {
       id: "veh-004",
