@@ -101,11 +101,12 @@ window.ORG_VEHICLE_LIST = {
       puspakom: "2026-07-18",
       permit: "2026-08-29",
       thumb: "#E6EDF8",
-      activeCheckIn: false,
+      activeCheckIn: true,
       drivers: [
         { name: "Roslan Ibrahim", driverId: "DRV-005", phone: "013-800 2265", status: "On duty", lastEvent: "Checked in · 8:06 AM" },
       ],
     },
+
     {
       id: "veh-003",
       plate: "STG0234",
@@ -119,7 +120,7 @@ window.ORG_VEHICLE_LIST = {
       puspakom: "2026-10-03",
       permit: null,
       thumb: "#F2EADF",
-      activeCheckIn: false,
+      activeCheckIn: true,
       drivers: [],
       // Open to every driver — shows the "All drivers can access" state in the
       // expanded row. veh-007 is left as the plain "no drivers" case.
@@ -138,7 +139,7 @@ window.ORG_VEHICLE_LIST = {
       puspakom: "2026-09-08",
       permit: "2026-07-28",
       thumb: "#F0E5EA",
-      activeCheckIn: false,
+      activeCheckIn: true,
       drivers: [
         { name: "Zulkifli Hamid", driverId: "DRV-011", phone: "012-442 9983", status: "Off duty", lastEvent: "Checked out · Yesterday" },
         { name: "Karim Abdullah", driverId: "DRV-020", phone: "017-901 2217", status: "On duty", lastEvent: "Checked in · 9:01 AM" },
@@ -146,8 +147,8 @@ window.ORG_VEHICLE_LIST = {
     },
     {
       id: "veh-005",
-      plate: "WQM1190",
-      category: "Van",
+      plate: "WPK5567",
+      category: "Sedan",
       vendor: "Metro Vendor",
       btm: 2200,
       bdm: 3500,
@@ -157,7 +158,7 @@ window.ORG_VEHICLE_LIST = {
       puspakom: null,
       permit: null,
       thumb: "#E3F0F3",
-      activeCheckIn: false,
+      activeCheckIn: true,
       drivers: [
         { name: "Farid Manaf", driverId: "DRV-041", phone: "014-728 0186", status: "Off duty", lastEvent: "Checked out · 5:43 PM" },
       ],
@@ -199,7 +200,7 @@ window.ORG_VEHICLE_LIST = {
     {
       id: "veh-008",
       plate: "HNO3008",
-      category: "Lorry",
+      category: "MPV",
       vendor: "Swift Leasing",
       btm: 5100,
       bdm: 9900,
@@ -226,8 +227,8 @@ window.ORG_VEHICLE_LIST = {
       insurance: "2026-07-19",
       puspakom: "2026-08-02",
       permit: "2026-07-30",
-      thumb: "#F3EEE3",
-      activeCheckIn: false,
+      thumb: "#F3EBF4",
+      activeCheckIn: true,
       drivers: [
         { name: "Saiful Nizam", driverId: "DRV-031", phone: "012-771 0049", status: "On duty", lastEvent: "Checked in · 8:11 AM" },
         { name: "Afiq Daniel", driverId: "DRV-044", phone: "019-774 4528", status: "Off duty", lastEvent: "Checked out · Yesterday" },
@@ -236,7 +237,7 @@ window.ORG_VEHICLE_LIST = {
     {
       id: "veh-010",
       plate: "PKR2204",
-      category: "MPV",
+      category: "Bus",
       vendor: "Padu Fleet",
       btm: 1450,
       bdm: 1900,
