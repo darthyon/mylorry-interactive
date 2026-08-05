@@ -101,12 +101,101 @@ const DRIVER_DUE_RANGES = [
 ];
 
 function DriverList({ drivers, onNavigate, onDelete }) {
-  const [query, setQuery] = useState(""); const [scope, setScope] = useState("driver"); const [duty, setDuty] = useState("All duties");
-  const [page, setPage] = useState(1); const [perPage, setPerPage] = useState(10);
-  const filtered = useMemo(() => drivers.filter((driver) => { const text = scope === "staffId" ? driver.staffId : scope === "vendor" ? driver.vendor : `${fullName(driver)} ${driver.driverId} ${driver.phone} ${driver.email}`; return (!query.trim() || text.toLowerCase().includes(query.trim().toLowerCase())) && (duty === "All duties" ? driver.duty !== "Inactive" : duty === driver.duty); }), [drivers, query, scope, duty]);
+  const [query, setQuery] = useState("");
+  const [scope, setScope] = useState("driver");
+  const [duty, setDuty] = useState("All duties");
+  const [pendingDuty, setPendingDuty] = useState("All duties");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+
+  const filtered = useMemo(() => drivers.filter((driver) => {
+    const text = scope === "staffId" ? driver.staffId : scope === "vendor" ? driver.vendor : `${fullName(driver)} ${driver.driverId} ${driver.phone} ${driver.email}`;
+    return (!query.trim() || text.toLowerCase().includes(query.trim().toLowerCase())) && (duty === "All duties" ? driver.duty !== "Inactive" : duty === driver.duty);
+  }), [drivers, query, scope, duty]);
+
   const pageData = useMemo(() => filtered.slice((page - 1) * perPage, page * perPage), [filtered, page, perPage]);
   useEffect(() => { const totalPages = Math.max(1, Math.ceil(filtered.length / perPage)); if (page > totalPages) setPage(totalPages); }, [filtered.length, page, perPage]);
-  return <><section className="ovl-toolbar"><div className="hac-toolbar"><div className="hac-toolbar-left"><div className="hac-search-group scoped ovl-search-group"><SelectMenu className="hac-search-scope" value={scope} options={[{ value: "driver", label: "Driver" }, { value: "staffId", label: "Staff ID" }, { value: "vendor", label: "Vendor" }]} onChange={setScope} ariaLabel="Search by" style={{ width: "116px" }} /><div className="hac-search-bar"><Icon name="search" size={17} color="var(--fg-tertiary)" /><input className="hac-search-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Search by ${scope === "staffId" ? "staff ID" : scope}`} aria-label="Search drivers" /></div></div><SelectMenu className="hac-select" value={duty} options={["All duties", "On duty", "Off duty", "Inactive"]} onChange={setDuty} ariaLabel="Filter by operational duty" /></div></div></section><div className="hac-count">{filtered.length} driver{filtered.length === 1 ? "" : "s"}</div><section className="ovl-table-section"><div className="ml-table-wrap ovl-table-wrap odr-table-card odr-list-table-wrap"><div className="odr-desktop-table"><table className="ml-table ovl-table odr-list-table"><thead><tr><th>No.</th><th>Driver</th><th>Staff ID</th><th>ID Type</th><th>ID Number</th><th>Mobile No.</th><th>Email</th><th>Vendor</th><th>Status</th><th><span className="sr-only">Actions</span></th></tr></thead><tbody>{pageData.map((driver, index) => <tr key={driver.id} onDoubleClick={() => onNavigate("view", driver.id)}><td>{(page - 1) * perPage + index + 1}</td><td><DriverIdentity driver={driver} /></td><td>{driver.staffId}</td><td>{driver.idType}</td><td>{driver.idNumber}</td><td>{driver.phone}</td><td>{driver.email}</td><td>{driver.vendor}</td><td><DutyChip duty={driver.duty} /></td><td><RowMenu driver={driver} onView={() => onNavigate("view", driver.id)} onEdit={() => onNavigate("edit", driver.id)} onDelete={() => onDelete(driver)} /></td></tr>)}</tbody></table></div><div className="odr-mobile-list">{pageData.map((driver) => <DriverMobileCard key={driver.id} driver={driver} onNavigate={onNavigate} onDelete={onDelete} />)}</div>{!filtered.length && <div className="odr-table-empty">No drivers match the current search or filter.</div>}</div></section><Pager page={page} perPage={perPage} total={filtered.length} onPage={setPage} onPerPage={setPerPage} /></>;
+
+  function resetFilters() {
+    setQuery("");
+    setScope("driver");
+    setPendingDuty("All duties");
+    setDuty("All duties");
+    setPage(1);
+    setFilterOpen(false);
+  }
+
+  function toggleFilterPanel() {
+    if (!filterOpen) {
+      setPendingDuty(duty);
+    }
+    setFilterOpen((current) => !current);
+  }
+
+  function applyPendingFilters() {
+    setDuty(pendingDuty);
+    setPage(1);
+    setFilterOpen(false);
+  }
+
+  return (
+    <>
+      <section className="ovl-toolbar">
+        <div className="hac-toolbar">
+          <div className="hac-toolbar-left">
+            <div className="hac-search-group scoped ovl-search-group">
+              <SelectMenu className="hac-search-scope" value={scope} options={[{ value: "driver", label: "Driver" }, { value: "staffId", label: "Staff ID" }, { value: "vendor", label: "Vendor" }]} onChange={setScope} ariaLabel="Search by" style={{ width: "116px" }} />
+              <div className="hac-search-bar">
+                <Icon name="search" size={17} color="var(--fg-tertiary)" />
+                <input className="hac-search-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Search by ${scope === "staffId" ? "staff ID" : scope}`} aria-label="Search drivers" />
+                {query && (
+                  <button className="hac-search-clear" type="button" onClick={() => setQuery("")}>
+                    <Icon name="close" size={16} />
+                  </button>
+                )}
+              </div>
+            </div>
+            <button className={`hac-filter-btn${duty !== "All duties" ? " active" : ""}`} type="button" onClick={toggleFilterPanel}>
+              <Icon name="tune" size={18} /> Filter{duty !== "All duties" && <span className="hac-filter-badge">1</span>}
+            </button>
+          </div>
+        </div>
+        {filterOpen && (
+          <div className="hac-filter-panel ovl-filter-panel inline">
+            <div className="hac-filter-grid ovl-filter-grid">
+              <div className="hac-filter-field">
+                <label>Status</label>
+                <div className="hac-select-wrap">
+                  <SelectMenu className="hac-select" value={pendingDuty} options={["All duties", "On duty", "Off duty", "Inactive"]} onChange={setPendingDuty} ariaLabel="Filter by status" />
+                </div>
+              </div>
+            </div>
+            <div className="hac-filter-actions">
+              <button className="hac-filter-apply" type="button" onClick={applyPendingFilters}>Apply Filters</button>
+              <button className="hac-filter-reset" type="button" onClick={resetFilters}>Reset All</button>
+            </div>
+          </div>
+        )}
+      </section>
+      <div className="hac-count">{filtered.length} driver{filtered.length === 1 ? "" : "s"}</div>
+      <section className="ovl-table-section">
+        <div className="ml-table-wrap ovl-table-wrap odr-table-card odr-list-table-wrap">
+          <div className="odr-desktop-table">
+            <table className="ml-table ovl-table odr-list-table">
+              <thead><tr><th>No.</th><th>Driver</th><th>Staff ID</th><th>ID Type</th><th>ID Number</th><th>Mobile No.</th><th>Email</th><th>Vendor</th><th>Status</th><th><span className="sr-only">Actions</span></th></tr></thead>
+              <tbody>{pageData.map((driver, index) => <tr key={driver.id} onDoubleClick={() => onNavigate("view", driver.id)}><td>{(page - 1) * perPage + index + 1}</td><td><DriverIdentity driver={driver} /></td><td>{driver.staffId}</td><td>{driver.idType}</td><td>{driver.idNumber}</td><td>{driver.phone}</td><td>{driver.email}</td><td>{driver.vendor}</td><td><DutyChip duty={driver.duty} /></td><td><RowMenu driver={driver} onView={() => onNavigate("view", driver.id)} onEdit={() => onNavigate("edit", driver.id)} onDelete={() => onDelete(driver)} /></td></tr>)}</tbody>
+            </table>
+          </div>
+          <div className="odr-mobile-list">
+            {pageData.map((driver) => <DriverMobileCard key={driver.id} driver={driver} onNavigate={onNavigate} onDelete={onDelete} />)}
+          </div>
+          {!filtered.length && <div className="odr-table-empty">No drivers match the current search or filter.</div>}
+        </div>
+      </section>
+      <Pager page={page} perPage={perPage} total={filtered.length} onPage={setPage} onPerPage={setPerPage} />
+    </>
+  );
 }
 
 function DriverListShell({ activeTab, setActiveTab, onCreate, children }) {

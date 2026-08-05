@@ -218,6 +218,7 @@ function App() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [pendingDueDateType, setPendingDueDateType] = useState("all");
   const [pendingDueRange, setPendingDueRange] = useState("all");
+  const [pendingStatusFilter, setPendingStatusFilter] = useState("All statuses");
   const [expandedIds, setExpandedIds] = useState(new Set());
   const [deletingVehicle, setDeletingVehicle] = useState(null);
   const [mobileDriversVehicle, setMobileDriversVehicle] = useState(null);
@@ -318,7 +319,7 @@ function App() {
   const dateFilterCount = (dueDateType !== "all" ? 1 : 0) + (dueRange !== "all" ? 1 : 0);
 
   useEffect(() => {
-    const isSearching = Boolean(query.trim() || managedOnly || dateFilterCount > 0);
+    const isSearching = Boolean(query.trim());
     if (isSearching) {
       setExpandedIds(new Set(filtered.map((v) => v.id)));
     } else {
@@ -338,15 +339,18 @@ function App() {
     setDueRange("all");
     setPendingDueDateType("all");
     setPendingDueRange("all");
+    setPendingStatusFilter("All statuses");
     setManagedOnly(false);
     setStatusFilter("All statuses");
     setPage(1);
+    setFilterOpen(false);
   }
 
   function toggleFilterPanel() {
     if (!filterOpen) {
       setPendingDueDateType(dueDateType);
       setPendingDueRange(dueRange);
+      setPendingStatusFilter(statusFilter);
     }
     setFilterOpen((current) => !current);
   }
@@ -354,6 +358,7 @@ function App() {
   function applyPendingFilters() {
     setDueDateType(pendingDueDateType);
     setDueRange(pendingDueRange);
+    setStatusFilter(pendingStatusFilter);
     setPage(1);
     setFilterOpen(false);
   }
@@ -684,14 +689,10 @@ function App() {
                     )}
                   </div>
                 </div>
-                <SelectMenu
-                  className="hac-select"
-                  value={statusFilter}
-                  options={["All statuses", "In use", "Unused", "Inactive"]}
-                  onChange={(next) => { setStatusFilter(next); setPage(1); }}
-                  ariaLabel="Filter by status"
-                />
-              </div>
+                  <button className={`hac-filter-btn${statusFilter !== "All statuses" ? " active" : ""}`} type="button" onClick={toggleFilterPanel}>
+                    <Icon name="tune" size={18} /> Filter{statusFilter !== "All statuses" && <span className="hac-filter-badge">1</span>}
+                  </button>
+                </div>
 
               <div className="ovl-toolbar-right">
                 <label className={`ovl-managed-filter${managedOnly ? " active" : ""}`}>
@@ -706,6 +707,23 @@ function App() {
               </div>
 
             </div>
+
+            {filterOpen && (
+              <div className="hac-filter-panel ovl-filter-panel inline">
+                <div className="hac-filter-grid ovl-filter-grid">
+                  <div className="hac-filter-field">
+                    <label>Status</label>
+                    <div className="hac-select-wrap">
+                      <SelectMenu className="hac-select" value={pendingStatusFilter} options={["All statuses", "In use", "Unused", "Inactive"]} onChange={setPendingStatusFilter} ariaLabel="Filter by status" />
+                    </div>
+                  </div>
+                </div>
+                <div className="hac-filter-actions">
+                  <button className="hac-filter-apply" type="button" onClick={applyPendingFilters}>Apply Filters</button>
+                  <button className="hac-filter-reset" type="button" onClick={resetFilters}>Reset All</button>
+                </div>
+              </div>
+            )}
           </section>
 
           <div className="hac-count">{filtered.length} Vehicle{filtered.length !== 1 ? "s" : ""}</div>

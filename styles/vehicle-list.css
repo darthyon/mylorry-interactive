@@ -24,7 +24,7 @@
 .ovl-managed-count.danger{background:#FFF0F0;color:#b64b43;}
 .ovl-search-group{width:420px;}
 .ovl-filter-panel{margin-bottom:0;}
-.ovl-filter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;}
+
 .ovl-filter-wrap{position:relative;display:inline-flex;min-width:0;}
 .ovl-filter-wrap::after{content:"";position:absolute;top:50%;right:12px;width:7px;height:7px;border-right:1.5px solid var(--fg-tertiary);border-bottom:1.5px solid var(--fg-tertiary);transform:translateY(-62%) rotate(45deg);pointer-events:none;}
 .ovl-clear{display:inline-flex;align-items:center;gap:6px;border:none;background:transparent;color:var(--green-700);font:700 12.5px/1 var(--font-sans);cursor:pointer;padding:0;}
