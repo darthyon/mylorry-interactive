@@ -12,7 +12,7 @@
 {
 
 const { useEffect, useMemo, useState } = React;
-const { Icon, SelectMenu, Pager, StatusBadge, MobileListCard, EmptyState } = window.SharedShell;
+const { Icon, SelectMenu, Pager, StatusBadge, MobileListCard, EmptyState, HacModal } = window.SharedShell;
 const {
   DOC_FIELDS, VEHICLE_LIST_TABS, VEHICLE_EDIT_TABS,
   fmtNumber, makeVehicleDocuments, makeVehicleForms, makeEmptyForm, makeFormFromVehicle,
@@ -20,7 +20,7 @@ const {
   VehicleThumb, ManagedIcon, VehicleRowMenu, ExpandableVehicleDriversRow,
   AssignedDriversModal, VehicleDueDates, VehiclePageHead, VehicleQrModal,
   VehicleFormEditBar, VehicleViewSections, VehicleFormSections, VehicleFormsTab,
-  DriverListPanel, DriverPickerModal, VehicleRemindersTab,
+  DriverListPanel, DriverPickerModal, VehicleRemindersTab, VehicleStatusBadge,
 } = window.VehicleDetail;
 const D = window.HOST_VEHICLE_LIST;
 
@@ -62,16 +62,18 @@ function App() {
   const [dueDateType, setDueDateType] = useState("all");
   const [dueRange, setDueRange] = useState("all");
   const [managedOnly, setManagedOnly] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("All statuses");
   const [filterOpen, setFilterOpen] = useState(false);
   const [pendingOrgId, setPendingOrgId] = useState("all");
   const [pendingDueDateType, setPendingDueDateType] = useState("all");
   const [pendingDueRange, setPendingDueRange] = useState("all");
-  const [expandedId, setExpandedId] = useState(null);
+  const [expandedIds, setExpandedIds] = useState(new Set());
   const [mobileDriversVehicle, setMobileDriversVehicle] = useState(null);
   const [menuId, setMenuId] = useState(null);
   const [mobileMenuId, setMobileMenuId] = useState(null);
   const [mode, setMode] = useState("list");
   const [editingVehicle, setEditingVehicle] = useState(null);
+  const [deletingVehicle, setDeletingVehicle] = useState(null);
   const [editTab, setEditTab] = useState("details");
   const [detailsEditing, setDetailsEditing] = useState(false);
   const [form, setForm] = useState(() => makeEmptyForm());
@@ -138,8 +140,18 @@ function App() {
   const filtered = useMemo(() => vehicles.filter((vehicle) => {
     if (managedOnly && !vehicle.managed) return false;
     if (orgId !== "all" && vehicle.org?.id !== orgId) return false;
-    return matchesSearch(vehicle, query, scope);
-  }), [vehicles, query, scope, orgId, managedOnly]);
+    if (statusFilter === "All statuses") {
+      if (vehicle.status === "Inactive") return false;
+    } else if (statusFilter === "Inactive") {
+      if (vehicle.status !== "Inactive") return false;
+    } else if (statusFilter === "In use") {
+      if (vehicle.status === "Inactive" || !vehicle.activeCheckIn) return false;
+    } else if (statusFilter === "Unused") {
+      if (vehicle.status === "Inactive" || vehicle.activeCheckIn) return false;
+    }
+    if (query) return matchesSearch(vehicle, query, scope);
+    return true;
+  }), [vehicles, managedOnly, orgId, query, scope, statusFilter]);
 
   const pageData = useMemo(() => filtered.slice((page - 1) * perPage, page * perPage), [filtered, page, perPage]);
 
@@ -149,7 +161,16 @@ function App() {
   }, [filtered.length, page, perPage]);
 
   const filterCount = (orgId !== "all" ? 1 : 0) + (dueDateType !== "all" ? 1 : 0) + (dueRange !== "all" ? 1 : 0);
-  const hasClearableFilters = !!query || filterCount > 0;
+  const hasClearableFilters = !!query || filterCount > 0 || managedOnly || statusFilter !== "All statuses";
+
+  useEffect(() => {
+    const isSearching = Boolean(query.trim() || filterCount > 0 || managedOnly);
+    if (isSearching) {
+      setExpandedIds(new Set(filtered.map((v) => v.id)));
+    } else {
+      setExpandedIds(new Set());
+    }
+  }, [query, scope, managedOnly, filterCount]);
 
   function resetFilters() {
     setQuery("");
@@ -160,6 +181,8 @@ function App() {
     setPendingOrgId("all");
     setPendingDueDateType("all");
     setPendingDueRange("all");
+    setManagedOnly(false);
+    setStatusFilter("All statuses");
     setPage(1);
     setFilterOpen(false);
   }
@@ -366,6 +389,7 @@ function App() {
       documents: makeVehicleDocuments({ id, roadTax: null, insurance: null, puspakom: null, permit: null }),
       activeCheckIn: false,
       drivers: [],
+      status: "Active",
     };
     setVehicles((current) => [created, ...current]);
     closeForm();
@@ -509,14 +533,18 @@ function App() {
                           {query && <button className="hac-search-clear" type="button" onClick={() => setQuery("")}><Icon name="close" size={16} /></button>}
                         </div>
                       </div>
+                      <SelectMenu
+                        className="hac-select"
+                        value={statusFilter}
+                        options={["All statuses", "In use", "Unused", "Inactive"]}
+                        onChange={(next) => { setStatusFilter(next); setPage(1); }}
+                        ariaLabel="Filter by status"
+                      />
                       <button className={`hac-filter-btn${orgId !== "all" ? " active" : ""}`} type="button" onClick={toggleFilterPanel}>
                         <Icon name="tune" size={18} /> Filter{orgId !== "all" && <span className="hac-filter-badge">1</span>}
                       </button>
-                      {hasClearableFilters && <button className="ovl-clear" type="button" onClick={resetFilters}><Icon name="ink_eraser" size={15} /> Clear filters</button>}
                     </div>
 
-                    {/* No slot counter: slots are a per-org plan limit, so a
-                        host-wide "x of N used" would be meaningless. */}
                     <div className="ovl-toolbar-right">
                       <label className={`ovl-managed-filter${managedOnly ? " active" : ""}`}>
                         <input type="checkbox" checked={managedOnly} onChange={() => { setManagedOnly((current) => !current); setPage(1); }} />
@@ -525,8 +553,6 @@ function App() {
                     </div>
                   </div>
 
-                  {/* Only Organisation applies here — due-date type and range
-                      are filters on the Vehicle Due Dates tab. */}
                   {filterOpen && (
                     <div className="hac-filter-panel ovl-filter-panel">
                       <div className="hac-filter-grid ovl-filter-grid">{orgFilterField}</div>
@@ -552,26 +578,27 @@ function App() {
                           <th>Managed</th>
                           <th>Vehicle Category</th>
                           <th>Vendor</th>
-                          <th>Weight (BTM) kg</th>
-                          <th>Total Weight (BDM) kg</th>
-                          <th>Load Capacity (kg)</th>
+                          <th className="ovl-col-right">Weight (BTM) <small>kg</small></th>
+                          <th className="ovl-col-right">Total Weight (BDM) <small>kg</small></th>
+                          <th className="ovl-col-right">Load Capacity <small>(kg)</small></th>
+                          <th>Status</th>
                           <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {!filtered.length && (
-                          <tr><td colSpan="11"><div className="ovl-empty-table">No vehicles match the current filters.</div></td></tr>
+                          <tr><td colSpan="12"><div className="ovl-empty-table">No vehicles match the current filters.</div></td></tr>
                         )}
                         {pageData.map((vehicle, index) => {
-                          const expanded = expandedId === vehicle.id;
+                          const expanded = expandedIds.has(vehicle.id);
                           return (
                             <React.Fragment key={vehicle.id}>
-                              <tr className={`ovl-row${expanded ? " ml-row-open" : ""}`} onClick={() => setExpandedId(expanded ? null : vehicle.id)} aria-expanded={expanded}>
+                              <tr className={`ovl-row${expanded ? " ml-row-open" : ""}`} onClick={() => setExpandedIds(prev => { const next = new Set(prev); if (next.has(vehicle.id)) next.delete(vehicle.id); else next.add(vehicle.id); return next; })} aria-expanded={expanded}>
                                 <td><Icon name={expanded ? "expand_more" : "chevron_right"} size={18} color="#999AA5" /></td>
                                 <td className="ovl-index">{(page - 1) * perPage + index + 1}</td>
                                 <td>
                                   <div className="ovl-vehicle-cell">
-                                    <VehicleThumb inUse={vehicle.activeCheckIn} />
+                                    <VehicleThumb inUse={vehicle.activeCheckIn} category={vehicle.category} />
                                     <div className="ovl-vehicle-main">
                                       <div className="ml-cell-main ovl-vehicle-plate">{vehicle.plate}</div>
                                     </div>
@@ -581,23 +608,29 @@ function App() {
                                 <td><ManagedIcon managed={vehicle.managed} /></td>
                                 <td>{vehicle.category}</td>
                                 <td>{vehicle.vendor}</td>
-                                <td className="ovl-weight">{fmtNumber(vehicle.btm)}</td>
-                                <td className="ovl-weight">{fmtNumber(vehicle.bdm)}</td>
-                                <td className="ovl-weight">{fmtNumber(vehicle.capacity)}</td>
+                                <td className="ovl-col-right">{fmtNumber(vehicle.btm)}</td>
+                                <td className="ovl-col-right">{fmtNumber(vehicle.bdm)}</td>
+                                <td className="ovl-col-right">{fmtNumber(vehicle.capacity)}</td>
+                                <td><VehicleStatusBadge vehicle={vehicle} /></td>
                                 <td onClick={(event) => event.stopPropagation()}>
                                   <VehicleRowMenu
                                     open={menuId === vehicle.id}
                                     onToggle={(next) => setMenuId(next ? vehicle.id : null)}
                                     onView={() => { openView(vehicle); setMenuId(null); }}
                                     onEdit={() => { openEdit(vehicle); setMenuId(null); }}
-                                    onDelete={() => { setMenuId(null); pushToast("warn", "Delete is shown for parity only. No prototype deletion was performed."); }}
-                                    showDelete={false}
+                                    onDelete={() => { setMenuId(null); setDeletingVehicle(vehicle); }}
+                                    isInactive={vehicle.status === "Inactive"}
+                                    onReactivate={() => {
+                                      setMenuId(null);
+                                      setVehicles(current => current.map(v => v.id === vehicle.id ? { ...v, status: "Unused" } : v));
+                                      pushToast("ok", `Vehicle ${vehicle.plate} was reactivated.`);
+                                    }}
                                   />
                                 </td>
                               </tr>
                               {expanded && (
                                 <tr>
-                                  <td className="ovl-expanded-cell" colSpan="11">
+                                  <td className="ovl-expanded-cell" colSpan="12">
                                     <ExpandableVehicleDriversRow vehicle={vehicle} onEditDrivers={openDrivers} />
                                   </td>
                                 </tr>
@@ -612,7 +645,7 @@ function App() {
                   <div className="ovl-mobile-list">
                     {pageData.map((vehicle) => (
                       <MobileListCard key={vehicle.id} className="ovl-vehicle-mobile-card"
-                        leading={<VehicleThumb inUse={vehicle.activeCheckIn} />}
+                        leading={<VehicleThumb inUse={vehicle.activeCheckIn} category={vehicle.category} />}
                         title={vehicle.plate}
                         subtitle={vehicle.category}
                         status={<ManagedIcon managed={vehicle.managed} label />}
@@ -621,8 +654,13 @@ function App() {
                           onToggle={(next) => setMobileMenuId(next ? vehicle.id : null)}
                           onView={() => { openView(vehicle); setMobileMenuId(null); }}
                           onEdit={() => { openEdit(vehicle); setMobileMenuId(null); }}
-                          onDelete={() => { setMobileMenuId(null); pushToast("warn", "Delete is shown for parity only. No prototype deletion was performed."); }}
-                          showDelete={false}
+                          onDelete={() => { setMobileMenuId(null); setDeletingVehicle(vehicle); }}
+                          isInactive={vehicle.status === "Inactive"}
+                          onReactivate={() => {
+                            setMobileMenuId(null);
+                            setVehicles(current => current.map(v => v.id === vehicle.id ? { ...v, status: "Unused" } : v));
+                            pushToast("ok", `Vehicle ${vehicle.plate} was reactivated.`);
+                          }}
                         />}
                         meta={<span>{vehicle.org?.name} · {vehicle.vendor || "No vendor"}</span>}
                       >
@@ -656,12 +694,25 @@ function App() {
           onAdd={(drivers) => addDriversToVehicle(currentEditingVehicle.id, drivers)}
         />
       )}
-      {mobileDriversVehicle && (
-        <AssignedDriversModal
-          vehicle={mobileDriversVehicle}
-          onClose={() => setMobileDriversVehicle(null)}
-          onEditDrivers={(vehicle) => { setMobileDriversVehicle(null); openDrivers(vehicle); }}
-        />
+      {mobileDriversVehicle && <AssignedDriversModal vehicle={mobileDriversVehicle} onClose={() => setMobileDriversVehicle(null)} onEditDrivers={(vehicle) => { setMobileDriversVehicle(null); openDrivers(vehicle); }} />}
+
+      {deletingVehicle && (
+        <HacModal
+          title="Delete vehicle?"
+          onClose={() => setDeletingVehicle(null)}
+          footer={
+            <>
+              <button className="hac-modal-cancel" type="button" onClick={() => setDeletingVehicle(null)}>Keep Vehicle</button>
+              <button className="hac-modal-save ovl-delete-action" style={{ background: "#c44741", color: "#fff", border: "none" }} type="button" onClick={() => {
+                setVehicles((current) => current.map((v) => v.id === deletingVehicle.id ? { ...v, status: "Inactive" } : v));
+                pushToast("ok", `Vehicle ${deletingVehicle.plate} was deleted.`);
+                setDeletingVehicle(null);
+              }}>Delete Vehicle</button>
+            </>
+          }
+        >
+          <p className="ovl-delete-copy" style={{ color: "var(--fg-secondary)", marginTop: "8px" }}>Vehicle {deletingVehicle.plate} will be marked as inactive in this prototype.</p>
+        </HacModal>
       )}
       <div className="ovl-toast-stack">
         <div className="ovl-toast-col">

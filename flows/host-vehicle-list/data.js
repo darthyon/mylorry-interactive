@@ -65,7 +65,7 @@ window.HOST_VEHICLE_LIST = {
     },
     {
       id: "veh-004", org: { id: "padu", name: "Padu Logistik Sdn. Bhd." },
-      plate: "WPK5567", category: "Van", vendor: "Bintang Mobility",
+      plate: "WPK5567", category: "Sedan", vendor: "Bintang Mobility",
       btm: 2100, bdm: 3400, capacity: 1300,
       roadTax: "2026-08-18", insurance: "2026-11-02", puspakom: "2026-09-25", permit: "2027-02-14",
       managed: false, activeCheckIn: false,

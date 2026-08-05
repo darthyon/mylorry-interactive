@@ -77,16 +77,33 @@ function initials(name = "") {
   return parts.slice(0, 2).map((part) => part[0].toUpperCase()).join("") || "?";
 }
 
-function VehicleThumb({ inUse = false }) {
+function VehicleThumb({ inUse = false, category = "" }) {
   const label = inUse ? "In-use" : "Not in-use";
+  const cat = String(category).toLowerCase();
+  
+  let iconName = "local_shipping"; // Default for Lorry/Truck/Prime Mover
+  if (cat.includes("van") || cat.includes("mpv")) iconName = "airport_shuttle";
+  else if (cat.includes("bus")) iconName = "directions_bus";
+  else if (cat.includes("sedan") || cat.includes("car")) iconName = "directions_car";
+
   return (
     <div className="ovl-thumb" title={label} aria-label={label}>
-      <svg className="ovl-thumb-icon" viewBox="0 0 24 24" focusable="false">
-        <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h9A1.5 1.5 0 0 1 15 6.5V8h2.4c.5 0 .98.22 1.3.6l2.1 2.52c.26.3.4.7.4 1.1V16a1 1 0 0 1-1 1h-1.05a2.5 2.5 0 0 1-4.9 0h-5.1a2.5 2.5 0 0 1-4.9 0H4a1 1 0 0 1-1-1V6.5Zm12 3.25V12h4.05l-1.48-1.78a1.25 1.25 0 0 0-.96-.47H15ZM6.7 18a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm10 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
-      </svg>
+      <div className="ovl-thumb-icon" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", color: "var(--fg-secondary)" }}>
+        <Icon name={iconName} size={22} fill={1} />
+      </div>
       <span className={`ovl-use-dot${inUse ? " in-use" : ""}`} aria-hidden="true" />
     </div>
   );
+}
+
+function VehicleStatusBadge({ vehicle }) {
+  if (vehicle.status === "Inactive") {
+    return <span style={{ display: "inline-flex", alignItems: "center", padding: "4px 8px", borderRadius: "4px", background: "#f4f5f5", color: "var(--fg-secondary)", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap", border: 0 }}>Inactive</span>;
+  }
+  if (vehicle.activeCheckIn) {
+    return <span style={{ display: "inline-flex", alignItems: "center", padding: "4px 8px", borderRadius: "4px", background: "#effaf4", color: "#397051", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap", border: 0 }}>In use</span>;
+  }
+  return <span style={{ display: "inline-flex", alignItems: "center", padding: "4px 8px", borderRadius: "4px", background: "#f4f5f5", color: "var(--fg-secondary)", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap", border: 0 }}>Unused</span>;
 }
 
 function fmtNumber(n) {
@@ -391,7 +408,7 @@ function VehicleDueDates({
                 return (
                   <tr key={rowId}>
                     <td className="ovl-index">{(page - 1) * perPage + index + 1}</td>
-                    <td><div className="ovl-vehicle-cell"><VehicleThumb inUse={vehicle.activeCheckIn} /><div className="ovl-vehicle-main"><div className="ml-cell-main ovl-vehicle-plate">{vehicle.plate}</div></div></div></td>
+                    <td><div className="ovl-vehicle-cell"><VehicleThumb inUse={vehicle.activeCheckIn} category={vehicle.category} /><div className="ovl-vehicle-main"><div className="ml-cell-main ovl-vehicle-plate">{vehicle.plate}</div></div></div></td>
                     {renderExtraCells && renderExtraCells(vehicle)}
                     <td>{vehicle.category}</td>
                     <td>{vehicle.vendor}</td>
@@ -412,7 +429,7 @@ function VehicleDueDates({
             const tone = documentTone(doc.expireDate);
             return (
               <MobileListCard key={`${vehicle.id}-${doc.id}`}
-                leading={<VehicleThumb inUse={vehicle.activeCheckIn} />}
+                leading={<VehicleThumb inUse={vehicle.activeCheckIn} category={vehicle.category} />}
                 title={vehicle.plate}
                 subtitle={<span className="ml-plain-subtitle">{vehicle.category} · {vehicleDocumentTitle(doc)}</span>}
                 status={vehicleDocumentStatus(doc)}
@@ -440,7 +457,7 @@ function VehicleDueDates({
   );
 }
 
-function VehicleRowMenu({ open, onToggle, onView, onEdit, onDelete, showDelete = true }) {
+function VehicleRowMenu({ open, onToggle, onView, onEdit, onDelete, showDelete = true, isInactive = false, onReactivate }) {
   const btnRef = useRef(null);
   const dropRef = useRef(null);
   const [pos, setPos] = useState({ top: 0, left: 0 });
@@ -486,8 +503,11 @@ function VehicleRowMenu({ open, onToggle, onView, onEdit, onDelete, showDelete =
           <button className="hac-drop-item" type="button" onClick={onEdit}>
             <Icon name="edit" size={15} /> Edit
           </button>
-          {showDelete && <button className="hac-drop-item danger" type="button" onClick={onDelete}>
+          {showDelete && !isInactive && <button className="hac-drop-item danger" type="button" onClick={onDelete}>
             <Icon name="delete" size={15} /> Delete
+          </button>}
+          {showDelete && isInactive && onReactivate && <button className="hac-drop-item" type="button" onClick={onReactivate}>
+            <Icon name="history" size={15} /> Reactivate
           </button>}
         </div>,
         document.body
@@ -1156,7 +1176,7 @@ function VehicleRemindersTab({ vehicle, documents, editable, tier, onChange, onT
   function saveDocument(doc) { const exists = documents.some((item) => item.id === doc.id); const now = new Date(); const finalDoc = exists ? doc : { ...doc, uploadedDate: now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }), uploadedBy: vehicle.plate }; onChange(exists ? documents.map((item) => item.id === doc.id ? finalDoc : item) : [finalDoc, ...documents]); setModal(null); onToast(exists ? `${doc.type} changes saved.` : `${doc.type} added.`); }
   function removeDocument() { if (!deleteTarget) return; onChange(documents.filter((item) => item.id !== deleteTarget.id)); onToast(`${deleteTarget.type} deleted.`); setDeleteTarget(null); }
   function newDocument() { const field = DOC_FIELDS[0]; return { id: null, type: field.type, startDate: "", expireDate: "", reminders: [field.defaultReminder, "", ""], files: [], history: [] }; }
-  function renderGroup(title, items) { if (!items.length) return null; return <section className="ovl-doc-section" key={title}><div className="ovl-doc-section-head"><span className="ovl-doc-section-title">{title}</span><span className="ovl-doc-section-count">{items.length}</span></div><div className="ovl-doc-list">{items.map((doc) => <VehicleDocumentCard key={doc.id} doc={doc} editable={editable} tier={tier} onEdit={() => setModal(doc)} onDelete={() => setDeleteTarget(doc)} onPreview={setPreview} />)}</div></section>; }
+  function renderGroup(title, items) { if (!items.length) return null; return <section className="ovl-doc-section" key={title}><div className="ovl-doc-section-head"><span className="ovl-doc-section-title">{title}</span></div><div className="ovl-doc-list">{items.map((doc) => <VehicleDocumentCard key={doc.id} doc={doc} editable={editable} tier={tier} onEdit={() => setModal(doc)} onDelete={() => setDeleteTarget(doc)} onPreview={setPreview} />)}</div></section>; }
   const addBtn = editable && <button className="ml-btn-soft ovl-doc-add" type="button" onClick={() => setModal(newDocument())}><Icon name="add" size={16} color="var(--green-600)" />Add<span className="ovl-doc-add-full"> document</span></button>;
   return <section className="ml-card ovl-documents-panel">{documents.length ? <><div className="ovl-doc-toolbar"><h2 className="ovl-doc-heading">Uploaded Documents</h2>{addBtn}</div><div className="ovl-doc-groups">{renderGroup("Document Types", typedDocuments)}{renderGroup("Other Documents", otherDocuments)}</div></> : <div className="ovl-doc-empty"><Icon name="folder_open" size={30} color="var(--fg-tertiary)" /><h3>No documents added yet.</h3><p>Add this vehicle's documents to track due dates and reminders.</p>{addBtn}</div>}{modal && <VehicleDocumentModal initial={modal} tier={tier} onClose={() => setModal(null)} onSave={saveDocument} onUpgrade={() => onToast("Upgrade options would open here.")} />}{preview && <VehicleFilePreview file={preview} onClose={() => setPreview(null)} />}{deleteTarget && <HacModal title="Delete document?" onClose={() => setDeleteTarget(null)} footer={<><button className="hac-modal-cancel" type="button" onClick={() => setDeleteTarget(null)}>Cancel</button><button className="hac-modal-save ovl-delete-action" type="button" onClick={removeDocument}>Delete document</button></>}><p className="ovl-delete-copy">{deleteTarget.type} and its current files will be removed from this vehicle. Historical records are retained in the prototype history model.</p></HacModal>}</section>;
 }
@@ -1175,7 +1195,7 @@ window.VehicleDetail = {
   slotsMeta, resolveEditTab, fileCountLabel,
   // list-level components
   VehicleThumb, ManagedIcon, ExpiryCell, VehicleRowMenu, EditDriverButton,
-  ExpandableVehicleDriversRow, AssignedDriversModal, VehicleDueDates,
+  ExpandableVehicleDriversRow, AssignedDriversModal, VehicleDueDates, VehicleStatusBadge,
   // detail-page components
   VehiclePageHead, VehicleQrModal, VehicleFormEditBar, VehiclePhotoField,
   ViewField, VehicleViewSections, VehicleFormSections, VehicleFormsTab,

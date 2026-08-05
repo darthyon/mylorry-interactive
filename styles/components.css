@@ -574,6 +574,7 @@
   padding: 34px 16px;
   text-align: center;
   color: var(--fg-tertiary);
+  white-space: normal;
 }
 .ml-empty-state .msr { color: var(--border-strong, #c7cdcb); }
 .ml-empty-title { font-size: 13px; font-weight: 600; color: var(--fg-secondary); text-align: center; }
