@@ -37,7 +37,7 @@ window.HOST_VEHICLE_LIST = {
       id: "veh-001", org: { id: "padu", name: "Padu Logistik Sdn. Bhd." },
       plate: "VLT8421", category: "Lorry", vendor: "Swift Leasing",
       btm: 7600, bdm: 18000, capacity: 10400,
-      roadTax: "2026-11-22", insurance: "2026-09-10", puspakom: "2026-08-21", permit: "2026-10-18",
+      roadTax: "2026-11-22", insurance: "2026-09-10", puspakom: "2026-08-21", puspakomAppointment: "2026-08-12", permit: "2026-10-18",
       managed: true, activeCheckIn: true,
       drivers: [
         { name: "Azhar Rahman", driverId: "DRV-014", phone: "012-330 4471", status: "Checked in", lastEvent: "Checked in · 7:42 AM" },
@@ -88,7 +88,7 @@ window.HOST_VEHICLE_LIST = {
       id: "veh-006", org: { id: "swift", name: "Swift Cargo Express" },
       plate: "PNG7712", category: "Truck", vendor: "Swift Leasing",
       btm: 9200, bdm: 21000, capacity: 11800,
-      roadTax: "2026-08-09", insurance: "2026-10-19", puspakom: "2026-08-30", permit: "2026-11-11",
+      roadTax: "2026-08-09", insurance: "2026-10-19", puspakom: "2026-08-30", puspakomAppointment: "2026-08-19", permit: "2026-11-11",
       managed: true, activeCheckIn: true,
       drivers: [
         { name: "Kumaran Raj", driverId: "DRV-041", phone: "014-882 3306", status: "Checked in", lastEvent: "Checked in · 6:55 AM" },
@@ -145,7 +145,7 @@ window.HOST_VEHICLE_LIST = {
       id: "veh-012", org: { id: "bintang", name: "Bintang Freight Sdn. Bhd." },
       plate: "KDH1120", category: "Lorry", vendor: "Metro Vendor",
       btm: 7300, bdm: 17600, capacity: 10300,
-      roadTax: "2026-11-29", insurance: "2026-12-30", puspakom: "2026-08-08", permit: "2027-03-15",
+      roadTax: "2026-11-29", insurance: "2026-12-30", puspakom: "2026-08-08", puspakomAppointment: "2026-07-30", permit: "2027-03-15",
       managed: true, activeCheckIn: true,
       drivers: [
         { name: "Zulkifli Hassan", driverId: "DRV-083", phone: "017-220 4498", status: "Checked in", lastEvent: "Checked in · 7:05 AM" },
@@ -241,7 +241,7 @@ window.HOST_VEHICLE_LIST = {
       id: "veh-022", org: { id: "swift", name: "Swift Cargo Express" },
       plate: "PNG1145", category: "Lorry", vendor: "Swift Leasing",
       btm: 6700, bdm: 16200, capacity: 9500,
-      roadTax: "2026-09-02", insurance: "2026-11-08", puspakom: "2026-08-14", permit: "2027-01-11",
+      roadTax: "2026-09-02", insurance: "2026-11-08", puspakom: "2026-08-14", puspakomAppointment: "2026-08-05", permit: "2027-01-11",
       managed: true, activeCheckIn: false,
       drivers: [
         { name: "Aiman Sofea", driverId: "DRV-143", phone: "017-991 3348", status: "On duty", lastEvent: "Checked in · 8:12 AM" },

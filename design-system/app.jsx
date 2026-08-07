@@ -1,4 +1,4 @@
-const { Icon, Badge, StatusBadge, AccountStatusBadge, LockSection, EmptyState, CountCard, HistoryCard, MobileListCard, HacModal, HacFileUpload, SelectMenu } = window.SharedShell;
+const { Icon, Badge, StatusBadge, AccountStatusBadge, HoverTip, LockSection, EmptyState, CountCard, HistoryCard, MobileListCard, HacModal, HacFileUpload, SelectMenu } = window.SharedShell;
 
 /* ── Token swatches (read straight from tokens.css via getComputedStyle) ── */
 const COLOR_TOKENS = [
@@ -83,6 +83,11 @@ mount("docStatus", <>
   <StatusBadge status="doc_31_60" />
   <StatusBadge status="doc_61_90" />
   <StatusBadge status="doc_future" />
+</>);
+
+mount("apptStatus", <>
+  <HoverTip label="Appointment on 12 Aug 2026"><StatusBadge status="appt_set" /></HoverTip>
+  <HoverTip label="No appointment date set"><StatusBadge status="appt_unset" /></HoverTip>
 </>);
 
 mount("tripStatus", <>
