@@ -403,6 +403,10 @@
 .hac-drop-item:hover { background: var(--bg-muted); }
 .hac-drop-item.danger { color: var(--red-400); }
 .hac-drop-item.danger:hover { background: #FFF0F0; }
+/* Variant — hairline between items, for longer action lists where the items
+   read as a stacked list rather than 2-3 quick actions. */
+.hac-drop.divided .hac-drop-item + .hac-drop-item,
+.hac-drop-fixed.divided .hac-drop-item + .hac-drop-item { border-top: 1px solid var(--border-light); }
 
 /* ── Breadcrumb ──────────────────────────────────────────────── */
 .hac-breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--fg-secondary); margin-bottom: 4px; }

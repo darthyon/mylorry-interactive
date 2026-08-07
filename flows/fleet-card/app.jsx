@@ -1,5 +1,5 @@
 const { useState, useEffect, useRef, useCallback } = React;
-const { CalcPopover } = window.SharedShell;
+const { CalcPopover, HacModal } = window.SharedShell;
 
 /* ── Icon helper ───────────────────────────────────────────────── */
 function Icon({ name, size = 20, fill = 0, style }) {
@@ -31,6 +31,10 @@ const ROWS = [
   { id:9,  owner:'Stark Ind.', org:'Org 19', acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:160, dm:500,   du:340, dL:13.3, mr:5800,  mm:15000, mu:9200, mL:359.4, sm:900,     su:320,     sEst:320,     st:'Active',   fuels: FUEL_SETS.all },
   { id:10, owner:'Umbrella',   org:'Org 15', acc:'ORG59-SPA-MEMBER', bal:842.10,  card:'5241 9876 1234 1234', pin:'123', veh:'XYZ-789', tag:'MAIN-12', dr:240, dm:500,   du:260, dL:10.2, mr:7850,  mm:15000, mu:7150, mL:279.3, sm:900,     su:320,     sEst:320,     st:'Active',   fuels: FUEL_SETS.standard },
 ];
+// Provider account limit — account level, so every card on ORG59-SPA-MEMBER
+// shares it. Remaining is derived, never stored: pending transactions settle
+// hours later, so the honest figure is limit − confirmed − pending.
+const PROVIDER_LIMIT = { max: 10000, used: 5200, pending: 2445 };
 const N  = n => n.toLocaleString();
 const NRM = n => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -259,14 +263,14 @@ const FUEL_LABELS = {
   'diesel-max': { top: 'DIESEL', bottom: 'MAX', wide: true },
   'diesel': { top: 'DIESEL', bottom: null, wide: true },
 };
-function FleetCardMobile({ row, pending, failed, utype }) {
+function FleetCardMobile({ row, pending, failed, utype, onMenuSelect }) {
   return (
     <article className="fc-card">
       <div className="fc-card-top">
         <div className="fc-card-head">
           <img src="petron.png" className="fc-card-logo" alt="Petron" />
           <StatusCell status={row.st} pending={pending} failed={failed} utype={utype} />
-          <button className="btn-3dot"><Icon name="more_horiz" size={17} /></button>
+          <RowMenu row={row} onSelect={onMenuSelect} />
         </div>
         <div className="fc-card-wave-wrap">
           {/* Exact wave asset from Figma (MyLorry 2.0, node 2873:7025) */}
@@ -323,6 +327,103 @@ function FleetCardMobile({ row, pending, failed, utype }) {
         })}
       </div>
     </article>
+  );
+}
+
+/* ── Row Menu ──────────────────────────────────────────────────── */
+// Portal + fixed positioning: the desktop action cell lives inside the
+// horizontally scrolling .tbl-wrap, which would clip an absolute dropdown.
+const ROW_MENU_ITEMS = [
+  { key: 'edit',      label: 'Edit' },
+  { key: 'status',    label: 'Change Status' },
+  { key: 'limit',     label: 'Edit Limit' },
+  { key: 'subsidy',   label: 'View Subsidy' },
+  { key: 'provLimit', label: 'View Provider Limit' },
+  { key: 'unassign',  label: 'Unassign', danger: true },
+];
+const ROW_MENU_W = 180;
+function RowMenu({ row, onSelect }) {
+  const btnRef  = useRef(null);
+  const menuRef = useRef(null);
+  const [open, setOpen] = useState(false);
+  const [pos, setPos]   = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = e => {
+      if (!btnRef.current?.contains(e.target) && !menuRef.current?.contains(e.target)) setOpen(false);
+    };
+    const dismiss = () => setOpen(false);
+    document.addEventListener('mousedown', close);
+    window.addEventListener('scroll', dismiss, true);
+    window.addEventListener('resize', dismiss);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      window.removeEventListener('scroll', dismiss, true);
+      window.removeEventListener('resize', dismiss);
+    };
+  }, [open]);
+
+  function toggle() {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      const left = Math.max(12, Math.min(r.right - ROW_MENU_W, window.innerWidth - ROW_MENU_W - 12));
+      setPos({ top: r.bottom + 4, left });
+    }
+    setOpen(v => !v);
+  }
+
+  return (
+    <div className="hac-ellipsis">
+      <button
+        ref={btnRef} type="button" className="btn-3dot"
+        aria-label={`Actions for card ${row.card}`} aria-expanded={open} onClick={toggle}
+      >
+        <Icon name="more_horiz" size={17} />
+      </button>
+      {open && ReactDOM.createPortal(
+        <div
+          ref={menuRef} className="hac-drop-fixed divided" role="menu"
+          style={{ top: pos.top, left: pos.left, width: ROW_MENU_W }}
+        >
+          {ROW_MENU_ITEMS.map(item => (
+            <button
+              key={item.key} type="button" role="menuitem"
+              className={`hac-drop-item${item.danger ? ' danger' : ''}`}
+              onClick={() => { setOpen(false); onSelect(item.key, row); }}
+            >{item.label}</button>
+          ))}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+/* ── Provider Limit Modal ──────────────────────────────────────── */
+function ProviderLimitModal({ onClose }) {
+  const { max, used, pending } = PROVIDER_LIMIT;
+  const rows = [
+    { label: 'Limit',                value: `RM ${NRM(max)}` },
+    { label: 'Confirmed used',       value: `RM ${NRM(used)}` },
+    { label: 'Pending calculations', value: `RM ${NRM(pending)}`, tone: 'var(--amber-600)' },
+    { label: 'Remaining (est.)',     value: `RM ${NRM(max - used - pending)}`, tone: 'var(--navy-800)', total: true },
+  ];
+  return (
+    <HacModal
+      title="Provider Limit" onClose={onClose}
+      footer={<button className="hac-modal-cancel" type="button" onClick={onClose}>Close</button>}
+    >
+      <div className="fc-prov-card">
+        <div className="ml-cardhead-title">Monthly limit breakdown</div>
+        {rows.map(r => (
+          <div key={r.label} className={`ml-calc-row${r.total ? ' ml-calc-row-total' : ''}`}>
+            <span>{r.label}</span>
+            <b style={r.tone ? { color: r.tone } : undefined}>{r.value}</b>
+          </div>
+        ))}
+      </div>
+    </HacModal>
   );
 }
 
@@ -447,6 +548,7 @@ function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [sel, setSel]         = useState(new Set([3,4,5]));
   const [modal, setModal]     = useState(null);   // 'status' | 'limit'
+  const [provLimitOpen, setProvLimitOpen] = useState(false);
   const [strip, setStrip]     = useState(null);   // 'updating'|'queued'|'delayed'|'success'|'partial'|'failure'
   const [utype, setUtype]     = useState(null);   // 'status' | 'limit'
   const [ucount, setUcount]   = useState(0);
@@ -459,6 +561,9 @@ function App() {
 
   const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   const addTimer    = (fn, ms) => { const id = setTimeout(fn, ms); timers.current.push(id); };
+
+  // Only View Provider Limit is wired for now; the rest of the menu is stubbed.
+  const handleRowMenu = key => { if (key === 'provLimit') setProvLimitOpen(true); };
 
   const count    = sel.size;
   const canEdit  = count > 0 && !strip;
@@ -667,7 +772,7 @@ function App() {
                         <StatusCell status={row.st} pending={isPend} failed={isFail} utype={utype} />
                       </td>
                       <td className="c-act">
-                        <button className="btn-3dot"><Icon name="more_horiz" size={17} /></button>
+                        <RowMenu row={row} onSelect={handleRowMenu} />
                       </td>
                     </tr>
                   );
@@ -685,6 +790,7 @@ function App() {
                 <FleetCardMobile
                   key={row.id} row={row}
                   pending={isPend} failed={isFail} utype={utype}
+                  onMenuSelect={handleRowMenu}
                 />
               );
             })}
@@ -721,6 +827,9 @@ function App() {
           onDone={() => handleDone('limit')}
         />
       )}
+
+      {/* Provider Limit Modal */}
+      {provLimitOpen && <ProviderLimitModal onClose={() => setProvLimitOpen(false)} />}
 
       {/* Tweaks Panel */}
       <TweaksPanel title="Tweaks">

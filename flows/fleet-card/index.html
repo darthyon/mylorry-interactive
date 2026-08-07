@@ -253,6 +253,15 @@ body{font-family:var(--font-sans);font-size:13px;color:var(--fg-primary);backgro
 .modal-info span{font-size:12px;color:var(--fg-secondary);line-height:1.5;}
 .btn-done:hover{background:#009945;}
 
+/* ── Provider limit modal card ───────────────────────────────── */
+/* Rows reuse .ml-calc-row from components.css; only the stacking gap and the
+   slightly larger read-at-a-glance type are local to this dialog. Deliberately
+   NOT .ml-card — the modal is already a surface, a card inside it double-frames. */
+.fc-prov-card{display:flex;flex-direction:column;gap:12px;padding-bottom:4px;}
+.fc-prov-card .ml-cardhead-title{font-size:15px;margin-bottom:2px;}
+.fc-prov-card .ml-calc-row{font-size:13px;}
+.fc-prov-card .ml-calc-row b{font-size:14px;}
+
 /* ── Mobile drawer (sidebar collapses to hamburger + slide-in drawer) ──
    Kept at the end of the stylesheet on purpose: a media-query rule only
    wins a same-specificity conflict when it comes AFTER the unconditional
