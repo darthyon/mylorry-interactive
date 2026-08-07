@@ -99,6 +99,7 @@
 .ovl-doc-menu-pop button{width:100%;display:flex;align-items:center;gap:7px;padding:8px;color:var(--fg-primary);font:inherit;text-align:left;}
 .ovl-doc-menu-pop button.danger{color:#C44741;}
 .ovl-doc-meta-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:12px 12px 14px;}
+.ovl-doc-meta-row.has-appointment{grid-template-columns:repeat(5,1fr);}
 .ovl-doc-meta{display:flex;flex-direction:column;gap:3px;min-width:0;}
 .ovl-doc-meta span:first-child,.ovl-history-label{font-size:11px;font-weight:600;color:var(--fg-secondary);}
 .ovl-doc-meta span:last-child{font-size:12px;color:var(--fg-primary);white-space:nowrap;}
@@ -214,7 +215,7 @@
 .ovl-delete-action{background:#C44741;}
 .ovl-delete-action:hover{background:#AD3833;}
 @media (max-width:1180px){
-  .ovl-doc-meta-row{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .ovl-doc-meta-row,.ovl-doc-meta-row.has-appointment{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
 @media (max-width:1023px){
   .ovl-details-grid{grid-template-columns:1fr;}

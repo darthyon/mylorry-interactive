@@ -538,6 +538,9 @@ const STATUS_BADGE_META = {
   doc_future:   { label:"> 90 days",  cls:"doc-active"   },
   // Backward-compat generic due soon (still used by some callers)
   doc_due_soon: { label:"Due soon",   cls:"doc-due-soon" },
+  // Puspakom inspection appointment — booked vs not booked yet
+  appt_set:     { label:"Appointment", cls:"appt-set",   icon:"check_circle" },
+  appt_unset:   { label:"Appointment", cls:"appt-unset", icon:"error"        },
   // MyAdmin dashboard legacy aliases (kept for backward compat)
   due_soon:             { label:"Due soon",              cls:"doc-due-soon"     },
   // Checklist endorsement status (MyAdmin dashboard)
@@ -562,8 +565,29 @@ const STATUS_BADGE_META = {
 };
 function StatusBadge({ status, prefix, label, fallback = "activated" }) {
   const m = STATUS_BADGE_META[status] || STATUS_BADGE_META[fallback] || { label: status, cls: "" };
-  return <span className={"ml-badge " + m.cls}>{prefix || ""}{label || m.label}</span>;
+  // `icon` is opt-in per metadata entry; it inherits the badge's own color.
+  return <span className={"ml-badge " + m.cls}>{m.icon && <Icon name={m.icon} size={12} fill={1} />}{prefix || ""}{label || m.label}</span>;
 }
+// Hover/focus tooltip for a single short line. Positioned `fixed` from the
+// trigger's rect so it escapes scroll containers like .ml-table-wrap, which
+// clip an absolutely-positioned tooltip on the first table row.
+function HoverTip({ label, children, className = "" }) {
+  const ref = React.useRef(null);
+  const [pos, setPos] = React.useState(null);
+  function show() {
+    const rect = ref.current?.getBoundingClientRect();
+    if (rect) setPos({ top: rect.top - 7, left: rect.left + rect.width / 2 });
+  }
+  const hide = () => setPos(null);
+  return (
+    <span className={`ml-hovertip-wrap ${className}`} ref={ref} tabIndex={0}
+      onMouseEnter={show} onMouseLeave={hide} onFocus={show} onBlur={hide}>
+      {children}
+      {pos && <span className="ml-tooltip compact fixed" style={{ top: pos.top, left: pos.left }} role="tooltip">{label}</span>}
+    </span>
+  );
+}
+
 // Back-compat alias — account-status callers default to the "active" vocabulary.
 function AccountStatusBadge({ status = "active", prefix }) {
   return <StatusBadge status={status} prefix={prefix} fallback="active" />;
@@ -1161,7 +1185,7 @@ function useToast() {
 window.SharedShell = {
   Icon, TopBar, Sidebar, Badge, Pager, CardHead, ExportMenu, Segmented,
   Pill, CurrencyPill, SummaryCard, CountCard, KpiTierChip,
-  StatusBadge, AccountStatusBadge, KPIProgress, KPIProgressMeta,
+  StatusBadge, AccountStatusBadge, HoverTip, KPIProgress, KPIProgressMeta,
   LockSection, EmptyState, PetronLogo, HistoryCard, MobileListCard, ReminderSummary,
   fmtExpiryDate, daysUntilExpiry, expiryTone, expiryRelativeText, documentExpiryStatus,
   FeatureTabShell, OrgSwitcher, SelectMenu,

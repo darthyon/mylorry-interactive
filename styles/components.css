@@ -18,6 +18,10 @@
   font-size: 11.5px; font-weight: 600; white-space: nowrap;
 }
 
+/* Badge icons inherit the badge tone. Doubled class so this outranks flow-local
+   descendant rules such as .ovl-doc-meta span:first-child. */
+.ml-badge.ml-badge .msr { color: inherit; font-weight: 400; }
+
 /* Generic tones */
 .ml-badge.active   { background: var(--green-50); color: var(--green-600); }
 .ml-badge.inactive { background: #FFF0F0;         color: var(--red-400);   }
@@ -34,6 +38,14 @@
 .ml-badge.ml-badge.doc-active   { background: var(--green-50); color: var(--green-600); }
 .ml-badge.ml-badge.doc-due-soon { background: var(--amber-50); color: var(--amber-600); }
 .ml-badge.ml-badge.doc-expired  { background: #FFF0F0;         color: var(--red-400);   }
+
+/* Puspakom appointment: booked (green check) vs not booked yet (red alert).
+   Size is pinned so the card-title badge matches the due-dates table badge,
+   which flow CSS (.ovl-due-type-cell span) otherwise shrinks to 11px. */
+.ml-badge.ml-badge.appt-set,
+.ml-badge.ml-badge.appt-unset { font-size: 11px; padding: 2px 8px; gap: 3px; }
+.ml-badge.ml-badge.appt-set   { background: var(--green-50); color: var(--green-600); }
+.ml-badge.ml-badge.appt-unset { background: #FFF0F0;         color: var(--red-400);   }
 
 /* Expiry text in document cards must outrank the generic metadata value rule. */
 .odr-doc-meta .odr-time-left.danger,
@@ -187,6 +199,11 @@
 .ml-tooltip-wrap:hover .ml-tooltip,
 .ml-tooltip-wrap:focus-within .ml-tooltip { opacity: 1; }
 .ml-tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #322F35; }
+/* window.SharedShell.HoverTip — single-line tooltip that escapes scroll
+   containers (`.fixed`) instead of being clipped by them. */
+.ml-hovertip-wrap { display: inline-flex; align-items: center; outline: none; }
+.ml-tooltip.compact { width: max-content; max-width: 240px; white-space: nowrap; text-align: center; padding: 5px 9px; line-height: 1.4; }
+.ml-tooltip.fixed { position: fixed; bottom: auto; transform: translate(-50%, -100%); opacity: 1; }
 .ml-label-with-info { display: inline-flex; align-items: center; gap: 6px; }
 .ml-info-trigger { display: inline-flex; align-items: center; justify-content: center; cursor: help; }
 

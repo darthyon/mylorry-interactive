@@ -44,6 +44,7 @@
 .ovl-due-type-cell{display:flex;flex-direction:column;gap:3px;min-width:170px;}
 .ovl-due-type-cell strong{font-size:13px;color:var(--fg-primary);}
 .ovl-due-type-cell span,.ovl-due-sub{font-size:11px;color:var(--fg-tertiary);}
+.ovl-due-type-cell .ml-badge,.ovl-due-type-cell .ml-hovertip-wrap{align-self:flex-start;margin-top:1px;}
 .ovl-row{transition:background .12s ease;cursor:pointer;}
 .ovl-row:hover{background:var(--bg-hover);}
 .ovl-index{color:var(--fg-tertiary);font-weight:600;font-variant-numeric:tabular-nums;}

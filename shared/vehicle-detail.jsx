@@ -11,7 +11,7 @@
 {
 
 const { useEffect, useMemo, useRef, useState } = React;
-const { Icon, SelectMenu, Pager, HacModal, HacFileUpload, StatusBadge,
+const { Icon, SelectMenu, Pager, HacModal, HacFileUpload, StatusBadge, HoverTip,
   MobileListCard, ReminderSummary, EmptyState } = window.SharedShell;
 
 const REMINDER_LIMITS = { free: 1, lite: 3, premium: Infinity };
@@ -19,7 +19,9 @@ const REMINDER_LIMITS = { free: 1, lite: 3, premium: Infinity };
 const DOC_FIELDS = [
   { key: "roadTax", type: "Road Tax", label: "Road Tax", startRequired: true, expiryRequired: true, defaultReminder: 30 },
   { key: "insurance", type: "Insurance", label: "Insurance", startRequired: true, expiryRequired: true, defaultReminder: 30 },
-  { key: "puspakom", type: "Puspakom Service", label: "Puspakom Service", startRequired: true, expiryRequired: true, defaultReminder: 60 },
+  // Puspakom is the one type that needs an inspection slot booked before renewal,
+  // so it carries an extra optional appointment date (flat key on the vehicle).
+  { key: "puspakom", type: "Puspakom Service", label: "Puspakom Service", startRequired: true, expiryRequired: true, defaultReminder: 60, appointment: true, appointmentKey: "puspakomAppointment" },
   { key: "permit", type: "Truck Permit", label: "Truck Permit", startRequired: true, expiryRequired: true, defaultReminder: 30 },
   { key: "others", type: "Others", label: "Others", startRequired: true, expiryRequired: true, defaultReminder: 30, other: true },
 ];
@@ -206,6 +208,7 @@ function makeVehicleDocuments(vehicle) {
     type: field.type,
     startDate: issuedDateForVehicleDocument(vehicle[field.key], field),
     expireDate: vehicle[field.key] || "",
+    ...(field.appointment ? { appointmentDate: vehicle[field.appointmentKey] || "" } : {}),
     reminders: [field.defaultReminder, "", ""],
     files: [],
     history: [],
@@ -373,8 +376,9 @@ function VehicleDueDates({
     if (!editTarget) return;
     const documents = (editTarget.vehicle.documents || makeVehicleDocuments(editTarget.vehicle)).map((item) => item.id === doc.id ? doc : item);
     onDocumentsChange(editTarget.vehicle.id, documents);
+    const toast = appointmentToast(editTarget.doc, doc);
     setEditTarget(null);
-    onToast("Document changes saved.");
+    onToast(toast || "Document changes saved.");
   }
 
   return (
@@ -412,7 +416,7 @@ function VehicleDueDates({
                     {renderExtraCells && renderExtraCells(vehicle)}
                     <td>{vehicle.category}</td>
                     <td>{vehicle.vendor}</td>
-                    <td><div className="ovl-due-type-cell"><span>{doc.type}</span>{doc.type === "Others" && doc.title && <span>{doc.title}</span>}</div></td>
+                    <td><div className="ovl-due-type-cell"><span>{doc.type}</span>{doc.type === "Others" && doc.title && <span>{doc.title}</span>}{docAppointmentField(doc) && <AppointmentBadge doc={doc} tip />}</div></td>
                     <td>{fmtDate(doc.startDate)}</td>
                     <td><ExpiryCell iso={doc.expireDate} /></td>
                     <td><ReminderSummary reminders={doc.reminders} /></td>
@@ -1045,6 +1049,25 @@ function vehicleDocumentStatus(doc) {
   return <StatusBadge status={documentExpiryStatus(doc.expireDate)} />;
 }
 
+// Returns the DOC_FIELDS entry when this document type tracks an appointment.
+function docAppointmentField(doc) {
+  const field = DOC_FIELDS.find((item) => item.type === doc.type);
+  return field?.appointment ? field : null;
+}
+
+// Overrides the generic save toast, but only when this save is what booked the
+// slot — re-saving an unchanged appointment keeps the normal message.
+function appointmentToast(previous, next) {
+  if (!docAppointmentField(next) || !next.appointmentDate) return null;
+  return previous?.appointmentDate === next.appointmentDate ? null : "Appointment date is set.";
+}
+
+function AppointmentBadge({ doc, tip = false }) {
+  const badge = <StatusBadge status={doc.appointmentDate ? "appt_set" : "appt_unset"} />;
+  if (!tip) return badge;
+  return <HoverTip label={doc.appointmentDate ? `Appointment on ${fmtDate(doc.appointmentDate)}` : "No appointment date set"}>{badge}</HoverTip>;
+}
+
 function VehicleDocumentUpload({ files, onFiles }) {
   const currentFiles = files || [];
   function addFiles(fileList) {
@@ -1142,10 +1165,11 @@ function VehicleDocumentModal({ initial, tier, onClose, onSave, onUpgrade }) {
   return <HacModal title={title} onClose={onClose} className="ovl-doc-modal" footer={<><button className="hac-modal-cancel" type="button" onClick={onClose}>Cancel</button><button className="hac-modal-save" type="submit" form="vehicle-document-form">{initial.id ? "Save changes" : "Add document"}</button></>}>
     <form id="vehicle-document-form" onSubmit={submit}>
       <div className="ovl-doc-fields">
-        <div className="ovl-doc-field"><label>Document type *</label><SelectMenu className="ovl-doc-select" value={form.type} options={DOC_FIELDS.map((field) => ({ value: field.type, label: field.type }))} onChange={(value) => { const next = DOC_FIELDS.find((field) => field.type === value) || DOC_FIELDS[0]; setForm((current) => ({ ...current, type: value, reminders: [next.defaultReminder] })); }} ariaLabel="Document type" /></div>
+        <div className="ovl-doc-field"><label>Document type *</label><SelectMenu className="ovl-doc-select" value={form.type} options={DOC_FIELDS.map((field) => ({ value: field.type, label: field.type }))} onChange={(value) => { const next = DOC_FIELDS.find((field) => field.type === value) || DOC_FIELDS[0]; setForm((current) => ({ ...current, type: value, reminders: [next.defaultReminder], appointmentDate: next.appointment ? (current.appointmentDate || "") : "" })); }} ariaLabel="Document type" /></div>
         {isOther && <div className="ovl-doc-field"><label>Title *</label><input value={form.title || ""} onChange={(e) => update("title", e.target.value)} placeholder="Reminder title" />{errors.title && <span className="ovl-doc-error">{errors.title}</span>}</div>}
         <div className="ovl-doc-field"><label>Issued date{rule.startRequired ? " *" : ""}</label><input type="date" value={form.startDate || ""} onChange={(e) => update("startDate", e.target.value)} />{errors.startDate && <span className="ovl-doc-error">{errors.startDate}</span>}</div>
         <div className="ovl-doc-field"><label>Expiry date{rule.expiryRequired ? " *" : ""}</label><input type="date" value={form.expireDate || ""} onChange={(e) => update("expireDate", e.target.value)} />{errors.expireDate && <span className="ovl-doc-error">{errors.expireDate}</span>}</div>
+        {rule.appointment && <div className="ovl-doc-field"><label>Appointment date</label><input type="date" value={form.appointmentDate || ""} onChange={(e) => update("appointmentDate", e.target.value)} /></div>}
         {isOther && <div className="ovl-doc-field full"><label>Description</label><textarea className="ovl-doc-textarea" value={form.description || ""} onChange={(e) => update("description", e.target.value)} placeholder="Add reminder context" /></div>}
         <div className="ovl-doc-field full"><div className="ovl-doc-field-label-row"><label>File upload</label><span className="ovl-file-limit">{(form.files || []).length} of 5 files</span></div><VehicleDocumentUpload files={form.files || []} onFiles={(files) => update("files", files)} /></div>
       </div>
@@ -1164,7 +1188,8 @@ function VehicleDocumentCard({ doc, editable, tier, onEdit, onDelete, onPreview 
     setHistoryLimit(5);
     setHistoryModal(true);
   }
-  return <article className="ovl-doc-row"><div className="ovl-doc-top"><div className="ovl-doc-type-wrap"><div className="ovl-doc-type">{isOther ? (doc.title || "Others") : doc.type}</div></div><div className="ovl-doc-top-spacer" />{doc.files?.[0]?.uploadedDate && <div className="ovl-doc-upload-info">Updated {doc.files[0].uploadedDate}</div>}{editable && <VehicleDocumentMenu onEdit={onEdit} onDelete={onDelete} />}</div><div className="ovl-doc-meta-row"><div className="ovl-doc-meta"><span>Issued date</span><span>{fmtDate(doc.startDate)}</span></div><div className="ovl-doc-meta"><span>Expiry date</span><span>{fmtDate(doc.expireDate)}</span></div><div className="ovl-doc-meta"><span>Time left</span><span className={`ovl-time-left ${expiryTone(doc.expireDate)}`}>{expiryMeta(doc.expireDate)}</span></div><div className="ovl-doc-meta"><span>Reminders</span><span>{doc.expireDate ? <ReminderSummary reminders={visibleReminders} /> : "—"}</span></div></div>{isOther && <VehicleDocumentDescription description={doc.description} />}<VehicleDocumentFiles files={doc.files || []} onPreview={onPreview} />{history.length ? <><button className="ovl-doc-history" type="button" onClick={openHistory}>View history<Icon name="chevron_right" size={17} /></button>{historyModal && <HacModal title={`Document History — ${isOther ? (doc.title || "Others") : doc.type}`} onClose={() => setHistoryModal(false)} className="ovl-history-modal"><div className="ovl-history-modal-body">{history.slice(0, historyLimit).map((record) => <VehicleHistoryRow key={record.id} record={{ ...record, type: doc.type }} />)}{historyLimit < history.length && <button className="ml-btn-soft ovl-history-load" type="button" onClick={() => setHistoryLimit((value) => value + 5)}>Load more</button>}</div></HacModal>}</> : <div className="ovl-doc-no-history">No historical data</div>}</article>;
+  const hasAppointment = Boolean(docAppointmentField(doc));
+  return <article className="ovl-doc-row"><div className="ovl-doc-top"><div className="ovl-doc-type-wrap"><div className="ovl-doc-type">{isOther ? (doc.title || "Others") : doc.type}</div></div>{hasAppointment && <AppointmentBadge doc={doc} />}<div className="ovl-doc-top-spacer" />{doc.files?.[0]?.uploadedDate && <div className="ovl-doc-upload-info">Updated {doc.files[0].uploadedDate}</div>}{editable && <VehicleDocumentMenu onEdit={onEdit} onDelete={onDelete} />}</div><div className={`ovl-doc-meta-row${hasAppointment ? " has-appointment" : ""}`}><div className="ovl-doc-meta"><span>Issued date</span><span>{fmtDate(doc.startDate)}</span></div><div className="ovl-doc-meta"><span>Expiry date</span><span>{fmtDate(doc.expireDate)}</span></div>{hasAppointment && <div className="ovl-doc-meta"><span>Appointment date</span><span>{doc.appointmentDate ? fmtDate(doc.appointmentDate) : "Not set"}</span></div>}<div className="ovl-doc-meta"><span>Time left</span><span className={`ovl-time-left ${expiryTone(doc.expireDate)}`}>{expiryMeta(doc.expireDate)}</span></div><div className="ovl-doc-meta"><span>Reminders</span><span>{doc.expireDate ? <ReminderSummary reminders={visibleReminders} /> : "—"}</span></div></div>{isOther && <VehicleDocumentDescription description={doc.description} />}<VehicleDocumentFiles files={doc.files || []} onPreview={onPreview} />{history.length ? <><button className="ovl-doc-history" type="button" onClick={openHistory}>View history<Icon name="chevron_right" size={17} /></button>{historyModal && <HacModal title={`Document History — ${isOther ? (doc.title || "Others") : doc.type}`} onClose={() => setHistoryModal(false)} className="ovl-history-modal"><div className="ovl-history-modal-body">{history.slice(0, historyLimit).map((record) => <VehicleHistoryRow key={record.id} record={{ ...record, type: doc.type }} />)}{historyLimit < history.length && <button className="ml-btn-soft ovl-history-load" type="button" onClick={() => setHistoryLimit((value) => value + 5)}>Load more</button>}</div></HacModal>}</> : <div className="ovl-doc-no-history">No historical data</div>}</article>;
 }
 
 function VehicleRemindersTab({ vehicle, documents, editable, tier, onChange, onToast }) {
@@ -1173,7 +1198,7 @@ function VehicleRemindersTab({ vehicle, documents, editable, tier, onChange, onT
   const [deleteTarget, setDeleteTarget] = useState(null);
   const typedDocuments = documents.filter((doc) => doc.type !== "Others");
   const otherDocuments = documents.filter((doc) => doc.type === "Others");
-  function saveDocument(doc) { const exists = documents.some((item) => item.id === doc.id); const now = new Date(); const finalDoc = exists ? doc : { ...doc, uploadedDate: now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }), uploadedBy: vehicle.plate }; onChange(exists ? documents.map((item) => item.id === doc.id ? finalDoc : item) : [finalDoc, ...documents]); setModal(null); onToast(exists ? `${doc.type} changes saved.` : `${doc.type} added.`); }
+  function saveDocument(doc) { const previous = documents.find((item) => item.id === doc.id); const exists = Boolean(previous); const now = new Date(); const finalDoc = exists ? doc : { ...doc, uploadedDate: now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }), uploadedBy: vehicle.plate }; onChange(exists ? documents.map((item) => item.id === doc.id ? finalDoc : item) : [finalDoc, ...documents]); setModal(null); onToast(appointmentToast(previous, doc) || (exists ? `${doc.type} changes saved.` : `${doc.type} added.`)); }
   function removeDocument() { if (!deleteTarget) return; onChange(documents.filter((item) => item.id !== deleteTarget.id)); onToast(`${deleteTarget.type} deleted.`); setDeleteTarget(null); }
   function newDocument() { const field = DOC_FIELDS[0]; return { id: null, type: field.type, startDate: "", expireDate: "", reminders: [field.defaultReminder, "", ""], files: [], history: [] }; }
   function renderGroup(title, items) { if (!items.length) return null; return <section className="ovl-doc-section" key={title}><div className="ovl-doc-section-head"><span className="ovl-doc-section-title">{title}</span></div><div className="ovl-doc-list">{items.map((doc) => <VehicleDocumentCard key={doc.id} doc={doc} editable={editable} tier={tier} onEdit={() => setModal(doc)} onDelete={() => setDeleteTarget(doc)} onPreview={setPreview} />)}</div></section>; }
@@ -1192,6 +1217,7 @@ window.VehicleDetail = {
   remindersForTier, issuedDateForVehicleDocument, makeVehicleDocuments,
   makeVehicleForms, makeEmptyForm, makeFormFromVehicle, normalizeVehicle,
   vehicleDocumentTitle, flattenVehicleDueDates, vehicleDocumentStatus,
+  docAppointmentField, AppointmentBadge,
   slotsMeta, resolveEditTab, fileCountLabel,
   // list-level components
   VehicleThumb, ManagedIcon, ExpiryCell, VehicleRowMenu, EditDriverButton,

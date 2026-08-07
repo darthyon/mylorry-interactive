@@ -453,6 +453,7 @@ function App() {
       DOC_FIELDS.forEach((field) => {
         const record = documents.find((doc) => doc.type === field.type);
         next[field.key] = record?.expireDate || null;
+        if (field.appointment) next[field.appointmentKey] = record?.appointmentDate || null;
       });
       return next;
     }));
